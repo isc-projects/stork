@@ -16,7 +16,7 @@
 Synopsis
 ~~~~~~~~
 
-:program:`stork-server` [**-h**] [**-v**] [**-m**] [**-u**] [**--dbhost**] [**-p**] [**-d**] [**--db-sslmode**] [**--db-sslcert**] [**--db-sslkey**] [**--db-sslrootcert**] [**--db-trace-queries=**] [**--db-tls-1-2-enabled**] [**--rest-cleanup-timeout**] [**--rest-graceful-timeout**] [**--rest-max-header-size**] [**--rest-max-body-size**] [**--rest-host**] [**--rest-port**] [**--rest-listen-limit**] [**--rest-keep-alive**] [**--rest-read-timeout**] [**--rest-write-timeout**] [**--rest-tls-certificate**] [**--rest-tls-key**] [**--rest-tls-ca**] [**--rest-tls-1-2-enabled**] [**--rest-static-files-dir**] [**--rest-base-url**] [**--rest-versions-url**]
+:program:`stork-server` [**-h**] [**-v**] [**-m**] [**-u**] [**--dbhost**] [**-p**] [**-d**] [**--db-sslmode**] [**--db-sslcert**] [**--db-sslkey**] [**--db-sslrootcert**] [**--db-trace-queries=**] [**--db-tls-1-2-enabled**] [**--rest-cleanup-timeout**] [**--rest-graceful-timeout**] [**--rest-max-header-size**] [**--rest-max-body-size**] [**--rest-host**] [**--rest-port**] [**--rest-listen-limit**] [**--rest-keep-alive**] [**--rest-read-timeout**] [**--rest-write-timeout**] [**--rest-tls-certificate**] [**--rest-tls-key**] [**--rest-tls-ca**] [**--rest-tls-1-2-enabled**] [**--rest-static-files-dir**] [**--rest-base-url**] [**--rest-versions-url**] [**--oidc-issuer-url**]  [**--oidc-client-id**]  [**--oidc-client-secret**]  [**--oidc-provider-name**]  [**--oidc-group-allow**] [**--oidc-map-groups**]  [**--oidc-scopes**]  [**--oidc-groups-claim**]  [**--oidc-redirect-uri**]  [**--oidc-group-admin**]  [**--oidc-group-super-admin**]  [**--oidc-group-read-only**]
 
 Description
 ~~~~~~~~~~~
@@ -169,6 +169,44 @@ variables are listed in square brackets, where applicable):
 
 ``--rest-versions-url``
    Specifies the URL of the file with current Kea, Stork and BIND 9 software versions metadata. By default, it is `https://www.isc.org/versions.json <https://www.isc.org/versions.json>`_. ``[$STORK_REST_VERSIONS_URL]``
+
+``--oidc-issuer-url``
+   Mandatory. The OID Provider Issuer URL used for OIDC discovery process. ``[$STORK_OIDC_ISSUER_URL]``
+
+``--oidc-client-id``
+   Mandatory. Client ID registered at the OID Provider. ``[$STORK_OIDC_CLIENT_ID]``
+
+``--oidc-client-secret``
+   Optional. Client secret provided by the OID Provider. Optional, because only some Providers require this in the OIDC process. ``[$STORK_OIDC_CLIENT_SECRET]``
+
+``--oidc-provider-name``
+   Optional. The OID Provider name that will be displayed on a Login page. Leave blank to display generic OpenID Connect name. (default: OpenID Connect) ``[$STORK_OIDC_PROVIDER_NAME]``
+
+``--oidc-group-allow``
+   The mandatory group that user must belong to, to access Stork, empty for allow all users ``[$STORK_OIDC_GROUP_ALLOW]``
+
+``--oidc-map-groups``
+   Enable mapping OIDC groups returned from token endpoint to Stork groups ``[$STORK_OIDC_MAP_GROUPS]``
+
+``--oidc-scopes``
+   Comma separated list of scopes sent in Authentication Request. Stork always sends 'openid' scope and this list is appended. (default: email,profile) ``[$STORK_OIDC_SCOPES]``
+
+``--oidc-groups-claim``
+   Claim key used to retrieve user groups from OID Provider token endpoint. It must be configured if 'group-allow' or 'map-groups' setting is used (default: groups) ``[$STORK_OIDC_GROUPS_CLAIM]``
+
+``--oidc-redirect-uri``
+   Redirection URI to which the response to OIDC authentication request will be sent. If configured, it must end with '/oidc/callback' path. Example: 'https://example.org:1234/stork/oidc/callback'.
+   If left empty, Stork will try to construct this URI by joining Stork server address (scheme+'rest-host'+'rest-port'+'rest-base-url' settings) with '/oidc/callback' path. It is useful when Stork UI
+   is behind a Reverse Proxy and the UI is served under a different URL than Stork server. ``[$STORK_OIDC_REDIRECT_URI]``
+
+``--oidc-group-admin``
+   The claim value returned from OIDC token endpoint that can be mapped to Stork 'admin' group; also accepts a comma-separated list of group names (default: stork-admin) ``[$STORK_OIDC_GROUP_ADMIN]``
+
+``--oidc-group-super-admin``
+   The claim value returned from OIDC token endpoint that can be mapped to Stork 'super-admin' group; also accepts a comma-separated list of group names (default: stork-super-admin) ``[$STORK_OIDC_GROUP_SUPER_ADMIN]``
+
+``--oidc-group-read-only``
+   The claim value returned from OIDC token endpoint that can be mapped to Stork 'read-only' group; also accepts a comma-separated list of group names (default: stork-read-only) ``[$STORK_OIDC_GROUP_READ_ONLY]``
 
 Note that there is no argument for the database password, as command-line arguments can sometimes be seen
 by other users. The password can be set using the ``STORK_DATABASE_PASSWORD`` variable.
