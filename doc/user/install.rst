@@ -1398,7 +1398,7 @@ OpenID Connect Authentication
 =============================
 
 As of version 2.5.0, Stork server provides a possibility to authenticate users
-using OpenID Connect protocol.
+using `OpenID Connect <https://openid.net/developers/how-connect-works/>`_ protocol.
 
 OIDC Configuration
 ------------------
