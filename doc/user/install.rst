@@ -1408,12 +1408,12 @@ common ``STORK_OIDC_`` prefix):
 
 - ``STORK_OIDC_ISSUER_URL`` (``oidc-issuer-url`` in CLI)
 
-    The OpenID Provider Issuer URL; it is mandatory setting. Stork will try to do OIDC Discovery with the Issuer to retrieve
+    The OpenID Provider Issuer URL; it is a mandatory setting. Stork will try to do OIDC Discovery with the Issuer to retrieve
     authorization and token endpoints of the OpenID Provider.
 
 - ``STORK_OIDC_CLIENT_ID`` (``oidc-client-id`` in CLI)
 
-    The Client ID registered at the OpenID Provider; it is mandatory setting. You should get this from your OpenID
+    The Client ID registered at the OpenID Provider; it is a mandatory setting. You should get this from your OpenID
     Provider administrator.
 
 - ``STORK_OIDC_CLIENT_SECRET`` (``oidc-client-secret`` in CLI)
@@ -1439,12 +1439,12 @@ common ``STORK_OIDC_`` prefix):
 
 - ``STORK_OIDC_PROVIDER_NAME`` (``oidc-provider-name`` in CLI)
 
-    The OpenID Provider name that will be displayed on a Login page. You may use it to customize the label on the
+    The OpenID Provider name that will be displayed on the Login page. You may use it to customize the label on the
     ``Log in with...`` button. By default, it displays ``Log in with OpenID Connect``.
 
 - ``STORK_OIDC_SCOPES`` (``oidc-scopes`` in CLI)
 
-    Comma separated list of scopes sent in OIDC Authentication Request. Stork always sends ``openid`` scope and the list
+    Comma-separated list of scopes sent in OIDC Authentication Request. Stork always sends ``openid`` scope and the list
     from this setting is appended. It defaults to ``email,profile``. The scopes list may be OpenID Provider implementation
     specific. Based on requested scopes, the OpenID Provider may include different claims in the token endpoint response.
     Stork will try to extract such claims as user email, name or groups the user belongs to. Stork will use claim keys:
@@ -1460,15 +1460,15 @@ common ``STORK_OIDC_`` prefix):
 User group/role related settings
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Stork may extract groups that user belongs to from the received claims from OpenID Provider token endpoint response. The
+Stork may extract groups that the user belongs to from the received claims from OpenID Provider token endpoint response. The
 following related settings may be used:
 
 - ``STORK_OIDC_GROUP_ALLOW`` (``oidc-group-allow`` in CLI)
 
-    If defined, Stork login will be allowed only for members of the specified group. Use this if not all users that passed
+    If defined, Stork login will be allowed only for members of the specified group. Use this if not all users who passed
     OIDC authentication should be permitted login to Stork. For example, if you have a group in your OpenID Provider
-    ``netadmins``, you might specify that here, and then only your network admins will be able to login to Stork.
-    The default is empty, which allows any user who can authenticate at OpenID Provider to login to Stork.
+    ``netadmins``, you might specify that here, and then only your network admins will be able to log in to Stork.
+    The default is empty, which allows any user who can authenticate at OpenID Provider to log in to Stork.
 
     This is independent of the group mapping feature (``STORK_OIDC_MAP_GROUPS``).  You can restrict Stork login
     without mapping Stork roles.  You can map Stork roles without restricting Stork login.  However, it often makes the
@@ -1479,7 +1479,7 @@ following related settings may be used:
     Enable mapping of the groups from the received claims to Stork roles. Set to ``true`` or ``1`` to enable this setting.
     Leave empty to disable it. Defaults to disabled. When enabled, Stork will automatically follow permission changes that
     are applied in the OpenID Provider. Note that the mapping is refreshed with every OIDC authentication.
-    If group mapping is disabled, all users that authenticated at OpenID Provider will be assigned the
+    If group mapping is disabled, all users who authenticated at OpenID Provider will be assigned the
     "read-only" role in Stork. If group mapping is enabled, and a given user is permitted login but is not a
     member of any mapped group, they will be assigned no Stork role, and will receive error messages if they try to use
     Stork.
@@ -1502,9 +1502,9 @@ following related settings may be used:
 Example OIDC configuration
 --------------------------
 
-These examples assume that your organization local GitLab installation ``https://gitlab.my-organization.org`` serves as an
-OpenID Provider. Your Stork UI is served behind a Reverse Proxy and is accessible under URL ``https://stork.my-organization.org:8081``.
-Your Stork server REST API is accessible under URL ``https://stork.my-organization.org:8080``.
+These examples assume that your organization's local GitLab installation ``https://gitlab.my-organization.org`` serves as an
+OpenID Provider. Your Stork UI is served behind a Reverse Proxy and is accessible at URL ``https://stork.my-organization.org:8081``.
+Your Stork server REST API is accessible at URL ``https://stork.my-organization.org:8080``.
 
 .. code-block::
 
@@ -1534,8 +1534,8 @@ Your Stork server REST API is accessible under URL ``https://stork.my-organizati
     # Users that belong to stork-users group, but do not belong to either stork-super-admin, stork-admin or stork-read-only group will log in to Stork
     # but they will be assigned no Stork role, and will receive error messages if they try to use Stork.
 
-Since in the example a reverse proxy is used, you have to configure the web server to pass the OIDC related requests to
-Stork server API. Considering that NGINX is used the configuration snippet may look like:
+Since in the example a reverse proxy is used, you have to configure the web server to pass the OIDC-related requests to
+Stork server API. Considering that NGINX is used, the configuration snippet may look like:
 
 .. code-block::
 
@@ -1561,12 +1561,12 @@ as available to select in a ``Choose a Method`` form element on the Login page:
 .. figure:: ./static/oidc.png
    :alt: OpenID Connect authentication method
 
-After user clicks on the ``Log in with ...`` button, they will get redirected to OpenID Provider page where user will be
-able to authenticate and authorize the Stork as a OIDC Relying Party. It is highly recommended to enable also Multi
-Factor Authentication in the OpenID Provider to improve the authentication process security.
-After successful authentication, user will get redirected back to Stork. Considering that ``STORK_OIDC_GROUP_ALLOW`` was
+After the user clicks on the ``Log in with ...`` button, they will get redirected to OpenID Provider page, where the user will be
+able to authenticate and authorize the Stork as an OIDC Relying Party. It is highly recommended to enable also Multi
+Factor Authentication in the OpenID Provider to improve the security of the authentication process.
+After successful authentication, the user will get redirected back to Stork. Considering that ``STORK_OIDC_GROUP_ALLOW`` was
 configured, login to Stork will be successful if the user belongs to appropriate group in the OpenID Provider.
-In case of missing assignment to mandatory group, user may get redirected back to Stork Login page, where ``Unauthorized``
+In case of missing assignment to a mandatory group, the user may get redirected back to Stork Login page, where ``Unauthorized``
 error feedback will be visible.
 
 Security Checklist for Stork Configurations
