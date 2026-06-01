@@ -91,6 +91,14 @@ func (d *Daemon) GetMachineTag() dbmodel.MachineTag {
 	return d.Machine
 }
 
+// Represents a network interface detected on the monitored machine.
+type NetworkInterface struct {
+	Name            string
+	Flags           uint32
+	HardwareAddress []byte
+	IPAddresses     []string
+}
+
 // State of the machine. It describes multiple properties of the machine like number of CPUs
 // or operating system name and version.
 type State struct {
@@ -114,7 +122,7 @@ type State struct {
 	LastVisitedAt        time.Time
 	Error                string
 	Daemons              []*Daemon
-	IPAddresses          []string
+	Interfaces           []NetworkInterface
 }
 
 // An interface to the response from gRPC including a command status.
@@ -438,6 +446,16 @@ func (agents *connectedAgentsImpl) GetState(ctx context.Context, machine dbmodel
 		})
 	}
 
+	// Convert the network interfaces from the gRPC response to the database model.
+	var interfaces []NetworkInterface
+	for _, iface := range grpcState.MachineNetworkInterfaces {
+		interfaces = append(interfaces, NetworkInterface{
+			Name:            iface.Name,
+			Flags:           iface.Flags,
+			HardwareAddress: iface.HardwareAddress,
+			IPAddresses:     iface.IpAddresses,
+		})
+	}
 	state := State{
 		Address:              machine.GetAddress(),
 		AgentVersion:         grpcState.AgentVersion,
@@ -459,7 +477,7 @@ func (agents *connectedAgentsImpl) GetState(ctx context.Context, machine dbmodel
 		LastVisitedAt:        storkutil.UTCNow(),
 		Error:                grpcState.Error,
 		Daemons:              daemons,
-		IPAddresses:          grpcState.MachineIPAddresses,
+		Interfaces:           interfaces,
 	}
 
 	return &state, nil

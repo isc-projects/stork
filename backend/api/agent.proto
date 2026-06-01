@@ -67,6 +67,14 @@ message PingRsp {
 message GetStateReq {
 }
 
+// Network interface information converted from net.Interface.
+message NetworkInterface {
+  string name = 1;
+  uint32 flags = 2;
+  bytes hardwareAddress = 3;
+  repeated string ipAddresses = 4;
+}
+
 // State of machine and its system
 message GetStateRsp {
   string agentVersion = 1;
@@ -91,7 +99,7 @@ message GetStateRsp {
   // Always false.
   // TODO: Remove it when the API will be changed.
   bool agentUsesHTTPCredentials = 19 [deprecated = true];
-  repeated string machineIPAddresses = 20;
+  repeated NetworkInterface MachineNetworkInterfaces = 20;
 }
 
 // Access point

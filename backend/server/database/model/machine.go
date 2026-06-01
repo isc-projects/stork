@@ -13,38 +13,39 @@ import (
 
 // Part of machine table in database that describes state of machine. In DB it is stored as JSONB.
 type MachineState struct {
-	AgentVersion         string
-	Cpus                 int64
-	CpusLoad             string
-	Memory               int64
-	Hostname             string
-	Uptime               int64
-	UsedMemory           int64
-	Os                   string
-	Platform             string
-	PlatformFamily       string
-	PlatformVersion      string
-	KernelVersion        string
-	KernelArch           string
-	VirtualizationSystem string
-	VirtualizationRole   string
-	HostID               string
-	IPAddressesHash      string
+	AgentVersion              string
+	Cpus                      int64
+	CpusLoad                  string
+	Memory                    int64
+	Hostname                  string
+	Uptime                    int64
+	UsedMemory                int64
+	Os                        string
+	Platform                  string
+	PlatformFamily            string
+	PlatformVersion           string
+	KernelVersion             string
+	KernelArch                string
+	VirtualizationSystem      string
+	VirtualizationRole        string
+	HostID                    string
+	HostNetworkInterfacesHash string
 }
 
 // Represents a machine held in machine table in the database.
 type Machine struct {
-	ID              int64
-	CreatedAt       time.Time
-	Address         string
-	AgentPort       int64
-	LastVisitedAt   time.Time
-	Error           string
-	State           MachineState
-	Daemons         []*Daemon `pg:"rel:has-many"`
-	AgentToken      string
-	CertFingerprint [32]byte
-	Authorized      bool `pg:",use_zero"`
+	ID                       int64
+	CreatedAt                time.Time
+	Address                  string
+	AgentPort                int64
+	LastVisitedAt            time.Time
+	Error                    string
+	State                    MachineState
+	Daemons                  []*Daemon `pg:"rel:has-many"`
+	AgentToken               string
+	CertFingerprint          [32]byte
+	Authorized               bool                      `pg:",use_zero"`
+	MachineNetworkInterfaces []MachineNetworkInterface `pg:"rel:has-many"`
 }
 
 // Identifier of the relations between the machine and other tables.
@@ -52,15 +53,17 @@ type MachineRelation string
 
 // Names of the machine table relations. They must be valid in the go-pg sense.
 const (
-	MachineRelationDaemons            MachineRelation = "Daemons"
-	MachineRelationKeaDaemons         MachineRelation = "Daemons.KeaDaemon"
-	MachineRelationBind9Daemons       MachineRelation = "Daemons.Bind9Daemon"
-	MachineRelationPDNSDaemons        MachineRelation = "Daemons.PDNSDaemon"
-	MachineRelationDaemonLogTargets   MachineRelation = "Daemons.LogTargets"
-	MachineRelationDaemonAccessPoints MachineRelation = "Daemons.AccessPoints"
-	MachineRelationKeaDHCPConfigs     MachineRelation = "Daemons.KeaDaemon.KeaDHCPDaemon"
-	MachineRelationDaemonHAServices   MachineRelation = "Daemons.Services.HAService"
-	MachineRelationDaemonConfigReview MachineRelation = "Daemons.ConfigReview"
+	MachineRelationDaemons                      MachineRelation = "Daemons"
+	MachineRelationKeaDaemons                   MachineRelation = "Daemons.KeaDaemon"
+	MachineRelationBind9Daemons                 MachineRelation = "Daemons.Bind9Daemon"
+	MachineRelationPDNSDaemons                  MachineRelation = "Daemons.PDNSDaemon"
+	MachineRelationDaemonLogTargets             MachineRelation = "Daemons.LogTargets"
+	MachineRelationDaemonAccessPoints           MachineRelation = "Daemons.AccessPoints"
+	MachineRelationKeaDHCPConfigs               MachineRelation = "Daemons.KeaDaemon.KeaDHCPDaemon"
+	MachineRelationDaemonHAServices             MachineRelation = "Daemons.Services.HAService"
+	MachineRelationDaemonConfigReview           MachineRelation = "Daemons.ConfigReview"
+	MachineRelationNetworkInterfaces            MachineRelation = "MachineNetworkInterfaces"
+	MachineRelationNetworkInterfacesIPAddresses MachineRelation = "MachineNetworkInterfaces.IPAddresses"
 )
 
 // MachineTag is an interface implemented by the dbmodel.Machine exposing functions

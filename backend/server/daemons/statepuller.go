@@ -3,6 +3,8 @@ package daemons
 import (
 	"context"
 	"fmt"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/go-pg/pg/v10"
@@ -128,20 +130,47 @@ func updateMachineFields(ctx context.Context, db *dbops.PgDB, dbMachine *dbmodel
 	dbMachine.LastVisitedAt = m.LastVisitedAt
 	dbMachine.Error = m.Error
 
-	currentIPAddressesHash := dbMachine.State.IPAddressesHash
-	newIPAddressesHash := storkutil.Fnv128(m.IPAddresses)
-	dbMachine.State.IPAddressesHash = newIPAddressesHash
+	currentInterfacesHash := dbMachine.State.HostNetworkInterfacesHash
+
+	// Compute the hash of the network interfaces.
+	// Start by sorting the interfaces by name.
+	slices.SortFunc(m.Interfaces, func(iface1, iface2 agentcomm.NetworkInterface) int {
+		return strings.Compare(iface1.Name, iface2.Name)
+	})
+	// For each interface, sort the IP addresses by IP address.
+	for _, iface := range m.Interfaces {
+		slices.Sort(iface.IPAddresses)
+	}
+	// Compute the hash of the network interfaces.
+	newInterfacesHash := storkutil.Fnv128(m.Interfaces)
+	// Replace the hash.
+	dbMachine.State.HostNetworkInterfacesHash = newInterfacesHash
 
 	err := db.RunInTransaction(ctx, func(tx *pg.Tx) error {
 		err := dbmodel.UpdateMachine(tx, dbMachine)
 		if err != nil {
 			return errors.Wrapf(err, "problem updating machine with ID %d", dbMachine.ID)
 		}
-
-		if currentIPAddressesHash != newIPAddressesHash {
-			err = dbmodel.UpsertMachineIPAddresses(tx, dbMachine.ID, m.IPAddresses...)
+		// Only update the network interfaces if anything has changed.
+		if currentInterfacesHash != newInterfacesHash {
+			var interfaces []dbmodel.MachineNetworkInterface
+			for _, iface := range m.Interfaces {
+				var ipAddresses []dbmodel.MachineNetworkInterfaceIPAddress
+				for _, addr := range iface.IPAddresses {
+					ipAddresses = append(ipAddresses, dbmodel.MachineNetworkInterfaceIPAddress{
+						IPAddress: addr,
+					})
+				}
+				interfaces = append(interfaces, dbmodel.MachineNetworkInterface{
+					Name:            iface.Name,
+					Flags:           iface.Flags,
+					HardwareAddress: iface.HardwareAddress,
+					IPAddresses:     ipAddresses,
+				})
+			}
+			err = dbmodel.UpsertMachineNetworkInterfaces(tx, dbMachine.ID, interfaces...)
 			if err != nil {
-				return errors.Wrapf(err, "problem upserting machine IP addresses for machine with ID %d", dbMachine.ID)
+				return errors.Wrapf(err, "problem upserting network interfaces for machine with ID %d", dbMachine.ID)
 			}
 		}
 		return nil

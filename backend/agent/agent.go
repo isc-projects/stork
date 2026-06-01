@@ -268,12 +268,32 @@ func (sa *StorkAgent) GetState(ctx context.Context, in *agentapi.GetStateReq) (*
 		})
 	}
 
-	var errText string
-	ipAddresses, err := storkutil.GetHostIPAddresses()
+	// Get the host network interfaces along with their IP addresses
+	// and return to the server.
+	var (
+		errText                  string
+		machineNetworkInterfaces []*agentapi.NetworkInterface
+	)
+	ifaces, err := net.Interfaces()
 	if err != nil {
 		errText = err.Error()
-	} else {
-		slices.Sort(ipAddresses)
+	}
+	for _, iface := range ifaces {
+		addrs, err := iface.Addrs()
+		if err != nil {
+			errText = err.Error()
+			break
+		}
+		ipAddrs := make([]string, 0, len(addrs))
+		for _, addr := range addrs {
+			ipAddrs = append(ipAddrs, addr.String())
+		}
+		machineNetworkInterfaces = append(machineNetworkInterfaces, &agentapi.NetworkInterface{
+			Name:            iface.Name,
+			Flags:           uint32(iface.Flags),
+			HardwareAddress: iface.HardwareAddr,
+			IpAddresses:     ipAddrs,
+		})
 	}
 
 	state := agentapi.GetStateRsp{
@@ -299,7 +319,7 @@ func (sa *StorkAgent) GetState(ctx context.Context, in *agentapi.GetStateReq) (*
 		// API backward compatibility. The Stork Server should not rely
 		// on this field.
 		AgentUsesHTTPCredentials: false,
-		MachineIPAddresses:       ipAddresses,
+		MachineNetworkInterfaces: machineNetworkInterfaces,
 	}
 
 	return &state, nil
