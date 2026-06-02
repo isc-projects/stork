@@ -191,7 +191,7 @@ func daemonCompare(dbDaemon *dbmodel.Daemon, grpcDaemon *agentcomm.Daemon) bool 
 func updateAccessPoints(dbDaemon *dbmodel.Daemon, grpcDaemon *agentcomm.Daemon) {
 	var accessPoints []*dbmodel.AccessPoint
 	grpcAccessPointIndex := map[daemonCompareKey]int{}
-	seenGrpcIndices := map[int]struct{}{}
+	seenGrpcAccessPoints := make([]bool, len(grpcDaemon.AccessPoints))
 
 	for i, pt := range grpcDaemon.AccessPoints {
 		grpcAccessPointIndex[newDaemonCompareKey(pt)] = i
@@ -204,14 +204,14 @@ func updateAccessPoints(dbDaemon *dbmodel.Daemon, grpcDaemon *agentcomm.Daemon) 
 			dbAp.Key = grpcAp.Key
 			dbAp.Protocol = grpcAp.Protocol
 			accessPoints = append(accessPoints, dbAp)
-			seenGrpcIndices[i] = struct{}{}
+			seenGrpcAccessPoints[i] = true
 		}
 		// Skip the access points which are not present in the gRPC daemon.
 	}
 
 	// Add the access points which are present in the gRPC daemon but not in the database daemon.
 	for i, grpcAp := range grpcDaemon.AccessPoints {
-		if _, ok := seenGrpcIndices[i]; ok {
+		if seenGrpcAccessPoints[i] {
 			continue
 		}
 		accessPoints = append(accessPoints, &dbmodel.AccessPoint{
