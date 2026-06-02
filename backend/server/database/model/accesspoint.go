@@ -34,6 +34,13 @@ type AccessPoint struct {
 
 // Adds an access point in the database.
 func addAccessPoint(db dbops.DBI, accessPoint *AccessPoint) error {
+	if accessPoint.ID != 0 {
+		return pkgerrors.Errorf(
+			"cannot add access point with non-zero ID: %v",
+			accessPoint,
+		)
+	}
+
 	_, err := db.Model(accessPoint).Insert()
 	if err != nil {
 		return pkgerrors.Wrapf(

@@ -42,6 +42,38 @@ func TestAddAccessPoint(t *testing.T) {
 	require.Equal(t, "bar", daemon.AccessPoints[0].Key)
 }
 
+// Test that the access point with non-zero I cannot be inserted.
+func TestAddExistingAccessPoint(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	m := &Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	_ = AddMachine(db, m)
+
+	daemon := NewDaemon(m, "kea-dhcp4", true, nil)
+	_ = AddDaemon(db, daemon)
+
+	ap := &AccessPoint{
+		ID:       1,
+		DaemonID: daemon.ID,
+		Type:     AccessPointControl,
+		Address:  "foo",
+		Port:     8000,
+		Key:      "bar",
+	}
+
+	// Act
+	err := addAccessPoint(db, ap)
+
+	// Assert
+	require.ErrorContains(t, err, "cannot add access point with non-zero ID")
+}
+
 // Test that the access point can be updated in the database.
 func TestUpdateAccessPoint(t *testing.T) {
 	// Arrange
