@@ -134,8 +134,9 @@ func updateMachineFields(db *dbops.PgDB, dbMachine *dbmodel.Machine, m *agentcom
 }
 
 // It is an index key for comparing daemons. The daemons are considered equal
-// if their type matches and if they have at least one same control channel. The
-// control channel is unique for each daemon because only one process can
+// if their type matches and they have at least one same control channel or have
+// no access points.
+// The control channel is unique for each daemon because only one process can
 // listen on a given address and port or a given Unix socket.
 // We don't compare the protocol here because we want to consider daemons same
 // even if they switched from HTTP to HTTPS or from RNDC without key to RNDC
