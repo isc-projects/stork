@@ -1,17 +1,17 @@
 build:
-  os: ubuntu-22.04
+  os: ubuntu-lts-latest
   tools:
-    python: '3.11'
+    python: '3.14'
   jobs:
     pre_create_environment:
       - rake prepare:doc
 formats: all
 python:
-   install:
-   - requirements: doc/src/requirements.txt
+  install:
+    - requirements: doc/src/requirements.txt
 sphinx:
-   configuration: doc/user/conf.py
-   fail_on_warning: true
+  configuration: doc/user/conf.py
+  fail_on_warning: true
 submodules:
   include: all
   recursive: true
