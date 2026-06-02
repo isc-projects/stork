@@ -1,8 +1,0 @@
-"control-socket": {
-    <?include "/etc/kea/kea-tls.json"?>
-    <?include "/etc/kea/kea-auth.json"?>
-    <?include "/etc/kea/kea-http-headers.json"?>
-    "socket-type": "https",
-    "socket-address": "127.0.0.1",
-    "socket-port": 8004
-},

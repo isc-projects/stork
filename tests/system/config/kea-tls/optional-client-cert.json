@@ -1,4 +1,0 @@
-"trust-anchor": "/root/certs/CA",
-"cert-file": "/root/certs/cert.pem",
-"key-file": "/root/certs/key.pem",
-"cert-required": false,

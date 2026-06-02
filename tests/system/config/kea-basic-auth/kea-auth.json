@@ -1,9 +1,0 @@
-"authentication": {
-    "type": "basic",
-    "realm": "kea-control-agent",
-    "clients": [
-        {
-            "password-file": "/etc/kea/kea-password-file.txt"
-        }
-    ]
-},
