@@ -195,6 +195,11 @@ type DaemonTag interface {
 
 // Creates an instance of a daemon with its references initialized to empty
 // structures.
+//
+// The access points passed to this function must be unique instances for a
+// given daemon, otherwise the caller may experience unexpected behavior when
+// the daemon is updated. Especially, the access points created in unit tests
+// should not share the same instance across multiple daemons.
 func NewDaemon(machine *Machine, name daemonname.Name, active bool, accessPoints []*AccessPoint) *Daemon {
 	daemon := &Daemon{
 		Name:         name,
