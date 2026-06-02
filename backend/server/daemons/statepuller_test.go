@@ -606,7 +606,7 @@ func TestStatePullerPullDataModifyAccessPoints(t *testing.T) {
 	daemonPDNSNew := daemonIndex[daemonname.PDNS]
 	require.Equal(t, daemonPDNS.ID, daemonPDNSNew.ID)
 	require.Len(t, daemonPDNSNew.AccessPoints, 1)
-	// The key has been set but the access point hhas the same ID.
+	// The key has been set but the access point has the same ID.
 	require.Equal(t, "abcd", daemonPDNSNew.AccessPoints[0].Key)
 	require.Equal(t, daemonPDNS.AccessPoints[0].ID, daemonPDNSNew.AccessPoints[0].ID)
 }
