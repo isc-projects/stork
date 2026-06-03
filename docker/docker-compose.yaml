@@ -315,8 +315,8 @@ services:
       subnet-03:
         ipv4_address: 172.103.0.102
         interface_name: eth1
-      subnet6-02:
-        ipv6_address: 3002:db8:1::200
+      subnet6-01:
+        ipv6_address: 3001:db8:1::302
         interface_name: eth2
     expose:
       - "8885"
@@ -367,9 +367,12 @@ services:
       subnet-03:
         ipv4_address: 172.103.0.103
         interface_name: eth1
-      subnet6-02:
-        ipv6_address: 3002:db8:1::300
+      subnet6-01:
+        ipv6_address: 3001:db8:1::303
         interface_name: eth2
+      subnet6-02:
+        ipv6_address: 3002:db8:1::303
+        interface_name: eth3
     expose:
       - "8890"
       - "9547" # kea_exporter for prometheus
