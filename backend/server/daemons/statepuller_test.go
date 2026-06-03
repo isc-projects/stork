@@ -650,82 +650,156 @@ func TestDaemonCompare(t *testing.T) {
 
 // Test that the puller updates access points of daemons.
 func TestUpdateAccessPoints(t *testing.T) {
-	// No access points.
-	dbDaemon := &dbmodel.Daemon{}
-	grpcDaemon := &agentcomm.Daemon{}
-	updateAccessPoints(dbDaemon, grpcDaemon)
-	require.Empty(t, dbDaemon.AccessPoints)
-	require.Empty(t, grpcDaemon.AccessPoints)
+	t.Run("No access points", func(t *testing.T) {
+		// Arrange
+		dbDaemon := &dbmodel.Daemon{}
+		grpcDaemon := &agentcomm.Daemon{}
 
-	// Access point only in dbDaemon. It should be removed.
-	dbDaemon.AccessPoints = []*dbmodel.AccessPoint{{
-		Type:     dbmodel.AccessPointControl,
-		Address:  "203.0.113.111",
-		Port:     1234,
-		Key:      "abcd",
-		Protocol: protocoltype.HTTPS,
-	}}
-	updateAccessPoints(dbDaemon, grpcDaemon)
-	require.Empty(t, dbDaemon.AccessPoints)
-	require.Empty(t, grpcDaemon.AccessPoints)
+		// Act
+		updateAccessPoints(dbDaemon, grpcDaemon)
 
-	// Access point only in grpcDaemon. It should be added to dbDaemon.
-	grpcDaemon.AccessPoints = []dbmodel.AccessPoint{{
-		Type:     dbmodel.AccessPointControl,
-		Address:  "203.0.113.111",
-		Port:     1234,
-		Key:      "abcd",
-		Protocol: protocoltype.HTTPS,
-	}}
-	updateAccessPoints(dbDaemon, grpcDaemon)
-	require.Len(t, dbDaemon.AccessPoints, 1)
-	require.Equal(t, dbDaemon.AccessPoints[0].Type, dbmodel.AccessPointControl)
-	require.Equal(t, dbDaemon.AccessPoints[0].Address, "203.0.113.111")
-	require.EqualValues(t, dbDaemon.AccessPoints[0].Port, 1234)
-	require.Equal(t, dbDaemon.AccessPoints[0].Key, "abcd")
-	require.Equal(t, dbDaemon.AccessPoints[0].Protocol, protocoltype.HTTPS)
-	require.Len(t, grpcDaemon.AccessPoints, 1)
-
-	// Access point in both daemons but with different parameters. It should be
-	// updated in dbDaemon.
-	dbDaemon.AccessPoints[0].ID = 42
-	grpcDaemon.AccessPoints[0].Protocol = protocoltype.HTTP
-	grpcDaemon.AccessPoints[0].Key = "foo"
-	updateAccessPoints(dbDaemon, grpcDaemon)
-	require.Len(t, dbDaemon.AccessPoints, 1)
-	require.EqualValues(t, 42, dbDaemon.AccessPoints[0].ID)
-	require.EqualValues(t, dbDaemon.AccessPoints[0].Port, 1234)
-	require.Equal(t, dbDaemon.AccessPoints[0].Key, "foo")
-	require.Equal(t, dbDaemon.AccessPoints[0].Protocol, protocoltype.HTTP)
-
-	// Access point in both daemons but with different ports. The port should
-	// recreated.
-	grpcDaemon.AccessPoints[0].Port = 4321
-	updateAccessPoints(dbDaemon, grpcDaemon)
-	require.Len(t, dbDaemon.AccessPoints, 1)
-	require.Zero(t, dbDaemon.AccessPoints[0].ID)
-	require.EqualValues(t, dbDaemon.AccessPoints[0].Port, 4321)
-
-	// Two access points in grpcDaemon. The second one should be added to dbDaemon.
-	dbDaemon.AccessPoints[0].ID = 42
-	grpcDaemon.AccessPoints = append(grpcDaemon.AccessPoints, dbmodel.AccessPoint{
-		Type:     dbmodel.AccessPointControl,
-		Address:  "203.0.113.124",
-		Port:     5678,
-		Protocol: protocoltype.HTTPS,
+		// Assert
+		require.Empty(t, dbDaemon.AccessPoints)
+		require.Empty(t, grpcDaemon.AccessPoints)
 	})
-	updateAccessPoints(dbDaemon, grpcDaemon)
-	require.Len(t, dbDaemon.AccessPoints, 2)
-	require.Equal(t, dbDaemon.AccessPoints[0].Type, dbmodel.AccessPointControl)
-	require.Equal(t, dbDaemon.AccessPoints[0].Address, "203.0.113.111")
-	require.EqualValues(t, dbDaemon.AccessPoints[0].Port, 4321)
-	require.Equal(t, dbDaemon.AccessPoints[0].Protocol, protocoltype.HTTP)
-	require.EqualValues(t, 42, dbDaemon.AccessPoints[0].ID)
-	require.Equal(t, dbDaemon.AccessPoints[1].Type, dbmodel.AccessPointControl)
-	require.Equal(t, dbDaemon.AccessPoints[1].Address, "203.0.113.124")
-	require.EqualValues(t, dbDaemon.AccessPoints[1].Port, 5678)
-	require.Equal(t, dbDaemon.AccessPoints[1].Protocol, protocoltype.HTTPS)
-	require.Zero(t, dbDaemon.AccessPoints[1].ID)
+
+	t.Run("Remove access points", func(t *testing.T) {
+		// Arrange
+		dbDaemon := &dbmodel.Daemon{AccessPoints: []*dbmodel.AccessPoint{{
+			Type:     dbmodel.AccessPointControl,
+			Address:  "203.0.113.111",
+			Port:     1234,
+			Key:      "abcd",
+			Protocol: protocoltype.HTTPS,
+		}}}
+		grpcDaemon := &agentcomm.Daemon{}
+
+		// Act
+		updateAccessPoints(dbDaemon, grpcDaemon)
+
+		// Assert
+		require.Empty(t, dbDaemon.AccessPoints)
+		require.Empty(t, grpcDaemon.AccessPoints)
+	})
+
+	t.Run("Add access points", func(t *testing.T) {
+		// Arrange
+		dbDaemon := &dbmodel.Daemon{}
+		grpcDaemon := &agentcomm.Daemon{AccessPoints: []dbmodel.AccessPoint{{
+			Type:     dbmodel.AccessPointControl,
+			Address:  "203.0.113.111",
+			Port:     1234,
+			Key:      "abcd",
+			Protocol: protocoltype.HTTPS,
+		}}}
+
+		// Act
+		updateAccessPoints(dbDaemon, grpcDaemon)
+
+		// Assert
+		require.Len(t, dbDaemon.AccessPoints, 1)
+		require.Equal(t, dbDaemon.AccessPoints[0].Type, dbmodel.AccessPointControl)
+		require.Equal(t, dbDaemon.AccessPoints[0].Address, "203.0.113.111")
+		require.EqualValues(t, dbDaemon.AccessPoints[0].Port, 1234)
+		require.Equal(t, dbDaemon.AccessPoints[0].Key, "abcd")
+		require.Equal(t, dbDaemon.AccessPoints[0].Protocol, protocoltype.HTTPS)
+		require.Len(t, grpcDaemon.AccessPoints, 1)
+	})
+
+	t.Run("Update access points", func(t *testing.T) {
+		// Arrange
+		dbDaemon := &dbmodel.Daemon{AccessPoints: []*dbmodel.AccessPoint{{
+			ID:       42,
+			Type:     dbmodel.AccessPointControl,
+			Address:  "203.0.113.111",
+			Port:     1234,
+			Key:      "abcd",
+			Protocol: protocoltype.HTTPS,
+		}}}
+		grpcDaemon := &agentcomm.Daemon{AccessPoints: []dbmodel.AccessPoint{{
+			Type:     dbmodel.AccessPointControl,
+			Address:  "203.0.113.111",
+			Port:     1234,
+			Key:      "foo",
+			Protocol: protocoltype.HTTP,
+		}}}
+
+		// Act
+		updateAccessPoints(dbDaemon, grpcDaemon)
+
+		// Assert
+		require.Len(t, dbDaemon.AccessPoints, 1)
+		require.EqualValues(t, 42, dbDaemon.AccessPoints[0].ID)
+		require.EqualValues(t, dbDaemon.AccessPoints[0].Port, 1234)
+		require.Equal(t, dbDaemon.AccessPoints[0].Key, "foo")
+		require.Equal(t, dbDaemon.AccessPoints[0].Protocol, protocoltype.HTTP)
+	})
+
+	t.Run("Change a port", func(t *testing.T) {
+		// Arrange
+		dbDaemon := &dbmodel.Daemon{AccessPoints: []*dbmodel.AccessPoint{{
+			ID:       42,
+			Type:     dbmodel.AccessPointControl,
+			Address:  "203.0.113.111",
+			Port:     1234,
+			Protocol: protocoltype.HTTP,
+		}}}
+		grpcDaemon := &agentcomm.Daemon{AccessPoints: []dbmodel.AccessPoint{{
+			Type:     dbmodel.AccessPointControl,
+			Address:  "203.0.113.111",
+			Port:     4321,
+			Protocol: protocoltype.HTTP,
+		}}}
+
+		// Act
+		updateAccessPoints(dbDaemon, grpcDaemon)
+
+		// Assert
+		require.Len(t, dbDaemon.AccessPoints, 1)
+		require.Zero(t, dbDaemon.AccessPoints[0].ID)
+		require.EqualValues(t, dbDaemon.AccessPoints[0].Port, 4321)
+	})
+
+	t.Run("two access points", func(t *testing.T) {
+		// Arrange
+		dbDaemon := &dbmodel.Daemon{AccessPoints: []*dbmodel.AccessPoint{{
+			ID:       42,
+			Type:     dbmodel.AccessPointControl,
+			Address:  "203.0.113.111",
+			Port:     1234,
+			Protocol: protocoltype.HTTP,
+		}}}
+		grpcDaemon := &agentcomm.Daemon{AccessPoints: []dbmodel.AccessPoint{
+			{
+				Type:     dbmodel.AccessPointControl,
+				Address:  "203.0.113.111",
+				Port:     1234,
+				Protocol: protocoltype.HTTP,
+			},
+			{
+				Type:     dbmodel.AccessPointControl,
+				Address:  "203.0.113.124",
+				Port:     5678,
+				Protocol: protocoltype.HTTPS,
+			},
+		}}
+
+		// Act
+		updateAccessPoints(dbDaemon, grpcDaemon)
+
+		// Assert
+		require.Len(t, dbDaemon.AccessPoints, 2)
+		require.Equal(t, dbDaemon.AccessPoints[0].Type, dbmodel.AccessPointControl)
+		require.Equal(t, dbDaemon.AccessPoints[0].Address, "203.0.113.111")
+		require.EqualValues(t, dbDaemon.AccessPoints[0].Port, 1234)
+		require.Equal(t, dbDaemon.AccessPoints[0].Protocol, protocoltype.HTTP)
+		require.EqualValues(t, 42, dbDaemon.AccessPoints[0].ID)
+		require.Equal(t, dbDaemon.AccessPoints[1].Type, dbmodel.AccessPointControl)
+		require.Equal(t, dbDaemon.AccessPoints[1].Address, "203.0.113.124")
+		require.EqualValues(t, dbDaemon.AccessPoints[1].Port, 5678)
+		require.Equal(t, dbDaemon.AccessPoints[1].Protocol, protocoltype.HTTPS)
+		require.Zero(t, dbDaemon.AccessPoints[1].ID)
+	})
 }
 
 // Test that new configuration review is scheduled when a daemon's
