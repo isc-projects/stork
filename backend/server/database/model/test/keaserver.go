@@ -2,13 +2,62 @@ package dbmodeltest
 
 import (
 	"github.com/go-pg/pg/v10"
+	"isc.org/stork/datamodel/daemonname"
+	"isc.org/stork/datamodel/protocoltype"
 	dbmodel "isc.org/stork/server/database/model"
 )
 
 // A wrapper for a Kea daemon.
 type KeaServer struct {
-	machine  *Machine
-	DaemonID int64
+	Daemon
+}
+
+// Creates new Kea daemon instance in the machine.
+func (m *Machine) newKeaDaemon(name daemonname.Name) (*KeaServer, error) {
+	ap := []*dbmodel.AccessPoint{{
+		Type:     dbmodel.AccessPointControl,
+		Address:  "localhost",
+		Port:     int64(getRandInt31()),
+		Key:      "",
+		Protocol: protocoltype.HTTPS,
+	}}
+
+	daemon := dbmodel.NewDaemon(&dbmodel.Machine{ID: m.ID}, name, true, ap)
+	if err := dbmodel.AddDaemon(m.db, daemon); err != nil {
+		return nil, err
+	}
+
+	return &KeaServer{
+		Daemon: Daemon{
+			machine:  m,
+			DaemonID: daemon.ID,
+		},
+	}, nil
+}
+
+// Creates DHCPPv4 server instance for the Kea daemon.
+func (m *Machine) NewKeaDHCPv4Server() (*KeaServer, error) {
+	return m.newKeaDaemon(daemonname.DHCPv4)
+}
+
+// Creates DHCPv6 server instance for the Kea daemon.
+func (m *Machine) NewKeaDHCPv6Server() (*KeaServer, error) {
+	return m.newKeaDaemon(daemonname.DHCPv6)
+}
+
+// Creates CA instance for the Kea daemon.
+func (m *Machine) NewKeaCA() (*KeaServer, error) {
+	return m.newKeaDaemon(daemonname.CA)
+}
+
+// Creates CA server instance for the Kea daemon.
+func (m *Machine) NewKeaCAServer() (*KeaServer, error) {
+	return m.newKeaDaemon(daemonname.CA)
+}
+
+// Creates D2 server instance for the Kea daemon.
+func (m *Machine) NewKeaD2Server() (*KeaServer, error) {
+	return m.newKeaDaemon(daemonname.D2)
 }
 
 // Creates new Kea daemon and a DHCPv4 server daemon in the database.
@@ -84,22 +133,4 @@ func (server *KeaServer) SetVersion(version string) error {
 	}
 	d.Version = version
 	return dbmodel.UpdateDaemon(server.machine.db, d)
-}
-
-// Returns a machine the Kea server belongs to.
-func (server *KeaServer) GetMachine() (*dbmodel.Machine, error) {
-	machine, err := dbmodel.GetMachineByID(server.machine.db, server.machine.ID)
-	if err != nil {
-		return nil, err
-	}
-	return machine, nil
-}
-
-// Returns a daemon the Kea server belongs to.
-func (server *KeaServer) GetDaemon() (*dbmodel.Daemon, error) {
-	daemon, err := dbmodel.GetKeaDaemonByID(server.machine.db, server.DaemonID)
-	if err != nil {
-		return nil, err
-	}
-	return daemon, nil
 }

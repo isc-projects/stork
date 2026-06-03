@@ -5,8 +5,6 @@ import (
 	"math/rand"
 
 	"github.com/go-pg/pg/v10"
-	"isc.org/stork/datamodel/daemonname"
-	"isc.org/stork/datamodel/protocoltype"
 	dbmodel "isc.org/stork/server/database/model"
 )
 
@@ -26,11 +24,18 @@ type Machine struct {
 	ID int64
 }
 
+// A wrapper for a daemon.
+type Daemon struct {
+	machine  *Machine
+	DaemonID int64
+}
+
 // Creates a new machine in the database with a default address and port.
 func NewMachine(db *pg.DB) (*Machine, error) {
 	m := dbmodel.Machine{
-		Address:   fmt.Sprintf("machine%d", getRandInt63()),
-		AgentPort: int64(getRandInt31()),
+		Address:    fmt.Sprintf("machine%d", getRandInt63()),
+		AgentPort:  int64(getRandInt31()),
+		Authorized: true,
 	}
 	if err := dbmodel.AddMachine(db, &m); err != nil {
 		return nil, err
@@ -42,51 +47,21 @@ func NewMachine(db *pg.DB) (*Machine, error) {
 	return machine, nil
 }
 
-// Creates new Kea daemon instance in the machine.
-func (m *Machine) newKeaDaemon(name daemonname.Name) (*KeaServer, error) {
-	ap := []*dbmodel.AccessPoint{{
-		Type:     dbmodel.AccessPointControl,
-		Address:  "localhost",
-		Port:     int64(getRandInt31()),
-		Key:      "",
-		Protocol: protocoltype.HTTPS,
-	}}
+// Returns a machine representation from the database.
+func (m *Machine) GetMachine() (*dbmodel.Machine, error) {
+	return dbmodel.GetMachineByID(m.db, m.ID)
+}
 
-	daemon := &dbmodel.Daemon{
-		MachineID:    m.ID,
-		Name:         name,
-		Active:       true,
-		AccessPoints: ap,
-		KeaDaemon: &dbmodel.KeaDaemon{
-			KeaDHCPDaemon: &dbmodel.KeaDHCPDaemon{},
-		},
-	}
-	if err := dbmodel.AddDaemon(m.db, daemon); err != nil {
+// Returns a machine the server belongs to.
+func (server *Daemon) GetMachine() (*dbmodel.Machine, error) {
+	return server.machine.GetMachine()
+}
+
+// Returns a daemon the server belongs to.
+func (server *Daemon) GetDaemon() (*dbmodel.Daemon, error) {
+	daemon, err := dbmodel.GetKeaDaemonByID(server.machine.db, server.DaemonID)
+	if err != nil {
 		return nil, err
 	}
-
-	return &KeaServer{
-		machine:  m,
-		DaemonID: daemon.ID,
-	}, nil
-}
-
-// Creates DHCPv4 server instance for the Kea daemon.
-func (m *Machine) NewKeaDHCPv4Server() (*KeaServer, error) {
-	return m.newKeaDaemon(daemonname.DHCPv4)
-}
-
-// Creates DHCPv6 server instance for the Kea daemon.
-func (m *Machine) NewKeaDHCPv6Server() (*KeaServer, error) {
-	return m.newKeaDaemon(daemonname.DHCPv6)
-}
-
-// Creates CA server instance for the Kea daemon.
-func (m *Machine) NewKeaCAServer() (*KeaServer, error) {
-	return m.newKeaDaemon(daemonname.CA)
-}
-
-// Creates D2 server instance for the Kea daemon.
-func (m *Machine) NewKeaD2Server() (*KeaServer, error) {
-	return m.newKeaDaemon(daemonname.D2)
+	return daemon, nil
 }
