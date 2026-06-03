@@ -104,6 +104,11 @@ var _ types.ValueAppender = (*Utilization)(nil)
 
 var _ types.ValueScanner = (*Utilization)(nil)
 
+// clamp restricts the value of a float64 to at most maxf and at least minf.
+func clamp(value, minf, maxf float64) float64 {
+	return min(max(value, minf), maxf)
+}
+
 // Converts the utilization to the integer value. The value is multiplied by
 // 1000 to store it in the smallint column. The value is rounded to the nearest
 // integer value.
@@ -121,17 +126,12 @@ func (u Utilization) AppendValue(b []byte, quote int) ([]byte, error) {
 	// be confused for the end-users. Instead, we clip the value to the column
 	// limits and let the users to investigate the root cause of such high
 	// utilization.
-	utilizationFloat := float64(u) * 1000.
-	var utilizationString string
-	switch {
-	case utilizationFloat >= math.MaxInt16:
-		utilizationString = strconv.FormatInt(math.MaxInt16, 10)
-	case utilizationFloat <= math.MinInt16:
-		utilizationString = strconv.FormatInt(math.MinInt16, 10)
-	default:
-		utilizationString = strconv.FormatFloat(utilizationFloat, 'f', 0, 64)
-	}
-
+	utilizationFloat := clamp(
+		float64(u)*1000.,
+		float64(math.MinInt16),
+		float64(math.MaxInt16),
+	)
+	utilizationString := strconv.FormatFloat(utilizationFloat, 'f', 0, 64)
 	b = append(b, []byte(utilizationString)...)
 
 	if quote == 1 {
