@@ -599,55 +599,65 @@ func (d *keaDaemon) RefreshState(ctx context.Context, agent agentManager) error 
 	return nil
 }
 
+// getLeasefileConfigSettings retreives all the pieces of configuration about the
+// lease memfile from the Kea daemon's config.
+func getLeasefileConfigSettings(config *keaconfig.Config) (leaseDBType string, persist bool, configPath string) {
+	if config == nil {
+		return
+	}
+	databases := config.GetAllDatabases()
+	if databases.Lease == nil {
+		return
+	}
+	leaseDBType = databases.Lease.Type
+	configPath = databases.Lease.Name
+	persist = true
+	if databases.Lease.Persist != nil {
+		persist = *databases.Lease.Persist
+	}
+	// Note that this function uses Go's named return variables feature.
+	return
+}
+
+// findLeasefilePath finds the full, absolute path to the currently active leasefile.
+// If the Kea configuration specifies an absolute path, that is used directly.  If
+// not, it asks Kea via `status-get` what the current leasefile path is.  If the
+// response does not include a leasefile path, this returns an error.
+func (d *keaDaemon) findLeasefilePath(ctx context.Context, configPath string) (string, error) {
+	// If the leasefile path in the configuration is absolute, use that.
+	if filepath.IsAbs(configPath) {
+		return configPath, nil
+	}
+	// If the path is not absolute (and therefore ambiguous), ask Kea for it
+	// directly.  The Kea data directory can be changed by compile-time options,
+	// command-line flags, and run-time environment variables, so the only way to be
+	// sure we have the right path is to have Kea tell us.
+	status, err := d.fetchStatus(ctx)
+	if err != nil {
+		return "", err
+	}
+	if status.CSVLeaseFile == nil {
+		return "", errors.New("Kea's configuration says that it is in memfile mode with persistence on, but its status API did not return the path to the lease memfile. This is likely caused by running a Kea older than 3.1. Please configure an absolute (not relative) leasefile path in the Kea configuration, or upgrade to a newer Kea version.")
+	}
+	return *status.CSVLeaseFile, nil
+}
+
 // Ensure that this keaDaemon is watching the lease file it's supposed to be
 // watching. This function will use the get-status API to ask Kea for the
 // current lease file path (so that we don't have to guess based on defaults and
 // whatever's in the config).
 func (d *keaDaemon) ensureWatchingLeasefile(ctx context.Context, config *keaconfig.Config, maxLeaseUpdates int) error {
-	var leaseDBType string
-	var persist bool
+	leaseDBType, persist, configPath := getLeasefileConfigSettings(config)
 
-	switch d.Name {
-	case daemonname.DHCPv4:
-		if config != nil &&
-			config.DHCPv4Config != nil &&
-			config.DHCPv4Config.LeaseDatabase != nil {
-			leaseDBType = config.DHCPv4Config.LeaseDatabase.Type
-			if config.DHCPv4Config.LeaseDatabase.Persist != nil {
-				persist = *config.DHCPv4Config.LeaseDatabase.Persist
-			} else {
-				// The default when persist is unspecified is true, per https://kea.readthedocs.io/en/stable/arm/dhcp4-srv.html#memfile-basic-storage-for-leases.
-				persist = true
-			}
-		}
-	case daemonname.DHCPv6:
-		if config != nil &&
-			config.DHCPv6Config != nil &&
-			config.DHCPv6Config.LeaseDatabase != nil {
-			leaseDBType = config.DHCPv6Config.LeaseDatabase.Type
-			if config.DHCPv6Config.LeaseDatabase.Persist != nil {
-				persist = *config.DHCPv6Config.LeaseDatabase.Persist
-			} else {
-				// The default when persist is unspecified is true, per https://kea.readthedocs.io/en/stable/arm/dhcp6-srv.html#memfile-basic-storage-for-leases.
-				persist = true
-			}
-		}
-	default:
-		// do nothing, the variables should stay nil so that it doesn't try to look at a leasefile from D2 or something.
-	}
-
+	// Handle the case where the agent *should* be watching a lease memfile.
 	if leaseDBType == "memfile" && persist {
-		// I should likely be watching a leasefile...
-		status, err := d.fetchStatus(ctx)
+		csvLeaseFile, err := d.findLeasefilePath(ctx, configPath)
 		if err != nil {
 			return err
 		}
-		if status.CSVLeaseFile == nil {
-			return errors.New("Kea's configuration says that it is in memfile mode with persistence on, but its status API did not return the path to the lease memfile.")
-		}
+		// The agent *should* be watching a lease memfile, but currently isn't.
 		if d.snooper == nil {
-			// ...but I am currently not.
-			rs, err := NewRowSource(*status.CSVLeaseFile)
+			rs, err := NewRowSource(csvLeaseFile)
 			if err != nil {
 				return err
 			}
@@ -657,12 +667,14 @@ func (d *keaDaemon) ensureWatchingLeasefile(ctx context.Context, config *keaconf
 			}
 			d.snooper.Start()
 		} else {
-			// ...and I am, but I should make sure I'm looking at the right file.
-			return d.snooper.EnsureWatching(*status.CSVLeaseFile)
+			// The agent should be watching a leasefile, and it is, but it should make sure
+			// it is looking at the correct one.
+			return d.snooper.EnsureWatching(csvLeaseFile)
 		}
 	} else if d.snooper != nil {
-		// I shouldn't be watching a leasefile, but I currently am, so I should stop.
-		// e.g. Kea was reconfigured to use a lease PostgreSQL lease database.
+		// The agent shouldn't be watching a leasefile, but it currently is, so it must
+		// stop. This can happen when the administrator reconfigures it to use an SQL
+		// lease database.
 		d.snooper.Stop()
 		d.snooper = nil
 	}

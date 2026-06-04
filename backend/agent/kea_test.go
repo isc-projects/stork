@@ -2556,6 +2556,53 @@ func TestEnsureWatchingLeasefile(t *testing.T) {
 
 		require.False(t, gock.HasUnmatchedRequest())
 	})
+	// Kea 3.0.3 does not report the full lease file path in the status-get response,
+	// but the agent should still work correctly if the config-get response includes
+	// an absolute path to the lease file.
+	t.Run("Kea 3.0.3 without status API but with absolute path", func(t *testing.T) {
+		sb := testutil.NewSandbox()
+		defer sb.Close()
+		leasefile, err := sb.Join("kea-leases6")
+		require.NoError(t, err)
+
+		enabled := true
+		config := keaconfig.Config{
+			DHCPv6Config: &keaconfig.DHCPv6Config{
+				CommonDHCPConfig: keaconfig.CommonDHCPConfig{
+					LeaseDatabase: &keaconfig.Database{
+						Type:    "memfile",
+						Persist: &enabled,
+						Name:    leasefile,
+					},
+				},
+			},
+		}
+		defer gock.Off()
+
+		accessPoint := AccessPoint{
+			Type:     AccessPointControl,
+			Address:  "localhost",
+			Port:     45634,
+			Protocol: protocoltype.HTTP,
+		}
+		connector := newKeaConnector(
+			accessPoint,
+			HTTPClientConfig{Interceptor: gock.InterceptClient},
+		)
+
+		daemon := &keaDaemon{
+			daemon: daemon{
+				Name:         daemonname.DHCPv6,
+				AccessPoints: []AccessPoint{accessPoint},
+			},
+			connector: connector,
+		}
+
+		err = daemon.ensureWatchingLeasefile(t.Context(), &config, 10)
+
+		require.NoError(t, err)
+		require.False(t, gock.HasUnmatchedRequest())
+	})
 }
 
 // Test that resolveKeaSocketPath returns the correct socket path for different
