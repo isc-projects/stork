@@ -857,13 +857,13 @@ system_test:
     - rake systemtest
   artifacts:
     paths:
-      - tests/system/test-results/
+      - stork-tests/tests/system/test-results/
     exclude:
-      - tests/system/test-results/**/performance-charts.html
+      - stork-tests/tests/system/test-results/**/performance-charts.html
     expire_in: 6 months
     when: always
     reports:
-      junit: test-results/junit.xml
+      junit: stork-tests/tests/system/test-results/junit.xml
 
 system_test_old_stables:
   extends: system_test
