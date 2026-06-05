@@ -113,7 +113,10 @@ export class UserFormComponent implements OnInit {
                     userEmail: ['', [Validators.email, Validators.maxLength(this.maxInputLen)]],
                     userFirst: ['', Validators.maxLength(this.maxInputLen)],
                     userLast: ['', Validators.maxLength(this.maxInputLen)],
-                    userGroup: ['', Validators.required],
+                    userGroup: [
+                        { value: '', disabled: !this.isInternalUser() && this.user().externallyManagedGroups },
+                        Validators.required,
+                    ],
                     userPassword: ['', [PasswordPolicy.validatorPassword()]],
                     userPassword2: ['', [PasswordPolicy.validatorPassword()]],
                     changePassword: [''],

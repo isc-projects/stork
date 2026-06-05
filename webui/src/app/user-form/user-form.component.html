@@ -160,7 +160,15 @@
                         </div>
                     }
                     <div class="col-12 sm:col-offset-3 sm:col-9">
-                        <small>{{ getGroupDescription(formGroup.controls['userGroup'].value?.id) }}</small>
+                        <small>
+                            @if (user().externallyManagedGroups) {
+                                Group assignment for this user is disabled because it is managed externally by the '{{
+                                    user().authenticationMethodId
+                                }}' authentication service.
+                            } @else {
+                                {{ getGroupDescription(formGroup.controls['userGroup'].value?.id) }}
+                            }
+                        </small>
                     </div>
                 </div>
                 @if (isInternalUser()) {
@@ -217,7 +225,7 @@
                 }
                 <div>
                     <p-button
-                        [disabled]="formGroup.invalid"
+                        [disabled]="formGroup.invalid || (!isInternalUser() && user().externallyManagedGroups)"
                         icon="pi pi-pencil"
                         label="Save"
                         severity="success"

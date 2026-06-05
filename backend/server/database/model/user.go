@@ -36,6 +36,15 @@ type SystemUser struct {
 	ChangePassword         bool `pg:",use_zero"`
 
 	Groups []*SystemGroup `pg:"many2many:system_user_to_group,fk:user_id,join_fk:group_id"`
+	Meta   *Metadata
+}
+
+type Metadata struct {
+	Login                   string
+	Email                   string
+	Lastname                string
+	Name                    string
+	ExternallyManagedGroups bool
 }
 
 // Represents a user password entry in system_user_password table in the database.
@@ -437,28 +446,22 @@ func AddOrUpdateExternalUser(db *dbops.PgDB, externalUser *authdata.User, method
 	}
 	defer dbops.RollbackOnError(tx, &err)
 
+	meta := Metadata{
+		Login:                   externalUser.Login,
+		Email:                   externalUser.Email,
+		Lastname:                externalUser.Lastname,
+		Name:                    externalUser.Name,
+		ExternallyManagedGroups: externalUser.ExternallyManagedGroups,
+	}
+
 	systemUser := &SystemUser{
-		Login:                  externalUser.Login,
-		Email:                  externalUser.Email,
-		Lastname:               externalUser.Lastname,
-		Name:                   externalUser.Name,
 		AuthenticationMethodID: methodID,
 		ExternalID:             externalUser.ID,
 		ChangePassword:         false,
-	}
-	login := (*string)(nil)
-	email := (*string)(nil)
-	if len(externalUser.Login) > 0 {
-		login = &externalUser.Login
-	}
-	if len(externalUser.Email) > 0 {
-		email = &externalUser.Email
+		Meta:                   &meta,
 	}
 	_, err = db.Model(systemUser).OnConflict("(auth_method, external_id) DO UPDATE").
-		Set("login = ?", login).
-		Set("email = ?", email).
-		Set("name = ?", externalUser.Name).
-		Set("lastname = ?", externalUser.Lastname).
+		Set("meta = ?", meta).
 		Set("change_password = ?", false).Insert()
 	if err != nil {
 		var pgError pg.Error

@@ -32,6 +32,13 @@ func newRestUser(u dbmodel.SystemUser) *models.User {
 		Groups:                 []int64{},
 		ChangePassword:         u.ChangePassword,
 	}
+	if len(u.ExternalID) > 0 && u.Meta != nil {
+		r.ExternallyManagedGroups = u.Meta.ExternallyManagedGroups
+		r.Email = u.Meta.Email
+		r.Name = u.Meta.Name
+		r.Lastname = u.Meta.Lastname
+		r.Login = u.Meta.Login
+	}
 
 	// Append an array of groups.
 	for _, g := range u.Groups {

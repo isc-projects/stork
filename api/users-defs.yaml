@@ -24,6 +24,8 @@
           type: integer
       changePassword:
         type: boolean
+      externallyManagedGroups:
+        type: boolean
 
   Password:
     type: string
