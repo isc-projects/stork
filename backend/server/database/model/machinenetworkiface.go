@@ -47,8 +47,12 @@ func upsertMachineNetworkInterfaces(tx *pg.Tx, machineID int64, interfaces ...Ma
 	q := tx.Model(&MachineNetworkInterface{}).
 		Where("machine_id = ?", machineID)
 	if len(interfaces) > 0 {
-		// Keep interfaces that are in the list of new interfaces.
-		q = q.Where("name NOT IN (?)", pg.In(interfaces))
+		// Delete the interfaces that are not in the list of new interfaces.
+		var ifacesNames []string
+		for _, iface := range interfaces {
+			ifacesNames = append(ifacesNames, iface.Name)
+		}
+		q = q.Where("name NOT IN (?)", pg.In(ifacesNames))
 	}
 	_, err := q.Delete()
 	if err != nil {

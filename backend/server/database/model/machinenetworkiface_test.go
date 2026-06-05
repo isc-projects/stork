@@ -68,13 +68,17 @@ func TestUpsertMachineNetworkInterfaces(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify that the first interface is preserved and the second one is replaced.
-	interfaces2, err := GetMachineNetworkInterfaceIPAddresses(db, MachineNetworkInterfaceIPAddressRelationInterface)
+	ipAddresses2, err := GetMachineNetworkInterfaceIPAddresses(db, MachineNetworkInterfaceIPAddressRelationInterface)
 	require.NoError(t, err)
-	require.Len(t, interfaces2, 4)
-	require.Equal(t, "192.168.1.1", interfaces2[0].IPAddress)
-	require.Equal(t, "192.168.1.2", interfaces2[1].IPAddress)
-	require.Equal(t, "192.168.1.5", interfaces2[2].IPAddress)
-	require.Equal(t, "192.168.1.6", interfaces2[3].IPAddress)
+	require.Len(t, ipAddresses2, 4)
+	require.Equal(t, "192.168.1.1", ipAddresses2[0].IPAddress)
+	require.Equal(t, "192.168.1.2", ipAddresses2[1].IPAddress)
+	require.Equal(t, "192.168.1.5", ipAddresses2[2].IPAddress)
+	require.Equal(t, "192.168.1.6", ipAddresses2[3].IPAddress)
+
+	// Make sure that IDs of the interface IDs for the first two IP addresses remain the same.
+	require.Equal(t, ipAddresses[0].MachineNetworkInterfaceID, ipAddresses2[0].MachineNetworkInterfaceID)
+	require.Equal(t, ipAddresses[1].MachineNetworkInterfaceID, ipAddresses2[1].MachineNetworkInterfaceID)
 }
 
 // Test that no IP addresses are inserted when the list of IP addresses is empty.
