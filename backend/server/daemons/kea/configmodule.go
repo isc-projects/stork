@@ -1249,25 +1249,32 @@ func (module *ConfigModule) ApplySubnetUpdate(ctx context.Context, subnet *dbmod
 
 	// Build helper indexes for association diffs between current and existing
 	// subnet copies.
-	existingAssociationByDaemonID := make(map[int64]struct{})
-	for _, ls := range existingSubnet.LocalSubnets {
-		if ls.Daemon == nil {
-			return ctx, errors.Errorf("existing subnet %s is associated with nil daemon", existingSubnet.Prefix)
+	//
+	// Creates a map from daemon ID to the local subnet for the given list of
+	// local subnets. It also validates that the daemons and their
+	// configurations exist.
+	mapDaemonIDToLocalSubnet := func(localSubnets []*dbmodel.LocalSubnet) (map[int64]*dbmodel.LocalSubnet, error) {
+		result := make(map[int64]*dbmodel.LocalSubnet)
+		for _, ls := range localSubnets {
+			if ls.Daemon == nil {
+				return nil, errors.Errorf("existing subnet %s is associated with nil daemon", existingSubnet.Prefix)
+			}
+			if ls.Daemon.KeaDaemon == nil || ls.Daemon.KeaDaemon.Config == nil {
+				return nil, errors.Errorf("configuration not found for daemon %d", ls.DaemonID)
+			}
+
+			result[ls.DaemonID] = ls
 		}
-		if ls.Daemon.KeaDaemon == nil || ls.Daemon.KeaDaemon.Config == nil {
-			return ctx, errors.Errorf("configuration not found for daemon %d", ls.DaemonID)
-		}
-		existingAssociationByDaemonID[ls.DaemonID] = struct{}{}
+		return result, nil
 	}
-	currentAssociationByDaemonID := make(map[int64]*dbmodel.LocalSubnet)
-	for _, ls := range subnet.LocalSubnets {
-		if ls.Daemon == nil {
-			return ctx, errors.Errorf("applied subnet %s is associated with nil daemon", subnet.Prefix)
-		}
-		if ls.Daemon.KeaDaemon == nil || ls.Daemon.KeaDaemon.Config == nil {
-			return ctx, errors.Errorf("configuration not found for daemon %d", ls.DaemonID)
-		}
-		currentAssociationByDaemonID[ls.DaemonID] = ls
+
+	existingAssociationByDaemonID, err := mapDaemonIDToLocalSubnet(existingSubnet.LocalSubnets)
+	if err != nil {
+		return ctx, err
+	}
+	currentAssociationByDaemonID, err := mapDaemonIDToLocalSubnet(subnet.LocalSubnets)
+	if err != nil {
+		return ctx, err
 	}
 
 	// Create commands to update the subnet in the Kea configuration or config
