@@ -2566,3 +2566,56 @@ func TestGetUserContext(t *testing.T) {
 		require.Nil(t, userContext)
 	})
 }
+
+// Test that the local subnets are set properly.
+func TestSetLocalSubnets(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	daemons := addTestSubnetDaemons(t, db)
+
+	subnet := &Subnet{
+		Prefix: "2001:db8::/64",
+		LocalSubnets: []*LocalSubnet{
+			{
+				DaemonID: daemons[0].ID,
+				AddressPools: []AddressPool{
+					{LowerBound: "2001:db8::1", UpperBound: "2001:db8::10"},
+				},
+				PrefixPools: []PrefixPool{
+					{Prefix: "2001:db8::/80", DelegatedLen: 96},
+				},
+			},
+		},
+	}
+	err := AddSubnet(db, subnet)
+	require.NoError(t, err)
+
+	// Act
+	// Remove the first local subnet and add a new one.
+	subnet.LocalSubnets = []*LocalSubnet{{DaemonID: daemons[1].ID}}
+	err1 := SetLocalSubnets(db, subnet)
+	// Update newly added local subnet with address and prefix pools.
+	subnet.LocalSubnets[0].AddressPools = []AddressPool{
+		{LowerBound: "2001:db8::100", UpperBound: "2001:db8::110"},
+	}
+	subnet.LocalSubnets[0].PrefixPools = []PrefixPool{
+		{Prefix: "2001:db8:1::/80", DelegatedLen: 96},
+	}
+	err2 := SetLocalSubnets(db, subnet)
+
+	// Assert
+	require.NoError(t, err1)
+	require.NoError(t, err2)
+	subnet, err = GetSubnet(db, subnet.ID)
+	require.NoError(t, err)
+	require.Len(t, subnet.LocalSubnets, 1)
+	require.EqualValues(t, daemons[1].ID, subnet.LocalSubnets[0].DaemonID)
+	require.Len(t, subnet.LocalSubnets[0].AddressPools, 1)
+	require.EqualValues(t, "2001:db8::100", subnet.LocalSubnets[0].AddressPools[0].LowerBound)
+	require.EqualValues(t, "2001:db8::110", subnet.LocalSubnets[0].AddressPools[0].UpperBound)
+	require.Len(t, subnet.LocalSubnets[0].PrefixPools, 1)
+	require.EqualValues(t, "2001:db8:1::/80", subnet.LocalSubnets[0].PrefixPools[0].Prefix)
+	require.EqualValues(t, 96, subnet.LocalSubnets[0].PrefixPools[0].DelegatedLen)
+}
