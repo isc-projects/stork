@@ -27,13 +27,20 @@ type MachineNetworkInterfaceIPAddress struct {
 
 // Represents a single network interface detected on the machine.
 type MachineNetworkInterface struct {
-	ID              int64
-	MachineID       int64
-	Name            string
-	Flags           uint32 `pg:",use_zero"`
+	// Interface ID.
+	ID int64
+	// Machine ID.
+	MachineID int64
+	// Interface name.
+	Name string
+	// Bitwise combination of interface flags as described in https://pkg.go.dev/net#Flags.
+	// Use net.Flags constants to test the flags (e.g., whether the interface is up or down).
+	Flags uint32 `pg:",use_zero"`
+	// Interface hardware address (e.g. MAC address).
 	HardwareAddress []byte
-	IPAddresses     []MachineNetworkInterfaceIPAddress `pg:"rel:has-many"`
-
+	// List of IP addresses assigned to the interface.
+	IPAddresses []MachineNetworkInterfaceIPAddress `pg:"rel:has-many"`
+	// Machine associated with the interface.
 	Machine *Machine `pg:"rel:has-one"`
 }
 
