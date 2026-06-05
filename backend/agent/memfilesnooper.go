@@ -42,6 +42,12 @@ const (
 // each MemfileSnooper to consuming ~15 MB of RAM.
 const LeaseUpdateCountLimit = 100_000
 
+// ErrHeaders is an error indicating that the row could not be processed
+// because it contains lease file headers.  It must be declared like this
+// so that I can compare it with `errors.Is` in order to squash the warning
+// about it. (Warning every time LFC runs is noisy for no reason.)
+var ErrHeaders = errors.New("cannot parse column headers as a lease structure")
+
 // How does this module work?
 // Users of this module are expected to create a RowSource, then feed its output one-at-a-time into ParseRowAsLease4 or ParseRowAsLease6.
 // This creates a pipeline of goroutines connected with channels which looks like this:
@@ -350,7 +356,7 @@ func ParseRowAsLease4(record []string, minCLTT uint64) (*keadata.Lease, error) {
 		return nil, errors.New("cannot parse empty slice as a lease structure")
 	}
 	if record[0] == "address" {
-		return nil, errors.New("cannot parse column headers as a lease structure")
+		return nil, ErrHeaders
 	}
 	if strings.Contains(record[0], ":") {
 		return nil, errors.Errorf("'%s' contains a colon: unexpected IPv6 address", record[0])
@@ -379,7 +385,7 @@ func ParseRowAsLease6(record []string, minCLTT uint64) (*keadata.Lease, error) {
 		return nil, errors.New("cannot parse empty sljice as a lease structure")
 	}
 	if record[0] == "address" {
-		return nil, errors.New("cannot parse column headers as a lease structure")
+		return nil, ErrHeaders
 	}
 	if strings.Contains(record[0], ".") {
 		return nil, errors.Errorf("'%s' contains a dot: unexpected IPv4 address", record[0])
@@ -561,7 +567,12 @@ func (ms *RealMemfileSnooper) Start() error {
 				}
 				parsed, err := ms.parser(row, ms.lastCLTT)
 				if err != nil {
-					log.WithError(err).Warn("Unable to parse this lease record")
+					// #2522: don't log a warning about headers. It happens every time LFC
+					// runs, and therefore creates log noise that makes finding other issues
+					// more difficult for no reason.
+					if !errors.Is(err, ErrHeaders) {
+						log.WithError(err).Warn("Unable to parse this lease record")
+					}
 					continue
 				}
 				if parsed == nil {
