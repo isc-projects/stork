@@ -355,6 +355,8 @@ func (t *xfrTracker) feed(logLine string) {
 	t.mutex.Unlock()
 }
 
+// Returns the list of ongoing or stuck zone transfers. It is not safe for concurrent use
+// and must be called under the mutex.
 func (t *xfrTracker) getNotCompletedUnsafe() []xfrState {
 	states := make([]xfrState, 0, t.startedList.Len())
 	for element := t.startedList.Front(); element != nil; element = element.Next() {
@@ -370,6 +372,8 @@ func (t *xfrTracker) getNotCompleted() []xfrState {
 	return t.getNotCompletedUnsafe()
 }
 
+// Returns the list of completed zone transfers. It is not safe for concurrent use
+// and must be called under the mutex.
 func (t *xfrTracker) getCompletedUnsafe() []xfrState {
 	states := make([]xfrState, 0, t.completedList.Len())
 	for element := t.completedList.Front(); element != nil; element = element.Next() {
