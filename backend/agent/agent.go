@@ -1004,8 +1004,11 @@ func (sa *StorkAgent) ReceiveKeaLeases(req *agentapi.ReceiveKeaLeasesReq, server
 func receiveZoneTransfer(server grpc.ServerStreamingServer[agentapi.ReceiveZoneTransfersRsp], state bind9xfr.State) error {
 	select {
 	case <-server.Context().Done():
+		// The context is cancelled. Return the context error to indicate that
+		// the caller has cancelled the request.
 		return server.Context().Err()
 	default:
+		// Send the zone transfer state over the stream to the caller.
 		err := server.Send(&agentapi.ReceiveZoneTransfersRsp{
 			ZoneTransfer: &agentapi.ZoneTransfer{
 				ViewName:      state.ViewName,
