@@ -1008,7 +1008,11 @@ func (sa *StorkAgent) ReceiveKeaLeases(req *agentapi.ReceiveKeaLeasesReq, server
 			Error("unable to get lease snapshot from daemon")
 		return status.New(codes.Internal, "unable to get lease snapshot from daemon").Err()
 	}
+	minCLTT := req.GetMinCLTT()
 	for _, lease := range leases {
+		if lease.CLTT < minCLTT {
+			continue
+		}
 		grpcLease := lease.ToGRPC()
 		err := server.Send(&agentapi.ReceiveKeaLeasesRsp{
 			Lease: &grpcLease,

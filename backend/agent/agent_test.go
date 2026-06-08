@@ -3036,17 +3036,24 @@ func TestAllowLeaseTracking(t *testing.T) {
 
 // Make a "happy path" keaDaemon structure with a mocked MemfileSnooper.
 // keaDaemon will have `name` as its name, and the snooper will provide
-// snapshots containing single-element lists with each element of `addrs`.
-func makeHappyDaemon(ctrl *gomock.Controller, version storkutil.IPType, name daemonname.Name, port int64, addrs []string) Daemon {
+// leases each time it is called.  For each call to GetSnapshot, the snooper
+// will read the matching index from the addrs slice and construct leases out
+// of each address in the inner slice at that index in the outer slice.  Each
+// lease in the snapshot will have CLTT values counting up from 0 in the
+// snapshot.
+func makeHappyDaemon(ctrl *gomock.Controller, version storkutil.IPType, name daemonname.Name, port int64, addrs [][]string) Daemon {
 	snooper := NewMockMemfileSnooper(ctrl)
-	for _, addr := range addrs {
+	for _, addrsInSnapshot := range addrs {
 		snooper.EXPECT().GetSnapshot().DoAndReturn(func() ([]*keadata.Lease, error) {
-			return []*keadata.Lease{
-				{
+			leases := []*keadata.Lease{}
+			for idx, addr := range addrsInSnapshot {
+				leases = append(leases, &keadata.Lease{
 					Family:    version,
 					IPAddress: addr,
-				},
-			}, nil
+					CLTT:      uint64(idx),
+				})
+			}
+			return leases, nil
 		})
 	}
 	return &keaDaemon{
@@ -3078,6 +3085,7 @@ func TestReceiveKeaLeasesHappyPath(t *testing.T) {
 	defer teardown()
 
 	expectedV4 := "192.168.1.108"
+	expectedV4second := "192.168.1.109"
 	expectedV6 := "fe80::67"
 
 	ctrl := gomock.NewController(t)
@@ -3088,14 +3096,19 @@ func TestReceiveKeaLeasesHappyPath(t *testing.T) {
 			storkutil.IPv6,
 			daemonname.DHCPv6,
 			8081,
-			[]string{expectedV6},
+			[][]string{
+				{expectedV6},
+			},
 		),
 		makeHappyDaemon(
 			ctrl,
 			storkutil.IPv4,
 			daemonname.DHCPv4,
 			8082,
-			[]string{expectedV4},
+			[][]string{
+				{expectedV4},
+				{expectedV4, expectedV4second},
+			},
 		),
 		&Bind9Daemon{
 			dnsDaemonImpl: dnsDaemonImpl{
@@ -3137,15 +3150,27 @@ func TestReceiveKeaLeasesHappyPath(t *testing.T) {
 	// DHCPv4 daemon.
 	ap = daemons[1].GetAccessPoint(AccessPointControl)
 	receivedLeases = make([]*agentapi.Lease, 0, 2)
-	minCLTT := uint64(2)
 	errV4 := sa.ReceiveKeaLeases(&agentapi.ReceiveKeaLeasesReq{
-		MinCLTT:        &minCLTT,
+		MinCLTT:        new(uint64),
 		ControlAddress: ap.Address,
 		ControlPort:    ap.Port,
 	}, sss)
 
 	require.NoError(t, errV4)
 	checkExpectedLeases(t, receivedLeases, []string{expectedV4})
+
+	// DHCPv4 daemon (with minCLTT greater than 0).
+	ap = daemons[1].GetAccessPoint(AccessPointControl)
+	receivedLeases = make([]*agentapi.Lease, 0, 2)
+	minCLTT := uint64(1)
+	errV4 = sa.ReceiveKeaLeases(&agentapi.ReceiveKeaLeasesReq{
+		MinCLTT:        &minCLTT,
+		ControlAddress: ap.Address,
+		ControlPort:    ap.Port,
+	}, sss)
+
+	require.NoError(t, errV4)
+	checkExpectedLeases(t, receivedLeases, []string{expectedV4second})
 
 	// Non-DHCP daemon.
 	ap = daemons[2].GetAccessPoint(AccessPointControl)
