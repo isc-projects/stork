@@ -1257,7 +1257,7 @@ func (module *ConfigModule) ApplySubnetUpdate(ctx context.Context, subnet *dbmod
 		result := make(map[int64]*dbmodel.LocalSubnet)
 		for _, ls := range localSubnets {
 			if ls.Daemon == nil {
-				return nil, errors.Errorf("existing subnet %s is associated with nil daemon", existingSubnet.Prefix)
+				return nil, errors.Errorf("local subnet '%d' is associated with nil daemon", ls.ID)
 			}
 			if ls.Daemon.KeaDaemon == nil || ls.Daemon.KeaDaemon.Config == nil {
 				return nil, errors.Errorf("configuration not found for daemon %d", ls.DaemonID)
