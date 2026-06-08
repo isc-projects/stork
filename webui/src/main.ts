@@ -1,4 +1,4 @@
-import { enableProdMode, importProvidersFrom } from '@angular/core'
+import { enableProdMode, importProvidersFrom, provideZoneChangeDetection } from '@angular/core'
 
 import AuraBluePreset, { cfgFactory } from './app/app.config'
 import { environment } from './environments/environment'
@@ -135,5 +135,6 @@ bootstrapApplication(AppComponent, {
             },
         }),
         provideAnimations(),
+        provideZoneChangeDetection({ eventCoalescing: true })
     ],
 }).catch((err) => console.error(err))
