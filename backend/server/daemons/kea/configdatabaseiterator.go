@@ -80,7 +80,9 @@ func forEachUniqueConfigSource(
 			key, err := buildConfigBackendKey(ls.Daemon)
 			if err != nil {
 				log.WithError(err).Warnf(
-					"skipping local subnet [%d] because its daemon [%d] has invalid config database configuration",
+					"Skipping local subnet [%d] "+
+						"while iterating over Config Backends "+
+						"because its daemon [%d] has an invalid config database configuration",
 					ls.ID,
 					ls.DaemonID,
 				)
