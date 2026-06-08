@@ -63,7 +63,6 @@ func forEachUniqueConfigSource(
 ) error {
 	localSubnetsByBackend := map[configBackendKey][]*dbmodel.LocalSubnet{}
 
-	// Group daemons by config backend for cb_cmds.
 	for _, ls := range localSubnets {
 		hook := ls.Daemon.KeaDaemon.Config.GetHookLibraries().GetSubnetAndSharedNetworkAlteringHookLibrary()
 		switch hook {
