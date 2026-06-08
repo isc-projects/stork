@@ -33,6 +33,7 @@ import (
 	agentapi "isc.org/stork/api"
 	bind9config "isc.org/stork/daemoncfg/bind9"
 	keactrl "isc.org/stork/daemonctrl/kea"
+	"isc.org/stork/daemondata/bind9xfr"
 	dnsmodel "isc.org/stork/datamodel/dns"
 	"isc.org/stork/pki"
 	storkutil "isc.org/stork/util"
@@ -998,23 +999,25 @@ func (sa *StorkAgent) ReceiveKeaLeases(req *agentapi.ReceiveKeaLeasesReq, server
 	return nil
 }
 
-func receiveZoneTransfer(server grpc.ServerStreamingServer[agentapi.ReceiveZoneTransfersRsp], state xfrState) error {
+// Sends the specified zone transfer state over the stream to the caller. This
+// function is called internally by the ReceiveZoneTransfers function.
+func receiveZoneTransfer(server grpc.ServerStreamingServer[agentapi.ReceiveZoneTransfersRsp], state bind9xfr.State) error {
 	select {
 	case <-server.Context().Done():
 		return server.Context().Err()
 	default:
 		err := server.Send(&agentapi.ReceiveZoneTransfersRsp{
 			ZoneTransfer: &agentapi.ZoneTransfer{
-				ViewName:      state.viewName,
-				ZoneName:      state.zoneName,
-				Serial:        state.serial,
-				Client:        state.client,
-				Server:        state.server,
-				MessagesCount: state.messagesCount,
-				RecordsCount:  state.recordsCount,
-				BytesCount:    state.bytesCount,
-				Duration:      int64(state.duration),
-				Status:        agentapi.ZoneTransfer_XfrStatus(state.status),
+				ViewName:      state.ViewName,
+				ZoneName:      state.ZoneName,
+				Serial:        state.Serial,
+				Client:        state.Client,
+				Server:        state.Server,
+				MessagesCount: state.MessagesCount,
+				RecordsCount:  state.RecordsCount,
+				BytesCount:    state.BytesCount,
+				Duration:      int64(state.Duration),
+				Status:        agentapi.ZoneTransfer_XfrStatus(state.Status),
 			},
 		})
 		if err != nil {
@@ -1057,9 +1060,9 @@ func (sa *StorkAgent) ReceiveZoneTransfers(req *agentapi.ReceiveZoneTransfersReq
 			fmt.Sprintf("BIND 9 zone transfer is disabled for daemon %s", daemon.GetName())).Err()
 	}
 	var (
-		completed  iter.Seq[xfrState]
-		ongoing    iter.Seq[xfrState]
-		followChan <-chan xfrState
+		completed  iter.Seq[bind9xfr.State]
+		ongoing    iter.Seq[bind9xfr.State]
+		followChan <-chan bind9xfr.State
 	)
 	if req.Follow {
 		// Caller request that we return currently recorded zone transfers, and keep
@@ -1072,7 +1075,7 @@ func (sa *StorkAgent) ReceiveZoneTransfers(req *agentapi.ReceiveZoneTransfersReq
 		ongoing = slices.Values(bind9Daemon.xfrTracker.getNotCompleted())
 	}
 	// Return the currently recorded zone transfers.
-	for _, group := range []iter.Seq[xfrState]{completed, ongoing} {
+	for _, group := range []iter.Seq[bind9xfr.State]{completed, ongoing} {
 		for state := range group {
 			err := receiveZoneTransfer(server, state)
 			if err != nil {
