@@ -16,9 +16,14 @@ import (
 // receive only one remote-subnet*-set command with multiple
 // server tags, instead of one command per daemon.
 type configBackendKey struct {
+	// These fields should be filled for daemons using cb_cmds hook. Otherwise,
+	// they must be left empty.
 	DBName string
 	DBHost string
-	DBPort int64
+	DBPort int
+	// This field must be filled with the daemon ID for daemons using
+	// subnet_cmds hook. Otherwise, it must be left empty.
+	DaemonID int64
 }
 
 // Constructs a configBackendKey for a local subnet's cb_cmds daemon.
@@ -37,7 +42,7 @@ func buildConfigBackendKey(daemon *dbmodel.Daemon) (configBackendKey, error) {
 	return configBackendKey{
 		DBName: db.Name,
 		DBHost: db.Host,
-		DBPort: int64(db.Port),
+		DBPort: db.Port,
 	}, nil
 }
 
@@ -69,7 +74,7 @@ func forEachUniqueConfigSource(
 		case keaconfig.SubnetAndSharedNetworkAlteringHookLibrarySubnetCmds:
 			// For non-cb_cmds daemons, the config source is the daemon config,
 			// they are not grouped.
-			key := configBackendKey{DBPort: ls.DaemonID}
+			key := configBackendKey{DaemonID: ls.DaemonID}
 			localSubnetsByBackend[key] = []*dbmodel.LocalSubnet{ls}
 		case keaconfig.SubnetAndSharedNetworkAlteringHookLibraryCBCmds:
 			key, err := buildConfigBackendKey(ls.Daemon)
