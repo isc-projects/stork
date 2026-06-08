@@ -316,12 +316,12 @@ func createSubnetDeleteCommands(
 		switch family {
 		case 4:
 			commands = append(commands, ConfigCommand{
-				Command: keactrl.NewCommandRemoteSubnet4DelByPrefix(subnetPrefix, localSubnet.Daemon.Name),
+				Command: keactrl.NewCommandRemoteSubnet4DelByID(localSubnet.LocalSubnetID, localSubnet.Daemon.Name),
 				Daemon:  localSubnet.Daemon,
 			})
 		default:
 			commands = append(commands, ConfigCommand{
-				Command: keactrl.NewCommandRemoteSubnet6DelByPrefix(subnetPrefix, localSubnet.Daemon.Name),
+				Command: keactrl.NewCommandRemoteSubnet6DelByID(localSubnet.LocalSubnetID, localSubnet.Daemon.Name),
 				Daemon:  localSubnet.Daemon,
 			})
 		}

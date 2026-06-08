@@ -427,7 +427,7 @@ func TestCreateSubnetUpdateCommandsCbCmds(t *testing.T) {
 	}`, string(marshalled))
 }
 
-// Tests that createSubnetDeleteCommands returns a remote-subnet4-del-by-prefix
+// Tests that createSubnetDeleteCommands returns a remote-subnet4-del-by-id
 // command for cb_cmds daemons.
 func TestCreateSubnetDeleteCommandsCbCmds(t *testing.T) {
 	// Arrange
@@ -443,8 +443,8 @@ func TestCreateSubnetDeleteCommandsCbCmds(t *testing.T) {
 	marshalled, err := cmds[0].Command.Marshal()
 	require.NoError(t, err)
 	require.JSONEq(t, `{
-		"command": "remote-subnet4-del-by-prefix",
+		"command": "remote-subnet4-del-by-id",
 		"service": ["dhcp4"],
-		"arguments": {"subnets": [{"subnet": "192.0.2.0/24"}]}
+		"arguments": {"subnets": [{"id": 42}]}
 	}`, string(marshalled))
 }

@@ -5855,7 +5855,7 @@ func TestApplySubnet6Delete(t *testing.T) {
 }
 
 // Tests applying subnet delete for cb_cmds daemons. Two daemons sharing the
-// same config backend should produce one remote-subnet4-del-by-prefix command.
+// same config backend should produce one remote-subnet4-del-by-id command.
 func TestApplySubnetDeleteConfigBackend(t *testing.T) {
 	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
 		DefLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
@@ -5926,17 +5926,17 @@ func TestApplySubnetDeleteConfigBackend(t *testing.T) {
 	marshalled, err := commands[0].Command.Marshal()
 	require.NoError(t, err)
 	require.JSONEq(t, `{
-		"command": "remote-subnet4-del-by-prefix",
+		"command": "remote-subnet4-del-by-id",
 		"service": ["dhcp4"],
 		"arguments": {
-			"subnets": [{"subnet": "192.0.2.0/24"}]
+			"subnets": [{"id": 42}]
 		}
 	}`, string(marshalled))
 	require.EqualValues(t, daemon1.ID, commands[0].Daemon.ID)
 }
 
 // Tests committing subnet delete for cb_cmds daemons. Two daemons sharing the
-// same config backend should produce one remote-subnet4-del-by-prefix command.
+// same config backend should produce one remote-subnet4-del-by-id command.
 func TestCommitSubnetDeleteConfigBackend(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -6027,10 +6027,10 @@ func TestCommitSubnetDeleteConfigBackend(t *testing.T) {
 	marshalled, err := agents.RecordedCommands[0].Marshal()
 	require.NoError(t, err)
 	require.JSONEq(t, `{
-		"command": "remote-subnet4-del-by-prefix",
+		"command": "remote-subnet4-del-by-id",
 		"service": ["dhcp4"],
 		"arguments": {
-			"subnets": [{"subnet": "192.0.2.0/24"}]
+			"subnets": [{"id": 1}]
 		}
 	}`, string(marshalled))
 
@@ -6144,10 +6144,10 @@ func TestCommitSubnetDelete(t *testing.T) {
 	require.True(t, hasTripleCommandURL)
 
 	expectedCommands := map[keactrl.CommandName]int{
-		"network4-subnet-del":          1,
-		"subnet4-del":                  1,
-		"remote-subnet4-del-by-prefix": 1,
-		"config-write":                 1,
+		"network4-subnet-del":      1,
+		"subnet4-del":              1,
+		"remote-subnet4-del-by-id": 1,
+		"config-write":             1,
 	}
 	for _, command := range agents.RecordedCommands {
 		marshalled, err := command.Marshal()
@@ -6172,12 +6172,12 @@ func TestCommitSubnetDelete(t *testing.T) {
 					"id": 0
 				}
 			}`, string(marshalled))
-		case "remote-subnet4-del-by-prefix":
+		case "remote-subnet4-del-by-id":
 			require.JSONEq(t, `{
-				"command": "remote-subnet4-del-by-prefix",
+				"command": "remote-subnet4-del-by-id",
 				"service": ["dhcp4"],
 				"arguments": {
-					"subnets": [{"subnet": "192.0.2.0/24"}]
+					"subnets": [{"id": 0}]
 				}
 			}`, string(marshalled))
 		case "config-write":
