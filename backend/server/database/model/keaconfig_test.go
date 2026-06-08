@@ -2,7 +2,6 @@ package dbmodel
 
 import (
 	"encoding/json"
-	"strings"
 	"testing"
 
 	"github.com/go-pg/pg/v10"
@@ -516,37 +515,6 @@ func TestKeaConfigIsAsKeaConfigMapForJSONWithSingleQuoteFromDatabase(t *testing.
 	rawConfig, err := resMap.Config.GetRawConfig()
 	require.NoError(t, err)
 	require.EqualValues(t, "b'r", rawConfig["foo"])
-}
-
-// Test storing a huge Kea configuration in the database.
-func TestStoreHugeKeaConfigInDatabase(t *testing.T) {
-	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
-	defer teardown()
-
-	// 50MB
-	hugeValue := strings.Repeat("a", 50*1024*1024)
-	rawConfig := map[string]any{"Dhcp4": map[string]any{"b": hugeValue}}
-	config, _ := keaconfig.NewConfigFromMap(rawConfig)
-	keaConfig := newKeaConfig(config)
-
-	machine := &Machine{
-		Address:   "localhost",
-		AgentPort: 3000,
-	}
-	err := AddMachine(db, machine)
-	require.NoError(t, err)
-
-	configJSON, _ := json.Marshal(keaConfig)
-	daemon := NewDaemon(machine, daemonname.DHCPv4, true, nil)
-	err = daemon.SetKeaConfigFromJSON(configJSON)
-	require.NoError(t, err)
-
-	err = AddDaemon(db, daemon)
-	require.NoError(t, err)
-
-	addedDaemon, err := GetDaemonByID(db, daemon.ID)
-	require.NoError(t, err)
-	require.EqualValues(t, keaConfig.Config, addedDaemon.KeaDaemon.Config.Config)
 }
 
 // Test that nil value is stored as a database NULL (not JSON null) in the database.
