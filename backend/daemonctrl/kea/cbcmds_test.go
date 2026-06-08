@@ -135,7 +135,7 @@ func TestNewCommandRemoteSubnet6SetWithSharedNetwork(t *testing.T) {
 
 // Tests that remote-subnet4-del-by-id command is constructed correctly.
 func TestNewCommandRemoteSubnet4DelByID(t *testing.T) {
-	command := NewCommandRemoteSubnet4DelByID(123, daemonname.DHCPv4)
+	command := NewCommandRemoteSubnet4DelByID(7, daemonname.DHCPv4)
 	require.NotNil(t, command)
 	marshalled, err := command.Marshal()
 	require.NoError(t, err)
@@ -145,7 +145,7 @@ func TestNewCommandRemoteSubnet4DelByID(t *testing.T) {
 		"arguments": {
 			"subnets": [
 				{
-					"id": 123
+					"id": 7
 				}
 			]
 		}
@@ -154,7 +154,7 @@ func TestNewCommandRemoteSubnet4DelByID(t *testing.T) {
 
 // Tests that remote-subnet6-del-by-id command is constructed correctly.
 func TestNewCommandRemoteSubnet6DelByID(t *testing.T) {
-	command := NewCommandRemoteSubnet6DelByID(456, daemonname.DHCPv6)
+	command := NewCommandRemoteSubnet6DelByID(9, daemonname.DHCPv6)
 	require.NotNil(t, command)
 	marshalled, err := command.Marshal()
 	require.NoError(t, err)
@@ -164,7 +164,7 @@ func TestNewCommandRemoteSubnet6DelByID(t *testing.T) {
 		"arguments": {
 			"subnets": [
 				{
-					"id": 456
+					"id": 9
 				}
 			]
 		}

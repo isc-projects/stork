@@ -435,7 +435,7 @@ func TestCreateSubnetDeleteCommandsCbCmds(t *testing.T) {
 	subnet := newTestSubnet(daemon)
 
 	// Act
-	cmds, err := createSubnetDeleteCommands(subnet.LocalSubnets[0], subnet.GetPrefix(), "")
+	cmds, err := createSubnetDeleteCommands(subnet.LocalSubnets[0], 4, "")
 
 	// Assert
 	require.NoError(t, err)

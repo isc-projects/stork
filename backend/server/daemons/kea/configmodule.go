@@ -1326,7 +1326,7 @@ func (module *ConfigModule) ApplySubnetUpdate(ctx context.Context, subnet *dbmod
 		var cmds []ConfigCommand
 		cmds, err = createSubnetDeleteCommands(
 			localSubnet,
-			existingSubnet.GetPrefix(),
+			existingSubnet.GetFamily(),
 			sharedNetworkNameBeforeUpdate,
 		)
 		if err != nil {
@@ -1411,7 +1411,7 @@ func (module *ConfigModule) ApplySubnetDelete(ctx context.Context, subnet *dbmod
 		target := localSubnets[0]
 		cmds, err := createSubnetDeleteCommands(
 			target,
-			subnet.GetPrefix(),
+			subnet.GetFamily(),
 			sharedNetworkNameBeforeUpdate,
 		)
 		if err != nil {
