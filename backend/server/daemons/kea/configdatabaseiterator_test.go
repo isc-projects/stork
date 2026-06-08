@@ -11,13 +11,13 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
-// Tests that config backend key fields are extracted correctly.
-func TestBuildConfigBackendKeyNoServerTag(t *testing.T) {
+// Tests that config target key fields are extracted correctly.
+func TestBuildConfigTargetKeyNoServerTag(t *testing.T) {
 	// Arrange
 	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv4, nil, keaconfig.SubnetAndSharedNetworkAlteringHookLibraryCBCmds)
 
 	// Act
-	id, err := buildConfigBackendKey(daemon)
+	id, err := buildConfigTargetKey(daemon)
 
 	// Assert
 	require.NoError(t, err)
@@ -26,13 +26,13 @@ func TestBuildConfigBackendKeyNoServerTag(t *testing.T) {
 	require.EqualValues(t, 5432, id.DBPort)
 }
 
-// Tests that the server tag is included in the config backend ID.
-func TestBuildConfigBackendIDWithServerTag(t *testing.T) {
+// Tests that the server tag is included in the config target key.
+func TestBuildConfigTargetKeyWithServerTag(t *testing.T) {
 	// Arrange
 	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server1"), keaconfig.SubnetAndSharedNetworkAlteringHookLibraryCBCmds)
 
 	// Act
-	id, err := buildConfigBackendKey(daemon)
+	id, err := buildConfigTargetKey(daemon)
 
 	// Assert
 	require.NoError(t, err)
@@ -42,7 +42,7 @@ func TestBuildConfigBackendIDWithServerTag(t *testing.T) {
 }
 
 // Tests that an error is returned when no config databases are configured.
-func TestBuildConfigBackendKeyNoConfigDB(t *testing.T) {
+func TestBuildConfigTargetKeyNoConfigDB(t *testing.T) {
 	// Arrange
 	daemon := &dbmodel.Daemon{
 		Name:      daemonname.DHCPv4,
@@ -53,14 +53,14 @@ func TestBuildConfigBackendKeyNoConfigDB(t *testing.T) {
 	require.NoError(t, err)
 
 	// Act
-	_, err = buildConfigBackendKey(daemon)
+	_, err = buildConfigTargetKey(daemon)
 
 	// Assert
 	require.ErrorContains(t, err, "no config databases configured")
 }
 
-// Tests that target iterator groups daemons sharing the same config backend
-// and calls the callback exactly once for that backend. The daemons with the
+// Tests that target iterator groups daemons sharing the same config target
+// and calls the callback exactly once for that target. The daemons with the
 // subnet_cmds hook are not grouped. The daemons with no hooks or both hooks
 // are silently skipped.
 func TestForEachUniqueConfigSource(t *testing.T) {

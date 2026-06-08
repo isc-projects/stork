@@ -11,11 +11,12 @@ import (
 	dbmodel "isc.org/stork/server/database/model"
 )
 
-// Uniquely identifies a cb_cmds config-backend target. Two daemons that share
-// the same config database will have the same configBackendKey and therefore
-// receive only one remote-subnet*-set command with multiple
-// server tags, instead of one command per daemon.
-type configBackendKey struct {
+// Uniquely identifies a configuration target (the Config Backend database or
+// daemon configuration). Two daemons that share the same CB database will
+// have the same configTargetKey and therefore receive only one
+// remote-subnet*-set command with multiple server tags, instead of one command
+// per daemon.
+type configTargetKey struct {
 	// These fields should be filled for daemons using cb_cmds hook. Otherwise,
 	// they must be left empty.
 	DBName string
@@ -26,20 +27,20 @@ type configBackendKey struct {
 	DaemonID int64
 }
 
-// Constructs a configBackendKey for a local subnet's cb_cmds daemon.
+// Constructs a configTargetKey for a local subnet's cb_cmds daemon.
 // The daemon's config databases list must not be empty.
-func buildConfigBackendKey(daemon *dbmodel.Daemon) (configBackendKey, error) {
+func buildConfigTargetKey(daemon *dbmodel.Daemon) (configTargetKey, error) {
 	config := daemon.KeaDaemon.Config
 
 	dbs := config.GetAllDatabases().Config
 	if len(dbs) == 0 {
-		return configBackendKey{}, errors.Errorf(
+		return configTargetKey{}, errors.Errorf(
 			"daemon [%d] has libdhcp_cb_cmds loaded but no config databases configured",
 			daemon.ID,
 		)
 	}
 	db := dbs[0]
-	return configBackendKey{
+	return configTargetKey{
 		DBName: db.Name,
 		DBHost: db.Host,
 		DBPort: db.Port,
@@ -66,18 +67,18 @@ func forEachUniqueConfigSource(
 	localSubnets []*dbmodel.LocalSubnet,
 	fn func(localSubnets []*dbmodel.LocalSubnet) error,
 ) error {
-	localSubnetsByBackend := map[configBackendKey][]*dbmodel.LocalSubnet{}
+	localSubnetsByBackend := map[configTargetKey][]*dbmodel.LocalSubnet{}
 
 	for _, ls := range localSubnets {
 		hook := ls.Daemon.KeaDaemon.Config.GetHookLibraries().GetSubnetAndSharedNetworkAlteringHookLibrary()
 		switch hook {
 		case keaconfig.SubnetAndSharedNetworkAlteringHookLibrarySubnetCmds:
-			// For non-cb_cmds daemons, the config source is the daemon config,
+			// For non-cb_cmds daemons, the config target is the daemon config,
 			// they are not grouped.
-			key := configBackendKey{DaemonID: ls.DaemonID}
+			key := configTargetKey{DaemonID: ls.DaemonID}
 			localSubnetsByBackend[key] = []*dbmodel.LocalSubnet{ls}
 		case keaconfig.SubnetAndSharedNetworkAlteringHookLibraryCBCmds:
-			key, err := buildConfigBackendKey(ls.Daemon)
+			key, err := buildConfigTargetKey(ls.Daemon)
 			if err != nil {
 				log.WithError(err).Warnf(
 					"Skipping local subnet [%d] "+
