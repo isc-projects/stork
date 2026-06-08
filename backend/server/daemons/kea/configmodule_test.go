@@ -5237,7 +5237,7 @@ func TestCommitSubnetUpdate(t *testing.T) {
 		case keactrl.RemoteSubnet4Set:
 			marshalledStr := string(marshalled)
 			// The daemon order is not deterministic.
-			marshalledStr = strings.ReplaceAll(marshalledStr, "tag-6,tag-5", "tag-5,tag-6")
+			marshalledStr = strings.ReplaceAll(marshalledStr, `"tag-6","tag-5"`, `"tag-5","tag-6"`)
 
 			require.JSONEq(t, `{
 				"command": "remote-subnet4-set",
