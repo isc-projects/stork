@@ -4854,6 +4854,8 @@ func TestCommitSubnetUpdateSubnetCmds(t *testing.T) {
 		require.Len(t, urls, 2)
 		require.NotEqual(t, urls[0], urls[1])
 	}
+	sort.Strings(commandURLs[keactrl.Subnet4Update])
+	sort.Strings(commandURLs[keactrl.ConfigWrite])
 	require.Equal(t, commandURLs[keactrl.Subnet4Update], commandURLs[keactrl.ConfigWrite])
 
 	// Make sure that the subnet has been updated in the database.
