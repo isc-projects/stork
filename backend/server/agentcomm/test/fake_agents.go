@@ -9,6 +9,7 @@ import (
 	agentapi "isc.org/stork/api"
 	bind9config "isc.org/stork/daemoncfg/bind9"
 	keactrl "isc.org/stork/daemonctrl/kea"
+	"isc.org/stork/daemondata/bind9xfr"
 	pdnsdata "isc.org/stork/daemondata/pdns"
 	dnsmodel "isc.org/stork/datamodel/dns"
 	"isc.org/stork/server/agentcomm"
@@ -267,5 +268,9 @@ func (fa *FakeAgents) ReceiveKeaLeases(
 	daemon agentcomm.ControlledDaemon,
 	minCLTT uint64,
 ) iter.Seq2[*agentapi.ReceiveKeaLeasesRsp, error] {
+	return nil
+}
+
+func (fa *FakeAgents) ReceiveZoneTransfers(ctx context.Context, daemon agentcomm.ControlledDaemon, follow bool) iter.Seq2[*bind9xfr.State, error] {
 	return nil
 }

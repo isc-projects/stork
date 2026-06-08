@@ -13,11 +13,13 @@ import (
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	agentapi "isc.org/stork/api"
 	bind9config "isc.org/stork/daemoncfg/bind9"
 	keactrl "isc.org/stork/daemonctrl/kea"
+	"isc.org/stork/daemondata/bind9xfr"
 	pdnsdata "isc.org/stork/daemondata/pdns"
 	"isc.org/stork/datamodel/daemonname"
 	dnsmodel "isc.org/stork/datamodel/dns"
@@ -1367,6 +1369,89 @@ func (agents *connectedAgentsImpl) ReceiveKeaLeases(ctx context.Context, daemon 
 			}
 			if !yield(response, nil) {
 				// Stop if the caller no longer iterates over the configuration lines.
+				return
+			}
+		}
+	}
+}
+
+// Makes a request to receive the zone transfers recorded by the specified agent.
+// The follow parameter indicates whether the stream should remain open after
+// receiving the existing zone transfers, and used to receive new zone transfers
+// asynchronously.
+func (agents *connectedAgentsImpl) ReceiveZoneTransfers(ctx context.Context, daemon ControlledDaemon, follow bool) iter.Seq2[*bind9xfr.State, error] {
+	return func(yield func(*bind9xfr.State, error) bool) {
+		// Get control access point for the specified daemon. It will be sent
+		// in the request to the agent, so the agent can identify the correct
+		// named instance.
+		accessPoint, err := daemon.GetAccessPoint(dbmodel.AccessPointControl)
+		if err != nil {
+			_ = yield(nil, err)
+			return
+		}
+
+		request := &agentapi.ReceiveZoneTransfersReq{
+			ControlAddress: accessPoint.Address,
+			ControlPort:    accessPoint.Port,
+			Follow:         follow,
+		}
+
+		// Get the agent's state. It holds the connection with the agent.
+		agentAddressPort := net.JoinHostPort(daemon.GetMachineTag().GetAddress(), strconv.FormatInt(daemon.GetMachineTag().GetAgentPort(), 10))
+		agent, err := agents.getConnectedAgent(agentAddressPort)
+		if err != nil {
+			_ = yield(nil, err)
+			return
+		}
+
+		// This is the same pattern we're using in the manager.go. The connection is
+		// cached so it is possible that it gets terminated or broken at some point.
+		// By trying the actual operation and retrying on failure we should be able
+		// to recover. There may be other ways to achieve recovery (e.g., getting
+		// the connection state before attempting the call). However, it is hard to
+		// say how reliable they are. This approach worked well for several years so
+		// it should be fine to continue using it.
+		var stream grpc.ServerStreamingClient[agentapi.ReceiveZoneTransfersRsp]
+		if stream, err = agent.connector.createClient().ReceiveZoneTransfers(ctx, request); err != nil {
+			if err = agent.connector.connect(); err == nil {
+				stream, err = agent.connector.createClient().ReceiveZoneTransfers(ctx, request)
+				err = errors.WithStack(err)
+			}
+		}
+		if err != nil {
+			// Cannot open the stream.
+			err = errors.WithMessage(err, "failed to open gRPC connection for receiving zone transfers from the agent")
+			_ = yield(nil, err)
+			return
+		}
+		for {
+			// Receive the zone transfers from the agent.
+			receivedTransferState, err := stream.Recv()
+			if err != nil {
+				if errors.Is(err, io.EOF) || errors.Is(err, context.Canceled) || status.Code(err) == codes.Canceled {
+					// End of the stream or the context is cancelled.
+					return
+				}
+				_ = yield(nil, errors.Wrap(err, "gRPC connection error occurred when receiving zone transfers from the agent"))
+				return
+			}
+			state := &bind9xfr.State{
+				ViewName:       receivedTransferState.ZoneTransfer.ViewName,
+				ZoneName:       receivedTransferState.ZoneTransfer.ZoneName,
+				Serial:         receivedTransferState.ZoneTransfer.Serial,
+				Client:         receivedTransferState.ZoneTransfer.Client,
+				Server:         receivedTransferState.ZoneTransfer.Server,
+				MessagesCount:  receivedTransferState.ZoneTransfer.MessagesCount,
+				RecordsCount:   receivedTransferState.ZoneTransfer.RecordsCount,
+				BytesCount:     receivedTransferState.ZoneTransfer.BytesCount,
+				Duration:       time.Duration(receivedTransferState.ZoneTransfer.Duration),
+				Status:         bind9xfr.Status(receivedTransferState.ZoneTransfer.Status),
+				StartTime:      time.Unix(receivedTransferState.ZoneTransfer.StartTime, 0),
+				CompletionTime: time.Unix(receivedTransferState.ZoneTransfer.CompletionTime, 0),
+				Message:        receivedTransferState.ZoneTransfer.Message,
+			}
+			if !yield(state, nil) {
+				// Stop if the caller no longer iterates over the transfer states.
 				return
 			}
 		}

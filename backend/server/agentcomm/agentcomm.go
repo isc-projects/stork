@@ -19,6 +19,7 @@ import (
 	agentapi "isc.org/stork/api"
 	bind9config "isc.org/stork/daemoncfg/bind9"
 	keactrl "isc.org/stork/daemonctrl/kea"
+	"isc.org/stork/daemondata/bind9xfr"
 	pdnsdata "isc.org/stork/daemondata/pdns"
 	dnsmodel "isc.org/stork/datamodel/dns"
 	dbmodel "isc.org/stork/server/database/model"
@@ -48,6 +49,7 @@ type ConnectedAgents interface {
 	ReceiveZoneRRs(ctx context.Context, daemon ControlledDaemon, zoneName string, viewName string) iter.Seq2[[]*dnsmodel.RR, error]
 	ReceiveBind9FormattedConfig(ctx context.Context, daemon ControlledDaemon, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) iter.Seq2[*agentapi.ReceiveBind9ConfigRsp, error]
 	ReceiveKeaLeases(ctx context.Context, daemon ControlledDaemon, minCLTT uint64) iter.Seq2[*agentapi.ReceiveKeaLeasesRsp, error]
+	ReceiveZoneTransfers(ctx context.Context, daemon ControlledDaemon, follow bool) iter.Seq2[*bind9xfr.State, error]
 }
 
 // Interface representing a connector to a selected agent over gRPC.

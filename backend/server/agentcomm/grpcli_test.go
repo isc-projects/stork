@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"io"
 	"iter"
+	"maps"
 	"net"
 	"strings"
 	"testing"
@@ -21,6 +22,7 @@ import (
 	agentapi "isc.org/stork/api"
 	bind9config "isc.org/stork/daemoncfg/bind9"
 	keactrl "isc.org/stork/daemonctrl/kea"
+	"isc.org/stork/daemondata/bind9xfr"
 	"isc.org/stork/datamodel/daemonname"
 	dnsmodel "isc.org/stork/datamodel/dns"
 	"isc.org/stork/datamodel/protocoltype"
@@ -3091,4 +3093,331 @@ func TestDaemonGetMachineID(t *testing.T) {
 
 	// Assert
 	require.EqualValues(t, 123, machineID)
+}
+
+// Test successful reception of the zone transfers over the stream.
+func TestReceiveZoneTransfers(t *testing.T) {
+	t.Parallel()
+	// Create an daemon.
+	daemon := &dbmodel.Daemon{
+		Machine: &dbmodel.Machine{
+			Address:   "127.0.0.1",
+			AgentPort: 8080,
+		},
+		AccessPoints: []*dbmodel.AccessPoint{{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    8000,
+			Key:     "",
+		}},
+	}
+
+	// Get the zone transfers to be returned over the stream.
+	testXfrs := testutil.GetTestZoneTransfers()
+
+	ctrl := gomock.NewController(t)
+	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
+	defer ctrl.Finish()
+
+	// Create the client mock.
+	mockStreamingClient := NewMockServerStreamingClient[agentapi.ReceiveZoneTransfersRsp](ctrl)
+	// The mock will return a sequence of zones.
+	var mocks []any
+	for _, xfr := range testXfrs {
+		xfrRsp := &agentapi.ReceiveZoneTransfersRsp{
+			ZoneTransfer: &agentapi.ZoneTransfer{
+				ViewName:      xfr.ViewName,
+				ZoneName:      xfr.ZoneName,
+				Serial:        xfr.Serial,
+				Client:        xfr.Client,
+				Server:        xfr.Server,
+				MessagesCount: xfr.MessagesCount,
+				RecordsCount:  xfr.RecordsCount,
+				BytesCount:    xfr.BytesCount,
+				Duration:      int64(xfr.Duration),
+				Status:        agentapi.ZoneTransfer_XfrStatus(xfr.Status),
+			},
+		}
+		mocks = append(mocks, mockStreamingClient.EXPECT().Recv().Return(xfrRsp, nil))
+	}
+	// The last item returned by the mock must be io.EOF indicating the
+	// end of the stream.
+	mocks = append(mocks, mockStreamingClient.EXPECT().Recv().Return(nil, io.EOF))
+
+	// Make sure the zones are returned in order.
+	gomock.InOrder(mocks...)
+
+	// Return the mocked client when ReceiveZones() called. Make sure that the  correct
+	// request is passed, including the filter and the ForcePopulate flag.
+	mockAgentClient.EXPECT().ReceiveZoneTransfers(gomock.Any(), &agentapi.ReceiveZoneTransfersReq{
+		ControlAddress: "localhost",
+		ControlPort:    8000,
+		Follow:         true,
+	}).AnyTimes().Return(mockStreamingClient, nil)
+
+	// Collect the zone transfers returned over the stream.
+	var xfrs []*bind9xfr.State
+	for xfr, err := range agents.ReceiveZoneTransfers(context.Background(), daemon, true) {
+		require.NoError(t, err)
+		require.NotNil(t, xfr)
+		xfrs = append(xfrs, xfr)
+	}
+	// Make sure all zone transfers have been returned.
+	require.Len(t, xfrs, len(testXfrs))
+
+	// Validate returned zone transfers.
+	for i, xfr := range xfrs {
+		require.Equal(t, testXfrs[i].ViewName, xfr.ViewName)
+		require.Equal(t, testXfrs[i].ZoneName, xfr.ZoneName)
+		require.Equal(t, testXfrs[i].Serial, xfr.Serial)
+		require.Equal(t, testXfrs[i].Client, xfr.Client)
+		require.Equal(t, testXfrs[i].Server, xfr.Server)
+		require.Equal(t, testXfrs[i].MessagesCount, xfr.MessagesCount)
+		require.Equal(t, testXfrs[i].RecordsCount, xfr.RecordsCount)
+		require.Equal(t, testXfrs[i].BytesCount, xfr.BytesCount)
+		require.Equal(t, testXfrs[i].Duration, xfr.Duration)
+		require.Equal(t, testXfrs[i].Status, xfr.Status)
+	}
+}
+
+// Test that the follow flag is properly propagated to the agent.
+func TestReceiveZoneTransfersNoFollow(t *testing.T) {
+	t.Parallel()
+	// Create an daemon.
+	daemon := &dbmodel.Daemon{
+		Machine: &dbmodel.Machine{
+			Address:   "localhost",
+			AgentPort: 8080,
+		},
+		AccessPoints: []*dbmodel.AccessPoint{{
+			Type:    dbmodel.AccessPointControl,
+			Address: "127.0.0.1",
+			Port:    8090,
+			Key:     "",
+		}},
+	}
+
+	ctrl := gomock.NewController(t)
+	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
+	defer ctrl.Finish()
+
+	mockStreamingClient := NewMockServerStreamingClient[agentapi.ReceiveZoneTransfersRsp](ctrl)
+
+	mockStreamingClient.EXPECT().Recv().Times(1).Return(nil, io.EOF)
+
+	// Expect that the follow flag sent to the agent is false.
+	mockAgentClient.EXPECT().ReceiveZoneTransfers(gomock.Any(), &agentapi.ReceiveZoneTransfersReq{
+		ControlAddress: "127.0.0.1",
+		ControlPort:    8090,
+		Follow:         false,
+	}).AnyTimes().Return(mockStreamingClient, nil)
+
+	// Use the false follow flag value.
+	require.Empty(t, maps.Collect(agents.ReceiveZoneTransfers(context.Background(), daemon, false)))
+}
+
+// Test that the reception of the zone transfers stops immediately when
+// the context is canceled.
+func TestReceiveZoneTransfersCancelContext(t *testing.T) {
+	t.Parallel()
+	type testCase struct {
+		name string
+		err  error
+	}
+	// These test cases differ by the error returned by the mock.
+	// They both indicate that the context is canceled.
+	testCases := []testCase{
+		{
+			name: "context canceled",
+			err:  context.Canceled,
+		},
+		{
+			name: "status canceled",
+			err:  status.Error(codes.Canceled, "context canceled"),
+		},
+	}
+
+	// Create an daemon.
+	daemon := &dbmodel.Daemon{
+		Machine: &dbmodel.Machine{
+			Address:   "127.0.0.1",
+			AgentPort: 8080,
+		},
+		AccessPoints: []*dbmodel.AccessPoint{{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    8000,
+			Key:     "",
+		}},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+			ctrl := gomock.NewController(t)
+			mockAgentClient, agents := setupGrpcliTestCase(ctrl)
+			defer ctrl.Finish()
+
+			// Create the client mock.
+			mockStreamingClient := NewMockServerStreamingClient[agentapi.ReceiveZoneTransfersRsp](ctrl)
+
+			mockStreamingClient.EXPECT().Recv().Return(nil, testCase.err)
+
+			// Expect that the agent is called with the correct parameters in the request.
+			mockAgentClient.EXPECT().ReceiveZoneTransfers(gomock.Any(), &agentapi.ReceiveZoneTransfersReq{
+				ControlAddress: "localhost",
+				ControlPort:    8000,
+				Follow:         true,
+			}).AnyTimes().Return(mockStreamingClient, nil)
+
+			// No zone transfers should be returned but the function should return immediately.
+			zoneTransfers := maps.Collect(agents.ReceiveZoneTransfers(context.Background(), daemon, true))
+			require.Empty(t, zoneTransfers)
+		})
+	}
+}
+
+// Test that an error is returned when the access point is not found.
+func TestReceiveZoneTransfersNonExistingAccessPoint(t *testing.T) {
+	t.Parallel()
+	// Create an daemon without the access point.
+	daemon := &dbmodel.Daemon{
+		Machine: &dbmodel.Machine{
+			Address:   "127.0.0.1",
+			AgentPort: 8080,
+		},
+	}
+	ctrl := gomock.NewController(t)
+	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
+	defer ctrl.Finish()
+
+	mockStreamingClient := NewMockServerStreamingClient[agentapi.Zone](ctrl)
+	// Make sure that the gRPC client is not used.
+	mockStreamingClient.EXPECT().Recv().Times(0)
+	mockAgentClient.EXPECT().ReceiveZoneTransfers(gomock.Any(), gomock.Any()).Times(0)
+
+	// The iterator should return an error that there is no access point available
+	// for this daemon.
+	for zone, err := range agents.ReceiveZoneTransfers(context.Background(), daemon, true) {
+		require.ErrorContains(t, err, "access point")
+		require.Nil(t, zone)
+	}
+}
+
+// Test that an error is returned when establishing connection fails.
+func TestReceiveZoneTransfersConnectionError(t *testing.T) {
+	t.Parallel()
+	caCertPEM, serverCertPEM, serverKeyPEM, err := generateSelfSignedCerts()
+	require.NoError(t, err)
+
+	// Create an daemon.
+	daemon := &dbmodel.Daemon{
+		Machine: &dbmodel.Machine{
+			Address:   "127.0.0.1",
+			AgentPort: 8080,
+		},
+		AccessPoints: []*dbmodel.AccessPoint{{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    8000,
+			Key:     "",
+		}},
+	}
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockAgentClient := NewMockAgentClient(ctrl)
+	mockAgentConnector := NewMockAgentConnector(ctrl)
+	mockAgentConnector.EXPECT().connect().AnyTimes().Return(&testError{})
+	mockAgentConnector.EXPECT().close().AnyTimes()
+	mockAgentConnector.EXPECT().createClient().AnyTimes().Return(mockAgentClient)
+
+	agents := newConnectedAgentsImpl(&AgentsSettings{}, &storktest.FakeEventCenter{}, caCertPEM, serverCertPEM, serverKeyPEM)
+	agents.setConnectorFactory(func(string) agentConnector {
+		return mockAgentConnector
+	})
+
+	mockStreamingClient := NewMockServerStreamingClient[agentapi.ReceiveZoneTransfersRsp](ctrl)
+	// Make sure that the gRPC client is not used.
+	mockStreamingClient.EXPECT().Recv().Times(0)
+	mockAgentClient.EXPECT().ReceiveZoneTransfers(gomock.Any(), gomock.Any()).Times(0)
+
+	// The iterator should return an error during an attempt to connect.
+	for zone, err := range agents.ReceiveZoneTransfers(context.Background(), daemon, true) {
+		var testError *testError
+		require.ErrorAs(t, err, &testError)
+		require.Nil(t, zone)
+	}
+}
+
+// Test that an error is returned when getting a gRPC stream fails.
+func TestReceiveZoneTransfersGetStreamError(t *testing.T) {
+	t.Parallel()
+	// Create an daemon.
+	daemon := &dbmodel.Daemon{
+		Machine: &dbmodel.Machine{
+			Address:   "127.0.0.1",
+			AgentPort: 8080,
+		},
+		AccessPoints: []*dbmodel.AccessPoint{{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    8000,
+			Key:     "",
+		}},
+	}
+	ctrl := gomock.NewController(t)
+	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
+	defer ctrl.Finish()
+
+	mockStreamingClient := NewMockServerStreamingClient[agentapi.ReceiveZoneTransfersRsp](ctrl)
+	// Make sure that the gRPC client is not used.
+	mockStreamingClient.EXPECT().Recv().Times(0)
+	mockAgentClient.EXPECT().ReceiveZoneTransfers(gomock.Any(), gomock.Any()).Times(2).Return(nil, &testError{})
+
+	// The iterator should return an error returned by ReceiveZoneTransfers().
+	for zone, err := range agents.ReceiveZoneTransfers(context.Background(), daemon, true) {
+		require.ErrorContains(t, err, "test error")
+		require.Nil(t, zone)
+	}
+}
+
+// Test that an error is returned when the upstream agent returns an error.
+func TestReceiveZoneTransfersStreamReturnsError(t *testing.T) {
+	t.Parallel()
+	// Create an daemon.
+	daemon := &dbmodel.Daemon{
+		Machine: &dbmodel.Machine{
+			Address:   "127.0.0.1",
+			AgentPort: 8080,
+		},
+		AccessPoints: []*dbmodel.AccessPoint{{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    8000,
+			Key:     "",
+		}},
+	}
+
+	ctrl := gomock.NewController(t)
+	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
+	defer ctrl.Finish()
+
+	// Create the client mock.
+	mockStreamingClient := NewMockServerStreamingClient[agentapi.ReceiveZoneTransfersRsp](ctrl)
+
+	mockStreamingClient.EXPECT().Recv().Return(nil, &testError{})
+
+	// Expect that the agent is called with the correct parameters in the request.
+	mockAgentClient.EXPECT().ReceiveZoneTransfers(gomock.Any(), &agentapi.ReceiveZoneTransfersReq{
+		ControlAddress: "localhost",
+		ControlPort:    8000,
+		Follow:         true,
+	}).AnyTimes().Return(mockStreamingClient, nil)
+
+	// Make sure that the error is returned.
+	for xfr, err := range agents.ReceiveZoneTransfers(context.Background(), daemon, true) {
+		require.Nil(t, xfr)
+		require.ErrorContains(t, err, "test error")
+	}
 }
