@@ -145,11 +145,17 @@ Changelog
 
 Below is the list of changes of CI images for particular tags.
 
+**Tag: 17**
+
+    - ``pkgs-alpine``:
+
+        Introduced in the #2495 ticket. Upgrades Golang to 1.25.11.
+
 **Tag: 16**
 
     - ``pkgs-compose-ubuntu``:
 
-        Introduced in the #2438 ticket. Changes Alpine based image to Ubuntu based to allow using Playwright in 
+        Introduced in the #2438 ticket. Changes Alpine based image to Ubuntu based to allow using Playwright in
         CI pipeline.
 
         - Base: ``cruizba/ubuntu-dind:noble-28.5.2`` (Ubuntu)
