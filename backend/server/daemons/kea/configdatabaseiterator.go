@@ -49,10 +49,10 @@ func buildConfigBackendKey(daemon *dbmodel.Daemon) (configBackendKey, error) {
 //     remote-subnet*-set command.
 //
 // It calls the provided fn with all local subnets sharing the same config
-// source (it always has a one item for subnet_cmds daemons, and may have
-// multiple for cb_cmds daemons).
+// source. That is always one local subnet for a daemon using subnet_cmds
+// hook and may be multiple local subnets for cb_cmds.
 //
-// It is guaranteed that the local subnets passed to fn has at least one
+// It is guaranteed that the local subnets passed to fn have at least one
 // item.
 //
 // Local subnets whose daemon or Kea configuration is nil, or whose hook type
