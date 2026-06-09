@@ -8,7 +8,6 @@ import { MessageService } from 'primeng/api'
 import { Observable, of, throwError } from 'rxjs'
 import { DHCPService, Subnet, UpdateSubnetBeginResponse } from '../backend'
 import { AddressPoolForm, KeaSubnetParametersForm, PrefixPoolForm } from '../forms/subnet-set-form.service'
-import { By } from '@angular/platform-browser'
 import { provideRouter } from '@angular/router'
 
 /**

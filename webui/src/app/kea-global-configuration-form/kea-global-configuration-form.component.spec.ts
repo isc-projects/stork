@@ -10,7 +10,6 @@ import {
 } from '../backend'
 import { of, throwError } from 'rxjs'
 import { provideNoopAnimations } from '@angular/platform-browser/animations'
-import { By } from '@angular/platform-browser'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 describe('KeaGlobalConfigurationFormComponent', () => {

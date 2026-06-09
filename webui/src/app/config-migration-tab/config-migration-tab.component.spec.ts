@@ -84,6 +84,7 @@ describe('ConfigMigrationTabComponent', () => {
         spyOn(authService, 'hasPrivilege').and.returnValue(true)
     })
 
+    /** Renders the component with the given migration status. */
     function render(migration: MigrationStatus = mockRunningMigration as MigrationStatus): void {
         component.migration = migration
         fixture.detectChanges()

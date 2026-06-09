@@ -6,8 +6,6 @@ import { MessageService } from 'primeng/api'
 import { Component, viewChild } from '@angular/core'
 import { Table, TableModule } from 'primeng/table'
 import { Subnet } from '../backend'
-import { By } from '@angular/platform-browser'
-
 describe('TabViewComponent', () => {
     let component: TabViewComponent<any, any>
     let fixture: ComponentFixture<TabViewComponent<any, any>>

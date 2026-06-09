@@ -17,6 +17,7 @@ describe('UtilizationStatsChartComponent', () => {
         component = fixture.componentInstance
     })
 
+    /** Sets chart inputs and triggers change detection. */
     function setInputs(leaseType: 'na' | 'pd', network: object): void {
         fixture.componentRef.setInput('leaseType', leaseType)
         fixture.componentRef.setInput('network', network)

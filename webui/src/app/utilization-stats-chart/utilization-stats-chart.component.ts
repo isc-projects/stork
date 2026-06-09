@@ -92,6 +92,7 @@ export class UtilizationStatsChartComponent implements OnChanges {
      */
     @Input() network: LocalSubnet | Subnet | SharedNetwork
 
+    /** Rebuilds chart data when inputs change. */
     ngOnChanges(_changes: SimpleChanges): void {
         this.rebuildChartData()
     }

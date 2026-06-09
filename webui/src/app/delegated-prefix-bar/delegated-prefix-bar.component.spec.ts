@@ -14,6 +14,7 @@ describe('DelegatedPrefixBarComponent', () => {
 
     })
 
+    /** Renders the component with the given prefix pool. */
     function render(pool: { prefix: string; delegatedLength: number; excludedPrefix?: string }): void {
         component.pool = pool
         fixture.detectChanges()

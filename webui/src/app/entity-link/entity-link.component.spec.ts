@@ -19,12 +19,14 @@ describe('EntityLinkComponent', () => {
         component = fixture.componentInstance
     })
 
+    /** Asserts that the daemon link with the given id has the expected text and href. */
     function expectDaemonLink(linkId: number | string, text: string, href: string): void {
         const link = fixture.debugElement.query(By.css(`#daemon-link-${linkId}`))
         expect(link.nativeElement.innerText).toEqual(text)
         expect(link.attributes.href).toEqual(href)
     }
 
+    /** Renders the component as a daemon link with the given attributes. */
     function renderDaemon(attrs: unknown): void {
         component.entity = 'daemon'
         component.attrs = attrs
