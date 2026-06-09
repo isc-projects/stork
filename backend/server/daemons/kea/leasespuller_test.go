@@ -1165,8 +1165,23 @@ func TestGetLeasesFromDaemonReadsMaxCLTTFromDatabase(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
+	// Include two leases in each pull so that we also test conflict resolution. The
+	// puller should get one or more duplicate leases and ignore those, so that it never
+	// loses leases that are updated at the same second as the most recently seen one
+	// (but after the most recent request).
 	mockLeasesFirst := storkutil.ZipPairs(
 		[]*agentapi.ReceiveKeaLeasesRsp{
+			{
+				Lease: &agentapi.Lease{
+					IpAddress:     "192.168.1.179",
+					HwAddress:     "00:01:02:03:04:04",
+					Cltt:          999,
+					ValidLifetime: 3600,
+					Family:        4,
+					SubnetID:      67,
+					State:         0,
+				},
+			},
 			{
 				Lease: &agentapi.Lease{
 					IpAddress:     "192.168.1.180",
@@ -1179,10 +1194,21 @@ func TestGetLeasesFromDaemonReadsMaxCLTTFromDatabase(t *testing.T) {
 				},
 			},
 		},
-		[]error{nil},
+		[]error{nil, nil},
 	)
 	mockLeasesSecond := storkutil.ZipPairs(
 		[]*agentapi.ReceiveKeaLeasesRsp{
+			{
+				Lease: &agentapi.Lease{
+					IpAddress:     "192.168.1.180",
+					HwAddress:     "00:01:02:03:04:05",
+					Cltt:          1000,
+					ValidLifetime: 3600,
+					Family:        4,
+					SubnetID:      67,
+					State:         0,
+				},
+			},
 			{
 				Lease: &agentapi.Lease{
 					IpAddress:     "192.168.1.27",
@@ -1195,7 +1221,7 @@ func TestGetLeasesFromDaemonReadsMaxCLTTFromDatabase(t *testing.T) {
 				},
 			},
 		},
-		[]error{nil},
+		[]error{nil, nil},
 	)
 	fa := NewMockConnectedAgents(ctrl)
 	fa.EXPECT().ReceiveKeaLeases(gomock.Any(), gomock.Any(), gomock.Eq(uint64(0))).Return(mockLeasesFirst)

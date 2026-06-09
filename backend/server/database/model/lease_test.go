@@ -360,6 +360,59 @@ func TestAddLeaseReturnsErrorWhenForeignKeyConstraintFails(t *testing.T) {
 	require.ErrorContains(t, err, "problem inserting lease")
 }
 
+// Confirm that AddLease correctly updates a lease when the lease already exists
+// in the table.
+func TestAddLeaseUpdatesExistingLease(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	daemons, subnets := addTestLeaseDaemons(t, db)
+	originalLeases := testHelperAddMockLeases(t, db, daemons, subnets)
+
+	t.Run("matching hardware address", func(t *testing.T) {
+		// Copy the lease so I can change bits of it and insert it again.
+		newLease := *originalLeases[0]
+		newLease.CLTT = 99999
+		newLease.State = keadata.LeaseStateExpiredReclaimed
+
+		err := AddLease(db, &newLease)
+		updatedLease, err2 := GetLeaseByID(db, newLease.ID)
+
+		require.NoError(t, err)
+		require.NoError(t, err2)
+
+		require.EqualValues(t, newLease.CLTT, updatedLease.CLTT)
+		require.EqualValues(t, newLease.State, updatedLease.State)
+	})
+	t.Run("matching duid", func(t *testing.T) {
+		newLease := *originalLeases[2]
+		newLease.CLTT = 99999
+		newLease.State = keadata.LeaseStateDefault
+
+		err := AddLease(db, &newLease)
+		updatedLease, err2 := GetLeaseByID(db, newLease.ID)
+
+		require.NoError(t, err)
+		require.NoError(t, err2)
+
+		require.EqualValues(t, newLease.CLTT, updatedLease.CLTT)
+		require.EqualValues(t, newLease.State, updatedLease.State)
+	})
+	t.Run("matching client id", func(t *testing.T) {
+		newLease := *originalLeases[4]
+		newLease.CLTT = 99999
+		newLease.State = keadata.LeaseStateExpiredReclaimed
+
+		err := AddLease(db, &newLease)
+		updatedLease, err2 := GetLeaseByID(db, newLease.ID)
+
+		require.NoError(t, err)
+		require.NoError(t, err2)
+
+		require.EqualValues(t, newLease.CLTT, updatedLease.CLTT)
+		require.EqualValues(t, newLease.State, updatedLease.State)
+	})
+}
+
 // Confirm that [GetLeaseByID] returns an error when there is a database issue *other*
 // than "there is no lease with that ID".
 func TestGetLeaseByIDDatabaseError(t *testing.T) {
