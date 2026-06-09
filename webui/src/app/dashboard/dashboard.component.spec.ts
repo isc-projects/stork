@@ -250,7 +250,6 @@ describe('DashboardComponent', () => {
         expect(component.grafanaUrl).toBe('http://localhost:3000')
         expect(component.grafanaDhcp4DashboardId).toBe('dhcp4-dashboard-id')
         expect(component.grafanaDhcp6DashboardId).toBe('dhcp6-dashboard-id')
-
     }))
 
     it('should indicate that HA is not enabled', () => {

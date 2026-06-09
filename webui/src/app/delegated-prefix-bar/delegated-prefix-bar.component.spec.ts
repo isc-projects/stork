@@ -11,7 +11,6 @@ describe('DelegatedPrefixBarComponent', () => {
 
         fixture = TestBed.createComponent(DelegatedPrefixBarComponent)
         component = fixture.componentInstance
-
     })
 
     /** Renders the component with the given prefix pool. */

@@ -1252,7 +1252,8 @@ export class HostFormComponent implements OnInit, OnDestroy {
         // Update the existing host.
         if (this.hostId) {
             host.id = this.hostId
-            lastValueFrom(this._dhcpApi.updateHostSubmit(this.hostId, this.form.transactionID, host)).then(() => {
+            lastValueFrom(this._dhcpApi.updateHostSubmit(this.hostId, this.form.transactionID, host))
+                .then(() => {
                     this._messageService.add({
                         severity: 'success',
                         summary: 'Host reservation successfully updated',
@@ -1275,7 +1276,8 @@ export class HostFormComponent implements OnInit, OnDestroy {
             return
         }
         // Submit new host.
-        lastValueFrom(this._dhcpApi.createHostSubmit(this.form.transactionID, host)).then(() => {
+        lastValueFrom(this._dhcpApi.createHostSubmit(this.form.transactionID, host))
+            .then(() => {
                 this._messageService.add({
                     severity: 'success',
                     summary: 'Host reservation successfully added',

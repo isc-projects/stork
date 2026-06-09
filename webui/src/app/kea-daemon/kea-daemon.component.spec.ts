@@ -232,10 +232,10 @@ describe('KeaDaemonComponent', () => {
         fixture.componentRef.setInput('daemon', {
             ...component.daemon(),
             hooks: [
-            '/libdhcp_cb_cmds.so',
-            '/lib/libdhcp_custom.so',
-            '/usr/lib/libdhcp_fake.so',
-            '/usr/local/lib/libdhcp_lease_cmds.so',
+                '/libdhcp_cb_cmds.so',
+                '/lib/libdhcp_custom.so',
+                '/usr/lib/libdhcp_fake.so',
+                '/usr/local/lib/libdhcp_lease_cmds.so',
             ],
         })
         fixture.detectChanges()

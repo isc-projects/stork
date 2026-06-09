@@ -180,7 +180,6 @@ describe('HostsTableComponent', () => {
 
         component.canStartMigration.set(true)
         TestBed.flushEffects()
-
         ;(component.table.filters['machineId'] as FilterMetadata).value = 5
         ;(component.table.filters['daemonId'] as FilterMetadata).value = 1
         ;(component.table.filters['subnetId'] as FilterMetadata).value = 2
