@@ -611,7 +611,7 @@ goswagger_ver = 'v0.34.1'
 protoc_ver = '31.1'
 protoc_gen_go_ver = 'v1.36.11'
 protoc_gen_go_grpc_ver = 'v1.6.2'
-nfpm_ver = 'v2.45.3'
+nfpm_ver = 'v2.45.2'
 golangcilint_ver = '2.8.0'
 
 # UI-related
