@@ -486,7 +486,7 @@ describe('JsonTreeComponent', () => {
             [new Foo(), 'object'], // Empty instance
         ]
 
-        for (const [item, kind] of empties) {
+        for (const [item, _kind] of empties) {
             component.value = item
             expect(component.isEmpty()).toBeTrue()
         }
