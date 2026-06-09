@@ -889,6 +889,7 @@ export const TestAllMachinesShown: Story = {
 }
 
 export const TestUnauthorizedShown: Story = {
+    tags: ['no-test-in-headless-browser'],
     globals: {
         role: 'super-admin',
     },
@@ -942,6 +943,7 @@ export const TestUnauthorizedShown: Story = {
 }
 
 export const TestAuthorizedShown: Story = {
+    tags: ['no-test-in-headless-browser'],
     globals: {
         role: 'super-admin',
     },
@@ -1039,6 +1041,7 @@ export const TestAuthorizedShown: Story = {
 }
 
 export const TestTableFiltering: Story = {
+    tags: ['no-test-in-headless-browser'],
     globals: {
         role: 'super-admin',
     },
@@ -1098,6 +1101,7 @@ export const TestTableFiltering: Story = {
 }
 
 export const TestAuthorizeMachines: Story = {
+    tags: ['no-test-in-headless-browser'],
     globals: {
         role: 'super-admin',
     },
