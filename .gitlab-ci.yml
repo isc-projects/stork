@@ -838,10 +838,6 @@ system_test:
   #      - tools/
   #    fallback_keys:
   #      - $CI_PROJECT_NAME-compose-$CI_DEFAULT_BRANCH
-  before_script:
-    - git clone https://gitlab.isc.org/isc-projects/stork-tests.git 
-    - export STORK_REPO_DIR=$PWD && cd stork-tests
-    - rake prepare:systemtest
   variables:
     BIND9_VERSION: latest-stable
     KEA_VERSION: latest-stable
@@ -852,6 +848,12 @@ system_test:
     USE_SYSTEM_NODEJS: "true"
     # It must be an alias of the docker:dind service.
     DEFAULT_MAPPED_ADDRESS: "docker"
+    STORK_TESTS_BRANCH: main
+  before_script:
+    - git clone -b "${STORK_TESTS_BRANCH}" --depth 1 https://gitlab.isc.org/isc-projects/stork-tests.git
+    - export STORK_REPO_DIR="${PWD}"
+    - cd stork-tests
+    - rake prepare:systemtest
   script:
     - rake systemtest:build
     - rake systemtest
