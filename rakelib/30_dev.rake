@@ -811,7 +811,7 @@ namespace :lint do
 
     namespace :python do
         desc 'Runs pylint, python linter tool'
-        task :pylint => [PYLINT, FLASK] do
+        task :pylint => [PYLINT, FLASK, PLOTLY] do
             python_files, exit_code = Open3.capture2('git', 'ls-files', '*.py')
             python_files = python_files.split("\n").map{ |string| string.strip }
             puts "Running pylint:"

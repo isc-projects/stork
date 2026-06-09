@@ -1184,6 +1184,14 @@ file FLASK => [PIP] do
 end
 add_hash_guard(FLASK, flask_requirements_file)
 
+plotly_requirements_file = File.expand_path("init_deps/plotly.#{PYTHON3_VERSION}.txt", __dir__)
+PLOTLY = File.join(python_tools_dir, "bin", "plotly_get_chrome")
+file PLOTLY => [PIP] do
+    sh PIP, "install", "-r", plotly_requirements_file
+    sh "touch", "-c", PLOTLY
+end
+add_hash_guard(PLOTLY, plotly_requirements_file)
+
 #############
 ### Tasks ###
 #############

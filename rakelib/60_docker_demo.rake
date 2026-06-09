@@ -271,7 +271,7 @@ namespace :demo do
     desc "Collects the performance data from the demo containers and generates
         the report
         TMP_DIRECTORY - temporary directory to store the performance data - optional, default: system temporary directory"
-    task :performance => [DOCKER_COMPOSE, PYTHON] do
+    task :performance => [DOCKER_COMPOSE, PYTHON, PLOTLY] do
         # Fetch running services.
         opts, _, _, _ = get_docker_opts(nil, false, false, [])
         services = []
@@ -309,7 +309,7 @@ namespace :demo do
 
             # Generate the report.
             report_path = File.join dir, "performance_report.html"
-            sh *PYTHON, "tests/system/core/performance_chart.py",
+            sh *PYTHON, "docker/tools/performance_chart.py",
                 "--output", report_path,
                 *FileList[File.join(dir, "*.data?")]
 
