@@ -18,6 +18,23 @@
                     >
                     </p-multiSelect>
                     <label for="servers-select">DHCP Servers</label>
+                    <span class="ml-2">
+                        <app-help-tip subject="DHCP servers selection">
+                            <p>
+                                The location where the subnet is saved depends on the loaded Kea hooks. With
+                                <span class="monospace">libdhcp_cb_cmds</span>, Stork updates the Config Backend
+                                database. With <span class="monospace">libdhcp_subnet_cmds</span>, Stork updates subnet
+                                data in the JSON configuration.
+                            </p>
+                            <p>
+                                If both <span class="monospace">libdhcp_subnet_cmds</span> and
+                                <span class="monospace">libdhcp_cb_cmds</span> hooks are loaded, Stork alters only the
+                                subnet data in the Config Backend database, and leaves the JSON configuration unchanged.
+                                Note that in this case, Kea prioritizes the subnets from the Config Backend database
+                                over the JSON configuration.
+                            </p>
+                        </app-help-tip>
+                    </span>
                 </p-floatlabel>
                 <small
                     *ngIf="
