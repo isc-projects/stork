@@ -118,12 +118,25 @@ utilization is shown for each subnet.
 Creating Subnets
 ~~~~~~~~~~~~~~~~
 
-Stork can configure new subnets in Kea instances with the Subnet Commands (``subnet_cmds``)
-hook library loaded. Navigate to ``DHCP -> Subnets`` to display the subnets list, and click
-the ``New Subnet`` button. The opened form initially contains only an input box where
-a subnet prefix must be specified. It can be an IPv4 address (e.g., ``192.0.2.0/24``) or
-IPv6 prefix (e.g., ``2001:db8:1::/64``). Click the ``Proceed`` button to expand the
-form and enter the remaining subnet configuration information.
+Stork can configure new subnets in Kea instances with the Subnet Commands
+(``subnet_cmds``) or Config Backend Commands (``cb_cmds``) hook libraries
+loaded. Navigate to ``DHCP -> Subnets`` to display the subnets list, and click
+the ``New Subnet`` button. The opened form initially contains only an input box
+where a subnet prefix must be specified. It can be an IPv4 address
+(e.g., ``192.0.2.0/24``) or IPv6 prefix (e.g., ``2001:db8:1::/64``). Click
+the ``Proceed`` button to expand the form and enter the remaining subnet
+configuration information.
+
+The location where a subnet is saved depends on the loaded Kea hooks. With
+``libdhcp_cb_cmds``, Stork updates the Config Backend database. With
+``libdhcp_subnet_cmds``, Stork updates subnet data in the JSON configuration.
+If both hooks are loaded, Stork alters only the subnet data in the Config
+Backend database and leaves the JSON configuration unchanged. In this case,
+Kea prioritizes subnets from the Config Backend database over the JSON
+configuration. Loading ``libdhcp_subnet_cmds`` and ``libdhcp_cb_cmds``
+together is not recommended.
+See `Kea ARM config conflicts section <https://kea.readthedocs.io/en/stable/arm/config.html#config-conflicts>`_
+for more details.
 
 The Stork subnet form allows the user to specify a common subnet configuration that
 can be instantly populated to multiple DHCP servers. Configuring the same subnet in
@@ -132,8 +145,8 @@ required (e.g. deployments using High Availability or with a shared lease databa
 When configuring a new subnet it is possible to select multiple DHCP servers
 in the ``Assignments`` panel, and the subnet is populated to these servers. Please
 note that the list of servers only contains those matching the subnet prefix
-(IPv4 or IPv6). Additionally, only servers running the ``subnet_cmds`` hook library
-are listed.
+(IPv4 or IPv6). Additionally, only servers running the ``subnet_cmds`` or
+``cb_cmds`` hook libraries are listed.
 
 The new subnet may be assigned to a shared network in the ``Subnet`` panel. The Shared
 Network dropdown list may be empty for two reasons:
@@ -226,8 +239,14 @@ Updating Subnets
 To update an existing subnet configuration, click on the subnet in the dashboard
 or in the subnets list to display detailed information about the subnet.
 Click the ``Edit`` button to open the subnet update form. Note that only subnets
-on servers with the ``subnet_cmds`` hook library loaded can
+on servers with the ``subnet_cmds`` or ``cb_cmds`` hook libraries loaded can
 be updated.
+
+The location where subnet updates are saved depends on the loaded hooks. With
+``libdhcp_cb_cmds``, Stork updates the Config Backend database. With
+``libdhcp_subnet_cmds``, Stork updates subnet data in the JSON configuration.
+If both hooks are loaded, Stork updates only the Config Backend database and
+the JSON configuration remains unchanged.
 
 Subnet configuration is described in detail in the :ref:`creating-subnets` section.
 Here, we focus on the process of updating a subnet.
@@ -260,7 +279,15 @@ To delete a subnet from Stork and the Kea instances, navigate to the subnet view
 from the dashboard or the subnets list and select the desired subnet. Click the
 ``Delete`` button and confirm the removal of the subnet from all Kea instances.
 Deleting a subnet requires the Kea servers with the subnet to have
-the ``subnet_cmds`` hook library loaded.
+the ``subnet_cmds`` or ``cb_cmds`` hook library loaded.
+
+When ``libdhcp_cb_cmds`` is used, subnet deletion removes the subnet from the
+Config Backend database. If both hooks are loaded and the subnet is specified
+both in the JSON configuration and in the Config Backend database, deleting the
+subnet removes it from the Config Backend database and runtime configuration,
+but not from the JSON configuration. After Kea is restarted or its
+configuration is reloaded, the subnet appears again. In that case, the subnet
+must be removed from the JSON configuration file manually.
 
 Creating Shared Networks
 ~~~~~~~~~~~~~~~~~~~~~~~~
