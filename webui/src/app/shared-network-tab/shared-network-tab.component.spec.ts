@@ -411,11 +411,11 @@ describe('SharedNetworkTabComponent', () => {
         expect(fieldsets[2].nativeElement.innerText).toContain('Pools')
         expect(fieldsets[2].nativeElement.innerText).toContain('No pools configured.')
 
-        expect(fieldsets[3].nativeElement.innerText).toContain('DHCP Parameters')
-        expect(fieldsets[3].nativeElement.innerText).toContain('No parameters configured.')
+        expect(fieldsets[3].nativeElement.textContent).toContain('DHCP Parameters')
+        expect(fieldsets[3].nativeElement.textContent).toContain('No parameters configured.')
 
-        expect(fieldsets[4].nativeElement.innerText).toContain('DHCP Options')
-        expect(fieldsets[4].nativeElement.innerText).toContain('No options configured.')
+        expect(fieldsets[4].nativeElement.textContent).toContain('DHCP Options')
+        expect(fieldsets[4].nativeElement.textContent).toContain('No options configured.')
     })
 
     it('should display an IPv6 shared network', () => {
@@ -497,17 +497,17 @@ describe('SharedNetworkTabComponent', () => {
         const charts = fieldsets[3].queryAll(By.css('p-chart'))
         expect(charts.length).toBe(2)
 
-        expect(fieldsets[4].nativeElement.innerText).toContain('Hostname Char Replacement')
-        expect(fieldsets[4].nativeElement.innerText).toContain('X')
-        expect(fieldsets[4].nativeElement.innerText).toContain('[^A-Za-z0-9.-]')
+        expect(fieldsets[4].nativeElement.textContent).toContain('Hostname Char Replacement')
+        expect(fieldsets[4].nativeElement.textContent).toContain('X')
+        expect(fieldsets[4].nativeElement.textContent).toContain('[^A-Za-z0-9.-]')
 
         // Ensure that the DHCP options are excluded from this list.
-        expect(fieldsets[4].nativeElement.innerText).not.toContain('Options')
-        expect(fieldsets[4].nativeElement.innerText).not.toContain('Options Hash')
+        expect(fieldsets[4].nativeElement.textContent).not.toContain('Options')
+        expect(fieldsets[4].nativeElement.textContent).not.toContain('Options Hash')
 
         // DHCP options sit in their own fieldset.
-        expect(fieldsets[5].nativeElement.innerText).toContain('DHCP Options')
-        expect(fieldsets[5].nativeElement.innerText).toContain('No options configured.')
+        expect(fieldsets[5].nativeElement.textContent).toContain('DHCP Options')
+        expect(fieldsets[5].nativeElement.textContent).toContain('No options configured.')
     })
 
     it('should display shared network delete button', () => {
