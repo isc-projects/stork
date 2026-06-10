@@ -603,7 +603,7 @@ func (r *RestAPI) commonCreateOrUpdateNetworkBegin(ctx context.Context) ([]*mode
 	for i := range daemons {
 		if daemons[i].KeaDaemon != nil && daemons[i].KeaDaemon.Config != nil {
 			// Keep daemons that can alter subnets with either subnet_cmds or cb_cmds.
-			if library := daemons[i].KeaDaemon.Config.GetSubnetAndSharedNetworkAlteringHookLibrary(); library != keaconfig.SubnetAndSharedNetworkAlteringHookLibraryNone && library != keaconfig.SubnetAndSharedNetworkAlteringHookLibraryBoth {
+			if library := daemons[i].KeaDaemon.Config.GetSubnetAndSharedNetworkAlteringHookLibrary(); library != keaconfig.SubnetAndSharedNetworkAlteringHookLibraryNone {
 				respDaemons = append(respDaemons, r.keaDaemonToRestAPI(&daemons[i]))
 			}
 			clientClasses := daemons[i].KeaDaemon.Config.GetClientClasses()
@@ -634,7 +634,7 @@ func (r *RestAPI) commonCreateOrUpdateNetworkBegin(ctx context.Context) ([]*mode
 	// If there are no daemons capable of altering subnets there is no way to
 	// proceed, so we don't begin a transaction.
 	if len(respDaemons) == 0 {
-		msg := "Unable to begin transaction because there are no Kea servers with subnet_cmds or cb_cmds hook library (mutually exclusive) available"
+		msg := "Unable to begin transaction because there are no Kea servers with subnet_cmds or cb_cmds hook library available"
 		log.Error(msg)
 		return nil, nil, nil, nil, nil, http.StatusBadRequest, msg
 	}

@@ -130,15 +130,15 @@ func TestGetSubnetAndSharedNetworkAlteringHookLibraryCBCmds(t *testing.T) {
 	require.Equal(t, SubnetAndSharedNetworkAlteringHookLibraryCBCmds, hooks.GetSubnetAndSharedNetworkAlteringHookLibrary())
 }
 
-// Tests that the case when both subnet_cmds and cb_cmds hook libraries are
-// configured is correctly detected as ambiguous.
-func TestGetSubnetAndSharedNetworkAlteringHookLibraryBoth(t *testing.T) {
+// Tests that when both subnet_cmds and cb_cmds hook libraries are configured,
+// cb_cmds takes precedence.
+func TestGetSubnetAndSharedNetworkAlteringHookLibraryCbCmdsPreferred(t *testing.T) {
 	hooks := HookLibraries{
 		{Library: "libdhcp_subnet_cmds"},
 		{Library: "libdhcp_cb_cmds"},
 	}
 
-	require.Equal(t, SubnetAndSharedNetworkAlteringHookLibraryBoth, hooks.GetSubnetAndSharedNetworkAlteringHookLibrary())
+	require.Equal(t, SubnetAndSharedNetworkAlteringHookLibraryCBCmds, hooks.GetSubnetAndSharedNetworkAlteringHookLibrary())
 }
 
 // Tests that the hook for altering subnets is correctly identified based on
@@ -197,7 +197,7 @@ func TestConfigGetSubnetAndSharedNetworkAlteringHookLibrary(t *testing.T) {
 					]
 				}
 			}`,
-			expected: SubnetAndSharedNetworkAlteringHookLibraryBoth,
+			expected: SubnetAndSharedNetworkAlteringHookLibraryCBCmds,
 		},
 	}
 

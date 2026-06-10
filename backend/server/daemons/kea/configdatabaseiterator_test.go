@@ -61,8 +61,8 @@ func TestBuildConfigTargetKeyNoConfigDB(t *testing.T) {
 
 // Tests that target iterator groups daemons sharing the same config target
 // and calls the callback exactly once for that target. The daemons with the
-// subnet_cmds hook are not grouped. The daemons with no hooks or both hooks
-// are silently skipped.
+// subnet_cmds hook are not grouped. The daemons with no hooks are silently
+// skipped.
 func TestForEachUniqueConfigSource(t *testing.T) {
 	// Arrange
 	daemon1 := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server1"), keaconfig.SubnetAndSharedNetworkAlteringHookLibraryCBCmds)
@@ -91,10 +91,10 @@ func TestForEachUniqueConfigSource(t *testing.T) {
 	err := forEachUniqueConfigSource(subnet.LocalSubnets, func(localSubnets []*dbmodel.LocalSubnet) error {
 		called++
 		switch localSubnets[0].DaemonID {
-		case 1, 2:
-			require.Len(t, localSubnets, 2)
-			daemonIDs := []int64{localSubnets[0].DaemonID, localSubnets[1].DaemonID}
-			require.ElementsMatch(t, []int64{1, 2}, daemonIDs)
+		case 1, 2, 6:
+			require.Len(t, localSubnets, 3)
+			daemonIDs := []int64{localSubnets[0].DaemonID, localSubnets[1].DaemonID, localSubnets[2].DaemonID}
+			require.ElementsMatch(t, []int64{1, 2, 6}, daemonIDs)
 		case 3:
 			require.Len(t, localSubnets, 1)
 			require.EqualValues(t, 3, localSubnets[0].DaemonID)

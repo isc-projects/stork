@@ -1800,12 +1800,13 @@ func TestCreateSubnetBeginSubmitNoServers(t *testing.T) {
 	require.IsType(t, &dhcp.CreateSubnetBeginDefault{}, rsp)
 	defaultRsp := rsp.(*dhcp.CreateSubnetBeginDefault)
 	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
-	require.Equal(t, "Unable to begin transaction because there are no Kea servers with subnet_cmds or cb_cmds hook library (mutually exclusive) available", *defaultRsp.Payload.Message)
+	require.Equal(t, "Unable to begin transaction because there are no Kea servers with subnet_cmds or cb_cmds hook library available", *defaultRsp.Payload.Message)
 }
 
-// Test that a daemon with both subnet_cmds and cb_cmds hooks loaded is excluded
-// from the list of available daemons returned by commonCreateOrUpdateNetworkBegin.
-func TestCreateSubnetBeginExcludesDaemonWithBothHooks(t *testing.T) {
+// Test that daemons with both subnet_cmds and cb_cmds hooks loaded are
+// included in the list of available daemons returned by
+// commonCreateOrUpdateNetworkBegin.
+func TestCreateSubnetBeginIncludesDaemonWithBothHooks(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -1901,12 +1902,13 @@ func TestCreateSubnetBeginExcludesDaemonWithBothHooks(t *testing.T) {
 	params := dhcp.CreateSubnetBeginParams{}
 	rsp := rapi.CreateSubnetBegin(ctx, params)
 
-	// The daemon with both hooks must be excluded. The two daemons with exactly
-	// one hook (subnet_cmds-only and cb_cmds-only) must be returned.
+	// All three daemons must be returned. For the daemon with both hooks,
+	// cb_cmds should take precedence internally.
 	require.IsType(t, &dhcp.CreateSubnetBeginOK{}, rsp)
 	okRsp := rsp.(*dhcp.CreateSubnetBeginOK)
-	require.Len(t, okRsp.Payload.Daemons, 2)
-	daemonIDs := []int64{okRsp.Payload.Daemons[0].ID, okRsp.Payload.Daemons[1].ID}
+	require.Len(t, okRsp.Payload.Daemons, 3)
+	daemonIDs := []int64{okRsp.Payload.Daemons[0].ID, okRsp.Payload.Daemons[1].ID, okRsp.Payload.Daemons[2].ID}
+	require.Contains(t, daemonIDs, daemonBoth.ID)
 	require.Contains(t, daemonIDs, daemonSubnetCmds.ID)
 	require.Contains(t, daemonIDs, daemonCbCmds.ID)
 }

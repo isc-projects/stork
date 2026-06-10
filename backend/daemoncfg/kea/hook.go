@@ -21,9 +21,6 @@ type SubnetAndSharedNetworkAlteringHookLibrary int
 const (
 	// Indicates that no supported hook library is loaded.
 	SubnetAndSharedNetworkAlteringHookLibraryNone SubnetAndSharedNetworkAlteringHookLibrary = iota
-	// Indicates that the subnet_cmds and cb_cmds hook libraries are loaded
-	// both.
-	SubnetAndSharedNetworkAlteringHookLibraryBoth
 	// Indicates that the subnet_cmds hook library is loaded.
 	SubnetAndSharedNetworkAlteringHookLibrarySubnetCmds
 	// Indicates that the cb_cmds hook library is loaded.
@@ -84,8 +81,6 @@ func (hl HookLibraries) GetSubnetAndSharedNetworkAlteringHookLibrary() SubnetAnd
 	_, _, hasSubnetHook := hl.GetHookLibrary("libdhcp_subnet_cmds")
 
 	switch {
-	case hasCBHook && hasSubnetHook:
-		return SubnetAndSharedNetworkAlteringHookLibraryBoth
 	case hasCBHook:
 		return SubnetAndSharedNetworkAlteringHookLibraryCBCmds
 	case hasSubnetHook:
