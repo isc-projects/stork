@@ -850,6 +850,7 @@ system_test:
     DEFAULT_MAPPED_ADDRESS: "docker"
     STORK_TESTS_BRANCH: main
   before_script:
+    - echo "Clone stork-tests branch ${STORK_TESTS_BRANCH}"
     - git clone -b "${STORK_TESTS_BRANCH}" --depth 1 https://gitlab.isc.org/isc-projects/stork-tests.git
     - export STORK_REPO_DIR="${PWD}"
     - cd stork-tests
