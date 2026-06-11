@@ -6,6 +6,7 @@ import AuraBluePreset from '../src/app/app.config'
 import { withThemeByClassName } from '@storybook/addon-themes'
 import { AuthService } from '../src/app/auth.service'
 import { authServiceDecorator, MockedAuthService } from '../src/app/utils-stories'
+import { provideZoneChangeDetection } from '@angular/core'
 
 const preview = {
     globalTypes: {
@@ -42,6 +43,7 @@ const preview = {
                         },
                     },
                 }),
+                provideZoneChangeDetection({ eventCoalescing: true }),
                 // Use MockedAuthService in all stories so that user privileges may be controlled by global "User role" setting.
                 { provide: AuthService, useClass: MockedAuthService },
             ],
