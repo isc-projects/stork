@@ -677,6 +677,89 @@ servers typically returns two occurrences of the same lease.
 To display the detailed lease information, click the expand button (``>``) in the
 first column for the selected lease.
 
+Leases List
+~~~~~~~~~~~
+
+.. note::
+
+	 This is a very new feature. It may not work as expected (particularly in a
+	 development release). If you encounter any bugs, please `submit a bug report
+	 <https://gitlab.isc.org/isc-projects/stork/-/work_items/new?description_template=bug_report>`_. Because
+	 it it so new, there is also significant room to influence future
+	 development. If would like to request a feature, please `search for an
+	 existing request
+	 <https://gitlab.isc.org/isc-projects/stork/-/work_items?sort=created_date&state=opened&search=lease&first_page_size=20>`_
+	 or `submit a new one
+	 <https://gitlab.isc.org/isc-projects/stork/-/work_items/new?description_template=feature_request>`_
+	 if no existing request covers your use case.
+
+In addition to directly querying Kea for specific leases, Stork can collect and
+display *all* leases. These are displayed in ``DHCP -> Lease List``.
+
+Operational Considerations
+++++++++++++++++++++++++++
+
+Tracking all DHCP leases can be a resource-intensive task. It increases the
+memory usage of the Stork agent, it transmits much larger volumes of data from
+the agent to the server, and it increases the disk space requirements for the
+Stork server database. We do not recommend enabling this feature for deployments
+with:
+
+- A large number of Kea servers (on the order of 100 or more)
+- An extremely high rate of lease changes (on the order of 100 per second or
+  more)
+- Bandwidth-constrained network links between the Stork server and the agents
+  (on the order of 1 Mbps or less)
+- Limited disk space for the Stork server's database (on the order of 10 GiB or
+  less)
+
+Additionally, this feature **only supports Kea daemons configured to
+use a memfile as the lease storage**. Kea daemons configured to store
+leases in an SQL database are not supported, nor are any custom lease
+backend hooks. We have plans for two different possible ways to lift
+these restrictions, but we have not implemented them yet.
+
+Setup
++++++
+
+By default, this feature is not active. To enable it, provide the
+``--enable-lease-tracking`` argument or set the environment variable
+``STORK_AGENT_ENABLE_LEASE_TRACKING=1`` when starting each Stork agent. You may
+also wish to adjust the interval at which the Stork server pulls leases from the
+agent in ``Settings -> Configuration``. By default, it pulls every 60 seconds.
+
+Please also verify that the Kea lease database memfile is readable by the Stork
+agent user. (The agent code does not attempt to write to the file, but it is
+good security practice to restrict write permissions either way.) In order to
+minimize disruptions to Kea, the agent directly reads the lease file. This
+avoids occupying a Kea thread with an API request.
+
+Usage
++++++
+
+On the ``DHCP -> Leases List`` page, Stork displays a paginated view of every lease which it has fetched from the agents. For each lease, this table shows:
+
+- The IP address
+- The hardware address/DUID/Client ID
+- The IPv6 prefix length (if appropriate)
+- The lease state
+- The daemon which stored the lease
+- The subnet in which the lease is allocated
+
+The table is sortable by any of the identifiers, and also by prefix length and
+state. The table can be filtered by machine, daemon, or subnet, and also by
+partial/complete string match on the address or identifier. This is unlike the
+Lease Search page, which only supports full string matches.
+
+.. note::
+	 
+	 When displaying data from Kea daemons in a high-availability relationship,
+	 there will be one row for each daemon which knows about the lease. For
+	 example, in a relationship with one primary Kea daemon and one standby Kea
+	 daemon, Stork will show two rows with the same identifiers (IP and hardware
+	 address/DUID/client ID), but with different daemons.
+
+	 
 Kea High Availability Status
 ============================
 

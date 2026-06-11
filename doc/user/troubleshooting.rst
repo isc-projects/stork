@@ -455,6 +455,51 @@ This section describes the solutions for some common issues with the Stork serve
               presents recommendations as a Config Review Report on the daemon
               page.
 
+---------------
+
+:Issue:       The Stork server does not display any leases in the Leases List page.
+:Solution:    Check the logs for both the Stork server and any agents which are
+              expected to return leases. This could be caused by a number of
+              conditions. Verify that (1) there is at least one Kea daemon configured
+              to use the memfile lease storage backend, (2) all Stork agents
+              monitoring memfile Kea daemons have lease tracking enabled via the
+              ``STORK_AGENT_ENABLE_LEASE_TRACKING=1`` environment variable or the
+              ``--enable-lease-tracking`` command-line flag, and (3) the Stork agent
+              user has permission to read Kea's lease memfile (and permission to
+              browse the directories containing it).
+:Explanation: Presently, the Leases List feature only supports Kea daemons which use
+              a memfile as the lease storage backend. This is a limitation which we
+              anticipate lifting in the future, but it is the case for now. The
+              system does not currently generate an error or warning message when
+              there are no Kea daemons with the memfile lease storage backend
+              configured, because this would create log spam for little benefit.
+
+              The Stork agent directly reads the Kea lease memfile to discover lease
+              information, so the feature can only operate if the agent has read
+              permissions for the lease memfile. If the agent lacks permissions, it
+              will report errors in its logs like this:
+
+							.. code-block:: console
+
+                WARN[2026-06-16 19:32:16]          monitor.go:507   Failed to refresh state of the daemon         daemon="dhcp4: control: unix:///var/run/kea/kea4-ctrl-socket/ (auth key: not found)" error="open /var/lib/kea/kea-leases4.csv: permission denied" stackTrace="open /var/lib/kea/kea-leases4.csv: permission denied"
+
+              One way to resolve this is to add the Stork agent user to the Kea
+              group, using a command like ``# usermod -a -G _kea stork-agent`` (on
+              Debian 13, using Kea from ISC's repository).
+
+              In order to avoid incurring performance penalties when not desired, the
+              Stork agent must be explicitly instructed to enable lease tracking
+              features. If it has not been given this instruction, the Stork *server*
+              will log messages like this:
+
+              .. code-block:: console
+
+                time="2026-06-16 19:47:37" level="error" msg="Errors were encountered while executing a periodic action of Kea Leases puller" file=" periodicexecutor.go:178  " error="could not retrieve leases from daemon 16: failed to receive Kea leases from the agent: rpc error: code = Unknown desc = This feature is not enabled. Pass `--enable-lease-tracking` or set `STORK_AGENT_ENABLE_LEASE_TRACKING` when starting the agent."
+
+              Setting the environment variable or providing the command line flag
+              both instruct the agent to enable this feature. Note that you will need
+              to make the same change for every agent where you want this feature to
+              be enabled.
 
 High Virtual Memory Usage
 =========================
