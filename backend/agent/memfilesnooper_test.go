@@ -2,7 +2,6 @@ package agent
 
 import (
 	"bufio"
-	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -27,7 +26,7 @@ import (
 // Write the lines from input to the file in output one at a time, syncing the
 // file to encourage the changes to reach the disk and trigger a filesystem
 // event.
-func slowlyWriteToLeasefile(input string, output *os.File) error {
+func writeToLeasefile(input string, output *os.File) error {
 	defer output.Close()
 	infile, err := os.Open(input)
 	if err != nil {
@@ -47,60 +46,48 @@ func slowlyWriteToLeasefile(input string, output *os.File) error {
 	return nil
 }
 
-// Write the lines from input1 to the file in output1 one at a time, with a
-// delay of 300 milliseconds between each write. Then rename output1 to output2,
-// reopen output1, and write the lines from input2 to output1 (as before).
-func slowlyWriteToLeasefileWithSwapAndDelay(input1 string, input2 string, output1 *os.File, output2 *os.File, delay time.Duration) error {
+// Write the lines from input1 to the file in output1 one at a time and emits
+// a value to the read channel. Then waits for the write channel to emit a
+// value. Next, rename output1 to output2, reopen output1, and write the lines
+// from input2 to output1 (as before). Then emits a value to the read channel
+// again.
+func writeToLeasefileWithWaitAndSwap(input1 string, input2 string, output1 *os.File, output2 *os.File, readCh, writeCh chan struct{}) error {
 	output1Name := output1.Name()
 	output2Name := output2.Name()
-	err := slowlyWriteToLeasefile(input1, output1)
+	err := writeToLeasefile(input1, output1)
 	if err != nil {
 		return err
 	}
 	output2.Close()
 	os.Remove(output2Name)
 	os.Rename(output1Name, output2Name)
-	if delay != 0 {
-		time.Sleep(delay)
-	}
+
+	// Lock until the channel emits a value.
+	readCh <- struct{}{}
+	<-writeCh
+
 	output1Again, err := os.OpenFile(output1Name, os.O_CREATE|os.O_RDWR, 0o600)
 	if err != nil {
 		return err
 	}
-	err = slowlyWriteToLeasefile(input2, output1Again)
+	err = writeToLeasefile(input2, output1Again)
+	readCh <- struct{}{}
 	return err
 }
 
-var (
-	errInvalidLimit = errors.New("invalid limit parameter; it is not possible to read a negative number of items from the channel")
-	errChanClosed   = errors.New("channel closed unexpectedly")
-	errTimedOut     = errors.New("timed out while waiting for enough rows")
-)
+var errChanClosed = errors.New("channel closed unexpectedly")
 
-// Read up to `limit` rows from `c`, stopping after the provided timeout. If
-// the timeout expires before reading `limit` items, return immediately and signal
-// an error.
-func readChanToLimitWithTimeout(c chan []string, limit int, ctx context.Context, timeout time.Duration) ([][]string, error) { //nolint:unparam
-	timeoutCtx, cancelFn := context.WithTimeout(ctx, timeout)
-	defer cancelFn()
-	if limit < 0 {
-		return nil, errInvalidLimit
-	}
+// Read up to `limit` rows from `c`.
+func readChanToLimit(c chan []string, limit int) ([][]string, error) {
 	results := make([][]string, 0, limit)
-	var didTimeOut error = nil
-	for didTimeOut == nil && len(results) < limit {
-		select {
-		case row, ok := <-c:
-			if !ok {
-				didTimeOut = errChanClosed
-				break
-			}
-			results = append(results, row)
-		case <-timeoutCtx.Done():
-			didTimeOut = errTimedOut
+	for len(results) < limit {
+		row, ok := <-c
+		if !ok {
+			return results, errChanClosed
 		}
+		results = append(results, row)
 	}
-	return results, didTimeOut
+	return results, nil
 }
 
 // Confirm that RowSource reads the expected amount of data from a file in the
@@ -142,7 +129,7 @@ func TestRowSourceExistingFile(t *testing.T) {
 	// Act
 	channel := rowsource.Start()
 	defer rowsource.Stop()
-	actual, err := readChanToLimitWithTimeout(channel, 4, t.Context(), 250*time.Millisecond)
+	actual, err := readChanToLimit(channel, 4)
 	// Assert
 
 	require.NoError(t, err, "Got error while reading channel")
@@ -196,10 +183,10 @@ func TestRowSourceContinuesReadingOverTime(t *testing.T) {
 	require.NoError(t, err)
 
 	// Act
-	go slowlyWriteToLeasefile(infile, leasefile)
+	go writeToLeasefile(infile, leasefile)
 	channel := rowsource.Start()
 	defer rowsource.Stop()
-	actual, err := readChanToLimitWithTimeout(channel, 4, t.Context(), 250*time.Millisecond)
+	actual, err := readChanToLimit(channel, 4)
 	// Assert
 
 	require.NoError(t, err, "Got an error when trying to read rows")
@@ -212,7 +199,6 @@ func TestRowSourceContinuesReadingOverTime(t *testing.T) {
 // event (and not just error out) if it takes some time for kea-lfc to create
 // the new leasefile.
 func TestRowSourceFollowsAcrossFileSwap(t *testing.T) {
-	t.Skip("this test is flaky and needs to be rewritten")
 	delaySettings := []time.Duration{0, 50 * time.Millisecond}
 
 	for _, delay := range delaySettings {
@@ -240,23 +226,39 @@ func TestRowSourceFollowsAcrossFileSwap(t *testing.T) {
 			rowsource, err := NewRowSource(preCleanupName)
 			require.NoError(t, err)
 
+			readCh := make(chan struct{})
+			defer func() {
+				// Wait for the second batch of rows to be read.
+				<-readCh
+				time.Sleep(delay)
+				close(readCh)
+			}()
+			writeCh := make(chan struct{})
+			defer close(writeCh)
+
 			// Act
-			go slowlyWriteToLeasefileWithSwapAndDelay(
+			go writeToLeasefileWithWaitAndSwap(
 				infile1,
 				infile2,
 				preCleanup,
 				postCleanup,
-				delay,
+				readCh,
+				writeCh,
 			)
 			results := rowsource.Start()
 			defer rowsource.Stop()
 
+			go func() {
+				// Wait until the first batch of rows has been read before allowing the
+				// file swap to proceed.
+				<-readCh
+				writeCh <- struct{}{}
+			}()
+
 			// Assert
-			parsedRows, err := readChanToLimitWithTimeout(
+			parsedRows, err := readChanToLimit(
 				results,
 				expectedRows,
-				t.Context(),
-				250*time.Millisecond+delay,
 			)
 			require.NoError(t, err, "Got error while reading channel")
 			require.Len(t, parsedRows, expectedRows)
@@ -335,14 +337,14 @@ func TestRowSourceEnsureWatchingNoChange(t *testing.T) {
 	// Act
 	channel := rowsource.Start()
 	defer rowsource.Stop()
-	actual, errRead1 := readChanToLimitWithTimeout(channel, 4, t.Context(), 250*time.Millisecond)
+	actual, errRead1 := readChanToLimit(channel, 4)
 	errEnsure := rowsource.EnsureWatching(leasefileName)
 	go func() {
-		err = slowlyWriteToLeasefile(infile2, leasefile)
+		err = writeToLeasefile(infile2, leasefile)
 		require.NoError(t, err, "Got an error when trying to WRITE the second set of rows")
 	}()
 
-	actualAfter, errRead2 := readChanToLimitWithTimeout(channel, 4, t.Context(), 250*time.Millisecond)
+	actualAfter, errRead2 := readChanToLimit(channel, 4)
 
 	// Assert
 	require.NoError(t, errRead1, "Got an error when trying to read the first set of rows")
@@ -408,11 +410,11 @@ func TestRowSourceEnsureWatchingWithChange(t *testing.T) {
 	// Act
 	channel := rowsource.Start()
 	defer rowsource.Stop()
-	actual, errRead1 := readChanToLimitWithTimeout(channel, 4, t.Context(), 250*time.Millisecond)
+	actual, errRead1 := readChanToLimit(channel, 4)
 
 	errEnsure := rowsource.EnsureWatching(infile2)
 
-	actualAfter, errRead2 := readChanToLimitWithTimeout(channel, 4, t.Context(), 250*time.Millisecond)
+	actualAfter, errRead2 := readChanToLimit(channel, 4)
 
 	// Assert
 	require.NoError(t, errRead1, "Got an error when trying to read the first set of rows")
