@@ -30,6 +30,7 @@
         type: string
       cltt:
         type: integer
+        format: uint64
       duid:
         type: string
       fqdnFwd:
@@ -107,6 +108,7 @@
     properties:
       code:
         type: integer
+        format: uint16
       alwaysSend:
         type: boolean
       encapsulate:
