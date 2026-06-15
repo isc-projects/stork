@@ -53,6 +53,7 @@
         type: integer
       state:
         type: integer
+        format: uint32
       subnetId:
         type: integer
       subnetPrefix:

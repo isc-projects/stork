@@ -80,7 +80,7 @@ func (r *RestAPI) GetLeases(ctx context.Context, params dhcp.GetLeasesParams) mi
 		l := keaLeases[i]
 		daemonLabel := l.Daemon.GetLabel()
 		cltt := l.CLTT
-		state := int64(l.State)
+		state := uint32(l.State)
 		localSubnetID := int64(l.LocalSubnetID)
 		validLifetime := int64(l.ValidLifetime)
 

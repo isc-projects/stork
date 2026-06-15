@@ -209,7 +209,7 @@ func NewLeaseFromGRPC(grpc *agentapi.Lease, daemonID, subnetID int64) *Lease {
 			CLTT:          grpc.Cltt,
 			ValidLifetime: uint32(grpc.ValidLifetime),
 			LocalSubnetID: grpc.SubnetID,
-			State:         int(grpc.State),
+			State:         keadata.LeaseState(grpc.State),
 			PrefixLength:  uint8(grpc.PrefixLen),
 		},
 		daemonID,

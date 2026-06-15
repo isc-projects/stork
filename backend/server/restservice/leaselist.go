@@ -32,8 +32,8 @@ func convertLeaseToRestAPI(dbLease *dbmodel.Lease) (*models.Lease, error) {
 		return nil, errors.New("database did not return a Subnet for this Lease")
 	}
 	cltt := dbLease.CLTT
+	state := uint32(dbLease.State)
 	daemonLabel := dbLease.Daemon.GetLabel()
-	state := int64(dbLease.State)
 	validLifetime := int64(dbLease.ValidLifetime)
 	return &models.Lease{
 			ClientID:          dbLease.ClientID.String(),
