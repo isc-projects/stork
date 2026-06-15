@@ -3,6 +3,7 @@ package agent
 import (
 	"encoding/csv"
 	"io"
+	"math"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -78,6 +79,10 @@ func newLease6(record []string, cltt uint64, lifetime uint32) (*keadata.Lease, e
 	if err != nil {
 		return nil, errors.Wrap(err, "the subnet ID is not valid")
 	}
+	if subnet64 < 0 || subnet64 > math.MaxUint32 {
+		return nil, errors.Errorf("the subnet ID must be between 0 and %d", math.MaxUint32)
+	}
+
 	subnet := uint32(subnet64)
 	state, err := strconv.Atoi(record[v6State])
 	if err != nil {
