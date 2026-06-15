@@ -37,6 +37,7 @@ import (
 	dnsmodel "isc.org/stork/datamodel/dns"
 	"isc.org/stork/pki"
 	storkutil "isc.org/stork/util"
+	"isc.org/stork/util/safeconvert"
 )
 
 // Global Stork Agent state.
@@ -290,12 +291,32 @@ func (sa *StorkAgent) GetState(ctx context.Context, in *agentapi.GetStateReq) (*
 		for _, addr := range addrs {
 			ipAddrs = append(ipAddrs, addr.String())
 		}
+
+		flags, err := safeconvert.FromUintToUint32(uint(iface.Flags))
+		if err != nil {
+			err = errors.WithMessage(err, "invalid interface flags")
+			errText = err.Error()
+			break
+		}
+
 		machineNetworkInterfaces = append(machineNetworkInterfaces, &agentapi.NetworkInterface{
 			Name:            iface.Name,
-			Flags:           uint32(iface.Flags),
+			Flags:           flags,
 			HardwareAddress: iface.HardwareAddr,
 			IpAddresses:     ipAddrs,
 		})
+	}
+
+	memoryTotal, err := safeconvert.FromUint64ToInt64(vm.Total / (1024 * 1024 * 1024)) // in GiB
+	if err != nil {
+		err = errors.WithMessage(err, "memory total exceeds int64 limit")
+		errText = err.Error()
+	}
+
+	uptime, err := safeconvert.FromUint64ToInt64(hostInfo.Uptime / (60 * 60 * 24)) // in days
+	if err != nil {
+		err = errors.WithMessage(err, "uptime exceeds int64 limit")
+		errText = err.Error()
 	}
 
 	state := agentapi.GetStateRsp{
@@ -304,9 +325,9 @@ func (sa *StorkAgent) GetState(ctx context.Context, in *agentapi.GetStateReq) (*
 		Hostname:             hostInfo.Hostname,
 		Cpus:                 int64(runtime.NumCPU()),
 		CpusLoad:             loadStr,
-		Memory:               int64(vm.Total / (1024 * 1024 * 1024)), // in GiB
+		Memory:               memoryTotal,
 		UsedMemory:           int64(vm.UsedPercent),
-		Uptime:               int64(hostInfo.Uptime / (60 * 60 * 24)), // in days
+		Uptime:               uptime, // in days
 		Os:                   hostInfo.OS,
 		Platform:             hostInfo.Platform,
 		PlatformFamily:       hostInfo.PlatformFamily,
