@@ -109,7 +109,7 @@ func (r *RestAPI) flattenDHCPOptions(optionSpace string, restOptions []*models.D
 	for _, restOption := range restOptions {
 		option := dbmodel.DHCPOption{
 			AlwaysSend:  restOption.AlwaysSend,
-			Code:        uint16(restOption.Code),
+			Code:        restOption.Code,
 			Encapsulate: restOption.Encapsulate,
 			Universe:    storkutil.IPType(restOption.Universe),
 		}
@@ -192,7 +192,7 @@ func (r *RestAPI) unflattenDHCPOptions(options []dbmodel.DHCPOption, space strin
 			space == option.Space {
 			restOption := &models.DHCPOption{
 				AlwaysSend:  option.AlwaysSend,
-				Code:        int64(option.Code),
+				Code:        option.Code,
 				Encapsulate: option.Encapsulate,
 				Universe:    int64(option.Universe),
 				Unknown:     option.UnknownParameters,
