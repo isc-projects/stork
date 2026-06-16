@@ -1,5 +1,5 @@
 import { Component, ViewChild } from '@angular/core'
-import { ComponentFixture, fakeAsync, flush, TestBed, tick, waitForAsync } from '@angular/core/testing'
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 import { By } from '@angular/platform-browser'
 
 import { JsonTreeComponent } from './json-tree.component'
@@ -15,6 +15,7 @@ describe('JsonTreeComponent', () => {
     beforeEach(() => {
         fixture = TestBed.createComponent(JsonTreeComponent)
         component = fixture.componentInstance
+        fixture.detectChanges()
     })
 
     it('should create', () => {
@@ -24,7 +25,6 @@ describe('JsonTreeComponent', () => {
     it('should display spinner when object is not set', async () => {
         expect(component.hasAssignedValue()).toBeFalse()
 
-        fixture.detectChanges()
         await fixture.whenStable()
 
         const spinner = fixture.debugElement.query(By.css('.tree-level__value .fa-spinner'))
@@ -307,20 +307,19 @@ describe('JsonTreeComponent', () => {
         expect(pressEnterHandler).toHaveBeenCalled()
     })
 
-    it('should correctly display last page of pagination', fakeAsync(() => {
+    it('should correctly display last page of pagination', async () => {
         const step = component.childStep
         const count = step * 2 + Math.floor(step / 2)
         const items = new Array(count).fill(0)
         component.value = items
-        fixture.detectChanges()
         component.onEnterJumpToPage(2)
-        tick(0)
-        flush()
+        fixture.detectChanges()
+        await fixture.whenRenderingDone()
 
         expect(component.childStep).toBe(step)
         expect(component.childStart).toBe(step * 2)
         expect(component.childEnd).toBe(count)
-    }))
+    })
 
     it('should order object (dictionary) by key', () => {
         component.value = { c: 3, b: 2, a: 1 }
@@ -362,14 +361,25 @@ describe('JsonTreeComponent', () => {
         expect(component.totalChildrenCount).toBe(0)
     })
 
-    it('should indicate loading when page is changed', () => {
+    it('should indicate loading when page is changed', async () => {
         const items = new Array(100).fill(0)
         component.value = items
         fixture.detectChanges()
+
+        await fixture.whenRenderingDone()
         expect(component.areChildrenLoading()).toBeFalse()
+
+        const spyRenderHandler = spyOn(component, 'onFinishRenderChildren').and.callThrough()
 
         component.onEnterJumpToPage(1)
         expect(component.areChildrenLoading()).toBeTrue()
+        fixture.detectChanges()
+
+        await fixture.whenRenderingDone()
+        // First time - when loading indicator starts
+        // Second time - when new items are rendered
+        expect(spyRenderHandler).toHaveBeenCalledTimes(2)
+        expect(component.areChildrenLoading()).toBe(false)
     })
 
     it('should recognize primitive types', () => {
@@ -384,12 +394,11 @@ describe('JsonTreeComponent', () => {
         for (const item of primitiveTypes) {
             component.value = item
             expect(component.isPrimitive()).toBeTrue()
-        }
 
-        component.value = 1
-        fixture.detectChanges()
-        const root = fixture.debugElement.query(By.css('.tree-level--leaf'))
-        expect(root).not.toBeNull()
+            fixture.detectChanges()
+            const root = fixture.debugElement.query(By.css('.tree-level--leaf'))
+            expect(root).not.toBeNull()
+        }
     })
 
     it('should recognize complex types', () => {
@@ -433,12 +442,11 @@ describe('JsonTreeComponent', () => {
         for (const item of arrayTypes) {
             component.value = item
             expect(component.isArray()).toBeTrue()
-        }
 
-        component.value = [1, 2, 3]
-        fixture.detectChanges()
-        const element = fixture.debugElement.query(By.css('.tree-level__value--array'))
-        expect(element).not.toBeNull()
+            fixture.detectChanges()
+            const element = fixture.debugElement.query(By.css('.tree-level__value--array'))
+            expect(element).not.toBeNull()
+        }
     })
 
     it('should recognize strings', () => {
@@ -452,12 +460,11 @@ describe('JsonTreeComponent', () => {
         for (const item of strings) {
             component.value = item
             expect(component.isString()).toBeTrue()
-        }
 
-        component.value = 'foobar'
-        fixture.detectChanges()
-        const element = fixture.debugElement.query(By.css('.tree-level__value--string'))
-        expect(element).not.toBeNull()
+            fixture.detectChanges()
+            const element = fixture.debugElement.query(By.css('.tree-level__value--string'))
+            expect(element).not.toBeNull()
+        }
     })
 
     it('should recognize numbers', () => {
@@ -486,17 +493,17 @@ describe('JsonTreeComponent', () => {
             [new Foo(), 'object'], // Empty instance
         ]
 
-        for (const [item, _kind] of empties) {
+        for (const [item, kind] of empties) {
             component.value = item
             expect(component.isEmpty()).toBeTrue()
-        }
 
-        component.value = {}
-        fixture.detectChanges()
-        const root = fixture.debugElement.query(By.css('.tree-level--leaf'))
-        expect(root).not.toBeNull()
-        const value = root.query(By.css('.tree-level__value--object'))
-        expect(value).not.toBeNull()
+            fixture.detectChanges()
+            const root = fixture.debugElement.query(By.css('.tree-level--leaf'))
+            expect(root).not.toBeNull()
+            const classSelector = kind === 'object' ? '.tree-level__value--object' : '.tree-level__value--array'
+            const value = root.query(By.css(classSelector))
+            expect(value).not.toBeNull()
+        }
     })
 
     it('should distinguish plain object from array', () => {
@@ -682,6 +689,7 @@ describe('JsonTreeComponent-ExternalTemplates', () => {
         fixture = TestBed.createComponent(WrapperComponent)
         const wrapperComponent = fixture.componentInstance
         component = wrapperComponent.innerComponentRef
+        fixture.detectChanges()
     })
 
     it('should create the component', () => {
@@ -702,28 +710,30 @@ describe('JsonTreeComponent-ExternalTemplates', () => {
         expect(content).toBe('biz')
     })
 
-    it('should render custom value component for assigned key foo', async () => {
+    it('should render custom value component for assigned key and primitive value', async () => {
         component.key = 'foo'
         component.value = 'biz'
         await fixture.detectChanges()
         await fixture.whenRenderingDone()
 
-        const element = fixture.debugElement.query(By.css('.tree-level__value'))
+        let element = fixture.debugElement.query(By.css('.tree-level__value'))
         expect(element).not.toBeNull()
-        const nativeElement = element.nativeElement as HTMLElement
-        expect(nativeElement.textContent).toBe('FOO')
-    })
+        let nativeElement = element.nativeElement as HTMLElement
+        expect(nativeElement).not.toBeNull()
+        let content = nativeElement.textContent
+        expect(content).toBe('FOO')
 
-    it('should render custom value component for assigned key bar', async () => {
         component.key = 'bar'
         component.value = 'biz'
         await fixture.detectChanges()
         await fixture.whenRenderingDone()
 
-        const element = fixture.debugElement.query(By.css('.tree-level__value'))
+        element = fixture.debugElement.query(By.css('.tree-level__value'))
         expect(element).not.toBeNull()
-        const nativeElement = element.nativeElement as HTMLElement
-        expect(nativeElement.textContent).toBe('BAR')
+        nativeElement = element.nativeElement as HTMLElement
+        expect(nativeElement).not.toBeNull()
+        content = nativeElement.textContent
+        expect(content).toBe('BAR')
     })
 
     it('should not render custom value component for assigned key and complex value', async () => {

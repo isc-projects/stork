@@ -12,17 +12,6 @@ import { DHCPService } from '../backend'
 import { HttpErrorResponse, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { AuthService } from '../auth.service'
 
-/** Expands toggleable PrimeNG fieldsets so their content is rendered in tests. */
-function expandToggleableFieldsets(fixture: ComponentFixture<SharedNetworkTabComponent>): void {
-    for (const fieldset of fixture.debugElement.queryAll(By.css('p-fieldset'))) {
-        const toggleButton = fieldset.query(By.css('button'))
-        if (toggleButton) {
-            toggleButton.nativeElement.click()
-        }
-    }
-    fixture.detectChanges()
-}
-
 describe('SharedNetworkTabComponent', () => {
     let component: SharedNetworkTabComponent
     let fixture: ComponentFixture<SharedNetworkTabComponent>
@@ -50,6 +39,7 @@ describe('SharedNetworkTabComponent', () => {
         msgService = fixture.debugElement.injector.get(MessageService)
         authService = fixture.debugElement.injector.get(AuthService)
         spyOn(authService, 'superAdmin').and.returnValue(true)
+        fixture.detectChanges()
     })
 
     it('should create', () => {
@@ -333,7 +323,6 @@ describe('SharedNetworkTabComponent', () => {
 
         component.ngOnInit()
         fixture.detectChanges()
-        expandToggleableFieldsets(fixture)
 
         expect(fixture.nativeElement.innerText).toContain('Shared Network foo')
 
@@ -395,7 +384,6 @@ describe('SharedNetworkTabComponent', () => {
 
         component.ngOnInit()
         fixture.detectChanges()
-        expandToggleableFieldsets(fixture)
 
         expect(fixture.nativeElement.innerText).toContain('Shared Network bar')
 
@@ -411,11 +399,11 @@ describe('SharedNetworkTabComponent', () => {
         expect(fieldsets[2].nativeElement.innerText).toContain('Pools')
         expect(fieldsets[2].nativeElement.innerText).toContain('No pools configured.')
 
-        expect(fieldsets[3].nativeElement.textContent).toContain('DHCP Parameters')
-        expect(fieldsets[3].nativeElement.textContent).toContain('No parameters configured.')
+        expect(fieldsets[3].nativeElement.innerText).toContain('DHCP Parameters')
+        expect(fieldsets[3].nativeElement.innerText).toContain('No parameters configured.')
 
-        expect(fieldsets[4].nativeElement.textContent).toContain('DHCP Options')
-        expect(fieldsets[4].nativeElement.textContent).toContain('No options configured.')
+        expect(fieldsets[4].nativeElement.innerText).toContain('DHCP Options')
+        expect(fieldsets[4].nativeElement.innerText).toContain('No options configured.')
     })
 
     it('should display an IPv6 shared network', () => {
@@ -471,7 +459,6 @@ describe('SharedNetworkTabComponent', () => {
 
         component.ngOnInit()
         fixture.detectChanges()
-        expandToggleableFieldsets(fixture)
 
         expect(fixture.nativeElement.innerText).toContain('Shared Network foo')
 
@@ -497,17 +484,17 @@ describe('SharedNetworkTabComponent', () => {
         const charts = fieldsets[3].queryAll(By.css('p-chart'))
         expect(charts.length).toBe(2)
 
-        expect(fieldsets[4].nativeElement.textContent).toContain('Hostname Char Replacement')
-        expect(fieldsets[4].nativeElement.textContent).toContain('X')
-        expect(fieldsets[4].nativeElement.textContent).toContain('[^A-Za-z0-9.-]')
+        expect(fieldsets[4].nativeElement.innerText).toContain('Hostname Char Replacement')
+        expect(fieldsets[4].nativeElement.innerText).toContain('X')
+        expect(fieldsets[4].nativeElement.innerText).toContain('[^A-Za-z0-9.-]')
 
         // Ensure that the DHCP options are excluded from this list.
-        expect(fieldsets[4].nativeElement.textContent).not.toContain('Options')
-        expect(fieldsets[4].nativeElement.textContent).not.toContain('Options Hash')
+        expect(fieldsets[4].nativeElement.innerText).not.toContain('Options')
+        expect(fieldsets[4].nativeElement.innerText).not.toContain('Options Hash')
 
         // DHCP options sit in their own fieldset.
-        expect(fieldsets[5].nativeElement.textContent).toContain('DHCP Options')
-        expect(fieldsets[5].nativeElement.textContent).toContain('No options configured.')
+        expect(fieldsets[5].nativeElement.innerText).toContain('DHCP Options')
+        expect(fieldsets[5].nativeElement.innerText).toContain('No options configured.')
     })
 
     it('should display shared network delete button', () => {

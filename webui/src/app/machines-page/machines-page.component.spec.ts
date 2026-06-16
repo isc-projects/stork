@@ -232,6 +232,7 @@ describe('MachinesPageComponent', () => {
         servicesApi.regenerateMachinesServerToken.and.returnValue(of(regenerateMachinesServerTokenResp))
         component.regenerateServerToken()
         await fixture.whenStable()
+        fixture.detectChanges()
 
         // check if server token has changed
         expect(component.serverToken).toBe('DEF')

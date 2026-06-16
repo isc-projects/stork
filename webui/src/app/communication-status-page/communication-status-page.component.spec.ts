@@ -31,6 +31,7 @@ describe('CommunicationStatusPageComponent', () => {
         component = fixture.componentInstance
         messageService = fixture.debugElement.injector.get(MessageService)
         servicesService = fixture.debugElement.injector.get(ServicesService)
+        fixture.detectChanges()
     })
 
     it('should create', () => {
@@ -44,7 +45,6 @@ describe('CommunicationStatusPageComponent', () => {
     })
 
     it('should contain page help tip', () => {
-        fixture.detectChanges()
         const helpTip = fixture.debugElement.query(By.css('app-help-tip'))
         expect(helpTip).toBeTruthy()
     })
@@ -55,14 +55,14 @@ describe('CommunicationStatusPageComponent', () => {
             total: 0,
         }
         spyOn(servicesService, 'getDaemonsWithCommunicationIssues').and.returnValue(of(list))
-        fixture.detectChanges()
-        tick()
-
         component.onReload()
         tick()
-        expect(servicesService.getDaemonsWithCommunicationIssues).toHaveBeenCalledTimes(2)
-        expect(component.loading).toBeFalse()
-        expect(component.daemons).toEqual([])
+        fixture.detectChanges()
+        expect(servicesService.getDaemonsWithCommunicationIssues).toHaveBeenCalled()
+
+        const issuesTree = fixture.debugElement.query(By.css('app-communication-status-tree'))
+        expect(issuesTree).toBeTruthy()
+        expect(issuesTree.nativeElement.innerText).toContain('No communication issues found.')
     }))
 
     it('should show an error when getting communication issues fails', fakeAsync(() => {
@@ -75,7 +75,6 @@ describe('CommunicationStatusPageComponent', () => {
 
     it('should show the progress spinner during loading', () => {
         component.loading = true
-        fixture.detectChanges()
         const spinner = fixture.debugElement.query(By.css('p-progressSpinner'))
         expect(spinner).toBeTruthy()
     })

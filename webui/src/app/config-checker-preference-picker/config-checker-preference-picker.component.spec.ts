@@ -30,10 +30,10 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
         component = fixture.componentInstance
         authService = fixture.debugElement.injector.get(AuthService)
         spyOn(authService, 'superAdmin').and.returnValue(true)
+        fixture.detectChanges()
     })
 
     it('should create', () => {
-        fixture.detectChanges()
         expect(component).toBeTruthy()
     })
 
@@ -223,7 +223,7 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
         fixture.detectChanges()
 
         const checker = component.checkers[0]
-        const submitButton = fixture.debugElement.query(By.css('[label=Submit] button'))
+        let submitButton = fixture.debugElement.query(By.css('[label=Submit] button'))
         expect(submitButton).not.toBeNull()
 
         // No changes
@@ -235,19 +235,41 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
         )
 
         // Significant changes.
+        // Disabled state.
         component.onCheckerStateChanged(checker)
+        fixture.detectChanges()
         expect(component.hasChanges).toBeTrue()
-
+        submitButton = fixture.debugElement.query(By.css('[label=Submit] button'))
+        expect(submitButton.attributes).not.toEqual(
+            jasmine.objectContaining({
+                disabled: '',
+            })
+        )
+        // Inherit state.
         component.onCheckerStateChanged(checker)
+        fixture.detectChanges()
         expect(component.hasChanges).toBeTrue()
+        submitButton = fixture.debugElement.query(By.css('[label=Submit] button'))
+        expect(submitButton.attributes).not.toEqual(
+            jasmine.objectContaining({
+                disabled: '',
+            })
+        )
 
         // Revert changes.
         component.onCheckerStateChanged(checker)
+        fixture.detectChanges()
         expect(component.hasChanges).toBeFalse()
+        submitButton = fixture.debugElement.query(By.css('[label=Submit] button'))
+        expect(submitButton.attributes).toEqual(
+            jasmine.objectContaining({
+                disabled: '',
+            })
+        )
     })
 
     it('should the checker state cell should have a proper CSS class', () => {
-        const checker: ConfigChecker = {
+        const checker = {
             globallyEnabled: true,
             name: 'foo',
             selectors: [],
@@ -255,11 +277,40 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
             triggers: [],
         }
         component.checkers = [checker]
-        expect(component.getActualState(checker)).toBe(ConfigChecker.StateEnum.Enabled)
-        checker.state = ConfigChecker.StateEnum.Disabled
-        expect(component.getActualState(checker)).toBe(ConfigChecker.StateEnum.Disabled)
-        checker.state = ConfigChecker.StateEnum.Inherit
-        expect(component.getActualState(checker)).toBe(ConfigChecker.StateEnum.Inherit)
+        fixture.detectChanges()
+
+        const stateCell = fixture.debugElement.query(By.css('.picker__state-cell'))
+        expect(stateCell).not.toBeNull()
+
+        // Enabled state.
+        expect(stateCell.classes['picker__state-cell--enabled']).toBeTrue()
+        expect(stateCell.classes['picker__state-cell--disabled']).not.toBeTrue()
+        expect(stateCell.classes['picker__state-cell--inherit-enabled']).not.toBeTrue()
+        expect(stateCell.classes['picker__state-cell--inherit-disabled']).not.toBeTrue()
+
+        // Disabled state.
+        checker.state = 'disabled'
+        fixture.detectChanges()
+        expect(stateCell.classes['picker__state-cell--enabled']).not.toBeTrue()
+        expect(stateCell.classes['picker__state-cell--disabled']).toBeTrue()
+        expect(stateCell.classes['picker__state-cell--inherit-enabled']).not.toBeTrue()
+        expect(stateCell.classes['picker__state-cell--inherit-disabled']).not.toBeTrue()
+
+        // Inherit state.
+        // Globally enabled.
+        checker.state = 'inherit'
+        fixture.detectChanges()
+        expect(stateCell.classes['picker__state-cell--enabled']).not.toBeTrue()
+        expect(stateCell.classes['picker__state-cell--disabled']).not.toBeTrue()
+        expect(stateCell.classes['picker__state-cell--inherit-enabled']).toBeTrue()
+        expect(stateCell.classes['picker__state-cell--inherit-disabled']).not.toBeTrue()
+        // Globally disabled.
+        checker.globallyEnabled = false
+        fixture.detectChanges()
+        expect(stateCell.classes['picker__state-cell--enabled']).not.toBeTrue()
+        expect(stateCell.classes['picker__state-cell--disabled']).not.toBeTrue()
+        expect(stateCell.classes['picker__state-cell--inherit-enabled']).not.toBeTrue()
+        expect(stateCell.classes['picker__state-cell--inherit-disabled']).toBeTrue()
     })
 
     it('should display inherit state with a globally enabled status', () => {
@@ -271,9 +322,18 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
             triggers: [],
         }
         component.checkers = [checker]
-        expect(checker.globallyEnabled).toBeTrue()
+        fixture.detectChanges()
+
+        const stateCell = fixture.debugElement.query(By.css('.picker__state-cell'))
+        expect(stateCell).not.toBeNull()
+
+        let content = (stateCell.nativeElement as HTMLElement).textContent
+        expect(content.trim()).toEqual('globally enabled')
+
         checker.globallyEnabled = false
-        expect(checker.globallyEnabled).toBeFalse()
+        fixture.detectChanges()
+        content = (stateCell.nativeElement as HTMLElement).textContent
+        expect(content.trim()).toEqual('globally disabled')
     })
 
     it('should handle submitting and set the loading state', () => {
@@ -319,7 +379,6 @@ describe('ConfigCheckerPreferencePickerComponent', () => {
     })
 
     it('should present the help button', () => {
-        fixture.detectChanges()
         const helpElement = fixture.debugElement.query(By.directive(HelpTipComponent))
         expect(helpElement).not.toBeNull()
         const helpComponent = helpElement.componentInstance as HelpTipComponent

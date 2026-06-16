@@ -223,6 +223,8 @@ describe('DaemonFilterComponent', () => {
         const newValue = { ...differentDaemons.items[2], listItemLabel: 'named@host_c' }
         component.onValueChange(newValue)
 
+        fixture.detectChanges()
+
         expect(component.daemonID()).toEqual(3)
     })
 

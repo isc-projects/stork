@@ -17,6 +17,7 @@ describe('IdentifierComponent', () => {
     beforeEach(() => {
         fixture = TestBed.createComponent(IdentifierComponent)
         component = fixture.componentInstance
+        fixture.detectChanges()
     })
 
     it('should create', () => {
@@ -80,7 +81,7 @@ describe('IdentifierComponent', () => {
         expect(toggleBtnEl).toBeTruthy()
     })
 
-    it('should display parse error placeholder when identifier is not a valid hex', () => {
+    it('should display error when identifier is not a valid hex', () => {
         component.label = 'client-id'
         component.hexValue = 'invalid'
         component.ngOnInit()
@@ -92,23 +93,13 @@ describe('IdentifierComponent', () => {
         // If the specified value is not a valid string of hexadecimal digits
         // NaN value should be displayed.
         expect(identifierEl.nativeElement.textContent).toContain('client-id=(\\0xNaN\\0xNaN\\0xNaN\\0x0d)')
-    })
 
-    it('should display raw bytes when user toggles hex format', () => {
-        component.label = 'client-id'
-        component.hexValue = 'invalid'
-        component.ngOnInit()
-        fixture.detectChanges()
-
-        const identifierEl = fixture.debugElement.query(By.css('div'))
-        expect(identifierEl).toBeTruthy()
-        expect(identifierEl.nativeElement.textContent).toContain('client-id=(\\0xNaN\\0xNaN\\0xNaN\\0x0d)')
+        component.hexFormat = true
+        fixture.detectChanges() // Add fixture.detectChanges() to reflect the change
+        expect(identifierEl.nativeElement.textContent).toContain('client-id=(in:va:li:d)')
 
         let toggleBtnEl = identifierEl.query(By.css('.p-togglebutton'))
         expect(toggleBtnEl).toBeTruthy()
-        toggleBtnEl.nativeElement.click()
-        fixture.detectChanges()
-        expect(identifierEl.nativeElement.textContent).toContain('client-id=(in:va:li:d)')
     })
 
     it('should exclude label when it is not specified', () => {

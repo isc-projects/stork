@@ -62,7 +62,7 @@ describe('DaemonsPageComponent', () => {
 
         const dialog = fixture.debugElement.query(By.directive(ConfirmDialog))
         expect(dialog).not.toBeNull()
-        expect(document.body.textContent).toContain('This operation instructs')
+        expect(dialog.nativeElement.innerText).toContain('This operation instructs')
 
         const success: any = {}
         spyOn(api, 'deleteKeaDaemonConfigHashes').and.returnValue(of(success))
@@ -84,7 +84,7 @@ describe('DaemonsPageComponent', () => {
 
         const dialog = fixture.debugElement.query(By.directive(ConfirmDialog))
         expect(dialog).not.toBeNull()
-        expect(document.body.textContent).toContain('This operation instructs')
+        expect(dialog.nativeElement.innerText).toContain('This operation instructs')
 
         // Simulate an error so we can also test that the error message is shown.
         spyOn(api, 'deleteKeaDaemonConfigHashes').and.returnValue(throwError({ status: 404 }))
@@ -106,7 +106,7 @@ describe('DaemonsPageComponent', () => {
 
         const dialog = fixture.debugElement.query(By.directive(ConfirmDialog))
         expect(dialog).not.toBeNull()
-        expect(document.body.textContent).toContain('This operation instructs')
+        expect(dialog.nativeElement.innerText).toContain('This operation instructs')
 
         spyOn(api, 'deleteKeaDaemonConfigHashes')
         spyOn(msgSrv, 'add')

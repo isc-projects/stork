@@ -121,7 +121,7 @@
     <div class="form-check">
         <app-tri-state-checkbox
             [value]="state === 'enabled' ? true : state === 'disabled' ? false : null"
-            (click)="onCheckerStateChanged(checker)"
+            (valueChange)="onCheckerStateChanged(checker)"
             name="select-{{ checker.name }}"
             inputID="select-{{ checker.name }}"
             class="mr-2"

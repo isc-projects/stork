@@ -6,6 +6,8 @@ import { MessageService } from 'primeng/api'
 import { Component, viewChild } from '@angular/core'
 import { Table, TableModule } from 'primeng/table'
 import { Subnet } from '../backend'
+import { By } from '@angular/platform-browser'
+
 describe('TabViewComponent', () => {
     let component: TabViewComponent<any, any>
     let fixture: ComponentFixture<TabViewComponent<any, any>>
@@ -17,10 +19,10 @@ describe('TabViewComponent', () => {
 
         fixture = TestBed.createComponent(TabViewComponent)
         component = fixture.componentInstance
+        fixture.detectChanges()
     })
 
     it('should create', () => {
-        fixture.detectChanges()
         expect(component).toBeTruthy()
     })
 
@@ -80,6 +82,7 @@ describe('TabViewComponent', () => {
         fixture.componentRef.setInput('initWithEntitiesInCollection', true)
         spyOn(component.activeTabChange, 'emit')
 
+        component.ngOnInit()
         fixture.detectChanges()
 
         expect(component.openTabs.length).toBe(2)
@@ -96,6 +99,7 @@ describe('TabViewComponent', () => {
         fixture.componentRef.setInput('initWithEntitiesInCollection', true)
         fixture.componentRef.setInput('openEntityID', 9)
 
+        component.ngOnInit()
         fixture.detectChanges()
 
         expect(component.openTabs.length).toBe(2)
@@ -111,12 +115,14 @@ describe('TabViewComponent', () => {
         fixture.componentRef.setInput('initWithEntitiesInCollection', true)
         fixture.componentRef.setInput('openEntityID', 9)
 
+        component.ngOnInit()
         fixture.detectChanges()
 
         expect(component.openTabs.length).toBe(2)
         expect(component.closableTabs()).toBeTrue()
 
         component.closeTab(9)
+        fixture.detectChanges()
 
         expect(component.openTabs.length).toBe(1)
         expect(component.activeTabEntityID).toBe(7)
@@ -130,12 +136,14 @@ describe('TabViewComponent', () => {
         fixture.componentRef.setInput('entities', entities)
         fixture.componentRef.setInput('initWithEntitiesInCollection', true)
 
+        component.ngOnInit()
         fixture.detectChanges()
 
         expect(component.openTabs.length).toBe(2)
         expect(component.closableTabs()).toBeTrue()
 
         component.closeTab(11) // non existing tab
+        fixture.detectChanges()
 
         expect(component.openTabs.length).toBe(2)
     })
@@ -149,11 +157,13 @@ describe('TabViewComponent', () => {
         fixture.componentRef.setInput('initWithEntitiesInCollection', true)
         fixture.componentRef.setInput('closableTabs', false)
 
+        component.ngOnInit()
         fixture.detectChanges()
 
         expect(component.openTabs.length).toBe(2)
 
         component.closeTab(9)
+        fixture.detectChanges()
 
         expect(component.openTabs.length).toBe(2)
     })
@@ -165,25 +175,30 @@ describe('TabViewComponent', () => {
         ]
         fixture.componentRef.setInput('entities', entities)
 
+        component.ngOnInit()
         fixture.detectChanges()
 
         expect(component.openTabs.length).toBe(0)
 
         component.openTab(7)
+        fixture.detectChanges()
 
         expect(component.openTabs.length).toBe(1)
         expect(component.activeTabEntityID).toBe(7)
 
         component.openTab(9)
+        fixture.detectChanges()
 
         expect(component.openTabs.length).toBe(2)
         expect(component.activeTabEntityID).toBe(9)
 
         component.closeTab(9)
+        fixture.detectChanges()
 
         expect(component.openTabs.length).toBe(1)
 
         component.openTab(9)
+        fixture.detectChanges()
 
         expect(component.openTabs.length).toBe(2)
         expect(component.activeTabEntityID).toBe(9)
@@ -196,20 +211,24 @@ describe('TabViewComponent', () => {
         ]
         fixture.componentRef.setInput('entities', entities)
 
+        component.ngOnInit()
         fixture.detectChanges()
 
         expect(component.openTabs.length).toBe(0)
 
         component.openTab(6) // non existing entity
+        fixture.detectChanges()
 
         expect(component.openTabs.length).toBe(0)
 
         component.openTab(9)
+        fixture.detectChanges()
 
         expect(component.openTabs.length).toBe(1)
         expect(component.activeTabEntityID).toBe(9)
 
         component.openTab(9) // repeat the same
+        fixture.detectChanges()
 
         expect(component.openTabs.length).toBe(1)
         expect(component.activeTabEntityID).toBe(9)
@@ -225,11 +244,13 @@ describe('TabViewComponent', () => {
         fixture.componentRef.setInput('entities', entities)
         fixture.componentRef.setInput('initWithEntitiesInCollection', true)
 
+        component.ngOnInit()
         fixture.detectChanges()
 
         expect(component.openTabs.length).toBe(4)
 
         component.closeTabsConditionally((entity: { id: number; name: string }) => entity.id % 2 === 0) // close two tabs with even ids
+        fixture.detectChanges()
 
         expect(component.openTabs.length).toBe(2)
         expect(component.openTabs[0].entity.name).toEqual('test2')
@@ -350,14 +371,53 @@ describe('TabViewTestComponent', () => {
         expect(component.openTabs.length).toEqual(0)
 
         component.openTab(1)
+        fixture.detectChanges()
         component.openTab(3)
+        fixture.detectChanges()
 
         expect(component.openTabs.length).toEqual(2)
 
+        // Check displayed tab content.
+        const activePanel = fixture.debugElement.query(By.css('.p-tabpanel-active')) // PrimeNG selector used!! might change in the future!
+        const id = activePanel.query(By.css('.entity-id'))
+        expect(id).toBeTruthy()
+        expect(id.nativeElement.innerText).toEqual('3')
+
+        const subnet = activePanel.query(By.css('.subnet'))
+        expect(subnet).toBeTruthy()
+        expect(subnet.nativeElement.innerText).toEqual('10.0.0.0/32')
+
+        // Check active tab title.
+        const title = fixture.debugElement.query(By.css('.p-tab-active')) // PrimeNG selector used!! might change in the future!
+        expect(title).toBeTruthy()
+        expect(title.nativeElement.innerText).toContain('10.0.0.0/32')
+
         // Act - update the entity.
         component.onUpdateTabEntity(3, { id: 3, subnet: '10.0.0.0/31' })
-        expect(component.getOpenTabEntity(3).subnet).toEqual('10.0.0.0/31')
-        expect(component.entitiesCollection()[1].subnet).toEqual('10.0.0.0/31')
+        fixture.detectChanges()
+
+        // Check if displayed tab content was updated.
+        const updatedSubnet = activePanel.query(By.css('.subnet'))
+        expect(updatedSubnet).toBeTruthy()
+        expect(updatedSubnet.nativeElement.innerText).toEqual('10.0.0.0/31')
+
+        // Check if active tab title was updated.
+        const updatedTitle = fixture.debugElement.query(By.css('.p-tab-active')) // PrimeNG selector used!! might change in the future!
+        expect(updatedTitle).toBeTruthy()
+        expect(updatedTitle.nativeElement.innerText).toContain('10.0.0.0/31')
+
+        // Go to the first tab with the table.
+        component.activeTabEntityID = 0
+        fixture.detectChanges()
+
+        // Check if table content was updated.
+        const tds = fixture.debugElement.queryAll(By.css('td'))
+        expect(tds).toBeTruthy()
+        expect(tds.length).toBe(4)
+        expect(tds[0].nativeElement.innerText).toEqual('1')
+        expect(tds[1].nativeElement.innerText).toEqual('1.0.0.0/32')
+        expect(tds[2].nativeElement.innerText).toEqual('3')
+        expect(tds[3].nativeElement.innerText).toEqual('10.0.0.0/31') // this should be also updated
     })
 
     it('should update entity title', () => {
@@ -365,15 +425,50 @@ describe('TabViewTestComponent', () => {
         expect(component.openTabs.length).toEqual(0)
 
         component.openTab(3)
+        fixture.detectChanges()
         component.openTab(1)
+        fixture.detectChanges()
 
         expect(component.openTabs.length).toEqual(2)
 
+        // Check displayed tab content.
+        const activePanel = fixture.debugElement.query(By.css('.p-tabpanel-active')) // PrimeNG selector used!! might change in the future!
+        const id = activePanel.query(By.css('.entity-id'))
+        expect(id).toBeTruthy()
+        expect(id.nativeElement.innerText).toEqual('1')
+
+        const subnet = activePanel.query(By.css('.subnet'))
+        expect(subnet).toBeTruthy()
+        expect(subnet.nativeElement.innerText).toEqual('1.0.0.0/32')
+
+        // Check active tab title.
+        const title = fixture.debugElement.query(By.css('.p-tab-active')) // PrimeNG selector used!! might change in the future!
+        expect(title).toBeTruthy()
+        expect(title.nativeElement.innerText).toContain('1.0.0.0/32')
+
         // Act - update entity title.
         component.onUpdateTitle(1, '1.2.0.0/32')
-        const tab = component.openTabs.find((t) => t.value === 1)
-        expect(tab?.title).toEqual('1.2.0.0/32')
-        expect(component.entitiesCollection()[0].subnet).toEqual('1.2.0.0/32')
+        fixture.detectChanges()
+
+        // Check if active tab title was updated.
+        const updatedTitle = fixture.debugElement.query(By.css('.p-tab-active')) // PrimeNG selector used!! might change in the future!
+        expect(updatedTitle).toBeTruthy()
+        expect(updatedTitle.nativeElement.innerText).toContain('1.2.0.0/32')
+
+        // Go to the first tab with the table.
+        component.activeTabEntityID = 0
+        fixture.detectChanges()
+
+        // Check if table content was updated.
+        const tds = fixture.debugElement.queryAll(By.css('td'))
+        expect(tds).toBeTruthy()
+        expect(tds.length).toBe(4)
+        expect(tds[0].nativeElement.innerText).toEqual('1')
+        expect(tds[1].nativeElement.innerText)
+            .withContext('entity title should be also updated in the table')
+            .toEqual('1.2.0.0/32') // this should be also updated
+        expect(tds[2].nativeElement.innerText).toEqual('3')
+        expect(tds[3].nativeElement.innerText).toEqual('10.0.0.0/32')
     })
 
     it('should not update entity title in the table', () => {
@@ -383,16 +478,49 @@ describe('TabViewTestComponent', () => {
         expect(component.openTabs.length).toEqual(0)
 
         component.openTab(3)
+        fixture.detectChanges()
         component.openTab(1)
+        fixture.detectChanges()
 
         expect(component.openTabs.length).toEqual(2)
 
+        // Check displayed tab content.
+        const activePanel = fixture.debugElement.query(By.css('.p-tabpanel-active')) // PrimeNG selector used!! might change in the future!
+        const id = activePanel.query(By.css('.entity-id'))
+        expect(id).toBeTruthy()
+        expect(id.nativeElement.innerText).toEqual('1')
+
+        const subnet = activePanel.query(By.css('.subnet'))
+        expect(subnet).toBeTruthy()
+        expect(subnet.nativeElement.innerText).toEqual('1.0.0.0/32')
+
+        // Check active tab title.
+        const title = fixture.debugElement.query(By.css('.p-tab-active')) // PrimeNG selector used!! might change in the future!
+        expect(title).toBeTruthy()
+        expect(title.nativeElement.innerText).toContain('Title 1.0.0.0/32')
+
         // Act - update entity title.
         component.onUpdateTitle(1, '1.2.0.0/32')
-        const tab = component.openTabs.find((t) => t.value === 1)
-        expect(tab?.title).toContain('1.2.0.0/32')
-        expect(component.entitiesCollection()[0].subnet)
+        fixture.detectChanges()
+
+        // Check if active tab title was updated.
+        const updatedTitle = fixture.debugElement.query(By.css('.p-tab-active')) // PrimeNG selector used!! might change in the future!
+        expect(updatedTitle).toBeTruthy()
+        expect(updatedTitle.nativeElement.innerText).withContext('').toContain('1.2.0.0/32')
+
+        // Go to the first tab with the table.
+        component.activeTabEntityID = 0
+        fixture.detectChanges()
+
+        // Check if table content is not touched.
+        const tds = fixture.debugElement.queryAll(By.css('td'))
+        expect(tds).toBeTruthy()
+        expect(tds.length).toBe(4)
+        expect(tds[0].nativeElement.innerText).toEqual('1')
+        expect(tds[1].nativeElement.innerText)
             .withContext('entity title should not be updated in the table when entityTitleProvider is used')
-            .toEqual('1.0.0.0/32')
+            .toEqual('1.0.0.0/32') // this should not be not updated
+        expect(tds[2].nativeElement.innerText).toEqual('3')
+        expect(tds[3].nativeElement.innerText).toEqual('10.0.0.0/32')
     })
 })

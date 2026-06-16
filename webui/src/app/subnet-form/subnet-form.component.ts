@@ -200,11 +200,6 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
      * skip initialization in the next ngOnInit function invocation.
      */
     ngOnDestroy(): void {
-        // In unit tests (and potentially edge cases), the component might be
-        // destroyed before `state` is initialized.
-        if (!this.state) {
-            return
-        }
         this.state.preserved = true
         this.formDestroy.emit(this.state)
     }
@@ -294,7 +289,9 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
      * a subnet.
      */
     private updateSubnetBegin(): void {
-        lastValueFrom(this.dhcpApi.updateSubnetBegin(this.subnetId))
+        this.dhcpApi
+            .updateSubnetBegin(this.subnetId)
+            .toPromise()
             .then((data) => {
                 this.state.savedSubnetBeginData = data
                 this.initializeState(data)
@@ -416,11 +413,11 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
             toggledDaemonIndex,
             this.state.servers.length
         )
-        this.addressPoolComponents?.forEach((apc) => {
+        this.addressPoolComponents.forEach((apc) => {
             apc.handleDaemonsChange(toggledDaemonId)
             apc.selectableDaemons = this.getSelectedDaemons()
         })
-        this.prefixPoolComponents?.forEach((ppc) => {
+        this.prefixPoolComponents.forEach((ppc) => {
             ppc.handleDaemonsChange(toggledDaemonId)
             ppc.selectableDaemons = this.getSelectedDaemons()
         })
@@ -597,7 +594,9 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
                 ls.id = originalLocalSubnet?.id
             }
             subnet.id = this.subnetId
-            lastValueFrom(this.dhcpApi.updateSubnetSubmit(this.subnetId, this.state.transactionID, subnet))
+            this.dhcpApi
+                .updateSubnetSubmit(this.subnetId, this.state.transactionID, subnet)
+                .toPromise()
                 .then(() => {
                     this.messageService.add({
                         severity: 'success',
@@ -621,7 +620,9 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
             return
         }
         // Creating a new subnet.
-        lastValueFrom(this.dhcpApi.createSubnetSubmit(this.state.transactionID, subnet))
+        this.dhcpApi
+            .createSubnetSubmit(this.state.transactionID, subnet)
+            .toPromise()
             .then((data) => {
                 this.messageService.add({
                     severity: 'success',

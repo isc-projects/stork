@@ -1,4 +1,4 @@
-import { ComponentFixture, fakeAsync, flush, TestBed, tick } from '@angular/core/testing'
+import { ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { SharedNetworkFormComponent } from './shared-network-form.component'
 import { MessageService } from 'primeng/api'
@@ -254,10 +254,7 @@ describe('SharedNetworkFormComponent', () => {
         component = fixture.componentInstance
         dhcpApi = fixture.debugElement.injector.get(DHCPService)
         messageService = fixture.debugElement.injector.get(MessageService)
-    })
-
-    afterEach(() => {
-        fixture.destroy()
+        fixture.detectChanges()
     })
 
     it('should create', () => {
@@ -781,26 +778,20 @@ describe('SharedNetworkFormComponent', () => {
         expect(component.formCancel.emit).toHaveBeenCalled()
     })
 
-    it('should present an error message when begin transaction fails', fakeAsync(() => {
-        let beginAttempts = 0
-        spyOn(dhcpApi, 'updateSharedNetworkBegin').and.callFake((() => {
-            beginAttempts++
-            if (beginAttempts === 1) {
-                return throwError(() => new Error('status: 404'))
-            }
-            return wrapInHttpResponse(cannedResponseBeginSharedNetwork4)
-        }) as any)
+    it('should present an error message when begin transaction fails', async () => {
+        spyOn(dhcpApi, 'updateSharedNetworkBegin').and.returnValues(
+            throwError(() => new Error('status: 404')),
+            wrapInHttpResponse(cannedResponseBeginSharedNetwork4)
+        )
         spyOn(messageService, 'add')
         component.sharedNetworkId = 123
         component.state = new SharedNetworkFormState()
         component.ngOnInit()
-        tick()
-        flush()
+        await fixture.whenStable()
+        fixture.detectChanges()
 
         expect(messageService.add).toHaveBeenCalled()
-        expect(component.state.initError).toBeTruthy()
-
-        fixture.detectChanges()
+        expect(component.state.initError.length).not.toBe(0)
 
         const messagesElement = fixture.debugElement.query(By.css('p-message'))
         expect(messagesElement).toBeTruthy()
@@ -811,12 +802,13 @@ describe('SharedNetworkFormComponent', () => {
         expect(retryButton.nativeElement.outerText).toBe('Retry')
 
         component.onRetry()
-        tick()
-        flush()
+        await fixture.whenStable()
+        fixture.detectChanges()
 
-        expect(component.state.initError).toBeNull()
-        expect(component.state.loaded).toBeTrue()
-        expect(component.state.transactionID).toBe(123)
-        expect(component.state.group).toBeTruthy()
-    }))
+        expect(fixture.debugElement.query(By.css('p-message'))).toBeFalsy()
+        expect(fixture.debugElement.query(By.css('[label="Retry"]'))).toBeFalsy()
+        expect(fixture.debugElement.query(By.css('[label="Submit"]'))).toBeTruthy()
+
+        await fixture.whenStable()
+    })
 })

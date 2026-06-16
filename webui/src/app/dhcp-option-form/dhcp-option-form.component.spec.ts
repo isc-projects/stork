@@ -22,15 +22,10 @@ describe('DhcpOptionFormComponent', () => {
         component = fixture.componentInstance
         // Our component needs a form group instance to be initialized.
         component.formGroup = createDefaultDhcpOptionFormGroup(IPType.IPv4)
+        fixture.detectChanges()
     })
 
-    function render(): void {
-        fixture.detectChanges()
-        fixture.detectChanges()
-    }
-
     it('should create', () => {
-        render()
         expect(component).toBeTruthy()
         expect(component.formGroup.contains('optionCode')).toBeTrue()
         expect(component.formGroup.contains('optionFields')).toBeTrue()
@@ -38,7 +33,6 @@ describe('DhcpOptionFormComponent', () => {
     })
 
     it('should display DHCPv4 options selection', () => {
-        render()
         // By default, the component should display a dropdown with option codes.
         const dropdownEl = fixture.debugElement.query(By.css('p-select'))
         expect(dropdownEl).toBeTruthy()
@@ -58,7 +52,7 @@ describe('DhcpOptionFormComponent', () => {
     it('should display DHCPv6 options selection', () => {
         // Configure the component to display DHCPv6 options.
         component.v6 = true
-        render()
+        fixture.detectChanges()
 
         // There should be a dropdown.
         const dropdownEl = fixture.debugElement.query(By.css('p-select'))
@@ -83,7 +77,6 @@ describe('DhcpOptionFormComponent', () => {
     })
 
     it('should add default option field when clicked on add payload', () => {
-        render()
         // Add Payload button should exist.
         const addPayloadBtn = fixture.debugElement.query(By.css('p-splitButton'))
         expect(addPayloadBtn).toBeTruthy()
@@ -95,7 +88,7 @@ describe('DhcpOptionFormComponent', () => {
 
         // Click the Add Payload button.
         addPayloadBtn.componentInstance.onClick.emit(new Event('click'))
-        render()
+        fixture.detectChanges()
 
         // It should result in adding a default option field.
         expect(component.optionFields.length).toBe(1)
@@ -115,7 +108,7 @@ describe('DhcpOptionFormComponent', () => {
 
         // Click the button to delete the field.
         deleteFieldBtn.nativeElement.click()
-        render()
+        fixture.detectChanges()
 
         // There should be no option fields and the tag should be back.
         expect(component.optionFields.length).toBe(0)
@@ -123,18 +116,22 @@ describe('DhcpOptionFormComponent', () => {
     })
 
     it('should remember last added option field', () => {
-        render()
+        // Simulate adding the uint8 option field.
         const uint8Field = component.fieldTypes.find((field) => field.label === 'uint8')
         expect(uint8Field).toBeTruthy()
         uint8Field.command({})
-        expect(component.optionFields.length).toBe(1)
+        fixture.detectChanges()
 
+        // The Add Payload button should add another uint8 option field.
         const addPayloadBtn = fixture.debugElement.query(By.css('p-splitButton'))
         expect(addPayloadBtn).toBeTruthy()
         addPayloadBtn.componentInstance.onClick.emit(new Event('click'))
+        fixture.detectChanges()
+
+        // We should have two uint8 option field.
         expect(component.optionFields.length).toBe(2)
 
-        render()
+        // Validate the fields.
         const inputEls = fixture.debugElement.queryAll(By.css('p-inputNumber'))
         expect(inputEls.length).toBe(2)
         for (let i = 0; i < 2; i++) {
@@ -146,21 +143,49 @@ describe('DhcpOptionFormComponent', () => {
     })
 
     it('should add many fields', () => {
-        render()
+        // Iterate over the option field types and simulate adding them.
         for (let field of component.fieldTypes) {
             expect(field.command).toBeTruthy()
             field.command({})
         }
+        fixture.detectChanges()
         expect(component.optionFields.length).toBe(14)
 
-        component.deleteField(5)
+        // Find the container holding all added option fields.
+        const containerEl = fixture.debugElement.query(By.css('[formArrayName="optionFields"]'))
+        expect(containerEl).toBeTruthy()
+
+        // Verify that the correct types of option fields have been added.
+        const textFieldEls = containerEl.queryAll(By.css('textarea'))
+        expect(textFieldEls.length).toBe(1)
+
+        const inputFieldEls = containerEl.queryAll(By.css('input + label'))
+        // string, ipv4-addr, ipv6-addr, ipv6-prefix, fqdn
+        expect(inputFieldEls.length).toBe(5)
+
+        const boolFieldEls = containerEl.queryAll(By.css('p-toggleButton'))
+        expect(boolFieldEls.length).toBe(2)
+
+        let numberFieldEls = containerEl.queryAll(By.css('p-inputNumber'))
+        expect(numberFieldEls.length).toBe(9)
+
+        const deleteBtns = containerEl.queryAll(By.css('button.p-button-danger'))
+        expect(deleteBtns.length).toBe(14)
+
+        // Delete uint32 option field.
+        deleteBtns[5].nativeElement.click()
+        fixture.detectChanges()
+
+        // Make sure it is gone.
+        numberFieldEls = containerEl.queryAll(By.css('p-inputNumber'))
+        expect(numberFieldEls.length).toBe(8)
         expect(component.optionFields.length).toBe(13)
     })
 
     it('should add and delete suboption form', () => {
         // Add a suboption.
         component.addSuboption()
-        render()
+        fixture.detectChanges()
 
         expect(fixture.debugElement.query(By.css('p-tag'))).toBeTruthy()
 
@@ -181,7 +206,7 @@ describe('DhcpOptionFormComponent', () => {
 
         // Simulate clicking the Add Payload button within the suboption.
         addPayloadBtn.componentInstance.onClick.emit(new Event('click'))
-        render()
+        fixture.detectChanges()
         expect(component.suboptions.length).toBe(1)
         expect((component.suboptions.at(0) as UntypedFormGroup).contains('optionFields')).toBeTrue()
         expect(((component.suboptions.at(0) as UntypedFormGroup).get('optionFields') as UntypedFormArray).length).toBe(
@@ -191,7 +216,7 @@ describe('DhcpOptionFormComponent', () => {
 
         // Simulate deleting the suboption.
         deleteBtn.parent.nativeElement.click()
-        render()
+        fixture.detectChanges()
 
         // It should be gone.
         expect(fixture.debugElement.query(By.css('app-dhcp-option-form'))).toBeFalsy()
@@ -218,7 +243,7 @@ describe('DhcpOptionFormComponent', () => {
     it('should require a valid DHCPv6 option code', () => {
         component.v6 = true
         component.formGroup = createDefaultDhcpOptionFormGroup(IPType.IPv6)
-        render()
+        fixture.detectChanges()
 
         component.formGroup.get('optionCode').setValue(7)
         expect(component.formGroup.valid).toBeTrue()
@@ -327,7 +352,7 @@ describe('DhcpOptionFormComponent', () => {
         // Switch to partial FQDN.
         toggleButton.setValue(true)
         component.togglePartialFqdn({ checked: true }, 0)
-        render()
+        fixture.detectChanges()
 
         // Invalid FQDN.
         input.setValue('fqdn..invalid.')
@@ -348,7 +373,7 @@ describe('DhcpOptionFormComponent', () => {
         // Switch back to full FQDN.
         toggleButton.setValue(false)
         component.togglePartialFqdn({ checked: false }, 0)
-        render()
+        fixture.detectChanges()
 
         // Invalid FQDN.
         input.setValue('fqdn..invalid.')
@@ -384,7 +409,7 @@ describe('DhcpOptionFormComponent', () => {
     it('should set the corresponding form layout for simple option type ', () => {
         component.formGroup = createDefaultDhcpOptionFormGroup(IPType.IPv4)
         component.formGroup.get('optionCode').setValue(3)
-        render()
+        fixture.detectChanges()
 
         const event = {
             value: 3,
@@ -411,7 +436,7 @@ describe('DhcpOptionFormComponent', () => {
         component.optionSpace = 's46-cont-mape-options'
         component.formGroup = createDefaultDhcpOptionFormGroup(IPType.IPv6)
         component.formGroup.get('optionCode').setValue(89)
-        render()
+        fixture.detectChanges()
 
         const event = {
             value: 89,
@@ -436,7 +461,7 @@ describe('DhcpOptionFormComponent', () => {
     it('should set the default form layout for an option without definition', () => {
         component.formGroup = createDefaultDhcpOptionFormGroup(IPType.IPv4)
         component.formGroup.get('optionCode').setValue(254)
-        render()
+        fixture.detectChanges()
 
         const event = {
             value: 254,
@@ -455,7 +480,7 @@ describe('DhcpOptionFormComponent', () => {
             value: 85,
         }
         component.onOptionCodeChange(event)
-        render()
+        fixture.detectChanges()
 
         helptip = fixture.debugElement.query(By.css('app-help-tip'))
         expect(helptip).toBeTruthy()

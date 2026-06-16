@@ -11,21 +11,18 @@ describe('DelegatedPrefixBarComponent', () => {
 
         fixture = TestBed.createComponent(DelegatedPrefixBarComponent)
         component = fixture.componentInstance
+        fixture.componentRef.setInput('pool', {
+            prefix: 'fe80::/64',
+            delegatedLength: 80,
+        })
     })
-
-    /** Renders the component with the given prefix pool. */
-    function render(pool: { prefix: string; delegatedLength: number; excludedPrefix?: string }): void {
-        component.pool = pool
-        fixture.detectChanges()
-        fixture.detectChanges()
-    }
 
     it('should create', () => {
         expect(component).toBeTruthy()
     })
 
     it('should display prefix and length', () => {
-        render({ prefix: 'fe80::/64', delegatedLength: 80 })
+        fixture.detectChanges()
         expect(
             (fixture.debugElement.nativeElement as HTMLElement).textContent
                 .trim()
@@ -35,22 +32,27 @@ describe('DelegatedPrefixBarComponent', () => {
     })
 
     it('should shorten the excluded prefix', () => {
-        render({ prefix: 'fe80::/64', delegatedLength: 80, excludedPrefix: 'fe80:42::/96' })
+        component.pool.excludedPrefix = 'fe80:42::/96'
         expect(component.shortExcludedPrefix).toBe('~:42::/96')
     })
 
     it('should not shorten if the excluded prefix has no common part with a prefix', () => {
-        render({ prefix: 'fe80::/64', delegatedLength: 80, excludedPrefix: '3001::/96' })
+        component.pool.excludedPrefix = '3001::/96'
         expect(component.shortExcludedPrefix).toBe('3001::/96')
     })
 
     it('should handle an error on the invalid excluded prefix', () => {
-        render({ prefix: 'fe80::/64', delegatedLength: 80, excludedPrefix: 'foo' })
+        component.pool.excludedPrefix = 'foo'
         expect(component.shortExcludedPrefix).toBe('foo')
     })
 
     it('should display an excluded prefix', () => {
-        render({ prefix: 'fe80::/64', delegatedLength: 80, excludedPrefix: 'fe80:42::/96' })
+        fixture.componentRef.setInput('pool', {
+            prefix: 'fe80::/64',
+            delegatedLength: 80,
+            excludedPrefix: 'fe80:42::/96',
+        })
+        fixture.detectChanges()
         expect(
             (fixture.debugElement.nativeElement as HTMLElement).textContent
                 .trim()

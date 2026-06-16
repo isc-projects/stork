@@ -73,11 +73,16 @@ describe('HaStatusComponent', () => {
         )
         spyOn(component, 'setCountdownTimer')
 
-        component.ngOnInit()
-        tick()
+        // Execute ngOnInit hook.
         fixture.detectChanges()
 
+        // Continue the API response processing.
+        tick()
+
+        // Check if the initial data loading is done.
         expect(component.loadedOnce).toBeTrue()
+        // Render the updated data.
+        fixture.detectChanges()
 
         // Check if there is no waiting indicator.
         const spinner = fixture.debugElement.query(By.directive(ProgressSpinner))

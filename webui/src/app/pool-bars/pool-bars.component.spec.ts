@@ -186,7 +186,6 @@ describe('PoolBarsComponent', () => {
 
     it('should not display the out of pool bar if there are no out of pool statistics', () => {
         component.source = {}
-        component.ngOnInit()
         fixture.detectChanges()
         expect((fixture.debugElement.nativeElement as HTMLElement).textContent).not.toContain('Out of pool')
     })
@@ -199,7 +198,6 @@ describe('PoolBarsComponent', () => {
             statsCollectedAt: '2023-10-01T00:00:00Z',
         }
         component.source = subnet
-        component.ngOnInit()
         fixture.detectChanges()
         expect((fixture.debugElement.nativeElement as HTMLElement).textContent).not.toContain('Out of pool')
     })
@@ -212,7 +210,6 @@ describe('PoolBarsComponent', () => {
             statsCollectedAt: '2023-10-01T00:00:00Z',
         }
         component.source = subnet
-        component.ngOnInit()
         fixture.detectChanges()
         expect((fixture.debugElement.nativeElement as HTMLElement).textContent).toContain('Out of pool')
     })

@@ -12,7 +12,6 @@ import {
     ReactiveFormsModule,
 } from '@angular/forms'
 import { MessageService, SelectItem } from 'primeng/api'
-import { lastValueFrom } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { collapseIPv6Number, isIPv4, IPv4, IPv6, Validator } from 'ip-num'
 import { StorkValidators } from '../validators'
@@ -450,15 +449,16 @@ export class HostFormComponent implements OnInit, OnDestroy {
      * with the retry button.
      */
     private _createHostBegin(): void {
-        lastValueFrom(
-            this._dhcpApi.createHostBegin().pipe(
+        this._dhcpApi
+            .createHostBegin()
+            .pipe(
                 map((data) => {
                     // We have to mangle the returned information and store them
                     // in the format usable by the component.
                     return this._mapHostBeginData(data)
                 })
             )
-        )
+            .toPromise()
             .then((data) => {
                 this._initializeForm(data)
             })
@@ -484,15 +484,16 @@ export class HostFormComponent implements OnInit, OnDestroy {
      * along with the retry button.
      */
     private _updateHostBegin(): void {
-        lastValueFrom(
-            this._dhcpApi.updateHostBegin(this.hostId).pipe(
+        this._dhcpApi
+            .updateHostBegin(this.hostId)
+            .pipe(
                 map((data) => {
                     // We have to mangle the returned information and store them
                     // in the format usable by the component.
                     return this._mapHostBeginData(data)
                 })
             )
-        )
+            .toPromise()
             .then((data) => {
                 this._initializeForm(data)
             })
@@ -668,9 +669,6 @@ export class HostFormComponent implements OnInit, OnDestroy {
      * skip initialization in the next ngOnInit function invocation.
      */
     ngOnDestroy(): void {
-        if (!this.form) {
-            return
-        }
         this.form.preserved = true
         this.formDestroy.emit(this.form)
     }
@@ -1252,7 +1250,9 @@ export class HostFormComponent implements OnInit, OnDestroy {
         // Update the existing host.
         if (this.hostId) {
             host.id = this.hostId
-            lastValueFrom(this._dhcpApi.updateHostSubmit(this.hostId, this.form.transactionID, host))
+            this._dhcpApi
+                .updateHostSubmit(this.hostId, this.form.transactionID, host)
+                .toPromise()
                 .then(() => {
                     this._messageService.add({
                         severity: 'success',
@@ -1276,7 +1276,9 @@ export class HostFormComponent implements OnInit, OnDestroy {
             return
         }
         // Submit new host.
-        lastValueFrom(this._dhcpApi.createHostSubmit(this.form.transactionID, host))
+        this._dhcpApi
+            .createHostSubmit(this.form.transactionID, host)
+            .toPromise()
             .then(() => {
                 this._messageService.add({
                     severity: 'success',

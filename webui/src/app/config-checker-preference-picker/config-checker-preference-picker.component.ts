@@ -40,7 +40,7 @@ export class ConfigCheckerPreferencePickerComponent {
     /**
      * List of the config checkers.
      */
-    @Input() checkers: ConfigChecker[] = []
+    @Input() checkers: ConfigChecker[] = null
 
     /**
      * Stream of the changed config checker preferences.
@@ -281,23 +281,10 @@ export class ConfigCheckerPreferencePickerComponent {
      * @param event Generic change input event
      * @param checker Affected checker
      */
-    onCheckerStateChanged(checker: ConfigChecker, value?: boolean | null) {
+    onCheckerStateChanged(checker: ConfigChecker) {
         const originalState = checker.state
         const currentState = this.getActualState(checker)
-        let nextState = this._getNextState(currentState)
-
-        // Ignore model sync events that do not represent an actual user change.
-        if (value !== undefined) {
-            nextState =
-                value === true
-                    ? ConfigChecker.StateEnum.Enabled
-                    : value === false
-                      ? ConfigChecker.StateEnum.Disabled
-                      : ConfigChecker.StateEnum.Inherit
-            if (nextState === currentState) {
-                return
-            }
-        }
+        const nextState = this._getNextState(currentState)
 
         if (nextState === originalState) {
             delete this.changes[checker.name]

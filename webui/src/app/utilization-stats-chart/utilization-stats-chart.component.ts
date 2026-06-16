@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges, SimpleChanges } from '@angular/core'
+import { Component, Input } from '@angular/core'
 import { getStatisticValue } from '../subnets'
 import { Subnet } from '../backend/model/subnet'
 import { SharedNetwork } from '../backend/model/sharedNetwork'
@@ -25,7 +25,7 @@ import { PositivePipe } from '../pipes/positive.pipe'
     styleUrls: ['./utilization-stats-chart.component.sass'],
     imports: [NgIf, UIChart, HumanCountComponent, PositivePipe],
 })
-export class UtilizationStatsChartComponent implements OnChanges {
+export class UtilizationStatsChartComponent {
     /**
      * Pie chart data initialized during the component initialization.
      */
@@ -82,7 +82,7 @@ export class UtilizationStatsChartComponent implements OnChanges {
     /**
      * Lease type for which the statistics should be shown.
      */
-    @Input() leaseType: 'na' | 'pd' = 'na'
+    @Input() leaseType: 'na' | 'pd'
 
     /**
      * An instance of a subnet or a shared network holding statistics.
@@ -90,19 +90,7 @@ export class UtilizationStatsChartComponent implements OnChanges {
      * It prepares the data to be displayed in a chart using the statistics
      * conveyed in a subnet, local subnet or a shared network.
      */
-    @Input() network: LocalSubnet | Subnet | SharedNetwork
-
-    /** Rebuilds chart data when inputs change. */
-    ngOnChanges(_changes: SimpleChanges): void {
-        this.rebuildChartData()
-    }
-
-    /**
-     * Rebuilds chart data from current input values.
-     * It is called from ngOnChanges so both leaseType and network inputs are settled.
-     */
-    private rebuildChartData(): void {
-        const network = this.network
+    @Input() set network(network: LocalSubnet | Subnet | SharedNetwork) {
         this.total = null
         this.assigned = null
         this.declined = null

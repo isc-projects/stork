@@ -79,6 +79,8 @@ describe('KeaDaemonConfigurationPageComponent', () => {
         const harness = await RouterTestingHarness.create()
         component = await harness.navigateByUrl('/daemons/2/config', KeaDaemonConfigurationPageComponent)
         fixture = harness.fixture
+
+        fixture.detectChanges()
     })
 
     it('should create', () => {
@@ -88,15 +90,34 @@ describe('KeaDaemonConfigurationPageComponent', () => {
     it('should toggle expand nodes', async () => {
         await fixture.whenStable()
         component.onClickRefresh()
-        await fixture.whenStable()
+        fixture.detectChanges()
 
         expect(component.autoExpand).toBe('none')
+        let expectedButtonCount = fixture.debugElement
+            .queryAll(By.css('.p-panel-header > div:not(.p-panel-icons) > *'))
+            .map((b) => (b.nativeElement as HTMLElement).textContent.trim())
+            .filter((t) => t === 'Expand').length
+        expect(expectedButtonCount).toBe(1)
 
         component.onClickToggleNodes()
+        fixture.detectChanges()
+        await fixture.whenRenderingDone()
         expect(component.autoExpand).toBe('all')
+        expectedButtonCount = fixture.debugElement
+            .queryAll(By.css('.p-panel-header > div:not(.p-panel-icons) > *'))
+            .map((b) => (b.nativeElement as HTMLElement).textContent.trim())
+            .filter((t) => t === 'Collapse').length
+        expect(expectedButtonCount).toBe(1)
 
         component.onClickToggleNodes()
+        fixture.detectChanges()
+        await fixture.whenRenderingDone()
         expect(component.autoExpand).toBe('none')
+        expectedButtonCount = fixture.debugElement
+            .queryAll(By.css('.p-panel-header > div:not(.p-panel-icons) > *'))
+            .map((b) => (b.nativeElement as HTMLElement).textContent.trim())
+            .filter((t) => t === 'Expand').length
+        expect(expectedButtonCount).toBe(1)
     })
 
     it('should set filename for download file', async () => {
@@ -127,12 +148,18 @@ describe('KeaDaemonConfigurationPageComponent', () => {
         expect(component.failedFetch).toBeFalse()
 
         component.onClickRefresh()
-        await fixture.whenStable()
+        fixture.detectChanges()
+        await fixture.whenRenderingDone()
 
         component.onClickRefresh()
-        await fixture.whenStable()
+        fixture.detectChanges()
+        await fixture.whenRenderingDone()
         expect(component.configuration).toBeNull()
         expect(component.failedFetch).toBeTrue()
+
+        const messageElement = fixture.debugElement.query(By.css('.p-message'))
+        expect(messageElement).not.toBeNull()
+        expect((messageElement.nativeElement as Element).textContent).toBe('Fetching daemon configuration failed')
     })
 
     it('should have breadcrumbs', async () => {

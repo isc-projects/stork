@@ -80,23 +80,17 @@ describe('ConfigMigrationTabComponent', () => {
     beforeEach(() => {
         fixture = TestBed.createComponent(ConfigMigrationTabComponent)
         component = fixture.componentInstance
+        component.migration = mockRunningMigration as MigrationStatus
         authService = fixture.debugElement.injector.get(AuthService)
         spyOn(authService, 'hasPrivilege').and.returnValue(true)
+        fixture.detectChanges()
     })
-
-    /** Renders the component with the given migration status. */
-    function render(migration: MigrationStatus = mockRunningMigration as MigrationStatus): void {
-        component.migration = migration
-        fixture.detectChanges()
-        fixture.detectChanges()
-    }
 
     it('should create', () => {
         expect(component).toBeTruthy()
     })
 
     it('should emit refresh event when refresh button is clicked', () => {
-        render()
         spyOn(component.refreshMigration, 'emit')
 
         const refreshButton = fixture.debugElement.query(By.css('button:not(.p-button-danger)'))
@@ -106,7 +100,6 @@ describe('ConfigMigrationTabComponent', () => {
     })
 
     it('should emit event when cancel button is clicked', () => {
-        render()
         spyOn(component.cancelMigration, 'emit')
 
         const cancelButton = fixture.debugElement.query(By.css('button.p-button-danger'))
@@ -146,11 +139,12 @@ describe('ConfigMigrationTabComponent', () => {
     })
 
     it('should display completion percentage', () => {
-        render({
+        component.migration = {
             ...mockRunningMigration,
             processedItemsCount: 6,
             totalItemsCount: 10,
-        } as MigrationStatus)
+        } as MigrationStatus
+        fixture.detectChanges()
 
         const progressBarElement = fixture.debugElement.query(By.directive(ProgressBar))
         expect(progressBarElement).toBeTruthy()
@@ -159,11 +153,12 @@ describe('ConfigMigrationTabComponent', () => {
     })
 
     it('should display 100% completion for finished migration', () => {
-        render({
+        component.migration = {
             ...mockCompletedMigration,
             processedItemsCount: 10,
             totalItemsCount: 10,
-        } as MigrationStatus)
+        } as MigrationStatus
+        fixture.detectChanges()
 
         const progressBarElement = fixture.debugElement.query(By.directive(ProgressBar))
         expect(progressBarElement).toBeTruthy()
@@ -172,7 +167,8 @@ describe('ConfigMigrationTabComponent', () => {
     })
 
     it('should display error items in table', () => {
-        render(mockFailedMigration as MigrationStatus)
+        component.migration = mockFailedMigration as MigrationStatus
+        fixture.detectChanges()
 
         const tableElement = fixture.debugElement.query(By.directive(Table))
         expect(tableElement).toBeTruthy()
@@ -187,22 +183,25 @@ describe('ConfigMigrationTabComponent', () => {
         expect(rows[1].error).toBe('Failed to process host')
     })
 
-    it('should show time information for running migration', () => {
-        render(mockRunningMigration as MigrationStatus)
-        const content = fixture.nativeElement.textContent
+    it('should show time information appropriately', () => {
+        // For running migration
+        component.migration = mockRunningMigration as MigrationStatus
+        fixture.detectChanges()
+        let content = fixture.debugElement.nativeElement.textContent
         expect(content).toContain('Duration:10 minutes')
         expect(content).toContain('Estimated Left:5 minutes')
-    })
 
-    it('should show time information for completed migration', () => {
-        render(mockCompletedMigration as MigrationStatus)
-        const content = fixture.nativeElement.textContent
+        // For completed migration
+        component.migration = mockCompletedMigration as MigrationStatus
+        fixture.detectChanges()
+        content = fixture.debugElement.nativeElement.textContent
         expect(content).toContain('Duration:15 minutes')
         expect(content).not.toContain('Estimated Left')
     })
 
     it('should display general error in fieldset when present', () => {
-        render(mockFailedMigration as MigrationStatus)
+        component.migration = mockFailedMigration as MigrationStatus
+        fixture.detectChanges()
 
         const fieldsetElements = fixture.debugElement.queryAll(By.directive(Fieldset))
         expect(fieldsetElements.length).toBe(2)
@@ -217,58 +216,71 @@ describe('ConfigMigrationTabComponent', () => {
     })
 
     it('should disable cancel button for completed migration', () => {
-        render(mockCompletedMigration as MigrationStatus)
+        component.migration = mockCompletedMigration as MigrationStatus
+        fixture.detectChanges()
 
         const cancelButton = fixture.debugElement.query(By.css('button.p-button-danger'))
         expect(cancelButton.nativeElement.disabled).toBeTrue()
     })
 
     it('should disable cancel button for already canceling migration', () => {
-        render({
+        component.migration = {
             ...mockRunningMigration,
             canceling: true,
-        } as MigrationStatus)
+        } as MigrationStatus
+        fixture.detectChanges()
 
         const cancelButton = fixture.debugElement.query(By.css('button.p-button-danger'))
         expect(cancelButton.nativeElement.disabled).toBeTrue()
     })
 
     it('should display author information', () => {
-        render({
+        component.migration = {
             ...mockRunningMigration,
             authorId: 1,
             authorLogin: 'admin',
-        } as MigrationStatus)
+        } as MigrationStatus
+        fixture.detectChanges()
 
         const content = fixture.debugElement.nativeElement.textContent
         expect(content).toContain('Started by')
         expect(content).toContain('admin')
     })
 
-    it('should show running status tag', () => {
-        render(mockRunningMigration as MigrationStatus)
-        const tag = fixture.debugElement.query(By.directive(Tag)).componentInstance as Tag
+    it('should show appropriate status tag for each migration state', () => {
+        // Running
+        component.migration = mockRunningMigration as MigrationStatus
+        fixture.detectChanges()
+        let tagElement = fixture.debugElement.query(By.directive(Tag))
+        expect(tagElement).toBeTruthy()
+        let tag = tagElement.componentInstance as Tag
         expect(tag.severity).toBe('info')
         expect(tag.value).toBe('Running')
-    })
 
-    it('should show canceling status tag', () => {
-        render({ ...mockRunningMigration, canceling: true } as MigrationStatus)
-        const tag = fixture.debugElement.query(By.directive(Tag)).componentInstance as Tag
+        // Canceling
+        component.migration = { ...mockRunningMigration, canceling: true } as MigrationStatus
+        fixture.detectChanges()
+        tagElement = fixture.debugElement.query(By.directive(Tag))
+        expect(tagElement).toBeTruthy()
+        tag = tagElement.componentInstance as Tag
         expect(tag.severity).toBe('warn')
         expect(tag.value).toBe('Canceling')
-    })
 
-    it('should show completed status tag', () => {
-        render(mockCompletedMigration as MigrationStatus)
-        const tag = fixture.debugElement.query(By.directive(Tag)).componentInstance as Tag
+        // Completed
+        component.migration = mockCompletedMigration as MigrationStatus
+        fixture.detectChanges()
+        tagElement = fixture.debugElement.query(By.directive(Tag))
+        expect(tagElement).toBeTruthy()
+        tag = tagElement.componentInstance as Tag
         expect(tag.severity).toBe('success')
         expect(tag.value).toBe('Completed')
-    })
 
-    it('should show failed status tag', () => {
-        render(mockFailedMigration as MigrationStatus)
-        const tag = fixture.debugElement.query(By.directive(Tag)).componentInstance as Tag
+        // Failed
+        component.migration = mockFailedMigration as MigrationStatus
+        fixture.detectChanges()
+        tagElement = fixture.debugElement.query(By.directive(Tag))
+        expect(tagElement).toBeTruthy()
+        tag = tagElement.componentInstance as Tag
         expect(tag.severity).toBe('danger')
         expect(tag.value).toBe('Failed')
     })

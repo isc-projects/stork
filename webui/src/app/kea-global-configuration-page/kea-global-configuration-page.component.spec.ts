@@ -48,6 +48,8 @@ describe('KeaGlobalConfigurationPageComponent', () => {
         messageService = fixture.debugElement.injector.get(MessageService)
         servicesService = fixture.debugElement.injector.get(ServicesService)
 
+        fixture.detectChanges()
+
         validDaemonConfig = {
             daemonId: 1,
             daemonName: 'dhcp4',

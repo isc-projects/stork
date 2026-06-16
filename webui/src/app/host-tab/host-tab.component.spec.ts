@@ -1,4 +1,4 @@
-import { ComponentFixture, fakeAsync, flush, TestBed, tick, waitForAsync } from '@angular/core/testing'
+import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { By } from '@angular/platform-browser'
 import { provideNoopAnimations } from '@angular/platform-browser/animations'
@@ -44,6 +44,7 @@ describe('HostTabComponent', () => {
         authService = fixture.debugElement.injector.get(AuthService)
         spyOn(authService, 'superAdmin').and.returnValue(true)
         component.canGetLeases = true
+        fixture.detectChanges()
     })
 
     it('should create', () => {
@@ -450,7 +451,7 @@ describe('HostTabComponent', () => {
         )
     })
 
-    it('should display multiple lease information', fakeAsync(() => {
+    it('should display multiple lease information', () => {
         const host: Partial<Host> = {
             id: 1,
             hostIdentifiers: [
@@ -519,7 +520,6 @@ describe('HostTabComponent', () => {
         spy.and.returnValue(of(fakeLeases))
         component.host = host
         fixture.detectChanges()
-        tick()
         expect(dhcpApi.getLeases).toHaveBeenCalled()
 
         let fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
@@ -550,13 +550,19 @@ describe('HostTabComponent', () => {
         component.canGetLeases = true
         component.refreshLeases()
         expect(dhcpApi.getLeases).toHaveBeenCalled()
-        tick()
+        fixture.detectChanges()
 
-        const leaseInfo = component.currentLeases.get('192.0.2.1')
-        expect(leaseInfo).toBeTruthy()
-        expect(leaseInfo.usage).toBe(component.Usage.Conflicted)
-        expect(component.getLeaseUsageText(leaseInfo.usage)).toBe('in conflict')
-    }))
+        fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
+        expect(fieldsets.length).toBe(6)
+
+        ipReservationsFieldset = fieldsets[3]
+        expect(ipReservationsFieldset).toBeTruthy()
+        ipReservationTable = ipReservationsFieldset.query(By.css('table'))
+        expect(ipReservationTable).toBeTruthy()
+        ipReservationTrs = ipReservationTable.queryAll(By.css('tr'))
+        expect(ipReservationTrs.length).toBe(1)
+        expect(ipReservationTrs[0].nativeElement.textContent).toContain('in conflict')
+    })
 
     it('should return correct lease summary', () => {
         // Single lease in use.
@@ -1189,8 +1195,7 @@ describe('HostTabComponent', () => {
         expect(fieldsets[4].properties.innerText).toContain('Boot file name\n-')
     })
 
-    it('should display a message about no DHCP options configured', fakeAsync(() => {
-        spyOn(dhcpApi, 'getLeases').and.returnValue(of({ items: [], conflicts: [], erredDaemons: [] } as any))
+    it('should display a message about no DHCP options configured', () => {
         const host = {
             id: 1,
             hostIdentifiers: [
@@ -1219,12 +1224,11 @@ describe('HostTabComponent', () => {
         }
         component.host = host
         fixture.detectChanges()
-        tick()
-        flush()
 
-        expect(component.localHostsGroups.dhcpOptions.length).toBe(1)
-        expect(component.localHostsGroups.dhcpOptions[0][0].options).toBeFalsy()
-    }))
+        let fieldsets = fixture.debugElement.queryAll(By.css('p-fieldset'))
+        expect(fieldsets.length).toBe(6)
+        expect(fieldsets[5].properties.innerText).toContain('No options configured.')
+    })
 
     it('should group local hosts by daemon ID properly', () => {
         const host = {

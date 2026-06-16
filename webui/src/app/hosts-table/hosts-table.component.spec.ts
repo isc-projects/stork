@@ -61,14 +61,10 @@ describe('HostsTableComponent', () => {
     beforeEach(() => {
         fixture = TestBed.createComponent(HostsTableComponent)
         component = fixture.componentInstance
-        getHostsSpy.and.returnValue(of({ items: [], total: 0 }))
-    })
-
-    /** Renders the table and stubs state persistence (must run after @ViewChild is set). */
-    function renderTable(): void {
         fixture.detectChanges()
+        // Do not save table state between tests, because that makes tests unstable.
         spyOn(component.table, 'saveState').and.callFake(() => {})
-    }
+    })
 
     it('should create', () => {
         expect(component).toBeTruthy()
@@ -175,20 +171,21 @@ describe('HostsTableComponent', () => {
     })
 
     it('should ask for confirmation before migrating hosts', fakeAsync(() => {
-        renderTable()
         startMigrationSpy.and.returnValue(of({}) as any)
 
         component.canStartMigration.set(true)
-        TestBed.flushEffects()
-        ;(component.table.filters['machineId'] as FilterMetadata).value = 5
-        ;(component.table.filters['daemonId'] as FilterMetadata).value = 1
-        ;(component.table.filters['subnetId'] as FilterMetadata).value = 2
-        ;(component.table.filters['keaSubnetId'] as FilterMetadata).value = 7
-        ;(component.table.filters['isGlobal'] as FilterMetadata).value = true
-        ;(component.table.filters['text'] as FilterMetadata).value = 'foo'
+
+        component.table.filters = {
+            machineId: { value: 5 },
+            daemonId: { value: 1 },
+            subnetId: { value: 2 },
+            keaSubnetId: { value: 7 },
+            isGlobal: { value: true },
+            text: { value: 'foo' },
+        }
 
         component.migrateToDatabaseAsk()
-        fixture.detectChanges()
+        fixture.whenRenderingDone()
 
         const dialog = fixture.debugElement.query(By.directive(ConfirmDialog))
         expect(dialog).not.toBeNull()
@@ -201,7 +198,6 @@ describe('HostsTableComponent', () => {
     }))
 
     it('should extract filter entries properly', () => {
-        renderTable()
         // Empty filter. Conflict is set to true by default.
         component.table.filters = {
             conflict: { value: null },
@@ -251,7 +247,6 @@ describe('HostsTableComponent', () => {
 
     it('should not filter the table by numeric input with value zero', fakeAsync(() => {
         // Arrange
-        renderTable()
         const inputNumbers = fixture.debugElement.queryAll(By.directive(InputNumber))
         expect(inputNumbers).toBeTruthy()
         expect(inputNumbers.length).toEqual(3)
@@ -259,12 +254,16 @@ describe('HostsTableComponent', () => {
         // Act
         component.table.clear()
         tick()
+        fixture.detectChanges()
         inputNumbers[0].componentInstance.handleOnInput(new InputEvent('input'), '', 0) // machineId
         tick(300)
+        fixture.detectChanges()
         inputNumbers[1].componentInstance.handleOnInput(new InputEvent('input'), '', 0) // subnetId
         tick(300)
+        fixture.detectChanges()
         inputNumbers[2].componentInstance.handleOnInput(new InputEvent('input'), '', 0) // keaSubnetId
         tick(300)
+        fixture.detectChanges()
 
         // Assert
         expect(dhcpService.getHosts).toHaveBeenCalled()
@@ -361,7 +360,6 @@ describe('HostsTableComponent', () => {
     })
 
     it('should contain a refresh button', fakeAsync(() => {
-        renderTable()
         const refreshBtn = fixture.debugElement.query(By.css('[label="Refresh List"] button'))
         expect(refreshBtn).toBeTruthy()
         spyOn(component, 'loadData')
@@ -374,15 +372,16 @@ describe('HostsTableComponent', () => {
     }))
 
     it('hosts list should be filtered by machineId', fakeAsync(() => {
-        renderTable()
         component.hosts = [
             { id: 1, localHosts: [{ daemonId: 1, daemonLabel: 'DHCPv4@localhost', dataSource: 'config' }] },
         ]
+        fixture.detectChanges()
 
         getHostsSpy.and.callThrough()
 
         component.filterTable(2, <FilterMetadata>component.table.filters['machineId'])
         tick(300)
+        fixture.detectChanges()
 
         expect(router.navigate).toHaveBeenCalledWith([], {
             queryParams: {
@@ -398,13 +397,14 @@ describe('HostsTableComponent', () => {
     }))
 
     it('hosts list should be filtered by subnetId', fakeAsync(() => {
-        renderTable()
         component.hosts = [{ id: 1, localHosts: [{ daemonId: 1, dataSource: 'config' }] }]
+        fixture.detectChanges()
 
         getHostsSpy.and.callThrough()
 
         component.filterTable(89, <FilterMetadata>component.table.filters['subnetId'])
         tick(300)
+        fixture.detectChanges()
 
         expect(router.navigate).toHaveBeenCalledWith([], {
             queryParams: {
@@ -420,13 +420,14 @@ describe('HostsTableComponent', () => {
     }))
 
     it('hosts list should be filtered by conflicts', fakeAsync(() => {
-        renderTable()
         component.hosts = [{ id: 1, localHosts: [{ daemonId: 1, dataSource: 'config' }] }]
+        fixture.detectChanges()
 
         getHostsSpy.and.callThrough()
 
         component.filterTable(true, <FilterMetadata>component.table.filters['conflict'])
         tick(300)
+        fixture.detectChanges()
 
         expect(router.navigate).toHaveBeenCalledWith([], {
             queryParams: {
@@ -442,13 +443,14 @@ describe('HostsTableComponent', () => {
     }))
 
     it('hosts list should be filtered by non-conflicts', fakeAsync(() => {
-        renderTable()
         component.hosts = [{ id: 1, localHosts: [{ daemonId: 1, dataSource: 'config' }] }]
+        fixture.detectChanges()
 
         getHostsSpy.and.callThrough()
 
         component.filterTable(false, <FilterMetadata>component.table.filters['conflict'])
         tick(300)
+        fixture.detectChanges()
 
         expect(router.navigate).toHaveBeenCalledWith([], {
             queryParams: {
@@ -464,15 +466,16 @@ describe('HostsTableComponent', () => {
     }))
 
     it('hosts list should be filtered by keaSubnetId', fakeAsync(() => {
-        renderTable()
         component.hosts = [
             { id: 1, localHosts: [{ daemonId: 1, daemonLabel: 'DHCPv4@localhost', dataSource: 'config' }] },
         ]
+        fixture.detectChanges()
 
         getHostsSpy.and.callThrough()
 
         component.filterTable(101, <FilterMetadata>component.table.filters['keaSubnetId'])
         tick(300)
+        fixture.detectChanges()
 
         expect(router.navigate).toHaveBeenCalledWith([], {
             queryParams: {
@@ -591,17 +594,16 @@ describe('HostsTableComponent', () => {
     })
 
     it('should have enabled or disabled button in filtering toolbar according to privileges', () => {
-        component.ngOnInit()
         expect(component.toolbarButtons.length).toBeGreaterThan(1)
         // at first, it should be disabled
         expect(component.toolbarButtons[0].disabled).toBeTrue()
         expect(component.toolbarButtons[1].disabled).toBeTrue()
         // it should react on privilege change
         component.canStartMigration.set(true)
-        TestBed.flushEffects()
+        fixture.detectChanges()
         expect(component.toolbarButtons[0].disabled).toBeFalse()
         component.canCreateHosts.set(true)
-        TestBed.flushEffects()
+        fixture.detectChanges()
         expect(component.toolbarButtons[1].disabled).toBeFalse()
     })
 })

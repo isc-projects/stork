@@ -1,4 +1,4 @@
-<p-tabs [value]="activeTabEntityID" (valueChange)="onTabValueChange($event)" [scrollable]="true">
+<p-tabs [(value)]="activeTabEntityID" (valueChange)="onActiveTabChange($event)" [scrollable]="true">
     <p-tablist>
         @if (firstTabTemplate()) {
             <p-tab

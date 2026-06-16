@@ -22,19 +22,14 @@ describe('DhcpOptionSetFormComponent', () => {
         component = fixture.componentInstance
         fb = new UntypedFormBuilder()
         component.formArray = fb.array([])
+        fixture.detectChanges()
     })
-
-    function render(): void {
-        fixture.detectChanges()
-        fixture.detectChanges()
-    }
 
     it('should create', () => {
         expect(component).toBeTruthy()
     })
 
     it('should add an option', () => {
-        render()
         let addBtn = fixture.debugElement.query(By.css('[label="Add Option"]'))
         expect(addBtn).toBeTruthy()
 
@@ -43,7 +38,7 @@ describe('DhcpOptionSetFormComponent', () => {
         })
 
         addBtn.nativeElement.dispatchEvent(new Event('click'))
-        render()
+        fixture.detectChanges()
 
         expect(component.optionAdd.emit).toHaveBeenCalled()
 
@@ -54,19 +49,21 @@ describe('DhcpOptionSetFormComponent', () => {
         expect(addBtn).toBeTruthy()
 
         addBtn.nativeElement.dispatchEvent(new Event('click'))
-        render()
+        fixture.detectChanges()
         expect(component.formArray.length).toBe(2)
 
         component.onOptionDelete(0)
+        fixture.detectChanges()
         expect(component.formArray.length).toBe(1)
 
         component.onOptionDelete(0)
+        fixture.detectChanges()
         expect(component.formArray.length).toBe(0)
     })
 
     it('should lack the button for higher nesting levels', () => {
         component.nestLevel = 1
-        render()
+        fixture.detectChanges()
 
         expect(fixture.debugElement.query(By.css('button'))).toBeFalsy()
     })

@@ -24,6 +24,7 @@ describe('LogViewPageComponent', () => {
     beforeEach(() => {
         fixture = TestBed.createComponent(LogViewPageComponent)
         component = fixture.componentInstance
+        fixture.detectChanges()
     })
 
     it('should create', () => {
