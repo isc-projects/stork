@@ -999,6 +999,31 @@ func (sa *StorkAgent) ReceiveKeaLeases(req *agentapi.ReceiveKeaLeasesReq, server
 	return nil
 }
 
+// Converts the zone transfer state to the gRPC message. It is extracted into
+// a separate function of unit testing convenience.
+func convertZoneTransferStateToAPI(state bind9xfr.State) *agentapi.ZoneTransfer {
+	convertedState := &agentapi.ZoneTransfer{
+		ViewName:      state.ViewName,
+		ZoneName:      state.ZoneName,
+		Serial:        state.Serial,
+		Client:        state.Client,
+		Server:        state.Server,
+		MessagesCount: state.MessagesCount,
+		RecordsCount:  state.RecordsCount,
+		BytesCount:    state.BytesCount,
+		Duration:      state.Duration.Milliseconds(),
+		Status:        agentapi.ZoneTransfer_XfrStatus(state.Status),
+		Message:       state.Message,
+	}
+	if !state.StartTime.IsZero() {
+		convertedState.StartTime = state.StartTime.UnixMilli()
+	}
+	if !state.CompletionTime.IsZero() {
+		convertedState.CompletionTime = state.CompletionTime.UnixMilli()
+	}
+	return convertedState
+}
+
 // Sends the specified zone transfer state over the stream to the caller. This
 // function is called internally by the ReceiveZoneTransfers function.
 func receiveZoneTransfer(server grpc.ServerStreamingServer[agentapi.ReceiveZoneTransfersRsp], state bind9xfr.State) error {
@@ -1010,18 +1035,7 @@ func receiveZoneTransfer(server grpc.ServerStreamingServer[agentapi.ReceiveZoneT
 	default:
 		// Send the zone transfer state over the stream to the caller.
 		err := server.Send(&agentapi.ReceiveZoneTransfersRsp{
-			ZoneTransfer: &agentapi.ZoneTransfer{
-				ViewName:      state.ViewName,
-				ZoneName:      state.ZoneName,
-				Serial:        state.Serial,
-				Client:        state.Client,
-				Server:        state.Server,
-				MessagesCount: state.MessagesCount,
-				RecordsCount:  state.RecordsCount,
-				BytesCount:    state.BytesCount,
-				Duration:      int64(state.Duration),
-				Status:        agentapi.ZoneTransfer_XfrStatus(state.Status),
-			},
+			ZoneTransfer: convertZoneTransferStateToAPI(state),
 		})
 		if err != nil {
 			return status.Error(codes.Aborted, err.Error())

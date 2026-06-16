@@ -32,6 +32,7 @@ import (
 	"isc.org/stork"
 	agentapi "isc.org/stork/api"
 	bind9config "isc.org/stork/daemoncfg/bind9"
+	"isc.org/stork/daemondata/bind9xfr"
 	keadata "isc.org/stork/daemondata/kea"
 	pdnsdata "isc.org/stork/daemondata/pdns"
 	"isc.org/stork/datamodel/daemonname"
@@ -3826,4 +3827,52 @@ func TestReceiveZoneTransfersSendErrorNoFollow(t *testing.T) {
 	st := status.Convert(err)
 	require.Equal(t, codes.Aborted, st.Code())
 	require.Equal(t, "test error", st.Message())
+}
+
+// Test that the zone transfer state is properly converted to the gRPC message.
+func TestReceiveZoneTransferDataConversion(t *testing.T) {
+	state := bind9xfr.State{
+		ViewName:       "_default",
+		ZoneName:       "zone.example.org",
+		Serial:         1234567890,
+		Client:         "127.0.0.1",
+		Server:         "127.0.0.2",
+		MessagesCount:  100,
+		RecordsCount:   1000,
+		BytesCount:     10000,
+		Duration:       50 * time.Millisecond,
+		Status:         bind9xfr.StatusCompleted,
+		StartTime:      time.UnixMilli(1781602382570),
+		CompletionTime: time.UnixMilli(1781602426477),
+		Message:        "message",
+	}
+	converted := convertZoneTransferStateToAPI(state)
+	require.Equal(t, "_default", converted.ViewName)
+	require.Equal(t, "zone.example.org", converted.ZoneName)
+	require.EqualValues(t, 1234567890, converted.Serial)
+	require.Equal(t, "127.0.0.1", converted.Client)
+	require.Equal(t, "127.0.0.2", converted.Server)
+	require.EqualValues(t, 100, converted.MessagesCount)
+	require.EqualValues(t, 1000, converted.RecordsCount)
+	require.EqualValues(t, 10000, converted.BytesCount)
+	require.EqualValues(t, 50, converted.Duration)
+	require.EqualValues(t, bind9xfr.StatusCompleted, converted.Status)
+	require.EqualValues(t, 1781602382570, converted.StartTime)
+	require.EqualValues(t, 1781602426477, converted.CompletionTime)
+	require.Equal(t, "message", converted.Message)
+}
+
+// Test that the 0 values are set in the returned gRPC message when the time and
+// duration are not specified.
+func TestReceiveZoneTransferDataUnspecifiedTimeAndDuration(t *testing.T) {
+	state := bind9xfr.State{
+		Duration:       0,
+		Status:         bind9xfr.StatusCompleted,
+		StartTime:      time.Time{},
+		CompletionTime: time.Time{},
+	}
+	converted := convertZoneTransferStateToAPI(state)
+	require.Zero(t, converted.Duration)
+	require.Zero(t, converted.StartTime)
+	require.Zero(t, converted.CompletionTime)
 }
