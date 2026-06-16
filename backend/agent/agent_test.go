@@ -3580,10 +3580,8 @@ func TestReceiveZoneTransfersNoFollow(t *testing.T) {
 		// Create a mock for the streaming server.
 		mock := NewMockServerStreamingServer[agentapi.ReceiveZoneTransfersRsp](ctrl)
 
-		// Create a mock specific cancellation context.
-		ctx, cancel := context.WithCancel(t.Context())
-		defer cancel()
-		mock.EXPECT().Context().AnyTimes().Return(ctx)
+		// Return the test context when the mock is called.
+		mock.EXPECT().Context().AnyTimes().Return(t.Context())
 
 		// Collect the responses.
 		responses := make([]*agentapi.ReceiveZoneTransfersRsp, 0)
