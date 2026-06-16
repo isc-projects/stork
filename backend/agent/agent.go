@@ -1082,11 +1082,11 @@ func (sa *StorkAgent) ReceiveZoneTransfers(req *agentapi.ReceiveZoneTransfersReq
 		followChan <-chan bind9xfr.State
 	)
 	if req.Follow {
-		// Caller request that we return currently recorded zone transfers, and keep
+		// Caller requests that we return currently recorded zone transfers, and keep
 		// the stream open to receive new zone transfers as they appear.
 		completed, ongoing, followChan = bind9Daemon.xfrTracker.follow(server.Context())
 	} else {
-		// Caller request that we return currently recorded zone transfers, and close
+		// Caller requests that we return currently recorded zone transfers, and close
 		// the stream after returning the transfers.
 		completed = slices.Values(bind9Daemon.xfrTracker.getCompleted())
 		ongoing = slices.Values(bind9Daemon.xfrTracker.getNotCompleted())
