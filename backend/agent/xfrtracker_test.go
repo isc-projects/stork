@@ -675,7 +675,7 @@ func TestXfrTrackerFollow(t *testing.T) {
 		xfrTracker.feed(logLine)
 	}
 	// Create a context to cancel the follow session.
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 
 	// Get the existing zone transfers and request following.
@@ -742,7 +742,7 @@ func TestXfrTrackerFollowReconnect(t *testing.T) {
 		xfrTracker.feed(logLine)
 	}
 	// Create a context to cancel the follow session.
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 
 	// Get the existing zone transfers and request following.
@@ -752,7 +752,7 @@ func TestXfrTrackerFollowReconnect(t *testing.T) {
 	require.NotNil(t, followChan)
 
 	// Collect the zone transfers from the channel.
-	ctx2, cancel2 := context.WithCancel(context.Background())
+	ctx2, cancel2 := context.WithCancel(t.Context())
 	defer cancel2()
 
 	closeChan := make(chan struct{})
