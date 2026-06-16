@@ -21,7 +21,7 @@ func GetTestZoneTransfers() []*bind9xfr.State {
 			Duration:       52 * time.Millisecond,
 			Status:         bind9xfr.StatusCompleted,
 			StartTime:      time.Date(2026, 4, 16, 10, 41, 27, 71000000, time.UTC),
-			CompletionTime: time.Date(2026, 4, 16, 10, 41, 27, 124000000, time.UTC),
+			CompletionTime: time.Date(2026, 4, 16, 10, 45, 11, 124000000, time.UTC),
 		},
 		{
 			ViewName:       "_default",
@@ -34,8 +34,8 @@ func GetTestZoneTransfers() []*bind9xfr.State {
 			BytesCount:     1320233,
 			Duration:       40 * time.Millisecond,
 			Status:         bind9xfr.StatusMessage,
-			StartTime:      time.Date(2026, 4, 16, 10, 41, 27, 71000000, time.UTC),
-			CompletionTime: time.Date(2026, 4, 16, 10, 41, 27, 124000000, time.UTC),
+			StartTime:      time.Date(2026, 4, 16, 11, 42, 30, 71000000, time.UTC),
+			CompletionTime: time.Date(2026, 4, 16, 11, 44, 30, 124000000, time.UTC),
 		},
 		{
 			ViewName:       "private",
@@ -48,8 +48,8 @@ func GetTestZoneTransfers() []*bind9xfr.State {
 			BytesCount:     1,
 			Duration:       1 * time.Second,
 			Status:         bind9xfr.StatusMessage,
-			StartTime:      time.Date(2026, 4, 16, 10, 41, 27, 71000000, time.UTC),
-			CompletionTime: time.Date(2026, 4, 16, 10, 41, 27, 124000000, time.UTC),
+			StartTime:      time.Date(2026, 4, 16, 12, 32, 13, 50000000, time.UTC),
+			CompletionTime: time.Date(2026, 4, 16, 12, 33, 34, 71000000, time.UTC),
 		},
 		{
 			ViewName:  "public",
@@ -58,7 +58,7 @@ func GetTestZoneTransfers() []*bind9xfr.State {
 			Client:    "192.168.1.1",
 			Server:    "192.168.1.2",
 			Status:    bind9xfr.StatusStarted,
-			StartTime: time.Date(2026, 4, 16, 10, 41, 27, 71000000, time.UTC),
+			StartTime: time.Date(2026, 4, 23, 13, 12, 34, 50000000, time.UTC),
 		},
 		{
 			ViewName:  "_default",
@@ -68,7 +68,7 @@ func GetTestZoneTransfers() []*bind9xfr.State {
 			Server:    "192.168.1.2",
 			Status:    bind9xfr.StatusMessage,
 			Message:   "Transfer failed: AXFR timed out after 50 seconds (serial 2026041604)",
-			StartTime: time.Date(2026, 4, 16, 10, 41, 27, 71000000, time.UTC),
+			StartTime: time.Date(2026, 4, 25, 1, 2, 0, 13000000, time.UTC),
 		},
 		{
 			ViewName: "_default",

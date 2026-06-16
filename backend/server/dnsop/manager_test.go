@@ -8,12 +8,14 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/stretchr/testify/require"
 	gomock "go.uber.org/mock/gomock"
 	agentapi "isc.org/stork/api"
 	bind9config "isc.org/stork/daemoncfg/bind9"
+	bind9xfr "isc.org/stork/daemondata/bind9xfr"
 	"isc.org/stork/datamodel/daemonname"
 	dnsmodel "isc.org/stork/datamodel/dns"
 	agentcomm "isc.org/stork/server/agentcomm"
@@ -235,6 +237,23 @@ func TestNewManager(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, manager)
 	manager.Shutdown()
+}
+
+// Test that the managerImpl implements the ManagerAccessors interface.
+func TestManagerAccessors(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	controller := gomock.NewController(t)
+	defer controller.Finish()
+	mock := NewMockConnectedAgents(controller)
+
+	manager := &managerImpl{
+		db:     db,
+		agents: mock,
+	}
+	require.Equal(t, db, manager.GetDB())
+	require.Equal(t, mock, manager.GetConnectedAgents())
 }
 
 // Test that an error is returned when trying to fetch the zones but there
@@ -2561,4 +2580,190 @@ func TestGetBind9FormattedConfigCancelRequest(t *testing.T) {
 	rsp, ok = next()
 	require.Nil(t, rsp)
 	require.False(t, ok)
+}
+
+// Test starting and stopping zone transfer tracking for all BIND 9 daemons.
+func TestStartStopXFRTracking(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Add a machine.
+	machine := &dbmodel.Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: int64(8080),
+	}
+	err := dbmodel.AddMachine(db, machine)
+	require.NoError(t, err)
+
+	// Add several daemons, including the ones that don't support zone transfer tracking.
+	daemons := []*dbmodel.Daemon{
+		dbmodel.NewDaemon(machine, daemonname.Bind9, true, []*dbmodel.AccessPoint{}),
+		dbmodel.NewDaemon(machine, daemonname.Bind9, true, []*dbmodel.AccessPoint{}),
+		dbmodel.NewDaemon(machine, daemonname.DHCPv4, true, []*dbmodel.AccessPoint{}),
+		dbmodel.NewDaemon(machine, daemonname.DHCPv6, true, []*dbmodel.AccessPoint{}),
+		dbmodel.NewDaemon(machine, daemonname.PDNS, true, []*dbmodel.AccessPoint{}),
+	}
+	for _, daemon := range daemons {
+		err := dbmodel.AddDaemon(db, daemon)
+		require.NoError(t, err)
+	}
+
+	synctest.Test(t, func(t *testing.T) {
+		controller := gomock.NewController(t)
+		defer controller.Finish()
+		agents := NewMockConnectedAgents(controller)
+
+		for i := 0; i < 2; i++ {
+			// For the first two we should observe attempts to connect to the agents.
+			agents.EXPECT().ReceiveZoneTransfers(gomock.Any(), gomock.Cond(func(d any) bool {
+				return d.(*dbmodel.Daemon).ID == daemons[i].ID
+			}), true).
+				AnyTimes().
+				Return(func(yield func(*bind9xfr.State, error) bool) {
+					// Returning an error ensures they will be actively reconnecting.
+					_ = yield(nil, &testError{})
+				})
+		}
+
+		manager, err := NewManager(&appstest.ManagerAccessorsWrapper{
+			DB:     db,
+			Agents: agents,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, manager)
+		defer manager.Shutdown()
+
+		// Start tracking zone transfers for all BIND 9 daemons.
+		err = manager.StartXFRTracking()
+		require.NoError(t, err)
+		synctest.Wait()
+
+		// Make sure that the collectors for the BIND 9 daemons are active,
+		// while the others are not.
+		for _, daemon := range daemons {
+			switch daemon.Name {
+			case daemonname.Bind9:
+				require.True(t, manager.IsXFRTrackingActiveForDaemon(daemon))
+			default:
+				require.False(t, manager.IsXFRTrackingActiveForDaemon(daemon))
+			}
+		}
+		// Stop tracking zone transfers for all BIND 9 daemons.
+		manager.StopXFRTracking()
+		synctest.Wait()
+
+		// Make sure there are no active collectors.
+		for _, daemon := range daemons {
+			require.False(t, manager.IsXFRTrackingActiveForDaemon(daemon))
+		}
+	})
+}
+
+// Test starting and stopping zone transfer tracking for a selected BIND 9 daemon.
+func TestStartStopXFRTrackingForDaemon(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Add a machine.
+	machine := &dbmodel.Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: int64(8080),
+	}
+	err := dbmodel.AddMachine(db, machine)
+	require.NoError(t, err)
+
+	// Add two BIND 9 daemons.
+	daemons := []*dbmodel.Daemon{
+		dbmodel.NewDaemon(machine, daemonname.Bind9, true, []*dbmodel.AccessPoint{}),
+		dbmodel.NewDaemon(machine, daemonname.Bind9, true, []*dbmodel.AccessPoint{}),
+	}
+	for _, daemon := range daemons {
+		err := dbmodel.AddDaemon(db, daemon)
+		require.NoError(t, err)
+	}
+
+	synctest.Test(t, func(t *testing.T) {
+		controller := gomock.NewController(t)
+		defer controller.Finish()
+		agents := NewMockConnectedAgents(controller)
+
+		for i := 0; i < 2; i++ {
+			// Make sure that the respective collectors attempt to connect to the agents.
+			agents.EXPECT().ReceiveZoneTransfers(gomock.Any(), gomock.Cond(func(d any) bool {
+				return d.(*dbmodel.Daemon).ID == daemons[i].ID
+			}), true).
+				AnyTimes().
+				Return(func(yield func(*bind9xfr.State, error) bool) {
+					// Returning an error ensures they will be actively reconnecting.
+					_ = yield(nil, &testError{})
+				})
+		}
+
+		manager, err := NewManager(&appstest.ManagerAccessorsWrapper{
+			DB:     db,
+			Agents: agents,
+		})
+		require.NoError(t, err)
+		require.NotNil(t, manager)
+		defer manager.Shutdown()
+
+		// Start tracking zone transfers for the first daemon.
+		err = manager.StartXFRTrackingForDaemon(daemons[0])
+		require.NoError(t, err)
+		synctest.Wait()
+		require.True(t, manager.IsXFRTrackingActiveForDaemon(daemons[0]))
+		require.False(t, manager.IsXFRTrackingActiveForDaemon(daemons[1]))
+
+		// Start tracking zone transfers for the second daemon.
+		err = manager.StartXFRTrackingForDaemon(daemons[1])
+		require.NoError(t, err)
+		synctest.Wait()
+		require.True(t, manager.IsXFRTrackingActiveForDaemon(daemons[0]))
+		require.True(t, manager.IsXFRTrackingActiveForDaemon(daemons[1]))
+
+		// Stop tracking zone transfers for the second daemon.
+		manager.StopXFRTrackingForDaemon(daemons[1])
+		synctest.Wait()
+		require.True(t, manager.IsXFRTrackingActiveForDaemon(daemons[0]))
+		require.False(t, manager.IsXFRTrackingActiveForDaemon(daemons[1]))
+
+		// Stop tracking zone transfers for the first daemon.
+		manager.StopXFRTrackingForDaemon(daemons[0])
+		synctest.Wait()
+		require.False(t, manager.IsXFRTrackingActiveForDaemon(daemons[0]))
+		require.False(t, manager.IsXFRTrackingActiveForDaemon(daemons[1]))
+	})
+}
+
+// Test that an error is returned if zone transfer tracking is attempted for a non-BIND 9 daemon.
+func TestStartXFRTrackingForDaemonUnsupportedDaemon(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Add a machine.
+	machine := &dbmodel.Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: int64(8080),
+	}
+	err := dbmodel.AddMachine(db, machine)
+	require.NoError(t, err)
+
+	// Add a Kea daemon instead of a BIND 9 daemon.
+	daemon := dbmodel.NewDaemon(machine, daemonname.DHCPv4, true, []*dbmodel.AccessPoint{})
+	err = dbmodel.AddDaemon(db, daemon)
+	require.NoError(t, err)
+
+	manager, err := NewManager(&appstest.ManagerAccessorsWrapper{
+		DB: db,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, manager)
+	defer manager.Shutdown()
+
+	err = manager.StartXFRTrackingForDaemon(daemon)
+	require.Error(t, err)
+	require.ErrorContains(t, err, "zone transfer tracking is supported only for BIND 9 daemons")
 }

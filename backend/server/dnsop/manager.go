@@ -15,13 +15,17 @@ import (
 	log "github.com/sirupsen/logrus"
 	agentapi "isc.org/stork/api"
 	bind9config "isc.org/stork/daemoncfg/bind9"
+	"isc.org/stork/datamodel/daemonname"
 	dnsmodel "isc.org/stork/datamodel/dns"
 	agentcomm "isc.org/stork/server/agentcomm"
 	dbmodel "isc.org/stork/server/database/model"
 	storkutil "isc.org/stork/util"
 )
 
-var _ Manager = (*managerImpl)(nil)
+var (
+	_ Manager          = (*managerImpl)(nil)
+	_ ManagerAccessors = (*managerImpl)(nil)
+)
 
 // An error returned upon a subsequent attempt to fetch zones while
 // fetching zones is still in progress. The REST API can use this
@@ -112,6 +116,17 @@ type Manager interface {
 	// files are returned. Otherwise, only the configuration files explicitly enabled
 	// in the file selector are returned.
 	GetBind9FormattedConfig(ctx context.Context, daemonID int64, fileSelector *bind9config.FileTypeSelector, filter *bind9config.Filter) iter.Seq[*Bind9FormattedConfigResponse]
+	// Starts tracking zone transfers.
+	StartXFRTracking() error
+	// Starts tracking zone transfers for a selected BIND 9 daemon.
+	StartXFRTrackingForDaemon(daemon *dbmodel.Daemon) error
+	// Stops tracking zone transfers.
+	StopXFRTracking()
+	// Stops tracking zone transfers for a selected BIND 9 daemon.
+	StopXFRTrackingForDaemon(daemon *dbmodel.Daemon)
+	// Checks if zone transfers are being tracked for a selected BIND 9 daemon.
+	IsXFRTrackingActiveForDaemon(daemon *dbmodel.Daemon) bool
+	// Shuts down the DNS manager by stopping background tasks.
 	Shutdown()
 }
 
@@ -407,6 +422,12 @@ type managerImpl struct {
 	pool *storkutil.PausablePool
 	// A cancel function for the pool.
 	cancel context.CancelFunc
+	// A map of daemon IDs to started XFR collectors. Collectors may be
+	// both active (when connected to the agent or trying to reconnect)
+	// or inactive (when the stream has ended cleanly).
+	xfrCollectors map[int64]*xfrCollector
+	// A mutex protecting the xfrCollectors map from concurrent access.
+	xfrCollectorsMutex sync.RWMutex
 }
 
 // A structure returned over the channel when Manager completes asynchronous task.
@@ -431,10 +452,21 @@ func NewManager(owner ManagerAccessors) (Manager, error) {
 			requestChan: make(chan *bind9FormattedConfigRequest),
 			requests:    make(map[int64]bool),
 		},
-		cancel: cancel,
+		cancel:        cancel,
+		xfrCollectors: make(map[int64]*xfrCollector),
 	}
 	impl.startAsyncRequestWorkers(ctx)
 	return impl, nil
+}
+
+// Returns the database instance (implements the ManagerAccessors interface).
+func (manager *managerImpl) GetDB() *pg.DB {
+	return manager.db
+}
+
+// Returns the connected agents instance (implements the ManagerAccessors interface).
+func (manager *managerImpl) GetConnectedAgents() agentcomm.ConnectedAgents {
+	return manager.agents
 }
 
 // Contacts all agents with DNS servers and fetches zones from these servers.
@@ -807,6 +839,7 @@ func (manager *managerImpl) stopRRsRequestWorkers() {
 // Shuts down the DNS manager by stopping background tasks.
 func (manager *managerImpl) Shutdown() {
 	log.Info("Shutting down DNS Manager")
+	manager.StopXFRTracking()
 	manager.stopRRsRequestWorkers()
 }
 
@@ -1011,6 +1044,85 @@ func (manager *managerImpl) GetBind9FormattedConfig(ctx context.Context, daemonI
 			}
 		}
 	}
+}
+
+// Attempts to start tracking zone transfers for all BIND 9 daemons.
+func (manager *managerImpl) StartXFRTracking() error {
+	daemons, err := dbmodel.GetDaemonsByName(manager.db, daemonname.Bind9)
+	if err != nil {
+		return errors.Wrap(err, "failed to get BIND 9 daemons while starting zone transfer tracking")
+	}
+	for _, daemon := range daemons {
+		if daemon.Bind9Daemon == nil {
+			// Zone transfer tracking is supported only for BIND 9 daemons.
+			continue
+		}
+		manager.xfrCollectorsMutex.Lock()
+		collector := manager.xfrCollectors[daemon.ID]
+		if collector == nil {
+			collector = newXFRCollector(manager, &daemon)
+			manager.xfrCollectors[daemon.ID] = collector
+		}
+		manager.xfrCollectorsMutex.Unlock()
+		collector.start()
+	}
+	return nil
+}
+
+// Attempts to start tracking zone transfers for a selected BIND 9 daemon.
+func (manager *managerImpl) StartXFRTrackingForDaemon(daemon *dbmodel.Daemon) error {
+	if daemon.Name != daemonname.Bind9 {
+		return errors.Errorf("zone transfer tracking is supported only for BIND 9 daemons, got %s", daemon.Name)
+	}
+	manager.xfrCollectorsMutex.Lock()
+	collector := manager.xfrCollectors[daemon.ID]
+	if collector == nil {
+		collector = newXFRCollector(manager, daemon)
+		manager.xfrCollectors[daemon.ID] = collector
+	}
+	manager.xfrCollectorsMutex.Unlock()
+	collector.start()
+	return nil
+}
+
+// Stops tracking zone transfers for all BIND 9 daemons.
+func (manager *managerImpl) StopXFRTracking() {
+	manager.xfrCollectorsMutex.Lock()
+	collectors := manager.xfrCollectors
+	manager.xfrCollectors = make(map[int64]*xfrCollector)
+	manager.xfrCollectorsMutex.Unlock()
+	var wg sync.WaitGroup
+	for _, collector := range collectors {
+		wg.Add(1)
+		// Send stop signal to all collectors concurrently.
+		go func() {
+			defer wg.Done()
+			collector.stop()
+		}()
+	}
+	// Wait for all collectors to stop.
+	wg.Wait()
+}
+
+// Stops tracking zone transfers for a selected BIND 9 daemon.
+func (manager *managerImpl) StopXFRTrackingForDaemon(daemon *dbmodel.Daemon) {
+	manager.xfrCollectorsMutex.Lock()
+	collector := manager.xfrCollectors[daemon.ID]
+	if collector != nil {
+		delete(manager.xfrCollectors, daemon.ID)
+	}
+	manager.xfrCollectorsMutex.Unlock()
+	if collector != nil {
+		collector.stop()
+	}
+}
+
+// Checks if zone transfers are being tracked for a selected BIND 9 daemon.
+func (manager *managerImpl) IsXFRTrackingActiveForDaemon(daemon *dbmodel.Daemon) bool {
+	manager.xfrCollectorsMutex.RLock()
+	defer manager.xfrCollectorsMutex.RUnlock()
+	collector := manager.xfrCollectors[daemon.ID]
+	return collector != nil && collector.isActive()
 }
 
 // Convenience function storing a value in a map with mutex protection.
