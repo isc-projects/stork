@@ -8,6 +8,7 @@ import { of } from 'rxjs'
 import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { provideRouter } from '@angular/router'
+import { By } from '@angular/platform-browser'
 
 describe('VersionStatusComponent', () => {
     let component: VersionStatusComponent
@@ -234,7 +235,7 @@ describe('VersionStatusComponent', () => {
         // Arrange
         // Act & Assert
         setCorrectInputs()
-        const messagesDiv = fixture.nativeElement.querySelector('div.p-message')
+        const messagesDiv = fixture.debugElement.query(By.css('div.p-message-content-wrapper'))
         expect(messagesDiv).toBeNull()
     })
 
@@ -244,7 +245,7 @@ describe('VersionStatusComponent', () => {
 
         // Act & Assert
         setCorrectInputs()
-        const messagesDiv = fixture.nativeElement.querySelector('div.p-message')
+        const messagesDiv = fixture.debugElement.query(By.css('div.p-message-content-wrapper'))
         expect(messagesDiv).toBeTruthy()
     })
 
