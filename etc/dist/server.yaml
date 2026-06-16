@@ -26,22 +26,31 @@ homepage: "https://stork.isc.org"
 license: "MPL 2.0"
 
 contents:
-- src: dist/server/lib/
-  dst: /lib
-- src: dist/server/lib/hooks
-  dst: /usr/lib/stork-server/hooks
-  type: dir
-- src: dist/server/usr/
-  dst: /usr
 - src: dist/server/etc/stork/server.env
   dst: /etc/stork/server.env
   type: config|noreplace
-- src: dist/server/etc/stork/isc-stork-server.initd
-  dst: /etc/init.d/isc-stork-server
-  packager: apk
 - src: dist/server/etc/stork/versions.json
   dst: /etc/stork/versions.json
   type: config
+- src: dist/server/lib/systemd/system/isc-stork-server.service
+  dst: /lib/systemd/system/isc-stork-server.service
+- src: dist/server/lib/hooks
+  dst: /usr/lib/stork-server/hooks
+  type: dir
+- src: dist/server/usr/bin/stork-server
+  dst: /usr/bin/stork-server
+- src: dist/server/usr/bin/stork-tool
+  dst: /usr/bin/stork-tool
+- src: dist/server/usr/share/man/man8/stork-server.8
+  dst: /usr/share/man/man8/stork-server.8
+- src: dist/server/usr/share/man/man8/stork-tool.8
+  dst: /usr/share/man/man8/stork-tool.8
+- src: dist/server/usr/share/stork
+  dst: /usr/share/stork
+  type: dir
+- src: dist/server/etc/stork/isc-stork-server.initd
+  dst: /etc/init.d/isc-stork-server
+  packager: apk
 - dst: /usr/share/stork/www/assets/authentication-methods
   type: dir
   file_info:
