@@ -279,9 +279,6 @@ func (t *xfrTracker) feed(logLine string) {
 			t.completedList.Remove(t.completedList.Front())
 		}
 	}
-	t.mutex.Unlock()
-
-	t.mutex.Lock()
 	if t.followChan != nil && t.followCtx != nil {
 		select {
 		case t.followChan <- *newState:
