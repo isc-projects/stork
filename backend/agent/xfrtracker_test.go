@@ -695,7 +695,10 @@ func TestXfrTrackerFollow(t *testing.T) {
 		defer close(closeChan)
 		for {
 			select {
-			case state := <-followChan:
+			case state, ok := <-followChan:
+				if !ok {
+					return
+				}
 				followedStates = append(followedStates, state)
 			case <-ctx.Done():
 				// Use the same context we're using for following to stop this goroutine.
