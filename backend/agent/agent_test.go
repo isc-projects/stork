@@ -3503,6 +3503,8 @@ func TestReceiveZoneTransfersWhileFollowing(t *testing.T) {
 		// Make sure that the number of transfers received is correct.
 		require.Len(t, responses[0], 6)
 
+		// This channel will be used to ensure that the second request has ended
+		// after returning all the data.
 		doneChan2 := make(chan struct{})
 		go func() {
 			defer close(doneChan2)
