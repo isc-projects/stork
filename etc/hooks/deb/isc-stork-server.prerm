@@ -15,6 +15,9 @@ before_remove () {
         systemctl disable isc-stork-server
         systemctl stop isc-stork-server
     fi
+
+    # Remove the authentication-methods icons.
+    rm -f /usr/share/stork/www/assets/authentication-methods/*.png
 }
 
 

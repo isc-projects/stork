@@ -16,5 +16,7 @@ case "$1" in
             systemctl disable isc-stork-server
             systemctl stop isc-stork-server
         fi
+
+        rm -f /usr/share/stork/www/assets/authentication-methods/*.png
         ;;
 esac

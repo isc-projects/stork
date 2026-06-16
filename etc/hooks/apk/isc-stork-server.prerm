@@ -5,4 +5,7 @@ set -eu
 if command -v rc-service > /dev/null; then
   # Stop if started.
   rc-service --ifstarted isc-stork-server stop
+
+  # Remove the authentication-methods icons.
+  rm -f /usr/share/stork/www/assets/authentication-methods/*.png
 fi
