@@ -3533,8 +3533,8 @@ func TestReceiveZoneTransfersWhileFollowing(t *testing.T) {
 		// The responses should be sent in response to the first request.
 		require.Len(t, responses[0], 11)
 
+		// Cancel the first request to follow the zone transfers.
 		cancels[0]()
-
 		// Make sure that the first request has ended as a result of the cancellation.
 		<-doneChan1
 	})
