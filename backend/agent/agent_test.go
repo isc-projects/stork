@@ -3258,7 +3258,7 @@ func TestReceiveZoneTransfersCancelContext(t *testing.T) {
 		mock := NewMockServerStreamingServer[agentapi.ReceiveZoneTransfersRsp](ctrl)
 
 		// Create a mock specific cancellation context.
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(t.Context())
 		defer cancel()
 		mock.EXPECT().Context().AnyTimes().Return(ctx)
 
@@ -3352,7 +3352,7 @@ func TestReceiveZoneTransfersCancelReconnect(t *testing.T) {
 			mock := NewMockServerStreamingServer[agentapi.ReceiveZoneTransfersRsp](ctrl)
 
 			// Create mock specific cancellation context.
-			ctx, cancel := context.WithCancel(context.Background())
+			ctx, cancel := context.WithCancel(t.Context())
 			defer cancel()
 			cancels[i] = cancel
 			mock.EXPECT().Context().AnyTimes().Return(ctx)
@@ -3470,7 +3470,7 @@ func TestReceiveZoneTransfersWhileFollowing(t *testing.T) {
 			mock := NewMockServerStreamingServer[agentapi.ReceiveZoneTransfersRsp](ctrl)
 
 			// Create mock specific cancellation context.
-			ctx, cancel := context.WithCancel(context.Background())
+			ctx, cancel := context.WithCancel(t.Context())
 			defer cancel()
 			cancels[i] = cancel
 			mock.EXPECT().Context().AnyTimes().Return(ctx)
@@ -3579,7 +3579,7 @@ func TestReceiveZoneTransfersNoFollow(t *testing.T) {
 		mock := NewMockServerStreamingServer[agentapi.ReceiveZoneTransfersRsp](ctrl)
 
 		// Create a mock specific cancellation context.
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(t.Context())
 		defer cancel()
 		mock.EXPECT().Context().AnyTimes().Return(ctx)
 
@@ -3732,7 +3732,7 @@ func TestReceiveZoneTransfersSendErrorWhileFollowing(t *testing.T) {
 
 		mock := NewMockServerStreamingServer[agentapi.ReceiveZoneTransfersRsp](ctrl)
 
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cancel := context.WithCancel(t.Context())
 		defer cancel()
 		mock.EXPECT().Context().AnyTimes().Return(ctx)
 
@@ -3806,7 +3806,7 @@ func TestReceiveZoneTransfersSendErrorNoFollow(t *testing.T) {
 
 	mock := NewMockServerStreamingServer[agentapi.ReceiveZoneTransfersRsp](ctrl)
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 	mock.EXPECT().Context().AnyTimes().Return(ctx)
 
