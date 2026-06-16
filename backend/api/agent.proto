@@ -432,24 +432,48 @@ message ReceiveZoneTransfersRsp {
 
 // A single zone transfer state.
 message ZoneTransfer {
+  // Zone transfer status.
   enum XfrStatus {
+    // The zone transfer status was not determined.
     UNKNOWN = 0;
+    // The zone transfer has started.
     STARTED = 1;
+    // The zone transfer is ongoing. The last message indicates that the
+    // secondary server has connected to the primary server.
     CONNECTED = 2;
+    // The zone transfer has completed.
     COMPLETED = 3;
+    // A message has been logged during the zone transfer that neither marks the
+    // completion of the zone transfer nor that the secondary server has connected
+    // to the primary server. Most likely it is a message indicating some kind of
+    //problem.
     MESSAGE = 4;
   }
+  // Name of the view where the zone transfer belongs.
   string viewName = 1;
+  // Name of the zone being transferred.
   string zoneName = 2;
+  // Zone serial number.
   int64 serial = 3;
+  // Secondary server address.
   string client = 4;
+  // Primary server address.
   string server = 5;
+  // Number of messages sent/received during the zone transfer.
   int64 messagesCount = 6;
+  // Number of records sent/received during the zone transfer.
   int64 recordsCount = 7;
+  // Number of bytes sent/received during the zone transfer.
   int64 bytesCount = 8;
+  // Duration of the zone transfer in milliseconds.
   int64 duration = 9;
+  // Zone transfer status.
   XfrStatus status = 10;
+  // Unix timestamp in milliseconds when the zone transfer started.
   int64 startTime = 11;
+  // Unix timestamp in milliseconds when the zone transfer completed.
   int64 completionTime = 12;
+  // A message logged during the zone transfer which may potentially indicate
+  // a failure if the zone transfer status is MESSAGE.
   string message = 13;
 }
