@@ -828,6 +828,7 @@ func TestAddOrUpdateExternalUserAddsUser(t *testing.T) {
 	require.Equal(t, "ext_method", systemUser.AuthenticationMethodID)
 	require.Greater(t, systemUser.ID, int64(0))
 	require.False(t, systemUser.ChangePassword)
+	require.False(t, systemUser.ExternallyManagedGroups)
 
 	// Add another very similar user, but with different authentication method.
 	systemUser2, err := AddOrUpdateExternalUser(db, externalUser, "other_method")
@@ -845,6 +846,7 @@ func TestAddOrUpdateExternalUserAddsUser(t *testing.T) {
 	require.Equal(t, "other_method", systemUser2.AuthenticationMethodID)
 	require.Greater(t, systemUser2.ID, systemUser.ID)
 	require.False(t, systemUser2.ChangePassword)
+	require.False(t, systemUser2.ExternallyManagedGroups)
 }
 
 // Test that the user is successfully updated by AddOrUpdateExternalUser.
@@ -919,6 +921,7 @@ func TestAddOrUpdateExternalUserFollowsGroupMappingChanges(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, createdUser)
 	require.Nil(t, createdUser.Groups)
+	require.True(t, createdUser.ExternallyManagedGroups)
 
 	// User was assigned externally to group which was mapped to Stork Admin group.
 	externalUser.Groups = []authdata.UserGroupID{authdata.UserGroupIDAdmin}
@@ -960,6 +963,7 @@ func TestAddOrUpdateExternalUserFollowsGroupMappingChanges(t *testing.T) {
 	require.NotNil(t, updatedUser.Groups)
 	require.Len(t, updatedUser.Groups, 1)
 	require.Equal(t, AdminGroupID, updatedUser.Groups[0].ID) // Internally assigned group should be applied.
+	require.False(t, updatedUser.ExternallyManagedGroups)
 }
 
 // Test that the user is not added by AddOrUpdateExternalUser when DB integrity violation occurs.

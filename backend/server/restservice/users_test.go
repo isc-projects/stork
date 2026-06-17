@@ -2129,6 +2129,9 @@ func TestCreateSessionOfExternalUserRoleChanges(t *testing.T) {
 	require.Len(t, okRsp1.Payload.Groups, 1)
 	require.Equal(t, dbmodel.AdminGroupID, okRsp1.Payload.Groups[0])
 	require.Empty(t, okRsp2.Payload.Groups)
+	require.True(t, okRsp1.Payload.ExternallyManagedGroups)
+	require.True(t, okRsp2.Payload.ExternallyManagedGroups)
+	require.False(t, okRsp3.Payload.ExternallyManagedGroups)
 }
 
 // Test that the internal authentication method is always returned.
