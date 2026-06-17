@@ -43,6 +43,9 @@ const preview = {
                         },
                     },
                 }),
+                // This is needed by Angular 21, the change was recommended by
+                // the angular.dev/update-guide:  Zone-based applications should add
+                // provideZoneChangeDetection() to your application's root providers.
                 provideZoneChangeDetection({ eventCoalescing: true }),
                 // Use MockedAuthService in all stories so that user privileges may be controlled by global "User role" setting.
                 { provide: AuthService, useClass: MockedAuthService },
