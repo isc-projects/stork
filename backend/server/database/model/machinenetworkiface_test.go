@@ -41,6 +41,12 @@ func TestUpsertMachineNetworkInterfaces(t *testing.T) {
 			HardwareAddress: []byte{1, 2, 3, 4, 5, 6},
 			IPAddresses:     []MachineNetworkInterfaceIPAddress{{IPAddress: "192.168.1.3"}, {IPAddress: "192.168.1.4"}},
 		},
+		// The interface with no IP addresses should be inserted as well.
+		{
+			Name:            "eth2",
+			Flags:           uint32(net.FlagUp),
+			HardwareAddress: []byte{1, 2, 3, 4, 5, 6},
+		},
 	}
 	err = UpsertMachineNetworkInterfaces(db, m.ID, interfaces...)
 	require.NoError(t, err)
@@ -54,7 +60,8 @@ func TestUpsertMachineNetworkInterfaces(t *testing.T) {
 	require.Equal(t, "192.168.1.3", ipAddresses[2].IPAddress)
 	require.Equal(t, "192.168.1.4", ipAddresses[3].IPAddress)
 
-	// Preserve one of the interfaces and replace the other one.
+	// Preserve one of the interfaces, replace the other one, remove the third
+	// one.
 	interfaces[1] = MachineNetworkInterface{
 		Name:            "eth2",
 		Flags:           uint32(net.FlagUp),
@@ -121,13 +128,20 @@ func TestUpsertMachineHostInterfacesRemove(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEqual(t, 0, m.ID)
 
-	// Insert two IP addresses.
-	err = UpsertMachineNetworkInterfaces(db, m.ID, MachineNetworkInterface{
-		Name:            "eth0",
-		Flags:           uint32(net.FlagUp),
-		HardwareAddress: []byte{1, 2, 3, 4, 5, 6},
-		IPAddresses:     []MachineNetworkInterfaceIPAddress{{IPAddress: "192.168.1.1"}, {IPAddress: "192.168.1.2"}},
-	})
+	// Insert two IP addresses and an interface with no IP addresses.
+	err = UpsertMachineNetworkInterfaces(db, m.ID,
+		MachineNetworkInterface{
+			Name:            "eth0",
+			Flags:           uint32(net.FlagUp),
+			HardwareAddress: []byte{1, 2, 3, 4, 5, 6},
+			IPAddresses:     []MachineNetworkInterfaceIPAddress{{IPAddress: "192.168.1.1"}, {IPAddress: "192.168.1.2"}},
+		},
+		MachineNetworkInterface{
+			Name:            "eth1",
+			Flags:           uint32(net.FlagUp),
+			HardwareAddress: []byte{1, 2, 3, 4, 5, 6},
+		},
+	)
 	require.NoError(t, err)
 
 	// Make sure that the IP addresses are present in the database.
