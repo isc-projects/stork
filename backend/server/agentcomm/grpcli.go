@@ -1436,19 +1436,23 @@ func (agents *connectedAgentsImpl) ReceiveZoneTransfers(ctx context.Context, dae
 				return
 			}
 			state := &bind9xfr.State{
-				ViewName:       receivedTransferState.ZoneTransfer.ViewName,
-				ZoneName:       receivedTransferState.ZoneTransfer.ZoneName,
-				Serial:         receivedTransferState.ZoneTransfer.Serial,
-				Client:         receivedTransferState.ZoneTransfer.Client,
-				Server:         receivedTransferState.ZoneTransfer.Server,
-				MessagesCount:  receivedTransferState.ZoneTransfer.MessagesCount,
-				RecordsCount:   receivedTransferState.ZoneTransfer.RecordsCount,
-				BytesCount:     receivedTransferState.ZoneTransfer.BytesCount,
-				Duration:       time.Duration(receivedTransferState.ZoneTransfer.Duration),
-				Status:         bind9xfr.Status(receivedTransferState.ZoneTransfer.Status),
-				StartTime:      time.Unix(receivedTransferState.ZoneTransfer.StartTime, 0),
-				CompletionTime: time.Unix(receivedTransferState.ZoneTransfer.CompletionTime, 0),
-				Message:        receivedTransferState.ZoneTransfer.Message,
+				ViewName:      receivedTransferState.ZoneTransfer.ViewName,
+				ZoneName:      receivedTransferState.ZoneTransfer.ZoneName,
+				Serial:        receivedTransferState.ZoneTransfer.Serial,
+				Client:        receivedTransferState.ZoneTransfer.Client,
+				Server:        receivedTransferState.ZoneTransfer.Server,
+				MessagesCount: receivedTransferState.ZoneTransfer.MessagesCount,
+				RecordsCount:  receivedTransferState.ZoneTransfer.RecordsCount,
+				BytesCount:    receivedTransferState.ZoneTransfer.BytesCount,
+				Duration:      time.Duration(receivedTransferState.ZoneTransfer.Duration) * time.Millisecond,
+				Status:        bind9xfr.Status(receivedTransferState.ZoneTransfer.Status),
+				Message:       receivedTransferState.ZoneTransfer.Message,
+			}
+			if receivedTransferState.ZoneTransfer.StartTime > 0 {
+				state.StartTime = time.UnixMilli(receivedTransferState.ZoneTransfer.StartTime).UTC()
+			}
+			if receivedTransferState.ZoneTransfer.CompletionTime > 0 {
+				state.CompletionTime = time.UnixMilli(receivedTransferState.ZoneTransfer.CompletionTime).UTC()
 			}
 			if !yield(state, nil) {
 				// Stop if the caller no longer iterates over the transfer states.

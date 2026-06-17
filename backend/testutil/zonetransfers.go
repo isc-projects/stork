@@ -20,8 +20,8 @@ func GetTestZoneTransfers() []*bind9xfr.State {
 			BytesCount:     1320233,
 			Duration:       52 * time.Millisecond,
 			Status:         bind9xfr.StatusCompleted,
-			StartTime:      time.Date(2026, 4, 16, 10, 41, 27, 71, time.UTC),
-			CompletionTime: time.Date(2026, 4, 16, 10, 41, 27, 124, time.UTC),
+			StartTime:      time.Date(2026, 4, 16, 10, 41, 27, 71000000, time.UTC),
+			CompletionTime: time.Date(2026, 4, 16, 10, 41, 27, 124000000, time.UTC),
 		},
 		{
 			ViewName:       "_default",
@@ -34,8 +34,8 @@ func GetTestZoneTransfers() []*bind9xfr.State {
 			BytesCount:     1320233,
 			Duration:       40 * time.Millisecond,
 			Status:         bind9xfr.StatusMessage,
-			StartTime:      time.Date(2026, 4, 16, 10, 41, 27, 71, time.UTC),
-			CompletionTime: time.Date(2026, 4, 16, 10, 41, 27, 124, time.UTC),
+			StartTime:      time.Date(2026, 4, 16, 10, 41, 27, 71000000, time.UTC),
+			CompletionTime: time.Date(2026, 4, 16, 10, 41, 27, 124000000, time.UTC),
 		},
 		{
 			ViewName:       "private",
@@ -48,8 +48,8 @@ func GetTestZoneTransfers() []*bind9xfr.State {
 			BytesCount:     1,
 			Duration:       1 * time.Second,
 			Status:         bind9xfr.StatusMessage,
-			StartTime:      time.Date(2026, 4, 16, 10, 41, 27, 71, time.UTC),
-			CompletionTime: time.Date(2026, 4, 16, 10, 41, 27, 124, time.UTC),
+			StartTime:      time.Date(2026, 4, 16, 10, 41, 27, 71000000, time.UTC),
+			CompletionTime: time.Date(2026, 4, 16, 10, 41, 27, 124000000, time.UTC),
 		},
 		{
 			ViewName:  "public",
@@ -58,7 +58,7 @@ func GetTestZoneTransfers() []*bind9xfr.State {
 			Client:    "192.168.1.1",
 			Server:    "192.168.1.2",
 			Status:    bind9xfr.StatusStarted,
-			StartTime: time.Date(2026, 4, 16, 10, 41, 27, 71, time.UTC),
+			StartTime: time.Date(2026, 4, 16, 10, 41, 27, 71000000, time.UTC),
 		},
 		{
 			ViewName:  "_default",
@@ -68,7 +68,14 @@ func GetTestZoneTransfers() []*bind9xfr.State {
 			Server:    "192.168.1.2",
 			Status:    bind9xfr.StatusMessage,
 			Message:   "Transfer failed: AXFR timed out after 50 seconds (serial 2026041604)",
-			StartTime: time.Date(2026, 4, 16, 10, 41, 27, 71, time.UTC),
+			StartTime: time.Date(2026, 4, 16, 10, 41, 27, 71000000, time.UTC),
+		},
+		{
+			ViewName: "_default",
+			ZoneName: "zero.example.org",
+			Client:   "192.168.1.1",
+			Status:   bind9xfr.StatusMessage,
+			Message:  "Transfer failed: AXFR timed out after 0 seconds (serial 0)",
 		},
 	}
 }

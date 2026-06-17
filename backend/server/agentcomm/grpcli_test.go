@@ -3134,9 +3134,16 @@ func TestReceiveZoneTransfers(t *testing.T) {
 				MessagesCount: xfr.MessagesCount,
 				RecordsCount:  xfr.RecordsCount,
 				BytesCount:    xfr.BytesCount,
-				Duration:      int64(xfr.Duration),
+				Duration:      xfr.Duration.Milliseconds(),
 				Status:        agentapi.ZoneTransfer_XfrStatus(xfr.Status),
+				Message:       xfr.Message,
 			},
+		}
+		if !xfr.StartTime.IsZero() {
+			xfrRsp.ZoneTransfer.StartTime = xfr.StartTime.UnixMilli()
+		}
+		if !xfr.CompletionTime.IsZero() {
+			xfrRsp.ZoneTransfer.CompletionTime = xfr.CompletionTime.UnixMilli()
 		}
 		mocks = append(mocks, mockStreamingClient.EXPECT().Recv().Return(xfrRsp, nil))
 	}
@@ -3177,6 +3184,9 @@ func TestReceiveZoneTransfers(t *testing.T) {
 		require.Equal(t, testXfrs[i].BytesCount, xfr.BytesCount)
 		require.Equal(t, testXfrs[i].Duration, xfr.Duration)
 		require.Equal(t, testXfrs[i].Status, xfr.Status)
+		require.Equal(t, testXfrs[i].StartTime, xfr.StartTime)
+		require.Equal(t, testXfrs[i].CompletionTime, xfr.CompletionTime)
+		require.Equal(t, testXfrs[i].Message, xfr.Message)
 	}
 }
 

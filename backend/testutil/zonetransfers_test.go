@@ -10,5 +10,5 @@ import (
 // zone transfer states.
 func TestGetTestZoneTransfers(t *testing.T) {
 	zoneTransfers := GetTestZoneTransfers()
-	require.Len(t, zoneTransfers, 5)
+	require.Len(t, zoneTransfers, 6)
 }
