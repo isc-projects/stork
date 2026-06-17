@@ -43,7 +43,7 @@ func TestUpsertMachineNetworkInterfaces(t *testing.T) {
 		},
 		// The interface with no IP addresses should be inserted as well.
 		{
-			Name:            "eth2",
+			Name:            "eth-none",
 			Flags:           uint32(net.FlagUp),
 			HardwareAddress: []byte{1, 2, 3, 4, 5, 6},
 		},
