@@ -95,15 +95,17 @@ func upsertMachineNetworkInterfaces(tx *pg.Tx, machineID int64, interfaces ...Ma
 		}
 		// Delete IP addresses that are not in the list of new IP addresses
 		// for the given interface.
+		query := tx.Model((*MachineNetworkInterfaceIPAddress)(nil)).
+			Where("machine_network_interface_id = ?", iface.ID)
+
 		if len(addrs) > 0 {
-			_, err := tx.Model((*MachineNetworkInterfaceIPAddress)(nil)).
-				Where("machine_network_interface_id = ?", iface.ID).
-				Where("ip_address NOT IN (?)", pg.In(addrs)).
-				Delete()
-			if err != nil {
-				return errors.Wrapf(err, "problem deleting IP addresses for machine network interface %d", iface.ID)
-			}
+			query = query.Where("ip_address NOT IN (?)", pg.In(addrs))
 		}
+		_, err := query.Delete()
+		if err != nil {
+			return errors.Wrapf(err, "problem deleting IP addresses for machine network interface %d", iface.ID)
+		}
+
 		// Insert new IP addresses for the given interface.
 		for _, addr := range iface.IPAddresses {
 			ipAddresses = append(ipAddresses, MachineNetworkInterfaceIPAddress{
