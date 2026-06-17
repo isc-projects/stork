@@ -2,9 +2,10 @@ import { Meta, StoryObj, applicationConfig } from '@storybook/angular'
 import { SubnetTabComponent } from './subnet-tab.component'
 import { IPType } from '../iptype'
 import { ConfirmationService, MessageService } from 'primeng/api'
-import { toastDecorator } from '../utils-stories'
+import { expandToggleableFieldset, toastDecorator } from '../utils-stories'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { provideRouter, withHashLocation } from '@angular/router'
+import { expect, within, waitFor } from 'storybook/test'
 
 export default {
     title: 'App/SubnetTab',
@@ -641,5 +642,241 @@ export const Subnet6NoPools: Story = {
                 },
             ],
         },
+    },
+}
+
+export const TestDisplaySubnet4NoPools: Story = {
+    args: {
+        subnet: {
+            id: 1,
+            subnet: '192.0.2.0/24',
+            sharedNetwork: 'Fiber',
+            addrUtilization: 30,
+            stats: {
+                'total-addresses': 240,
+                'assigned-addresses': 70,
+                'declined-addresses': 10,
+            },
+            statsCollectedAt: '2023-06-05',
+            localSubnets: [
+                {
+                    id: 12223,
+                    daemonId: 42,
+                    daemonLabel: 'DHCPv4@localhost',
+                    stats: {
+                        'total-addresses': 240,
+                        'assigned-addresses': 70,
+                        'declined-addresses': 10,
+                    },
+                },
+            ],
+        },
+    },
+    play: async ({ canvasElement }) => {
+        const canvas = within(canvasElement)
+        const title = canvasElement.querySelector('#tab-title-span')
+
+        await expect(title).toHaveTextContent('Subnet 192.0.2.0/24')
+        await expect(canvas.getByRole('link', { name: 'Fiber' })).toBeVisible()
+        await expect(canvas.getByText('No pools configured.')).toBeVisible()
+        await expect(canvas.getByText('No user context configured.')).toBeVisible()
+
+        await expandToggleableFieldset(canvas, 'DHCP Parameters')
+        await expect(canvas.getByText('No parameters configured.')).toBeVisible()
+
+        await expandToggleableFieldset(canvas, /DHCP Options/)
+        await expect(canvas.getByText('No options configured.')).toBeVisible()
+    },
+}
+
+export const TestDisplaySubnet6: Story = {
+    args: {
+        subnet: {
+            id: 1,
+            subnet: '2001:db8:1::/64',
+            addrUtilization: 60,
+            stats: {
+                'total-nas': 1000,
+                'assigned-nas': 30,
+                'declined-nas': 10,
+            },
+            statsCollectedAt: '2023-06-05',
+            localSubnets: [
+                {
+                    id: 12223,
+                    daemonId: 42,
+                    daemonLabel: 'DHCPv6@localhost',
+                    pools: [{ pool: '2001:db8:1::2-2001:db8:1::786' }],
+                    stats: {
+                        'total-nas': 1000,
+                        'assigned-nas': 30,
+                        'declined-nas': 10,
+                    },
+                },
+            ],
+        },
+    },
+    play: async ({ canvasElement }) => {
+        const canvas = within(canvasElement)
+
+        await expect(canvas.getByText('Subnet 2001:db8:1::/64')).toBeVisible()
+        await expect(canvas.getByText('2001:db8:1::2-2001:db8:1::786')).toBeVisible()
+        await expect(canvas.getByText('No user context configured.')).toBeVisible()
+
+        await expandToggleableFieldset(canvas, 'DHCP Parameters')
+        await expect(canvas.getByText('No parameters configured.')).toBeVisible()
+
+        await expandToggleableFieldset(canvas, /DHCP Options/)
+        await expect(canvas.getByText('No options configured.')).toBeVisible()
+    },
+}
+
+export const TestDisplaySubnet6AddressPrefix: Story = {
+    args: {
+        subnet: {
+            id: 1,
+            subnet: '2001:db8:1::/64',
+            addrUtilization: 88,
+            pdUtilization: 60,
+            stats: {
+                'total-nas': 1024,
+                'assigned-nas': 980,
+                'declined-nas': 10,
+                'total-pds': 500,
+                'assigned-pds': 358,
+            },
+            statsCollectedAt: '2023-06-05',
+            localSubnets: [
+                {
+                    id: 12223,
+                    daemonId: 42,
+                    daemonLabel: 'DHCPv6@localhost',
+                    pools: [{ pool: '2001:db8:1::2-2001:db8:1::768' }],
+                    prefixDelegationPools: [{ prefix: '3000::', delegatedLength: 80 }],
+                    stats: {
+                        'total-nas': 1024,
+                        'assigned-nas': 980,
+                        'declined-nas': 10,
+                        'total-pds': 500,
+                        'assigned-pds': 358,
+                    },
+                },
+            ],
+        },
+    },
+    play: async ({ canvasElement }) => {
+        const canvas = within(canvasElement)
+
+        await expect(canvas.getByText('Subnet 2001:db8:1::/64')).toBeVisible()
+        await expect(canvas.getByText('2001:db8:1::2-2001:db8:1::768')).toBeVisible()
+        await expect(canvas.getByText('3000::')).toBeVisible()
+        await expect(canvas.getByText('No user context configured.')).toBeVisible()
+
+        await expandToggleableFieldset(canvas, 'DHCP Parameters')
+        await expect(canvas.getByText('No parameters configured.')).toBeVisible()
+
+        await expandToggleableFieldset(canvas, /DHCP Options/)
+        await expect(canvas.getByText('No options configured.')).toBeVisible()
+    },
+}
+
+export const TestDisplaySubnet6DifferentServers: Story = {
+    args: {
+        subnet: {
+            id: 2,
+            subnet: '2001:db8:1::/64',
+            addrUtilization: 88,
+            pdUtilization: 60,
+            stats: {
+                'total-nas': 1024,
+                'assigned-nas': 980,
+                'declined-nas': 10,
+                'total-pds': 500,
+                'assigned-pds': 358,
+            },
+            statsCollectedAt: '2023-06-05',
+            localSubnets: [
+                {
+                    id: 12223,
+                    daemonId: 42,
+                    daemonLabel: 'DHCPv6@localhost',
+                    pools: [{ pool: '2001:db8:1::2-2001:db8:1::768' }],
+                    prefixDelegationPools: [{ prefix: '3000::', delegatedLength: 80 }],
+                    stats: {
+                        'total-nas': 1024,
+                        'assigned-nas': 500,
+                        'declined-nas': 5,
+                        'total-pds': 500,
+                        'assigned-pds': 200,
+                    },
+                    keaConfigSubnetParameters: {
+                        subnetLevelParameters: {
+                            cacheThreshold: 0.25,
+                            options: [
+                                {
+                                    code: 3,
+                                    fields: [{ fieldType: 'ipv4-address', values: ['192.0.2.1'] }],
+                                },
+                            ],
+                            optionsHash: '123',
+                        },
+                        sharedNetworkLevelParameters: { cacheThreshold: 0.3 },
+                        globalParameters: { cacheThreshold: 0.29 },
+                    },
+                    userContext: { foo: 'user-context-is-here' },
+                },
+                {
+                    id: 25432,
+                    daemonId: 43,
+                    daemonLabel: 'DHCPv6@localhost',
+                    pools: [{ pool: '2001:db8:1::2-2001:db8:1::768' }],
+                    prefixDelegationPools: [
+                        { prefix: '3000::/64', delegatedLength: 80 },
+                        { prefix: '3000:1::/64', delegatedLength: 96 },
+                    ],
+                    stats: {
+                        'total-nas': 1024,
+                        'assigned-nas': 480,
+                        'declined-nas': 5,
+                        'total-pds': 500,
+                        'assigned-pds': 158,
+                    },
+                    keaConfigSubnetParameters: {
+                        subnetLevelParameters: {
+                            cacheThreshold: 0.25,
+                            options: [
+                                {
+                                    code: 3,
+                                    fields: [{ fieldType: 'ipv4-address', values: ['192.0.2.2'] }],
+                                },
+                            ],
+                            optionsHash: '234',
+                        },
+                        sharedNetworkLevelParameters: { cacheThreshold: 0.3 },
+                        globalParameters: { cacheThreshold: 0.29 },
+                    },
+                },
+            ],
+        },
+    },
+    play: async ({ canvasElement }) => {
+        const canvas = within(canvasElement)
+
+        await expect(canvas.getByText('Subnet 2001:db8:1::/64')).toBeVisible()
+        await expect(canvas.getByText('12223')).toBeVisible()
+        await expect(canvas.getByText('25432')).toBeVisible()
+        await expect(canvas.getByText('3000::')).toBeVisible()
+        await waitFor(async () => {
+            await expect(canvas.getByText('3000:1::/64')).toBeVisible()
+        })
+        await expect(canvas.getByText('user-context-is-here')).toBeVisible()
+        await expect(canvas.getByText('No user context configured.')).toBeVisible()
+
+        await expandToggleableFieldset(canvas, 'DHCP Parameters')
+        await expect(canvas.getByText('Cache Threshold')).toBeVisible()
+        await expect(canvas.getAllByText('0.25').length).toBeGreaterThan(0)
+
+        const dhcpOptionsButtons = await canvas.findAllByRole('button', { name: /DHCP Options/ })
+        await expect(dhcpOptionsButtons.length).toBe(2)
     },
 }
