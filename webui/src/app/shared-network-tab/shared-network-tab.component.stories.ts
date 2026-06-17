@@ -374,10 +374,7 @@ export const TestDisplaySharedNetwork6: Story = {
             universe: IPType.IPv6,
             addrUtilization: 30,
             pdUtilization: 60,
-            pools: [
-                { pool: '2001:db8:1::2-2001:db8:1::786' },
-                { pool: '2001:db8:2::2-2001:db8:2::786' },
-            ],
+            pools: [{ pool: '2001:db8:1::2-2001:db8:1::786' }, { pool: '2001:db8:2::2-2001:db8:2::786' }],
             subnets: [
                 { id: 1, subnet: '2001:db8:1::/64' },
                 { id: 2, subnet: '2001:db8:2::/64' },
