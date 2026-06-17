@@ -1,5 +1,23 @@
 import { componentWrapperDecorator } from '@storybook/angular'
+import { userEvent, expect, waitFor, within } from 'storybook/test'
 import { AuthService } from './auth.service'
+
+export type StorybookCanvas = ReturnType<typeof within>
+
+/**
+ * Expands a PrimeNG toggleable fieldset in Storybook play functions.
+ *
+ * @param canvas testing-library canvas scoped to the story root
+ * @param name accessible name of the fieldset toggle button
+ */
+export async function expandToggleableFieldset(canvas: StorybookCanvas, name: string | RegExp): Promise<void> {
+    const user = userEvent.setup({ delay: 50 })
+    const button = await canvas.findByRole('button', { name })
+    if (button.getAttribute('aria-expanded') === 'false') {
+        await user.click(button)
+        await waitFor(() => expect(button).toHaveAttribute('aria-expanded', 'true'))
+    }
+}
 
 /**
  * Wraps the component with the PrimeNG toast handler.

@@ -3,8 +3,9 @@ import { SharedNetworkTabComponent } from './shared-network-tab.component'
 import { IPType } from '../iptype'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { ConfirmationService, MessageService } from 'primeng/api'
-import { toastDecorator } from '../utils-stories'
+import { expandToggleableFieldset, toastDecorator } from '../utils-stories'
 import { provideRouter, withHashLocation } from '@angular/router'
+import { expect, within } from 'storybook/test'
 
 export default {
     title: 'App/SharedNetworkTab',
@@ -334,5 +335,94 @@ export const SharedNetwork6: Story = {
                 },
             ],
         },
+    },
+}
+
+export const TestDisplaySharedNetwork4Minimal: Story = {
+    args: {
+        sharedNetwork: {
+            id: 1,
+            name: 'bar',
+            localSharedNetworks: [
+                {
+                    daemonId: 10,
+                    daemonLabel: 'DHCPv4@localhost',
+                },
+            ],
+        },
+    },
+    play: async ({ canvasElement }) => {
+        const canvas = within(canvasElement)
+
+        await expect(canvas.getByText('Shared Network bar')).toBeVisible()
+        await expect(canvas.getByText('No subnets configured.')).toBeVisible()
+        await expect(canvas.getByText('No pools configured.')).toBeVisible()
+
+        await expandToggleableFieldset(canvas, 'DHCP Parameters')
+        await expect(canvas.getByText('No parameters configured.')).toBeVisible()
+
+        await expandToggleableFieldset(canvas, /DHCP Options/)
+        await expect(canvas.getByText('No options configured.')).toBeVisible()
+    },
+}
+
+export const TestDisplaySharedNetwork6: Story = {
+    args: {
+        sharedNetwork: {
+            id: 1,
+            name: 'foo',
+            universe: IPType.IPv6,
+            addrUtilization: 30,
+            pdUtilization: 60,
+            pools: [
+                { pool: '2001:db8:1::2-2001:db8:1::786' },
+                { pool: '2001:db8:2::2-2001:db8:2::786' },
+            ],
+            subnets: [
+                { id: 1, subnet: '2001:db8:1::/64' },
+                { id: 2, subnet: '2001:db8:2::/64' },
+            ],
+            stats: {
+                'total-nas': 1000,
+                'assigned-nas': 30,
+                'declined-nas': 10,
+                'total-pds': 500,
+                'assigned-pds': 358,
+            },
+            statsCollectedAt: '2023-06-05',
+            localSharedNetworks: [
+                {
+                    daemonId: 1,
+                    daemonLabel: 'DHCPv6@localhost',
+                    keaConfigSharedNetworkParameters: {
+                        sharedNetworkLevelParameters: {
+                            hostnameCharReplacement: 'X',
+                            hostnameCharSet: '[^A-Za-z0-9.-]',
+                        },
+                        globalParameters: {
+                            cacheThreshold: 0.29,
+                            cacheMaxAge: 800,
+                        },
+                    },
+                },
+            ],
+        },
+    },
+    play: async ({ canvasElement }) => {
+        const canvas = within(canvasElement)
+
+        await expect(canvas.getByText('Shared Network foo')).toBeVisible()
+        await expect(canvas.getByText('2001:db8:1::/64')).toBeVisible()
+        await expect(canvas.getByText('2001:db8:2::/64')).toBeVisible()
+        await expect(canvas.getByText('2001:db8:1::2-2001:db8:1::786')).toBeVisible()
+        await expect(canvas.getByText('2001:db8:2::2-2001:db8:2::786')).toBeVisible()
+
+        await expandToggleableFieldset(canvas, 'DHCP Parameters')
+        await expect(canvas.getByText('Hostname Char Replacement')).toBeVisible()
+        await expect(canvas.getByText('X')).toBeVisible()
+        await expect(canvas.getByText('[^A-Za-z0-9.-]')).toBeVisible()
+
+        await expandToggleableFieldset(canvas, /DHCP Options/)
+        await expect(canvas.getByText('No options configured.')).toBeVisible()
     },
 }
