@@ -114,9 +114,13 @@ func upsertMachineNetworkInterfaces(tx *pg.Tx, machineID int64, interfaces ...Ma
 			})
 		}
 	}
-	_, err = tx.Model(&ipAddresses).OnConflict("(machine_network_interface_id, ip_address) DO NOTHING").
-		Insert()
-	return errors.Wrapf(err, "problem inserting host interfaces for machine %d", machineID)
+
+	if len(ipAddresses) > 0 {
+		_, err = tx.Model(&ipAddresses).OnConflict("(machine_network_interface_id, ip_address) DO NOTHING").
+			Insert()
+		err = errors.Wrapf(err, "problem inserting host interfaces for machine %d", machineID)
+	}
+	return err
 }
 
 // Updates interfaces detected on the given machine. It removes the interfaces that

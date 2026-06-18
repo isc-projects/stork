@@ -287,6 +287,38 @@ func TestGetMachinesByNetworkInterfaceIPAddress(t *testing.T) {
 	})
 }
 
+func TestUpsertMachineInterfaceHasNoIPAddresses(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	m := &Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err := AddMachine(db, m)
+	require.NoError(t, err)
+	require.NotEqual(t, 0, m.ID)
+
+	// Insert an interface with no IP addresses.
+	err = UpsertMachineNetworkInterfaces(db, m.ID, MachineNetworkInterface{
+		Name:            "eth0",
+		Flags:           uint32(net.FlagUp),
+		HardwareAddress: []byte{1, 2, 3, 4, 5, 6},
+	})
+	require.NoError(t, err)
+
+	// Make sure that the interface is present in the database.
+	machines, err := GetAllMachinesWithRelations(db, nil, MachineRelationNetworkInterfaces)
+	require.NoError(t, err)
+	require.Len(t, machines, 1)
+	require.Len(t, machines[0].MachineNetworkInterfaces, 1)
+	require.Equal(t, "eth0", machines[0].MachineNetworkInterfaces[0].Name)
+	require.Equal(t, uint32(net.FlagUp), machines[0].MachineNetworkInterfaces[0].Flags)
+	require.Equal(t, []byte{1, 2, 3, 4, 5, 6}, machines[0].MachineNetworkInterfaces[0].HardwareAddress)
+	require.Empty(t, machines[0].MachineNetworkInterfaces[0].IPAddresses)
+}
+
 // This benchmark tests performance of a query that returns machines holding the
 // specified IP address on one of their network interfaces. The benchmark creates
 // a variable number of machines, each with 4 network interfaces. The total number
