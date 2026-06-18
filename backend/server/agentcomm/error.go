@@ -37,3 +37,21 @@ func NewZoneInventoryNotInitedError(agent string) *ZoneInventoryNotInitedError {
 func (err *ZoneInventoryNotInitedError) Error() string {
 	return fmt.Sprintf("DNS zones have not been loaded on the agent %s", err.agent)
 }
+
+// An error created when the server tries to receive zone transfers from an agent
+// that has zone transfer tracking disabled.
+type ZoneTransferTrackingDisabledOnAgentError struct {
+	agent string
+}
+
+// Instantiates the ZoneTransferTrackingDisabledOnAgentError.
+func NewZoneTransferTrackingDisabledOnAgentError(agent string) *ZoneTransferTrackingDisabledOnAgentError {
+	return &ZoneTransferTrackingDisabledOnAgentError{
+		agent,
+	}
+}
+
+// Returns an error string.
+func (err *ZoneTransferTrackingDisabledOnAgentError) Error() string {
+	return fmt.Sprintf("Zone transfer tracking is disabled on the agent %s", err.agent)
+}

@@ -3190,6 +3190,51 @@ func TestReceiveZoneTransfers(t *testing.T) {
 	}
 }
 
+// Test the case when the agent returns a FailedPrecondition error indicating that
+// the zone transfer tracking is disabled on the agent. In this case, the tested
+// function should return ZoneTransferTrackingDisabledOnAgentError to the caller.
+func TestReceiveZoneTransfersZoneTransferTrackingDisabledOnAgent(t *testing.T) {
+	t.Parallel()
+	// Create a daemon.
+	daemon := &dbmodel.Daemon{
+		Machine: &dbmodel.Machine{
+			Address:   "localhost",
+			AgentPort: 8080,
+		},
+		AccessPoints: []*dbmodel.AccessPoint{{
+			Type:    dbmodel.AccessPointControl,
+			Address: "127.0.0.1",
+			Port:    8090,
+			Key:     "",
+		}},
+	}
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
+	defer ctrl.Finish()
+
+	mockStreamingClient := NewMockServerStreamingClient[agentapi.ReceiveZoneTransfersRsp](ctrl)
+
+	// The FailedPrecondition code indicates that the zone transfer tracking is disabled on the agent.
+	st := status.New(codes.FailedPrecondition, "zone transfer tracking is disabled on the agent")
+	mockStreamingClient.EXPECT().Recv().Return(nil, st.Err())
+
+	mockAgentClient.EXPECT().ReceiveZoneTransfers(gomock.Any(), &agentapi.ReceiveZoneTransfersReq{
+		ControlAddress: "127.0.0.1",
+		ControlPort:    8090,
+		Follow:         true,
+	}).AnyTimes().Return(mockStreamingClient, nil)
+
+	// The iterator should return ZoneTransferTrackingDisabledOnAgentError.
+	for xfr, err := range agents.ReceiveZoneTransfers(t.Context(), daemon, true) {
+		var zoneTransferTrackingDisabledOnAgentError *ZoneTransferTrackingDisabledOnAgentError
+		require.ErrorAs(t, err, &zoneTransferTrackingDisabledOnAgentError)
+		require.Nil(t, xfr)
+	}
+}
+
 // Test that the follow flag is properly propagated to the agent.
 func TestReceiveZoneTransfersNoFollow(t *testing.T) {
 	t.Parallel()

@@ -62,8 +62,17 @@ func (xfrCollector *xfrCollector) collect(ctx context.Context) {
 		streamErred := false
 		for xfr, err := range xfrCollector.agents.ReceiveZoneTransfers(ctx, xfrCollector.daemon, true) {
 			if err != nil {
-				log.WithError(err).Error("Failed to receive zone transfer state from the agent")
-				streamErred = true
+				var agentTrackingDisabledError *agentcomm.ZoneTransferTrackingDisabledOnAgentError
+				switch {
+				case errors.As(err, &agentTrackingDisabledError):
+					// Zone transfer tracking is disabled on the agent. There is nothing to do here.
+					log.Info(agentTrackingDisabledError.Error())
+					return
+				default:
+					// Some other error.
+					log.WithError(err).Error("Failed to receive zone transfer state from the agent")
+					streamErred = true
+				}
 				break
 			}
 			// The connection was successfully established. Let's restart the backoff.

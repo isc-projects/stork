@@ -19,3 +19,10 @@ func TestNewZoneInventoryNotInitedError(t *testing.T) {
 	require.Error(t, err)
 	require.Equal(t, "DNS zones have not been loaded on the agent agent-foo", err.Error())
 }
+
+// Test instantiating the ZoneTransferTrackingDisabledOnAgentError.
+func TestNewZoneTransferTrackingDisabledOnAgentError(t *testing.T) {
+	err := NewZoneTransferTrackingDisabledOnAgentError("agent-foo")
+	require.Error(t, err)
+	require.Equal(t, "Zone transfer tracking is disabled on the agent agent-foo", err.Error())
+}

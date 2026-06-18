@@ -1428,12 +1428,17 @@ func (agents *connectedAgentsImpl) ReceiveZoneTransfers(ctx context.Context, dae
 			// Receive the zone transfers from the agent.
 			receivedTransferState, err := stream.Recv()
 			if err != nil {
-				if errors.Is(err, io.EOF) || errors.Is(err, context.Canceled) || status.Code(err) == codes.Canceled {
+				switch {
+				case errors.Is(err, io.EOF) || errors.Is(err, context.Canceled) || status.Code(err) == codes.Canceled:
 					// End of the stream or the context is cancelled.
 					return
+				case status.Code(err) == codes.FailedPrecondition:
+					_ = yield(nil, NewZoneTransferTrackingDisabledOnAgentError(agentAddressPort))
+					return
+				default:
+					_ = yield(nil, errors.Wrap(err, "gRPC connection error occurred when receiving zone transfers from the agent"))
+					return
 				}
-				_ = yield(nil, errors.Wrap(err, "gRPC connection error occurred when receiving zone transfers from the agent"))
-				return
 			}
 			state := &bind9xfr.State{
 				ViewName:      receivedTransferState.ZoneTransfer.ViewName,

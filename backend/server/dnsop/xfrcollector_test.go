@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 	gomock "go.uber.org/mock/gomock"
 	bind9xfr "isc.org/stork/daemondata/bind9xfr"
+	agentcomm "isc.org/stork/server/agentcomm"
 	daemonstest "isc.org/stork/server/daemons/test"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
@@ -317,6 +318,54 @@ func TestXFRCollectorNonExistingDaemon(t *testing.T) {
 
 	// Make sure that the collector was stopped after receiving the first zone transfer state.
 	require.Equal(t, 1, yieldCount)
+
+	// Make sure that nothing was inserted into the database.
+	xfrs, _, err := dbmodel.GetZoneTransferStatesByPage(db, 0, 100)
+	require.NoError(t, err)
+	require.Empty(t, xfrs)
+}
+
+// Test that the XFR collector stops monitoring a daemon for which the
+// zone transfer trackingis disabled.
+func TestXFRCollectorZoneTransferTrackingDisabledOnAgent(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Create a daemon but do not add it to the database.
+	daemon := &dbmodel.Daemon{
+		ID: 1,
+		AccessPoints: []*dbmodel.AccessPoint{
+			{
+				Type:    dbmodel.AccessPointControl,
+				Address: "localhost",
+				Port:    5300,
+			},
+		},
+	}
+
+	controller := gomock.NewController(t)
+	defer controller.Finish()
+
+	agents := NewMockConnectedAgents(controller)
+
+	// Expect the collector to return after receiving the error indicating that
+	// the zone transfer tracking is disabled on the agent. Any other error would
+	// cause the collector to continue trying to collect the zone transfer states.
+	// It would result in a single ReceiveZoneTransfers call expectation failure.
+	agents.EXPECT().ReceiveZoneTransfers(gomock.Any(), gomock.Any(), true).DoAndReturn(func(context.Context, *dbmodel.Daemon, bool) iter.Seq2[*bind9xfr.State, error] {
+		return func(yield func(*bind9xfr.State, error) bool) {
+			_ = yield(nil, agentcomm.NewZoneTransferTrackingDisabledOnAgentError("localhost:5300"))
+		}
+	})
+
+	// Create the collector instance.
+	xfrCollector := newXFRCollector(daemonstest.ManagerAccessorsWrapper{
+		DB:     db,
+		Agents: agents,
+	}, daemon)
+
+	// Collect the zone transfer states from the agent.
+	xfrCollector.collect(t.Context())
 
 	// Make sure that nothing was inserted into the database.
 	xfrs, _, err := dbmodel.GetZoneTransferStatesByPage(db, 0, 100)
