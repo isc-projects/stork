@@ -18,7 +18,7 @@
             }
             <!-- Hex format. -->
             @if (hexFormat) {
-                <span>{{ hexValue }}</span>
+                <span>{{ displayHexValue }}</span>
             } @else {
                 @for (byte of hexBytes; track byte) {
                     <app-byte-character [byteValue]="byte"></app-byte-character>

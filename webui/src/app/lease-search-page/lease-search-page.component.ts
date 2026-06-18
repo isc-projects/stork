@@ -380,4 +380,121 @@ export class LeaseSearchPageComponent implements OnInit {
         this.invalidSearchText = false
         this.invalidSearchTextError = ''
     }
+
+    /**
+     * Checks whether a user-context leaf value is a hex-encoded string
+     * (an optional 0x prefix followed by an even number of hex digits),
+     * as written by Kea's store-extended-info for relay-agent-info.
+     *
+     * @param value leaf value from the user context.
+     * @returns true if the value can be rendered with the hex/text toggle.
+     */
+    isHexLeaf(value: any): boolean {
+        return typeof value === 'string' && /^(0[xX])?([0-9a-fA-F]{2})+$/.test(value)
+    }
+
+    /**
+     * Strips the optional 0x prefix from a hex string, so it can be
+     * passed to the identifier component.
+     *
+     * @param value hex string, optionally prefixed with 0x.
+     * @returns hex string without the prefix.
+     */
+    stripHexPrefix(value: string): string {
+        return value.replace(/^0[xX]/, '')
+    }
+
+    /**
+     * Cache of parsed relay agent information sub-options, keyed by the
+     * raw hex string. Avoids re-parsing on every change detection cycle.
+     */
+    private _subOptionsCache = new Map<string, RelayAgentSubOption[] | null>()
+
+    /**
+     * Names of the DHCPv4 relay agent information (option 82) sub-options
+     * by their codes, per RFC 3046 and related RFCs.
+     */
+    private static readonly _relayAgentSubOptionNames: { [code: number]: string } = {
+        1: 'circuit-id',
+        2: 'remote-id',
+        4: 'docsis-device-class',
+        5: 'link-selection',
+        6: 'subscriber-id',
+        7: 'radius-attributes',
+        8: 'authentication',
+        9: 'vendor-specific',
+        10: 'relay-agent-flags',
+        11: 'server-id-override',
+        12: 'relay-id',
+        151: 'virtual-subnet-selection',
+        152: 'virtual-subnet-selection-control',
+    }
+
+    /**
+     * Parses a hex-encoded DHCPv4 relay agent information option payload
+     * into a list of labeled sub-options.
+     *
+     * The payload is a sequence of TLV (type, length, value) tuples in
+     * arbitrary order, as inserted by the relay agent. The parser walks
+     * the sequence and labels each sub-option by its code, so it handles
+     * any ordering and any combination of sub-options that different
+     * relay implementations may produce. Unknown codes are labeled
+     * generically as sub-option N.
+     *
+     * @param value hex string, optionally prefixed with 0x.
+     * @returns parsed sub-options or null when the value is not a valid
+     *          TLV sequence; in this case the caller should fall back to
+     *          displaying the raw value.
+     */
+    parseRelayAgentSubOptions(value: string): RelayAgentSubOption[] | null {
+        if (this._subOptionsCache.has(value)) {
+            return this._subOptionsCache.get(value)
+        }
+        let parsed: RelayAgentSubOption[] | null = null
+        if (this.isHexLeaf(value)) {
+            const hex = this.stripHexPrefix(value)
+            const fields: RelayAgentSubOption[] = []
+            let pos = 0
+            const totalBytes = hex.length / 2
+            while (pos < totalBytes) {
+                // Need at least the code and length bytes.
+                if (pos + 2 > totalBytes) {
+                    fields.length = 0
+                    break
+                }
+                const code = parseInt(hex.substr(pos * 2, 2), 16)
+                const length = parseInt(hex.substr((pos + 1) * 2, 2), 16)
+                // The declared length must not run past the end of the data.
+                if (pos + 2 + length > totalBytes) {
+                    fields.length = 0
+                    break
+                }
+                fields.push({
+                    code: code,
+                    name:
+                        LeaseSearchPageComponent._relayAgentSubOptionNames[code] ||
+                        'sub-option ' + code,
+                    hexValue: hex.substr((pos + 2) * 2, length * 2),
+                })
+                pos += 2 + length
+            }
+            if (fields.length > 0) {
+                parsed = fields
+            }
+        }
+        this._subOptionsCache.set(value, parsed)
+        return parsed
+    }
+}
+
+/**
+ * A single parsed relay agent information sub-option.
+ */
+export interface RelayAgentSubOption {
+    /** Sub-option code. */
+    code: number
+    /** Human-readable sub-option name or a generic label for unknown codes. */
+    name: string
+    /** Hex-encoded sub-option data. */
+    hexValue: string
 }
