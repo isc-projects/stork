@@ -269,6 +269,9 @@ func TestBootstrap(t *testing.T) {
 	require.NotNil(t, server.HookManager.GetExecutor())
 	require.NotEmpty(t, server.HookManager.GetExecutor().GetTypesOfSupportedCalloutSpecifications())
 
+	// Check that the DNS manager is initialized.
+	require.NotNil(t, server.DNSManager)
+
 	// Run Bootstrap again with the reload flag set.
 	err = server.Bootstrap(true)
 	require.NoError(t, err)

@@ -1010,6 +1010,12 @@ func (r *RestAPI) DeleteMachine(ctx context.Context, params services.DeleteMachi
 		return rsp
 	}
 
+	for _, daemon := range dbMachine.Daemons {
+		if daemon.Name == daemonname.Bind9 {
+			r.DNSManager.StopXFRTrackingForDaemon(daemon)
+		}
+	}
+
 	r.EventCenter.AddInfoEvent("removed {machine}", dbMachine)
 
 	rsp := services.NewDeleteMachineOK()
@@ -1819,8 +1825,14 @@ func (r *RestAPI) UpdateDaemon(ctx context.Context, params services.UpdateDaemon
 
 	if oldMonitored != params.Daemon.Monitored {
 		if params.Daemon.Monitored {
+			if dbDaemon.Name == daemonname.Bind9 {
+				if err := r.DNSManager.StartXFRTrackingForDaemon(dbDaemon); err != nil {
+					log.WithError(err).Warnf("Cannot start zone transfer tracking for BIND 9 daemon with ID %d", dbDaemon.ID)
+				}
+			}
 			r.EventCenter.AddInfoEvent("{user} enabled monitoring {daemon}", dbUser, dbDaemon, dbDaemon.Machine)
 		} else {
+			r.DNSManager.StopXFRTrackingForDaemon(dbDaemon)
 			r.EventCenter.AddWarningEvent("{user} disabled monitoring {daemon}", dbUser, dbDaemon, dbDaemon.Machine)
 		}
 	}
@@ -1864,6 +1876,10 @@ func (r *RestAPI) DeleteDaemon(ctx context.Context, params services.DeleteDaemon
 			Message: &msg,
 		})
 		return rsp
+	}
+
+	if dbDaemon.Name == daemonname.Bind9 {
+		r.DNSManager.StopXFRTrackingForDaemon(dbDaemon)
 	}
 
 	r.EventCenter.AddInfoEvent("{user} deleted {daemon} of {machine}", dbUser, dbDaemon, dbDaemon.Machine)

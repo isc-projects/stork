@@ -20,29 +20,38 @@ import (
 	"isc.org/stork/server/daemons/pdns"
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
+	"isc.org/stork/server/dnsop"
 	"isc.org/stork/server/eventcenter"
 	storkutil "isc.org/stork/util"
 )
 
-// Instance of the puller which periodically checks the status of the Kea daemons.
-// Besides basic status information the High Availability status is fetched.
-type StatePuller struct {
-	*agentcomm.PeriodicPuller
+// A structure passed to the StatePuller constructor which should contain
+// server-wide dependencies, such as DB connection, agents, event center,
+// review dispatcher, DHCP option definition lookup and DNS manager.
+type StatePullerState struct {
+	DB                         *dbops.PgDB
+	Agents                     agentcomm.ConnectedAgents
 	EventCenter                eventcenter.EventCenter
 	ReviewDispatcher           configreview.Dispatcher
 	DHCPOptionDefinitionLookup keaconfig.DHCPOptionDefinitionLookup
-	updateMachineStateGroup    singleflight.Group
+	DNSManager                 dnsop.Manager
+}
+
+// Instance of the puller which periodically checks the status of the Kea daemons.
+// Besides basic status information the High Availability status is fetched.
+type StatePuller struct {
+	state StatePullerState
+	*agentcomm.PeriodicPuller
+	updateMachineStateGroup singleflight.Group
 }
 
 // Create an instance of the puller which periodically checks the status of
-// the Kea daemons.
-func NewStatePuller(db *dbops.PgDB, agents agentcomm.ConnectedAgents, eventCenter eventcenter.EventCenter, reviewDispatcher configreview.Dispatcher, lookup keaconfig.DHCPOptionDefinitionLookup) (*StatePuller, error) {
+// the monitored daemons.
+func NewStatePuller(state StatePullerState) (*StatePuller, error) {
 	puller := &StatePuller{
-		EventCenter:                eventCenter,
-		ReviewDispatcher:           reviewDispatcher,
-		DHCPOptionDefinitionLookup: lookup,
+		state: state,
 	}
-	periodicPuller, err := agentcomm.NewPeriodicPuller(db, agents, "State Puller",
+	periodicPuller, err := agentcomm.NewPeriodicPuller(state.DB, state.Agents, "State Puller",
 		"state_puller_interval", puller.pullData)
 	if err != nil {
 		return nil, err
@@ -60,7 +69,7 @@ func (puller *StatePuller) Shutdown() {
 func (puller *StatePuller) pullData() error {
 	// get list of all authorized machines from database
 	authorized := true
-	dbMachines, err := dbmodel.GetAllMachinesWithRelations(puller.DB, &authorized)
+	dbMachines, err := dbmodel.GetAllMachinesWithRelations(puller.state.DB, &authorized)
 	if err != nil {
 		return err
 	}
@@ -90,10 +99,7 @@ func (puller *StatePuller) pullData() error {
 func (puller *StatePuller) UpdateMachineAndDaemonsState(ctx context.Context, machineID int64) (*dbmodel.Machine, error) {
 	key := fmt.Sprintf("%s-update-state-%d", puller.GetName(), machineID)
 	val, err, _ := puller.updateMachineStateGroup.Do(key, func() (any, error) {
-		return updateMachineAndDaemonsState(ctx, puller.DB,
-			machineID,
-			puller.Agents, puller.EventCenter, puller.ReviewDispatcher,
-			puller.DHCPOptionDefinitionLookup)
+		return puller.updateMachineAndDaemonsState(ctx, machineID)
 	})
 	if err != nil {
 		return nil, err
@@ -328,8 +334,8 @@ DISCOVERED_LOOP:
 }
 
 // Retrieve remotely machine and its daemons state, and store it in the database.
-func updateMachineAndDaemonsState(ctx context.Context, db *dbops.PgDB, machineID int64, agents agentcomm.ConnectedAgents, eventCenter eventcenter.EventCenter, reviewDispatcher configreview.Dispatcher, lookup keaconfig.DHCPOptionDefinitionLookup) (*dbmodel.Machine, error) {
-	dbMachine, err := dbmodel.GetMachineByID(db, machineID)
+func (puller *StatePuller) updateMachineAndDaemonsState(ctx context.Context, machineID int64) (*dbmodel.Machine, error) {
+	dbMachine, err := dbmodel.GetMachineByID(puller.state.DB, machineID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot get machine with id %d", machineID)
 	}
@@ -341,11 +347,11 @@ func updateMachineAndDaemonsState(ctx context.Context, db *dbops.PgDB, machineID
 	defer cancel()
 
 	// get state of machine from agent
-	state, err := agents.GetState(ctx2, dbMachine)
+	state, err := puller.state.Agents.GetState(ctx2, dbMachine)
 	if err != nil {
 		log.WithError(err).Warn("Cannot get state of machine")
 		dbMachine.Error = "Cannot get state of machine"
-		err = dbmodel.UpdateMachine(db, dbMachine)
+		err = dbmodel.UpdateMachine(puller.state.DB, dbMachine)
 		if err != nil {
 			return nil, err
 		}
@@ -364,7 +370,7 @@ func updateMachineAndDaemonsState(ctx context.Context, db *dbops.PgDB, machineID
 				continue
 			}
 
-			additionalDaemons, err := getDaemonsFromKeaCAConfig(ctx, agents, daemon)
+			additionalDaemons, err := getDaemonsFromKeaCAConfig(ctx, puller.state.Agents, daemon)
 			if err != nil {
 				return nil, err
 			}
@@ -383,7 +389,7 @@ func updateMachineAndDaemonsState(ctx context.Context, db *dbops.PgDB, machineID
 	isStorkAgentChanged := false
 
 	// store machine's state in db
-	err = updateMachineFields(ctx, db, dbMachine, state)
+	err = updateMachineFields(ctx, puller.state.DB, dbMachine, state)
 	if err != nil {
 		return nil, err
 	}
@@ -432,35 +438,38 @@ func updateMachineAndDaemonsState(ctx context.Context, db *dbops.PgDB, machineID
 			var states []kea.DaemonStateMeta
 			var enhancedDaemons []*dbmodel.Daemon
 			for _, daemon := range mergedDaemons {
-				enhancedDaemon, state := kea.GetDaemonWithRefreshedState(ctx2, agents, daemon)
+				enhancedDaemon, state := kea.GetDaemonWithRefreshedState(ctx2, puller.state.Agents, daemon)
 				enhancedDaemons = append(enhancedDaemons, enhancedDaemon)
 				states = append(states, state)
 			}
 
-			err = kea.CommitDaemonsIntoDB(db, enhancedDaemons, eventCenter, states, lookup)
+			err = kea.CommitDaemonsIntoDB(puller.state.DB, enhancedDaemons, puller.state.EventCenter, states, puller.state.DHCPOptionDefinitionLookup)
 
 			if err == nil {
 				for i, daemon := range enhancedDaemons {
 					state := states[i]
 					// Let's now identify new daemons or the daemons with updated
 					// configurations and schedule configuration reviews for them
-					conditionallyBeginKeaConfigReviews(daemon, state, reviewDispatcher, isStorkAgentChanged)
+					conditionallyBeginKeaConfigReviews(daemon, state, puller.state.ReviewDispatcher, isStorkAgentChanged)
 					allDaemons = append(allDaemons, daemon)
 				}
 			}
 		case "bind9":
 			for _, daemon := range mergedDaemons {
-				bind9.GetDaemonState(ctx2, agents, daemon, eventCenter)
-				err = bind9.CommitDaemonIntoDB(db, daemon, eventCenter)
+				bind9.GetDaemonState(ctx2, puller.state.Agents, daemon, puller.state.EventCenter)
+				err = bind9.CommitDaemonIntoDB(puller.state.DB, daemon, puller.state.EventCenter)
 				if err != nil {
 					break
 				}
 				allDaemons = append(allDaemons, daemon)
+				if err := puller.state.DNSManager.StartXFRTrackingForDaemon(daemon); err != nil {
+					log.WithError(err).Warnf("Cannot start zone transfer tracking for BIND 9 daemon with ID %d", daemon.ID)
+				}
 			}
 		case "pdns":
 			for _, daemon := range mergedDaemons {
-				pdns.GetDaemonState(ctx2, agents, daemon, eventCenter)
-				err = pdns.CommitDaemonIntoDB(db, daemon, eventCenter)
+				pdns.GetDaemonState(ctx2, puller.state.Agents, daemon, puller.state.EventCenter)
+				err = pdns.CommitDaemonIntoDB(puller.state.DB, daemon, puller.state.EventCenter)
 				if err != nil {
 					break
 				}

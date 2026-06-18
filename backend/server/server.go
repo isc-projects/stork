@@ -177,8 +177,21 @@ func (ss *StorkServer) Bootstrap(reload bool) (err error) {
 	// is global for the server so various parts of the application can use it.
 	ss.DaemonLocker = config.NewDaemonLocker()
 
+	// Create DNS Manager.
+	ss.DNSManager, err = dnsop.NewManager(ss)
+	if err != nil {
+		return err
+	}
+
 	// setup state puller
-	ss.Pullers.StatePuller, err = daemons.NewStatePuller(ss.DB, ss.Agents, ss.EventCenter, ss.ReviewDispatcher, ss.DHCPOptionDefinitionLookup)
+	ss.Pullers.StatePuller, err = daemons.NewStatePuller(daemons.StatePullerState{
+		DB:                         ss.DB,
+		Agents:                     ss.Agents,
+		EventCenter:                ss.EventCenter,
+		ReviewDispatcher:           ss.ReviewDispatcher,
+		DHCPOptionDefinitionLookup: ss.DHCPOptionDefinitionLookup,
+		DNSManager:                 ss.DNSManager,
+	})
 	if err != nil {
 		return err
 	}
@@ -243,8 +256,8 @@ func (ss *StorkServer) Bootstrap(reload bool) (err error) {
 	endpointControl := restservice.NewEndpointControl()
 	endpointControl.SetEnabled(restservice.EndpointOpCreateNewMachine, enableMachineRegistration)
 
-	// Create DNS Manager.
-	ss.DNSManager, err = dnsop.NewManager(ss)
+	// Start zone transfer tracking for all BIND 9 daemons.
+	err = ss.DNSManager.StartXFRTracking()
 	if err != nil {
 		return err
 	}

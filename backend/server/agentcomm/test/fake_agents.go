@@ -272,5 +272,6 @@ func (fa *FakeAgents) ReceiveKeaLeases(
 }
 
 func (fa *FakeAgents) ReceiveZoneTransfers(ctx context.Context, daemon agentcomm.ControlledDaemon, follow bool) iter.Seq2[*bind9xfr.State, error] {
-	return nil
+	return func(yield func(*bind9xfr.State, error) bool) {
+	}
 }

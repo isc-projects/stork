@@ -27,10 +27,12 @@ import (
 	"isc.org/stork/server/certs"
 	"isc.org/stork/server/daemons"
 	"isc.org/stork/server/daemons/kea"
+	daemonstest "isc.org/stork/server/daemons/test"
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
 	dbmodeltest "isc.org/stork/server/database/model/test"
 	dbtest "isc.org/stork/server/database/test"
+	dnsop "isc.org/stork/server/dnsop"
 	"isc.org/stork/server/gen/models"
 	dhcp "isc.org/stork/server/gen/restapi/operations/d_h_c_p"
 	"isc.org/stork/server/gen/restapi/operations/general"
@@ -83,7 +85,19 @@ func TestGetMachineStateOnly(t *testing.T) {
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
-	statePuller, err := daemons.NewStatePuller(db, fa, fec, fd, lookup)
+	dm, err := dnsop.NewManager(&daemonstest.ManagerAccessorsWrapper{
+		DB:     db,
+		Agents: fa,
+	})
+	require.NoError(t, err)
+	statePuller, err := daemons.NewStatePuller(daemons.StatePullerState{
+		DB:                         db,
+		Agents:                     fa,
+		EventCenter:                fec,
+		ReviewDispatcher:           fd,
+		DHCPOptionDefinitionLookup: lookup,
+		DNSManager:                 dm,
+	})
 	require.NoError(t, err)
 	pullers := &daemons.Pullers{StatePuller: statePuller}
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, fd, pullers)
@@ -162,7 +176,19 @@ func TestGetMachineState(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(mockGetDaemonsState, nil)
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	statePuller, err := daemons.NewStatePuller(db, fa, fec, fd, dbmodel.NewDHCPOptionDefinitionLookup())
+	dm, err := dnsop.NewManager(&daemonstest.ManagerAccessorsWrapper{
+		DB:     db,
+		Agents: fa,
+	})
+	require.NoError(t, err)
+	statePuller, err := daemons.NewStatePuller(daemons.StatePullerState{
+		DB:                         db,
+		Agents:                     fa,
+		EventCenter:                fec,
+		ReviewDispatcher:           fd,
+		DHCPOptionDefinitionLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+		DNSManager:                 dm,
+	})
 	require.NoError(t, err)
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, fd, &daemons.Pullers{StatePuller: statePuller})
 	require.NoError(t, err)
@@ -347,9 +373,14 @@ func TestGetMachineAndPowerDNSState(t *testing.T) {
 	fd := &storktest.FakeDispatcher{}
 	fc := &storktest.FakeEventCenter{}
 	statePuller, err := daemons.NewStatePuller(
-		db, mockAgents,
-		fc, fd,
-		dbmodel.NewDHCPOptionDefinitionLookup(),
+		daemons.StatePullerState{
+			DB:                         db,
+			Agents:                     mockAgents,
+			EventCenter:                fc,
+			ReviewDispatcher:           fd,
+			DHCPOptionDefinitionLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+			DNSManager:                 nil,
+		},
 	)
 	require.NoError(t, err)
 	rapi, err := NewRestAPI(&RestAPISettings{}, dbSettings, db, mockAgents, fc, fd, &daemons.Pullers{StatePuller: statePuller})
@@ -400,7 +431,14 @@ func TestCreateMachine(t *testing.T) {
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
 	ec := NewEndpointControl()
-	statePuller, err := daemons.NewStatePuller(db, fa, fec, fd, dbmodel.NewDHCPOptionDefinitionLookup())
+	statePuller, err := daemons.NewStatePuller(daemons.StatePullerState{
+		DB:                         db,
+		Agents:                     fa,
+		EventCenter:                fec,
+		ReviewDispatcher:           fd,
+		DHCPOptionDefinitionLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+		DNSManager:                 nil,
+	})
 	require.NoError(t, err)
 	pullers := &daemons.Pullers{StatePuller: statePuller}
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, fd, ec, pullers)
@@ -1102,7 +1140,14 @@ func TestUpdateMachine(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	statePuller, _ := daemons.NewStatePuller(db, fa, fec, fd, dbmodel.NewDHCPOptionDefinitionLookup())
+	statePuller, _ := daemons.NewStatePuller(daemons.StatePullerState{
+		DB:                         db,
+		Agents:                     fa,
+		EventCenter:                fec,
+		ReviewDispatcher:           fd,
+		DHCPOptionDefinitionLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+		DNSManager:                 nil,
+	})
 	pullers := &daemons.Pullers{StatePuller: statePuller}
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, fd, pullers)
 	require.NoError(t, err)
@@ -1237,7 +1282,16 @@ func TestDeleteMachine(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, fd)
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	dm := NewMockManager(ctrl)
+	dm.EXPECT().StopXFRTrackingForDaemon(gomock.Cond(func(daemon *dbmodel.Daemon) bool {
+		return daemon.Name == daemonname.Bind9
+	})).Times(1)
+
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, fd, dm)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -2724,7 +2778,12 @@ func TestUpdateDaemon(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, fd)
+	dm, err := dnsop.NewManager(&daemonstest.ManagerAccessorsWrapper{
+		DB:     db,
+		Agents: fa,
+	})
+	require.NoError(t, err)
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, fd, dm)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -2783,6 +2842,103 @@ func TestUpdateDaemon(t *testing.T) {
 	okRsp = rsp.(*services.GetDaemonOK)
 	require.Equal(t, keaDaemon.ID, okRsp.Payload.ID)
 	require.False(t, okRsp.Payload.Monitored) // now it is false
+}
+
+// Test updating BIND 9 daemon, and check whether the zone transfer tracking
+// is started or stopped.
+func TestUpdateDeleteDaemonStartXFRTracking(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	settings := RestAPISettings{}
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	fec := &storktest.FakeEventCenter{}
+	fd := &storktest.FakeDispatcher{}
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	// Create the mock DNS manager and test that the zone transfer tracking
+	// is started and stopped depending on the monitored state flag.
+	dm := NewMockManager(ctrl)
+	// It will be started once when monitoring is enabled.
+	dm.EXPECT().StartXFRTrackingForDaemon(gomock.Any()).Times(1)
+	// It will be stopped twice, once when monitoring is disabled and once
+	// when the daemon is deleted.
+	dm.EXPECT().StopXFRTrackingForDaemon(gomock.Any()).Times(2)
+
+	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, fd, dm)
+	require.NoError(t, err)
+
+	// Add a machine.
+	m := &dbmodel.Machine{
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+	err = dbmodel.AddMachine(db, m)
+	require.NoError(t, err)
+
+	// Add a BIND 9 daemon.
+	bind9Daemon := dbmodel.NewDaemon(m, daemonname.Bind9, true, []*dbmodel.AccessPoint{})
+	err = dbmodel.AddDaemon(db, bind9Daemon)
+	require.NoError(t, err)
+	require.NotZero(t, bind9Daemon.ID)
+
+	// Setup a user session (UpdateDaemon needs user db object).
+	user, err := dbmodel.GetUserByID(rapi.DB, 1)
+	require.NoError(t, err)
+	ctx, err := rapi.SessionManager.Load(t.Context(), "")
+	require.NoError(t, err)
+	err = rapi.SessionManager.LoginHandler(ctx, user)
+	require.NoError(t, err)
+
+	// Update daemon: change monitored to false.
+	params := services.UpdateDaemonParams{
+		ID: bind9Daemon.ID,
+		Daemon: services.UpdateDaemonBody{
+			Monitored: false,
+		},
+	}
+	rsp := rapi.UpdateDaemon(ctx, params)
+	require.IsType(t, &services.UpdateDaemonOK{}, rsp)
+
+	// Get updated daemon.
+	getDaemonParams := services.GetDaemonParams{
+		ID: bind9Daemon.ID,
+	}
+	rsp = rapi.GetDaemon(ctx, getDaemonParams)
+	require.IsType(t, &services.GetDaemonOK{}, rsp)
+	okRsp := rsp.(*services.GetDaemonOK)
+	require.Equal(t, bind9Daemon.ID, okRsp.Payload.ID)
+	require.False(t, okRsp.Payload.Monitored)
+
+	// Update daemon: change monitored to true
+	params = services.UpdateDaemonParams{
+		ID: bind9Daemon.ID,
+		Daemon: services.UpdateDaemonBody{
+			Monitored: true,
+		},
+	}
+	rsp = rapi.UpdateDaemon(ctx, params)
+	require.IsType(t, &services.UpdateDaemonOK{}, rsp)
+
+	// Get updated daemon.
+	rsp = rapi.GetDaemon(ctx, getDaemonParams)
+	require.IsType(t, &services.GetDaemonOK{}, rsp)
+	okRsp = rsp.(*services.GetDaemonOK)
+	require.Equal(t, bind9Daemon.ID, okRsp.Payload.ID)
+	require.True(t, okRsp.Payload.Monitored)
+
+	rsp = rapi.DeleteDaemon(ctx, services.DeleteDaemonParams{
+		ID: bind9Daemon.ID,
+	})
+	require.IsType(t, &services.DeleteDaemonOK{}, rsp)
+
+	// Make sure that the daemon is gone.
+	rsp = rapi.GetDaemon(ctx, getDaemonParams)
+	require.IsType(t, &services.GetDaemonDefault{}, rsp)
+	defaultRsp := rsp.(*services.GetDaemonDefault)
+	require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
 }
 
 // Test that the daemon is removed and its entities are cascade deleted.

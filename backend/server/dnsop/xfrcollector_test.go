@@ -264,3 +264,62 @@ func TestXFRCollectorReconnect(t *testing.T) {
 		require.Less(t, sub, xfrCollector.backoffFactor*time.Duration(math.Pow(2, float64(i-1))))
 	}
 }
+
+// Test that the XFR collector stops monitoring a daemon that doesn't exist in the database.
+func TestXFRCollectorNonExistingDaemon(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Create a daemon but do not add it to the database.
+	daemon := &dbmodel.Daemon{
+		ID: 1,
+		AccessPoints: []*dbmodel.AccessPoint{
+			{
+				Type:    dbmodel.AccessPointControl,
+				Address: "localhost",
+				Port:    5300,
+			},
+		},
+	}
+
+	controller := gomock.NewController(t)
+	defer controller.Finish()
+
+	// Generate some test zone transfers to be returned over the stream.
+	testXFRs := testutil.GetTestZoneTransfers()
+
+	agents := NewMockConnectedAgents(controller)
+
+	// Expect the collector to receive only one zone transfer state. After receiving
+	// this state and trying to insert it to the database, it should stop monitoring
+	// the daemon because the daemon does not exist in the database. yieldCount counts
+	// how many times the collector received a zone transfer state. It should be 1.
+	var yieldCount int
+	agents.EXPECT().ReceiveZoneTransfers(gomock.Any(), gomock.Any(), true).DoAndReturn(func(context.Context, *dbmodel.Daemon, bool) iter.Seq2[*bind9xfr.State, error] {
+		return func(yield func(*bind9xfr.State, error) bool) {
+			for _, xfr := range testXFRs {
+				yieldCount++
+				if !yield(xfr, nil) {
+					return
+				}
+			}
+		}
+	})
+
+	// Create the collector instance.
+	xfrCollector := newXFRCollector(daemonstest.ManagerAccessorsWrapper{
+		DB:     db,
+		Agents: agents,
+	}, daemon)
+
+	// Collect the zone transfer states from the agent.
+	xfrCollector.collect(t.Context())
+
+	// Make sure that the collector was stopped after receiving the first zone transfer state.
+	require.Equal(t, 1, yieldCount)
+
+	// Make sure that nothing was inserted into the database.
+	xfrs, _, err := dbmodel.GetZoneTransferStatesByPage(db, 0, 100)
+	require.NoError(t, err)
+	require.Empty(t, xfrs)
+}

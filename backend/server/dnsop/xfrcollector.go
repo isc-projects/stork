@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/go-pg/pg/v10"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	agentcomm "isc.org/stork/server/agentcomm"
 	dbmodel "isc.org/stork/server/database/model"
@@ -84,6 +85,12 @@ func (xfrCollector *xfrCollector) collect(ctx context.Context) {
 				Message:        xfr.Message,
 			})
 			if err != nil {
+				var pgErr pg.Error
+				if errors.As(err, &pgErr) && pgErr.Field('C') == "23503" && pgErr.Field('n') == "zone_transfer_state_daemon_id_fkey" {
+					// Handle foreign key violation error. It indicates that the daemon with this ID no longer exists in the database.
+					log.Warnf("The daemon with ID %d have been removed; stopping zone transfer monitoring for that daemon", xfrCollector.daemon.ID)
+					return
+				}
 				log.WithError(err).Error("Failed to add zone transfer state into the database")
 			}
 		}

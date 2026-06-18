@@ -71,9 +71,7 @@ func GetTestZoneTransfers() []*bind9xfr.State {
 			StartTime: time.Date(2026, 4, 25, 1, 2, 0, 13000000, time.UTC),
 		},
 		{
-			ViewName: "_default",
 			ZoneName: "zero.example.org",
-			Client:   "192.168.1.1",
 			Status:   bind9xfr.StatusMessage,
 			Message:  "Transfer failed: AXFR timed out after 0 seconds (serial 0)",
 		},

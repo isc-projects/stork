@@ -15,14 +15,17 @@ import (
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	"isc.org/stork/server/configreview"
 	kea "isc.org/stork/server/daemons/kea"
+	daemonstest "isc.org/stork/server/daemons/test"
 	dbmodel "isc.org/stork/server/database/model"
 	dbmodeltest "isc.org/stork/server/database/model/test"
 	dbtest "isc.org/stork/server/database/test"
+	"isc.org/stork/server/dnsop"
 	storktest "isc.org/stork/server/test/dbmodel"
 )
 
 //go:generate mockgen -package=daemons -destination=dispatchermock_test.go isc.org/stork/server/configreview Dispatcher
 //go:generate mockgen -package=daemons -destination=connectedagentsmock_test.go isc.org/stork/server/agentcomm ConnectedAgents
+//go:generate mockgen -package=daemons -destination=dnsmanagermock_test.go isc.org/stork/server/dnsop Manager
 
 // Check creating and shutting down StatePuller.
 func TestStatsPullerBasic(t *testing.T) {
@@ -44,7 +47,14 @@ func TestStatsPullerBasic(t *testing.T) {
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
 
-	sp, err := NewStatePuller(db, fa, fec, fd, dbmodel.NewDHCPOptionDefinitionLookup())
+	sp, err := NewStatePuller(StatePullerState{
+		DB:                         db,
+		Agents:                     fa,
+		EventCenter:                fec,
+		ReviewDispatcher:           fd,
+		DHCPOptionDefinitionLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+		DNSManager:                 nil,
+	})
 	require.NoError(t, err)
 	require.NotNil(t, sp.PeriodicPuller)
 
@@ -201,8 +211,21 @@ func TestStatePullerPullData(t *testing.T) {
 	_, err = db.Model(&setting).Insert()
 	require.NoError(t, err)
 
+	// Make sure that the zone transfer tracking is started for the BIND 9 daemon.
+	dm := NewMockManager(ctrl)
+	dm.EXPECT().StartXFRTrackingForDaemon(gomock.Cond(func(daemon *dbmodel.Daemon) bool {
+		return daemon.Name == daemonname.Bind9
+	})).Return(nil)
+
 	// prepare stats puller
-	sp, err := NewStatePuller(db, fa, fec, fd, dbmodel.NewDHCPOptionDefinitionLookup())
+	sp, err := NewStatePuller(StatePullerState{
+		DB:                         db,
+		Agents:                     fa,
+		EventCenter:                fec,
+		ReviewDispatcher:           fd,
+		DHCPOptionDefinitionLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+		DNSManager:                 dm,
+	})
 	require.NoError(t, err)
 	// shutdown state puller at the end
 	defer sp.Shutdown()
@@ -338,7 +361,20 @@ func TestStatePullerPullDataNetworkInterfacesOverride(t *testing.T) {
 	_, err = db.Model(&setting).Insert()
 	require.NoError(t, err)
 
-	sp, err := NewStatePuller(db, mock, &storktest.FakeEventCenter{}, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	dm, err := dnsop.NewManager(daemonstest.ManagerAccessorsWrapper{
+		DB:     db,
+		Agents: mock,
+	})
+	require.NoError(t, err)
+
+	sp, err := NewStatePuller(StatePullerState{
+		DB:                         db,
+		Agents:                     mock,
+		EventCenter:                &storktest.FakeEventCenter{},
+		ReviewDispatcher:           nil,
+		DHCPOptionDefinitionLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+		DNSManager:                 dm,
+	})
 	require.NoError(t, err)
 	defer sp.Shutdown()
 
@@ -562,6 +598,12 @@ func TestStatePullerPullDataFromLegacyAgent(t *testing.T) {
 	// fake config review dispatcher
 	fd := &storktest.FakeDispatcher{}
 
+	dm, err := dnsop.NewManager(&daemonstest.ManagerAccessorsWrapper{
+		DB:     db,
+		Agents: fa,
+	})
+	require.NoError(t, err)
+
 	// add one machine with one kea daemon
 	m := &dbmodel.Machine{
 		ID:         0,
@@ -569,7 +611,7 @@ func TestStatePullerPullDataFromLegacyAgent(t *testing.T) {
 		AgentPort:  8080,
 		Authorized: true,
 	}
-	err := dbmodel.AddMachine(db, m)
+	err = dbmodel.AddMachine(db, m)
 	require.NoError(t, err)
 	require.NotEqual(t, 0, m.ID)
 
@@ -609,7 +651,14 @@ func TestStatePullerPullDataFromLegacyAgent(t *testing.T) {
 	require.NoError(t, err)
 
 	// prepare stats puller
-	sp, err := NewStatePuller(db, fa, fec, fd, dbmodel.NewDHCPOptionDefinitionLookup())
+	sp, err := NewStatePuller(StatePullerState{
+		DB:                         db,
+		Agents:                     fa,
+		EventCenter:                fec,
+		ReviewDispatcher:           fd,
+		DHCPOptionDefinitionLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+		DNSManager:                 dm,
+	})
 	require.NoError(t, err)
 	// shutdown state puller at the end
 	defer sp.Shutdown()
@@ -679,7 +728,14 @@ func TestStatePullerAddAccessPoint(t *testing.T) {
 	fd := NewMockDispatcher(ctrl)
 	fd.EXPECT().BeginReview(gomock.Any(), gomock.Any(), gomock.Any())
 
-	sp, err := NewStatePuller(db, fa, fec, fd, dbmodel.NewDHCPOptionDefinitionLookup())
+	sp, err := NewStatePuller(StatePullerState{
+		DB:                         db,
+		Agents:                     fa,
+		EventCenter:                fec,
+		ReviewDispatcher:           fd,
+		DHCPOptionDefinitionLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+		DNSManager:                 nil,
+	})
 	require.NoError(t, err)
 	defer sp.Shutdown()
 
@@ -741,7 +797,14 @@ func TestStatePullerModifyAccessPoint(t *testing.T) {
 	fd := NewMockDispatcher(ctrl)
 	fd.EXPECT().BeginReview(gomock.Any(), gomock.Any(), gomock.Any())
 
-	sp, err := NewStatePuller(db, fa, fec, fd, dbmodel.NewDHCPOptionDefinitionLookup())
+	sp, err := NewStatePuller(StatePullerState{
+		DB:                         db,
+		Agents:                     fa,
+		EventCenter:                fec,
+		ReviewDispatcher:           fd,
+		DHCPOptionDefinitionLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+		DNSManager:                 nil,
+	})
 	require.NoError(t, err)
 	defer sp.Shutdown()
 
@@ -792,7 +855,20 @@ func TestStatePullerDeleteAccessPoint(t *testing.T) {
 	}
 	fec := &storktest.FakeEventCenter{}
 
-	sp, err := NewStatePuller(db, fa, fec, nil, dbmodel.NewDHCPOptionDefinitionLookup())
+	dm, err := dnsop.NewManager(&daemonstest.ManagerAccessorsWrapper{
+		DB:     db,
+		Agents: fa,
+	})
+	require.NoError(t, err)
+
+	sp, err := NewStatePuller(StatePullerState{
+		DB:                         db,
+		Agents:                     fa,
+		EventCenter:                fec,
+		ReviewDispatcher:           nil,
+		DHCPOptionDefinitionLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+		DNSManager:                 dm,
+	})
 	require.NoError(t, err)
 	defer sp.Shutdown()
 
@@ -1150,6 +1226,12 @@ func TestStatePullerConcurrentPulls(t *testing.T) {
 		return daemon.Name == daemonname.DHCPv4 && daemon.AccessPoints[0].Address == "203.0.113.123"
 	}), gomock.Any(), gomock.Any()).MinTimes(1)
 
+	dm, err := dnsop.NewManager(&daemonstest.ManagerAccessorsWrapper{
+		DB:     db,
+		Agents: fa,
+	})
+	require.NoError(t, err)
+
 	// add one machine with one kea daemon
 	m := &dbmodel.Machine{
 		ID:         0,
@@ -1157,7 +1239,7 @@ func TestStatePullerConcurrentPulls(t *testing.T) {
 		AgentPort:  8080,
 		Authorized: true,
 	}
-	err := dbmodel.AddMachine(db, m)
+	err = dbmodel.AddMachine(db, m)
 	require.NoError(t, err)
 	require.NotEqual(t, 0, m.ID)
 
@@ -1181,7 +1263,14 @@ func TestStatePullerConcurrentPulls(t *testing.T) {
 	require.NoError(t, err)
 
 	// prepare state puller
-	sp, err := NewStatePuller(db, fa, fec, fd, dbmodel.NewDHCPOptionDefinitionLookup())
+	sp, err := NewStatePuller(StatePullerState{
+		DB:                         db,
+		Agents:                     fa,
+		EventCenter:                fec,
+		ReviewDispatcher:           fd,
+		DHCPOptionDefinitionLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+		DNSManager:                 dm,
+	})
 	require.NoError(t, err)
 	// shutdown state puller at the end
 	defer sp.Shutdown()
