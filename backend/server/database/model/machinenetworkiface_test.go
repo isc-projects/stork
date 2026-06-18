@@ -71,6 +71,7 @@ func TestUpsertMachineNetworkInterfaces(t *testing.T) {
 			{IPAddress: "192.168.1.6"},
 		},
 	}
+	interfaces = interfaces[:2]
 	err = UpsertMachineNetworkInterfaces(db, m.ID, interfaces...)
 	require.NoError(t, err)
 
