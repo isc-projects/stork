@@ -978,7 +978,6 @@ export const ListZones: Story = {
 }
 
 export const TestAllZonesShown: Story = {
-    tags: ['no-test-in-headless-browser'],
     globals: {
         role: 'super-admin',
     },
@@ -1027,7 +1026,6 @@ export const TestAllZonesShown: Story = {
 }
 
 export const TestZonesFiltering: Story = {
-    tags: ['no-test-in-headless-browser'],
     globals: {
         role: 'super-admin',
     },
@@ -1226,7 +1224,6 @@ export const TestZonesFiltering: Story = {
 }
 
 export const TestCorrectQueryParamFilters: Story = {
-    tags: ['no-test-in-headless-browser'],
     decorators: [
         applicationConfig({
             providers: [
@@ -1275,7 +1272,6 @@ export const TestCorrectQueryParamFilters: Story = {
 }
 
 export const TestIncorrectQueryParamFilters: Story = {
-    tags: ['no-test-in-headless-browser'],
     decorators: [
         applicationConfig({
             providers: [

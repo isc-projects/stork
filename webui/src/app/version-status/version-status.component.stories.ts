@@ -276,7 +276,6 @@ export const NoAnchor: Story = {
 }
 
 export const TestFeedbackIsDisplayed: Story = {
-    tags: ['no-test-in-headless-browser'],
     play: async ({ canvasElement }) => {
         // Arrange
         const canvas = within(canvasElement)

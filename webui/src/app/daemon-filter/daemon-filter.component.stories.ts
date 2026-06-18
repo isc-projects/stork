@@ -393,7 +393,6 @@ export const TestNormalUsage: Story = {
 }
 
 export const TestSlowBackendResponse: Story = {
-    tags: ['no-test-in-headless-browser'],
     parameters: SlowBackendResponses.parameters,
     args: {
         daemonNames: ['dhcp4', 'dhcp6', 'named', 'pdns'],
