@@ -1088,9 +1088,11 @@ func TestGetMetadata(t *testing.T) {
 	_, err := meta.GetIcon()
 	require.Error(t, err) // We don't expect to have icon returned by OIDC.
 	controller.settings.IdentityProviderName = "OpenID Connect"
+	controller.settings.IdentityProviderID = "new-oidc"
 	controller.metadata = Metadata{settings: controller.settings}
 	meta = controller.GetMetadata()
 	require.Contains(t, meta.GetDescription(), "OpenID Provider")
+	require.EqualValues(t, "new-oidc", meta.GetID())
 }
 
 // Test if OIDC controller configuration is using redirect URI setting.
