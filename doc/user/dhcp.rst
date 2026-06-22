@@ -127,14 +127,19 @@ where a subnet prefix must be specified. It can be an IPv4 address
 the ``Proceed`` button to expand the form and enter the remaining subnet
 configuration information.
 
-The location where a subnet is saved depends on the loaded Kea hooks. With
-``libdhcp_cb_cmds``, Stork updates the Config Backend database. With
-``libdhcp_subnet_cmds``, Stork updates subnet data in the JSON configuration.
+The location where a subnet is saved in Kea instance depends on the loaded hooks.
+If the ``libdhcp_cb_cmds`` is loaded, Stork updates the subnet in the Config Backend database.
+If the ``libdhcp_subnet_cmds`` is loaded, Stork updates the subnet information in the JSON configuration.
 If both hooks are loaded, Stork alters only the subnet data in the Config
-Backend database and leaves the JSON configuration unchanged. In this case,
-Kea prioritizes subnets from the Config Backend database over the JSON
-configuration. Loading ``libdhcp_subnet_cmds`` and ``libdhcp_cb_cmds``
-together is not recommended.
+Backend database and leaves the JSON configuration unchanged. It conforms to
+the Kea behavior which prioritizes the subnet configuration from the Config Backend
+database over the JSON configuration.
+
+Loading ``libdhcp_subnet_cmds`` and ``libdhcp_cb_cmds`` together is not recommended
+because it may lead to the configuration conflicts between the Config Backend and the
+configuration file. Stork doesn't take into account whether the edited subnet orginally
+comes from the Config Backend or the configuration file. As a result, it will duplicate
+the subnet sourced from the configuration file in the Config Backend database.
 See `Kea ARM config conflicts section <https://kea.readthedocs.io/en/stable/arm/config.html#config-conflicts>`_
 for more details.
 

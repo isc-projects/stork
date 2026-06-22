@@ -70,40 +70,36 @@
                     </p>
                     <p>
                         When a subnet belongs to a shared network, it is not allowed to change the assignments of the
-                        subnet to servers. These assignments can only be controlled in the shared network form, for the
-                        entire shared network. The subnet assignments can be directly controlled only when the subnet
-                        does not belong to a shared network.
+                        subnet to servers in the subnet form. In this case, these assignments can only be controlled in the shared network form, for the
+                        entire shared network.
                     </p>
                     <p>
-                        The location where the subnet is saved depends on the loaded Kea hooks. With
-                        <span class="monospace">libdhcp_cb_cmds</span>, Stork updates the Config Backend database. With
-                        <span class="monospace">libdhcp_subnet_cmds</span>, Stork updates subnet data in the JSON
-                        configuration.
+                        The location where the edited subnet information is saved depends on the loaded Kea hooks. If
+                        <span class="monospace">libdhcp_cb_cmds</span> is loaded, Stork updates the Config Backend database. If
+                        <span class="monospace">libdhcp_subnet_cmds</span> is loaded, Stork updates subnet data in the Kea JSON
+                        configuration file.
                     </p>
                     <p>
                         If both <span class="monospace">libdhcp_subnet_cmds</span> and
-                        <span class="monospace">libdhcp_cb_cmds</span> hooks are loaded, Stork alters only the subnet
-                        data in the Config Backend database, and leaves the JSON configuration unchanged. Note that in
-                        this case, Kea prioritizes the subnets from the Config Backend database over the JSON
-                        configuration.
+                        <span class="monospace">libdhcp_cb_cmds</span> hooks are loaded, Stork updates the subnet
+                        configuration in the Config Backend database, and leaves the JSON configuration unchanged.
+                        It conforms to the Kea behavior that prioritizes configuration specified in the Config Backend
+                        over the configuration sourced from the JSON file.
                     </p>
                     <p>
-                        If both hooks are loaded and the subnet is specified both in the JSON configuration and in the
-                        Config Backend database, when the subnet is deleted, it is removed from the Config Backend
-                        database and runtime configuration, but not from the JSON configuration. After Kea is restarted
-                        or its configuration is reloaded, the subnet appears again. It is used to allocate leases and
-                        re-detected by Stork. It cannot be effectively deleted via Stork UI. It must be removed from the
-                        JSON configuration file manually.
-                    </p>
-                    <p>
-                        Loading <span class="monospace">libdhcp_subnet_cmds</span> and When both are loaded, Stork is
-                        able to display all subnets but can only update the subnet data in the Config Backend database.
-                        <span class="monospace">libdhcp_cb_cmds</span> together is not recommended. See [Kea ARM section
-                        about incompatible
+                        Using <span class="monospace">libdhcp_subnet_cmds</span> and
+                        <span class="monospace">libdhcp_cb_cmds</span> hooks is not recommended as described in
+                        [Kea ARM section about incompatible
                         software](https://kea.readthedocs.io/en/stable/arm/config.html#incompatible-software) and [Kea
                         ARM section about config
-                        conflicts](https://kea.readthedocs.io/en/stable/arm/config.html#config-conflicts).
-                    </p>
+                        conflicts](https://kea.readthedocs.io/en/stable/arm/config.html#config-conflicts). If a user
+                        decides to use such a configuration, it is important to understand some implications.
+                        If a subnet is specified in both the Config Backend and the JSON configuration file, deleting
+                        this subnet will merely remove it from the Config Backend. As a result, the subnet defined in
+                        in the configuration file will appear in the Kea server after the server is restarted or
+                        its configuration reloaded. Such a subnet cannot be deleted from Kea using Stork. It must
+                        be deleted manually.
+                   </p>
                 </app-help-tip>
             </div>
         </div>
