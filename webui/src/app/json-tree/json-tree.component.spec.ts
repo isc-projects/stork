@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 import { By } from '@angular/platform-browser'
 
 import { JsonTreeComponent } from './json-tree.component'
+import { IdentifierComponent } from '../identifier/identifier.component'
 
 describe('JsonTreeComponent', () => {
     let component: JsonTreeComponent
@@ -658,6 +659,48 @@ describe('JsonTreeComponent', () => {
         await fixture.whenRenderingDone()
         content = valueElement.nativeElement.innerText.trim()
         expect(content).toBe('')
+    })
+
+    it('should display MAC address as an identifier in hex format by default', async () => {
+        component.key = 'hw-address'
+        component.value = '50:51:52:53:54:55'
+
+        fixture.detectChanges()
+
+        const valueElement = fixture.debugElement.query(By.css('.tree-level--leaf .tree-level__value'))
+        const identifierElement = valueElement.query(By.directive(IdentifierComponent))
+        expect(identifierElement).not.toBeNull()
+
+        const identifierValue = valueElement.nativeElement.textContent
+        expect(identifierValue).toContain('50:51:52:53:54:55')
+    })
+
+    it('should display flex ID as an identifier in text format by default', async () => {
+        component.key = 'flex-id'
+        component.value = '41:42:43:44:45:46'
+
+        fixture.detectChanges()
+
+        const valueElement = fixture.debugElement.query(By.css('.tree-level--leaf .tree-level__value'))
+        const identifierElement = valueElement.query(By.directive(IdentifierComponent))
+        expect(identifierElement).not.toBeNull()
+
+        const identifierValue = valueElement.nativeElement.textContent
+        expect(identifierValue).toContain('ABCDEF')
+    })
+
+    it('should display any ID-like value as an identifier in text format by default', async () => {
+        component.key = 'some-id'
+        component.value = '41:42:43:44:45:46'
+
+        fixture.detectChanges()
+
+        const valueElement = fixture.debugElement.query(By.css('.tree-level--leaf .tree-level__value'))
+        const identifierElement = valueElement.query(By.directive(IdentifierComponent))
+        expect(identifierElement).not.toBeNull()
+
+        const identifierValue = valueElement.nativeElement.textContent
+        expect(identifierValue).toContain('ABCDEF')
     })
 })
 

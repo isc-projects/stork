@@ -5,21 +5,25 @@
             <span class="tree-level__key">{{ key }}</span>
         }
         <div class="tree-level__value">
-            <!-- Secret value rendering -->
-            @if (!hasCustomValueTemplate() && isSecret()) {
-                <ng-template [ngTemplateOutlet]="leafSecretValue"></ng-template>
-            }
-            <!-- Standard value rendering -->
-            @if (!hasCustomValueTemplate() && !isSecret()) {
-                <ng-template [ngTemplateOutlet]="leafValue"></ng-template>
-            }
-            <!-- Custom value rendering -->
             @if (hasCustomValueTemplate()) {
+                <!-- Custom value rendering -->
                 <ng-template
                     [ngTemplateOutlet]="customValueTemplates[key]"
                     [ngTemplateOutletContext]="{ key: key, value: value }"
-                >
-                </ng-template>
+                ></ng-template>
+            } @else if (isSecret()) {
+                <!-- Secret value rendering -->
+                <ng-template [ngTemplateOutlet]="leafSecretValue"></ng-template>
+            } @else if (isIdentifier()) {
+                <!-- Identifier value rendering -->
+                <app-identifier
+                    class="tree-level__value--string"
+                    [hexValue]="value"
+                    [defaultHexFormat]="identifierRule.defaultHexFormat"
+                ></app-identifier>
+            } @else {
+                <!-- Standard value rendering -->
+                <ng-template [ngTemplateOutlet]="leafValue"></ng-template>
             }
         </div>
     </div>

@@ -2,6 +2,7 @@ import { KeyValue, NgClass, NgTemplateOutlet, SlicePipe, KeyValuePipe } from '@a
 import { Component, Input, TemplateRef } from '@angular/core'
 import { Paginator } from '@openng/optimus-ui/paginator'
 import { InputText } from '@openng/optimus-ui/inputtext'
+import { IdentifierComponent } from '../identifier/identifier.component'
 
 /**
  * Typing for page changed event of OptimusUI navigation.
@@ -31,7 +32,15 @@ interface PageChangedEvent {
     selector: 'app-json-tree',
     templateUrl: './json-tree.component.html',
     styleUrls: ['./json-tree.component.sass'],
-    imports: [NgClass, NgTemplateOutlet, Paginator, InputText, SlicePipe, KeyValuePipe],
+    imports: [
+        NgClass,
+        NgTemplateOutlet,
+        Paginator,
+        InputText,
+        SlicePipe,
+        KeyValuePipe,
+        IdentifierComponent,
+    ],
 })
 export class JsonTreeComponent {
     private _value: any = null
@@ -172,6 +181,34 @@ export class JsonTreeComponent {
     }
 
     private _canShowSecrets = false
+
+    /**
+     * Default values match rules for host reservation identifiers.
+     */
+    private _identifierRules: { defaultHexFormat: boolean; key: string | RegExp }[] = [
+        { defaultHexFormat: true, key: 'hw-address' },
+        { defaultHexFormat: true, key: 'duid' },
+        { defaultHexFormat: true, key: 'client-id' },
+        { defaultHexFormat: false, key: /.*-id/ },
+    ]
+
+    /**
+     * Set list of rules to display values as identifiers.
+     * Each rule contains a key or regular expression to match keys and a
+     * boolean value indicating if the value should be displayed in hex format
+     * by default.
+     */
+    @Input()
+    set identifierRules(rules: { defaultHexFormat: boolean; key: string | RegExp }[]) {
+        this._identifierRules = rules
+    }
+
+    /**
+     * Get list of rules to display values as identifiers.
+     */
+    get identifierRules() {
+        return this._identifierRules
+    }
 
     /**
      * Enable/disable showing a secret value after a click on the placeholder
@@ -577,6 +614,30 @@ export class JsonTreeComponent {
      */
     isSecret(): boolean {
         return this.secretKeys.includes(this.key)
+    }
+
+    /**
+     * Specifies when the value is an identifier and should be displayed using
+     * an identifier component.
+     */
+    isIdentifier(): boolean {
+        return this.identifierRule != null
+    }
+
+    /**
+     * Returns the identifier rule for the current key or null if there is no
+     * such rule.
+     */
+    get identifierRule(): { defaultHexFormat: boolean; key: string | RegExp } | null {
+        return (
+            this.identifierRules.find(({ key }) => {
+                if (typeof key === 'string') {
+                    return key === this.key
+                } else {
+                    return key.test(this.key)
+                }
+            }) || null
+        )
     }
 
     /**
