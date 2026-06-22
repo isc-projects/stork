@@ -1861,15 +1861,15 @@ func TestCreateSubnetBeginIncludesDaemonWithBothHooks(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create a daemon with only cb_cmds.
-	serverCbCmds, err := dbmodeltest.NewKeaDHCPv4Server(db)
+	serverCBCmds, err := dbmodeltest.NewKeaDHCPv4Server(db)
 	require.NoError(t, err)
-	err = serverCbCmds.Configure(cbCmdsConfig)
+	err = serverCBCmds.Configure(cbCmdsConfig)
 	require.NoError(t, err)
-	daemonCbCmds, err := serverCbCmds.GetDaemon()
+	daemonCBCmds, err := serverCBCmds.GetDaemon()
 	require.NoError(t, err)
 
 	err = kea.CommitDaemonsIntoDB(db,
-		[]*dbmodel.Daemon{daemonBoth, daemonSubnetCmds, daemonCbCmds},
+		[]*dbmodel.Daemon{daemonBoth, daemonSubnetCmds, daemonCBCmds},
 		&storktest.FakeEventCenter{},
 		[]kea.DaemonStateMeta{{IsConfigChanged: true}, {IsConfigChanged: true}, {IsConfigChanged: true}},
 		dbmodel.NewDHCPOptionDefinitionLookup(),
@@ -1910,7 +1910,7 @@ func TestCreateSubnetBeginIncludesDaemonWithBothHooks(t *testing.T) {
 	daemonIDs := []int64{okRsp.Payload.Daemons[0].ID, okRsp.Payload.Daemons[1].ID, okRsp.Payload.Daemons[2].ID}
 	require.Contains(t, daemonIDs, daemonBoth.ID)
 	require.Contains(t, daemonIDs, daemonSubnetCmds.ID)
-	require.Contains(t, daemonIDs, daemonCbCmds.ID)
+	require.Contains(t, daemonIDs, daemonCBCmds.ID)
 }
 
 // Test error cases for submitting new subnet.

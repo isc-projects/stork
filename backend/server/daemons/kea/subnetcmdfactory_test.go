@@ -182,7 +182,7 @@ func TestCreateSubnetCmdsSubnetAddCommandsIPv4WithSharedNetwork(t *testing.T) {
 
 // Tests creating a cb_cmds set command for an IPv4 subnet when no server
 // tag is configured (defaults to "all").
-func TestCreateCbCmdsSetCommandIPv4(t *testing.T) {
+func TestCreateCBCmdsSetCommandIPv4(t *testing.T) {
 	// Arrange
 	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv4, nil, keaconfig.SubnetAndSharedNetworkAlteringHookLibraryCBCmds)
 	subnet := newTestSubnet(daemon)
@@ -211,7 +211,7 @@ func TestCreateCbCmdsSetCommandIPv4(t *testing.T) {
 
 // Tests creating a cb_cmds set command for an IPv4 subnet with an explicit
 // server tag.
-func TestCreateCbCmdsSetCommandIPv4WithServerTag(t *testing.T) {
+func TestCreateCBCmdsSetCommandIPv4WithServerTag(t *testing.T) {
 	// Arrange
 	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server1"), keaconfig.SubnetAndSharedNetworkAlteringHookLibraryCBCmds)
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
@@ -238,7 +238,7 @@ func TestCreateCbCmdsSetCommandIPv4WithServerTag(t *testing.T) {
 }
 
 // Tests creating a cb_cmds set command for an IPv6 subnet.
-func TestCreateCbCmdsSetCommandIPv6(t *testing.T) {
+func TestCreateCBCmdsSetCommandIPv6(t *testing.T) {
 	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv6, nil, keaconfig.SubnetAndSharedNetworkAlteringHookLibraryCBCmds)
 	subnet := newTestSubnet(daemon)
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
@@ -265,7 +265,7 @@ func TestCreateCbCmdsSetCommandIPv6(t *testing.T) {
 
 // Tests that the shared-network-name is embedded in the subnet when the subnet
 // belongs to a shared network.
-func TestCreateCbCmdsSetCommandIPv4WithSharedNetwork(t *testing.T) {
+func TestCreateCBCmdsSetCommandIPv4WithSharedNetwork(t *testing.T) {
 	// Arrange
 	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv4, nil, keaconfig.SubnetAndSharedNetworkAlteringHookLibraryCBCmds)
 	subnet := newTestSubnet(daemon)
@@ -319,7 +319,7 @@ func TestCreateSubnetAddCommandsSubnetCmds(t *testing.T) {
 
 // Tests that createSubnetAddCommands returns a remote-subnet4-set for a
 // cb_cmds daemon.
-func TestCreateSubnetAddCommandsCbCmds(t *testing.T) {
+func TestCreateSubnetAddCommandsCBCmds(t *testing.T) {
 	// Arrange
 	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server"), keaconfig.SubnetAndSharedNetworkAlteringHookLibraryCBCmds)
 	subnet := newTestSubnet(daemon)
@@ -395,7 +395,7 @@ func TestCreateSubnetUpdateCommandsSubnetCmds(t *testing.T) {
 
 // Tests that createSubnetUpdateCommands returns remote-subnet4-set for
 // cb_cmds daemons.
-func TestCreateSubnetUpdateCommandsCbCmds(t *testing.T) {
+func TestCreateSubnetUpdateCommandsCBCmds(t *testing.T) {
 	// Arrange
 	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server"), keaconfig.SubnetAndSharedNetworkAlteringHookLibraryCBCmds)
 	subnet := newTestSubnet(daemon)
@@ -429,7 +429,7 @@ func TestCreateSubnetUpdateCommandsCbCmds(t *testing.T) {
 
 // Tests that createSubnetDeleteCommands returns a remote-subnet4-del-by-id
 // command for cb_cmds daemons.
-func TestCreateSubnetDeleteCommandsCbCmds(t *testing.T) {
+func TestCreateSubnetDeleteCommandsCBCmds(t *testing.T) {
 	// Arrange
 	daemon := newTestDaemonWithConfig(t, daemonname.DHCPv4, storkutil.Ptr("server"), keaconfig.SubnetAndSharedNetworkAlteringHookLibraryCBCmds)
 	subnet := newTestSubnet(daemon)

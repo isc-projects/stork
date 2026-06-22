@@ -132,7 +132,7 @@ func TestGetSubnetAndSharedNetworkAlteringHookLibraryCBCmds(t *testing.T) {
 
 // Tests that when both subnet_cmds and cb_cmds hook libraries are configured,
 // cb_cmds takes precedence.
-func TestGetSubnetAndSharedNetworkAlteringHookLibraryCbCmdsPreferred(t *testing.T) {
+func TestGetSubnetAndSharedNetworkAlteringHookLibraryCBCmdsPreferred(t *testing.T) {
 	hooks := HookLibraries{
 		{Library: "libdhcp_subnet_cmds"},
 		{Library: "libdhcp_cb_cmds"},
