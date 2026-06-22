@@ -1437,6 +1437,12 @@ common ``STORK_OIDC_`` prefix):
 
     INFO[2026-05-29 10:39:56]       controller.go:124   Authentication using OpenID Connect is now enabled in Stork, and users will be authenticated by OpenID Provider if the redirectURI has been registered in this provider.  openIDProvider="https://example.oidc.issuer.org" redirectURI="https://example.org:1234/stork/oidc/callback"
 
+- ``STORK_OIDC_PROVIDER_ID`` (``oidc-provider-id`` in CLI)
+
+    The OpenID Provider identifier to uniquely identify the provider in your Stork deployment. You don't need to use this
+    setting unless you change OpenID Provider in your Stork deployment. It will be used as authentication method identifier
+    in Stork server. Stork UI will display it as authentication method for users authenticating via OIDC. It defaults to ``oidc``.
+
 - ``STORK_OIDC_PROVIDER_NAME`` (``oidc-provider-name`` in CLI)
 
     The OpenID Provider name that will be displayed on the Login page. You may use it to customize the label on the

@@ -16,7 +16,7 @@
 Synopsis
 ~~~~~~~~
 
-:program:`stork-server` [**-h**] [**-v**] [**-m**] [**-u**] [**--dbhost**] [**-p**] [**-d**] [**--db-sslmode**] [**--db-sslcert**] [**--db-sslkey**] [**--db-sslrootcert**] [**--db-trace-queries=**] [**--db-tls-1-2-enabled**] [**--rest-cleanup-timeout**] [**--rest-graceful-timeout**] [**--rest-max-header-size**] [**--rest-max-body-size**] [**--rest-host**] [**--rest-port**] [**--rest-listen-limit**] [**--rest-keep-alive**] [**--rest-read-timeout**] [**--rest-write-timeout**] [**--rest-tls-certificate**] [**--rest-tls-key**] [**--rest-tls-ca**] [**--rest-tls-1-2-enabled**] [**--rest-static-files-dir**] [**--rest-base-url**] [**--rest-versions-url**] [**--oidc-issuer-url**]  [**--oidc-client-id**]  [**--oidc-client-secret**]  [**--oidc-provider-name**]  [**--oidc-group-allow**] [**--oidc-map-groups**]  [**--oidc-scopes**]  [**--oidc-groups-claim**]  [**--oidc-redirect-uri**]  [**--oidc-group-admin**]  [**--oidc-group-super-admin**]  [**--oidc-group-read-only**]
+:program:`stork-server` [**-h**] [**-v**] [**-m**] [**-u**] [**--dbhost**] [**-p**] [**-d**] [**--db-sslmode**] [**--db-sslcert**] [**--db-sslkey**] [**--db-sslrootcert**] [**--db-trace-queries=**] [**--db-tls-1-2-enabled**] [**--rest-cleanup-timeout**] [**--rest-graceful-timeout**] [**--rest-max-header-size**] [**--rest-max-body-size**] [**--rest-host**] [**--rest-port**] [**--rest-listen-limit**] [**--rest-keep-alive**] [**--rest-read-timeout**] [**--rest-write-timeout**] [**--rest-tls-certificate**] [**--rest-tls-key**] [**--rest-tls-ca**] [**--rest-tls-1-2-enabled**] [**--rest-static-files-dir**] [**--rest-base-url**] [**--rest-versions-url**] [**--oidc-issuer-url**] [**--oidc-client-id**] [**--oidc-client-secret**] [**--oidc-provider-name**] [**--oidc-group-allow**] [**--oidc-map-groups**] [**--oidc-scopes**] [**--oidc-groups-claim**] [**--oidc-redirect-uri**] [**--oidc-provider-id**] [**--oidc-group-admin**] [**--oidc-group-super-admin**] [**--oidc-group-read-only**]
 
 Description
 ~~~~~~~~~~~
@@ -198,6 +198,10 @@ variables are listed in square brackets, where applicable):
    Redirection URI to which the response to OIDC authentication request will be sent. If configured, it must end with '/oidc/callback' path. Example: 'https://example.org:1234/stork/oidc/callback'.
    If left empty, Stork will try to construct this URI by joining Stork server address (scheme+'rest-host'+'rest-port'+'rest-base-url' settings) with '/oidc/callback' path. It is useful when Stork UI
    is behind a Reverse Proxy and the UI is served under a different URL than Stork server. ``[$STORK_OIDC_REDIRECT_URI]``
+
+``--oidc-provider-id``
+   Optional. The OID Provider identifier. Update it whenever you change the OID Provider in your Stork deployment so that each Provider has unique identifier. It will be used as authentication method identifier
+   in Stork server. Stork UI will display it as authentication method for users authenticating via OIDC. (default: oidc) ``[$STORK_OIDC_PROVIDER_ID]``
 
 ``--oidc-group-admin``
    The claim value returned from OIDC token endpoint that can be mapped to Stork 'admin' group; also accepts a comma-separated list of group names (default: stork-admin) ``[$STORK_OIDC_GROUP_ADMIN]``
