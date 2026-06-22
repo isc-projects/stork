@@ -358,7 +358,7 @@ func createSubnetSaveCommands(daemon *dbmodel.Daemon) ([]ConfigCommand, error) {
 		return []ConfigCommand{}, nil
 	}
 	if hook == keaconfig.SubnetAndSharedNetworkAlteringHookLibraryNone {
-		return nil, pkgerrors.Errorf("no hook library for altering subnets")
+		return nil, pkgerrors.Errorf("no hook library for configuring subnets")
 	}
 
 	var cmds []ConfigCommand
