@@ -88,19 +88,18 @@ export class IdentifierComponent implements OnInit {
     @Input() defaultHexFormat = false
 
     /**
-     * Specifies whether the hex format is displayed with colons separating
-     * the bytes (the default, suitable for MAC addresses and similar
-     * identifiers) or as a contiguous string of hexadecimal digits
-     * (suitable for long values, e.g. relay agent information options).
+     * Specifies the hex value separator (the default is a colon).
      */
-    @Input() separateHexBytes = true
+    @Input() displaySeparator = ':'
 
     /**
-     * Returns the hex value formatted for display, with or without the
-     * byte separators, depending on the separateHexBytes flag.
+     * Returns the hex value formatted for display, with a proper separator.
      */
     get displayHexValue(): string {
-        return this.separateHexBytes ? this._hexValue : this._hexValue.replace(/:/g, '')
+        if (this.displaySeparator === ':') {
+            return this._hexValue
+        }
+        return this._hexValue.replace(/:/g, this.displaySeparator)
     }
 
     /**

@@ -169,4 +169,20 @@ describe('IdentifierComponent', () => {
         expect(identifierEl).toBeTruthy()
         expect(identifierEl.nativeElement.textContent.trim()).toContain('Empty identifier')
     })
+
+    it('should take into account the display separator', () => {
+        component.defaultHexFormat = true
+        component.hexValue = '01:02:03:04:05:06'
+        component.displaySeparator = '-'
+        component.ngOnInit()
+        fixture.detectChanges()
+
+        let identifierEl = fixture.debugElement.query(By.css('div'))
+        expect(identifierEl).toBeTruthy()
+        expect(identifierEl.nativeElement.textContent.trim()).toContain('01-02-03-04-05-06')
+
+        component.displaySeparator = ''
+        fixture.detectChanges()
+        expect(identifierEl.nativeElement.textContent.trim()).toContain('010203040506')
+    })
 })
