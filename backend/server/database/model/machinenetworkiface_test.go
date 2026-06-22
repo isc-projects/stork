@@ -288,6 +288,7 @@ func TestGetMachinesByNetworkInterfaceIPAddress(t *testing.T) {
 	})
 }
 
+// Test that inserting a network interface with no IP addresses works correctly.
 func TestUpsertMachineInterfaceHasNoIPAddresses(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
