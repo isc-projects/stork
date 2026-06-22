@@ -787,6 +787,7 @@ func TestCallbackEndpointAuthorizesUser(t *testing.T) {
 		ClientID:            "clientID",
 		GroupsClaim:         "groups",
 		MandatoryAllowGroup: "stork-users",
+		IdentityProviderID:  "oidc",
 		EnableGroupMapping:  true,
 		GroupMapping: GroupMapping{
 			SuperAdmin: CommaSeparatedStrings{"stork-super-admins"},
@@ -831,7 +832,7 @@ func TestCallbackEndpointAuthorizesUser(t *testing.T) {
 	require.Equal(t, http.StatusFound, resp2.StatusCode)
 	// Check redirect Location header. It should redirect to home "/" path.
 	require.Contains(t, resp2.Header, "Location")
-	require.EqualValues(t, resp2.Header.Get("Location"), "/")
+	require.EqualValues(t, "/", resp2.Header.Get("Location"))
 	// Check if user was created in DB.
 	dbUser, err := dbmodel.GetUserByExternalID(db, "oidc", "foo")
 	require.NoError(t, err)
@@ -858,6 +859,7 @@ func TestCallbackEndpointAuthorizesUserGroupMappingDisabled(t *testing.T) {
 		ClientID:            "clientID",
 		GroupsClaim:         "groups",
 		MandatoryAllowGroup: "stork-users",
+		IdentityProviderID:  "oidc",
 	}
 	controller := NewController(settings, db)
 	require.NotNil(t, controller)
@@ -898,7 +900,7 @@ func TestCallbackEndpointAuthorizesUserGroupMappingDisabled(t *testing.T) {
 	require.Equal(t, http.StatusFound, resp2.StatusCode)
 	// Check redirect Location header. It should redirect to home "/" path.
 	require.Contains(t, resp2.Header, "Location")
-	require.EqualValues(t, resp2.Header.Get("Location"), "/")
+	require.EqualValues(t, "/", resp2.Header.Get("Location"))
 	// Check if user was created in DB.
 	dbUser, err := dbmodel.GetUserByExternalID(db, "oidc", "foo")
 	require.NoError(t, err)
@@ -1088,11 +1090,9 @@ func TestGetMetadata(t *testing.T) {
 	_, err := meta.GetIcon()
 	require.Error(t, err) // We don't expect to have icon returned by OIDC.
 	controller.settings.IdentityProviderName = "OpenID Connect"
-	controller.settings.IdentityProviderID = "new-oidc"
 	controller.metadata = Metadata{settings: controller.settings}
 	meta = controller.GetMetadata()
 	require.Contains(t, meta.GetDescription(), "OpenID Provider")
-	require.EqualValues(t, "new-oidc", meta.GetID())
 }
 
 // Test if OIDC controller configuration is using redirect URI setting.

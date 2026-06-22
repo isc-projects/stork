@@ -25,11 +25,7 @@ func (m *Metadata) GetDescription() string {
 
 // GetID implements [authdata.AuthenticationMetadata].
 func (m *Metadata) GetID() string {
-	id := m.settings.IdentityProviderID
-	if len(id) == 0 {
-		id = "oidc"
-	}
-	return id
+	return "oidc"
 }
 
 // GetIcon implements [authdata.AuthenticationMetadata].

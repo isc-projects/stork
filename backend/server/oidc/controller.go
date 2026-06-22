@@ -518,7 +518,7 @@ func (ctl *Controller) callbackHandler(w http.ResponseWriter, r *http.Request) {
 			authdata.UserGroupIDReadOnly,
 		}
 	}
-	systemUser, err := dbmodel.AddOrUpdateExternalUser(ctl.db, &outputUser, ctl.metadata.GetID())
+	systemUser, err := dbmodel.AddOrUpdateExternalUser(ctl.db, &outputUser, ctl.settings.IdentityProviderID)
 	if err != nil || systemUser == nil {
 		log.WithError(err).Errorf("Error creating or updating system user in DB for authenticated OIDC user ID %s", claims.Sub)
 		http.Redirect(w, r, authErrorURLPath, http.StatusFound)

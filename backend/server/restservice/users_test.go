@@ -2164,8 +2164,9 @@ func TestGetAuthenticationMethodsOIDC(t *testing.T) {
 	require.NoError(t, err)
 	defer srvTeardown()
 	oidcSettings := oidc.Settings{
-		IssuerURL: issuerURL,
-		ClientID:  "clientID",
+		IssuerURL:          issuerURL,
+		ClientID:           "clientID",
+		IdentityProviderID: "custom-oidc",
 	}
 	oidcController := oidc.NewController(oidcSettings, rapi.DB)
 	require.NotNil(t, oidcController)
