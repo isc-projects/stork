@@ -2,7 +2,7 @@ import { Meta, StoryObj, applicationConfig } from '@storybook/angular'
 import { SubnetTabComponent } from './subnet-tab.component'
 import { IPType } from '../iptype'
 import { ConfirmationService, MessageService } from 'primeng/api'
-import { expandToggleableFieldset, toastDecorator } from '../utils-stories'
+import { toastDecorator } from '../utils-stories'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { provideRouter, withHashLocation } from '@angular/router'
 import { expect, within, waitFor } from 'storybook/test'
@@ -672,7 +672,7 @@ export const TestDisplaySubnet4NoPools: Story = {
             ],
         },
     },
-    play: async ({ canvasElement }) => {
+    play: async ({ canvasElement, userEvent }) => {
         const canvas = within(canvasElement)
         const title = canvasElement.querySelector('#tab-title-span')
 
@@ -681,10 +681,13 @@ export const TestDisplaySubnet4NoPools: Story = {
         await expect(canvas.getByText('No pools configured.')).toBeVisible()
         await expect(canvas.getByText('No user context configured.')).toBeVisible()
 
-        await expandToggleableFieldset(canvas, 'DHCP Parameters')
+        const dhcpParamsBtn = await canvas.findByRole('button', { name: 'DHCP Parameters' })
+        await userEvent.click(dhcpParamsBtn)
+
         await expect(canvas.getByText('No parameters configured.')).toBeVisible()
 
-        await expandToggleableFieldset(canvas, /DHCP Options/)
+        const dhcpOptionsBtn = await canvas.findByRole('button', { name: /DHCP Options/ })
+        await userEvent.click(dhcpOptionsBtn)
         await expect(canvas.getByText('No options configured.')).toBeVisible()
     },
 }
@@ -716,17 +719,19 @@ export const TestDisplaySubnet6: Story = {
             ],
         },
     },
-    play: async ({ canvasElement }) => {
+    play: async ({ canvasElement, userEvent }) => {
         const canvas = within(canvasElement)
 
         await expect(canvas.getByText('Subnet 2001:db8:1::/64')).toBeVisible()
         await expect(canvas.getByText('2001:db8:1::2-2001:db8:1::786')).toBeVisible()
         await expect(canvas.getByText('No user context configured.')).toBeVisible()
 
-        await expandToggleableFieldset(canvas, 'DHCP Parameters')
+        const dhcpParamsBtn = await canvas.findByRole('button', { name: 'DHCP Parameters' })
+        await userEvent.click(dhcpParamsBtn)
         await expect(canvas.getByText('No parameters configured.')).toBeVisible()
 
-        await expandToggleableFieldset(canvas, /DHCP Options/)
+        const dhcpOptionsBtn = await canvas.findByRole('button', { name: /DHCP Options/ })
+        await userEvent.click(dhcpOptionsBtn)
         await expect(canvas.getByText('No options configured.')).toBeVisible()
     },
 }
@@ -764,7 +769,7 @@ export const TestDisplaySubnet6AddressPrefix: Story = {
             ],
         },
     },
-    play: async ({ canvasElement }) => {
+    play: async ({ canvasElement, userEvent }) => {
         const canvas = within(canvasElement)
 
         await expect(canvas.getByText('Subnet 2001:db8:1::/64')).toBeVisible()
@@ -772,10 +777,12 @@ export const TestDisplaySubnet6AddressPrefix: Story = {
         await expect(canvas.getByText('3000::')).toBeVisible()
         await expect(canvas.getByText('No user context configured.')).toBeVisible()
 
-        await expandToggleableFieldset(canvas, 'DHCP Parameters')
+        const dhcpParamsBtn = await canvas.findByRole('button', { name: 'DHCP Parameters' })
+        await userEvent.click(dhcpParamsBtn)
         await expect(canvas.getByText('No parameters configured.')).toBeVisible()
 
-        await expandToggleableFieldset(canvas, /DHCP Options/)
+        const dhcpOptionsBtn = await canvas.findByRole('button', { name: /DHCP Options/ })
+        await userEvent.click(dhcpOptionsBtn)
         await expect(canvas.getByText('No options configured.')).toBeVisible()
     },
 }
@@ -859,7 +866,7 @@ export const TestDisplaySubnet6DifferentServers: Story = {
             ],
         },
     },
-    play: async ({ canvasElement }) => {
+    play: async ({ canvasElement, userEvent }) => {
         const canvas = within(canvasElement)
 
         await expect(canvas.getByText('Subnet 2001:db8:1::/64')).toBeVisible()
@@ -872,7 +879,8 @@ export const TestDisplaySubnet6DifferentServers: Story = {
         await expect(canvas.getByText('user-context-is-here')).toBeVisible()
         await expect(canvas.getByText('No user context configured.')).toBeVisible()
 
-        await expandToggleableFieldset(canvas, 'DHCP Parameters')
+        const dhcpParamsBtn = await canvas.findByRole('button', { name: 'DHCP Parameters' })
+        await userEvent.click(dhcpParamsBtn)
         await expect(canvas.getByText('Cache Threshold')).toBeVisible()
         await expect(canvas.getAllByText('0.25').length).toBeGreaterThan(0)
 

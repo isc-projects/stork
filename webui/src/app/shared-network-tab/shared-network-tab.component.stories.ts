@@ -3,7 +3,7 @@ import { SharedNetworkTabComponent } from './shared-network-tab.component'
 import { IPType } from '../iptype'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { ConfirmationService, MessageService } from 'primeng/api'
-import { expandToggleableFieldset, toastDecorator } from '../utils-stories'
+import { toastDecorator } from '../utils-stories'
 import { provideRouter, withHashLocation } from '@angular/router'
 import { expect, within } from 'storybook/test'
 
@@ -351,17 +351,25 @@ export const TestDisplaySharedNetwork4Minimal: Story = {
             ],
         },
     },
-    play: async ({ canvasElement }) => {
+    play: async ({ canvasElement, userEvent }) => {
+        // Test that it should display an IPv4 shared network with minimal data.
         const canvas = within(canvasElement)
 
         await expect(canvas.getByText('Shared Network bar')).toBeVisible()
+        await expect(canvas.getByRole('group', { name: 'DHCP Servers Using the Shared Network' })).toBeVisible()
+        await expect(canvas.getByRole('group', { name: 'Subnets' })).toBeVisible()
+        await expect(canvas.getByRole('group', { name: 'Pools' })).toBeVisible()
+        await expect(canvas.getByText(/\[10\] DHCPv4@localhost/)).toBeVisible()
         await expect(canvas.getByText('No subnets configured.')).toBeVisible()
         await expect(canvas.getByText('No pools configured.')).toBeVisible()
 
-        await expandToggleableFieldset(canvas, 'DHCP Parameters')
-        await expect(canvas.getByText('No parameters configured.')).toBeVisible()
+        // Toggle PrimeNG fieldsets.
+        const dhcpParamsBtn = await canvas.findByRole('button', { name: 'DHCP Parameters' })
+        await userEvent.click(dhcpParamsBtn)
+        const dhcpOptionsBtn = await canvas.findByRole('button', { name: /DHCP Options/ })
+        await userEvent.click(dhcpOptionsBtn)
 
-        await expandToggleableFieldset(canvas, /DHCP Options/)
+        await expect(canvas.getByText('No parameters configured.')).toBeVisible()
         await expect(canvas.getByText('No options configured.')).toBeVisible()
     },
 }
@@ -405,21 +413,38 @@ export const TestDisplaySharedNetwork6: Story = {
             ],
         },
     },
-    play: async ({ canvasElement }) => {
+    play: async ({ canvasElement, userEvent }) => {
+        // Test that it should display an IPv6 shared network.
         const canvas = within(canvasElement)
 
         await expect(canvas.getByText('Shared Network foo')).toBeVisible()
+        await expect(canvas.getByRole('group', { name: 'DHCP Servers Using the Shared Network' })).toBeVisible()
+        await expect(canvas.getByRole('group', { name: 'Subnets' })).toBeVisible()
+        await expect(canvas.getByRole('group', { name: 'Pools' })).toBeVisible()
+        await expect(canvas.getByRole('group', { name: 'Statistics' })).toBeVisible()
+        await expect(canvas.getByText(/\[1\] DHCPv6@localhost/)).toBeVisible()
         await expect(canvas.getByText('2001:db8:1::/64')).toBeVisible()
         await expect(canvas.getByText('2001:db8:2::/64')).toBeVisible()
         await expect(canvas.getByText('2001:db8:1::2-2001:db8:1::786')).toBeVisible()
         await expect(canvas.getByText('2001:db8:2::2-2001:db8:2::786')).toBeVisible()
+        // There should be 2 utilization pie charts. They appear as <canvas> elements with role "img".
+        const imgs = await canvas.findAllByRole('img')
+        await expect(imgs).toBeTruthy()
+        await expect(imgs.length).toEqual(2)
 
-        await expandToggleableFieldset(canvas, 'DHCP Parameters')
+        // Toggle PrimeNG fieldsets.
+        const dhcpParamsBtn = await canvas.findByRole('button', { name: 'DHCP Parameters' })
+        await userEvent.click(dhcpParamsBtn)
+        const dhcpOptionsBtn = await canvas.findByRole('button', { name: /DHCP Options/ })
+        await userEvent.click(dhcpOptionsBtn)
+
         await expect(canvas.getByText('Hostname Char Replacement')).toBeVisible()
         await expect(canvas.getByText('X')).toBeVisible()
         await expect(canvas.getByText('[^A-Za-z0-9.-]')).toBeVisible()
-
-        await expandToggleableFieldset(canvas, /DHCP Options/)
         await expect(canvas.getByText('No options configured.')).toBeVisible()
+
+        // Ensure that the DHCP options are excluded from this list.
+        await expect(canvas.queryByText('Options')).toBeNull()
+        await expect(canvas.queryByText('Options Hash')).toBeNull()
     },
 }
