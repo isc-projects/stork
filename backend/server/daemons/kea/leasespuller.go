@@ -136,7 +136,7 @@ func filterDaemons(daemons []dbmodel.Daemon, onlyMemfile bool) []*dbmodel.Daemon
 		switch {
 		case databases.Lease.Type == "memfile" && (databases.Lease.Persist == nil || *databases.Lease.Persist):
 			// TODO: get full memfile path from status-get response
-			key.leasefilePath = databases.Lease.Path
+			key.leasefilePath = databases.Lease.Name
 			key.machine = daemon.MachineID
 		case databases.Lease.Type == "mysql" || databases.Lease.Type == "postgresql":
 			if onlyMemfile {

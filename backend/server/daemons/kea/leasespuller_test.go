@@ -73,7 +73,7 @@ func daemonWithLeaseDB(d *dbmodel.Daemon, ldb *keaconfig.Database) *dbmodel.Daem
 func daemonWithLeaseMemfile(d *dbmodel.Daemon, path string, persist *bool) *dbmodel.Daemon {
 	ldb := keaconfig.Database{
 		Type:    "memfile",
-		Path:    path,
+		Name:    path,
 		Persist: persist,
 	}
 	return daemonWithLeaseDB(d, &ldb)
