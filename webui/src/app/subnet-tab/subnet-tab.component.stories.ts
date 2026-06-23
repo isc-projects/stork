@@ -673,6 +673,7 @@ export const TestDisplaySubnet4NoPools: Story = {
         },
     },
     play: async ({ canvasElement, userEvent }) => {
+        // Test that it should display an IPv4 shared network with minimal data.
         const canvas = within(canvasElement)
         const title = canvasElement.querySelector('#tab-title-span')
 
@@ -720,6 +721,7 @@ export const TestDisplaySubnet6: Story = {
         },
     },
     play: async ({ canvasElement, userEvent }) => {
+        // Test that it should display an IPv6 subnet.
         const canvas = within(canvasElement)
 
         await expect(canvas.getByText('Subnet 2001:db8:1::/64')).toBeVisible()
@@ -770,6 +772,7 @@ export const TestDisplaySubnet6AddressPrefix: Story = {
         },
     },
     play: async ({ canvasElement, userEvent }) => {
+        // Test that it should display an IPv6 subnet with address and prefix delegation pools.
         const canvas = within(canvasElement)
 
         await expect(canvas.getByText('Subnet 2001:db8:1::/64')).toBeVisible()
@@ -867,6 +870,8 @@ export const TestDisplaySubnet6DifferentServers: Story = {
         },
     },
     play: async ({ canvasElement, userEvent }) => {
+        // Test that it should display an IPv6 subnet with different
+        // option values for different servers.
         const canvas = within(canvasElement)
 
         await expect(canvas.getByText('Subnet 2001:db8:1::/64')).toBeVisible()
