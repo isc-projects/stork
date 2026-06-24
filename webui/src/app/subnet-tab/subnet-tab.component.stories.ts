@@ -5,7 +5,7 @@ import { ConfirmationService, MessageService } from 'primeng/api'
 import { toastDecorator } from '../utils-stories'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { provideRouter, withHashLocation } from '@angular/router'
-import { expect, within, waitFor } from 'storybook/test'
+import { expect, within } from 'storybook/test'
 
 export default {
     title: 'App/SubnetTab',
