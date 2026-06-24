@@ -702,6 +702,20 @@ describe('JsonTreeComponent', () => {
         const identifierValue = valueElement.nativeElement.textContent
         expect(identifierValue).toContain('ABCDEF')
     })
+
+    it('should display any hex value as an identifier in text format by default', async () => {
+        component.key = 'some-id'
+        component.value = '0x414243444546'
+
+        fixture.detectChanges()
+
+        const valueElement = fixture.debugElement.query(By.css('.tree-level--leaf .tree-level__value'))
+        const identifierElement = valueElement.query(By.directive(IdentifierComponent))
+        expect(identifierElement).not.toBeNull()
+
+        const identifierValue = valueElement.nativeElement.textContent
+        expect(identifierValue).toContain('ABCDEF')
+    })
 })
 
 /**

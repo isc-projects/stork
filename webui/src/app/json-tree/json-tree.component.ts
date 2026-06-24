@@ -190,6 +190,7 @@ export class JsonTreeComponent {
         { defaultHexFormat: true, key: 'duid' },
         { defaultHexFormat: true, key: 'client-id' },
         { defaultHexFormat: false, key: /.*-id/ },
+        { defaultHexFormat: false, key: /0[xX][0-9a-fA-F]+/ },
     ]
 
     /**

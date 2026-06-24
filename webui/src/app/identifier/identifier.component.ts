@@ -155,9 +155,15 @@ export class IdentifierComponent implements OnInit {
 
     /**
      * Normalizes the hex identifier. Replace spaces with colons or add them
-     * if they are missing.
+     * if they are missing. Trims the "0x" prefix if it is present.
      */
     private normalizeHexString(hexValue: string): string {
+        if (!hexValue) {
+            return ''
+        }
+        if (hexValue.startsWith('0x') || hexValue.startsWith('0X')) {
+            hexValue = hexValue.slice(2)
+        }
         hexValue = hexValue.replace(/\:|\s/g, '')
         const bytes = []
         for (let n = 0; n < hexValue.length; n += 2) {

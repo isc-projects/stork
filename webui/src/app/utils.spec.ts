@@ -595,9 +595,9 @@ describe('utils', () => {
         expect(typeof suboptions).toBe('object')
         const suboptionsObject = suboptions as unknown as Record<string, any>
         expect(suboptionsObject).toEqual({
-            'circuit-id': '416e646572736f6e5f434f5f45372d32303a312f372f312f32383030322f47313a',
-            'remote-id': '000000000000009444244423a0',
-            'suboption-97': '130303236202d2000000000512201f44',
+            'circuit-id': '0x416e646572736f6e5f434f5f45372d32303a312f372f312f32383030322f47313a',
+            'remote-id': '0x000000000000009444244423a0',
+            'suboption-97': '0x130303236202d2000000000512201f44',
         })
     })
 
@@ -630,7 +630,7 @@ describe('utils', () => {
         // Invalid length of the second sub-options.
         userContext = { ISC: { 'relay-agent-info': { 'sub-options': '0x010101FFFFFF' } } }
         decodeUserContextOptions(userContext)
-        expect(userContext['ISC']['relay-agent-info']['sub-options']).toEqual({ 'circuit-id': '01' })
+        expect(userContext['ISC']['relay-agent-info']['sub-options']).toEqual({ 'circuit-id': '0x01' })
     })
 
     it('should return authentication method label', () => {

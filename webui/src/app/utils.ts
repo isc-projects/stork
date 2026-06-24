@@ -906,7 +906,7 @@ export function decodeUserContextOptions(userContext: Record<string, any> | null
             break
         }
         const name = relayAgentSubOptionNames[code] || `suboption-${code}`
-        fields[name] = suboptions.substr((pos + 2) * 2, length * 2)
+        fields[name] = '0x' + suboptions.substr((pos + 2) * 2, length * 2)
 
         pos += 2 + length
     }
