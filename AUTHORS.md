@@ -51,6 +51,8 @@ We have received the following contributions:
   - 2025-11: Fix for monitor Kea listening on IPv6 address.
 - Phillip Jaenke
   - 2026-05: Fix the management of a Stork system user in the Alpine package.
+- Jack Rickett (McDonald County Telephone Company)
+  - 2026-06: Decoding of relay agent info sub-options in the lease user context.
 - Sebastien De Groof
   - 2026-07: Add support for allocation statistics.
 - Wojciech Lipiński
