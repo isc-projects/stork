@@ -557,26 +557,31 @@ describe('LeaseSearchPageComponent', () => {
 
     it('should decode user context suboptions', fakeAsync(() => {
         const leases: Leases = {
-            items: [{
-                id: 0,
-                ipAddress: '192.0.2.3',
-                state: 0,
-                daemonId: 1,
-                daemonLabel: 'DHCPv4@localhost',
-                hwAddress: '01:02:03:04:05:06',
-                clientId: '51:52:53:54',
-                hostname: 'faq.example.org',
-                fqdnFwd: false,
-                fqdnRev: true,
-                subnetId: 123,
-                cltt: 1616149050,
-                validLifetime: 3600,
-                userContext: {
-                    'ISC': { 'relay-agent-info': {
-                        'sub-options': '0x0121416e646572736f6e5f434f5f45372d32303a312f372f312f32383030322f47313a020d000000000000009444244423a06110130303236202d2000000000512201f44'
-                    }},
-                }
-            }],
+            items: [
+                {
+                    id: 0,
+                    ipAddress: '192.0.2.3',
+                    state: 0,
+                    daemonId: 1,
+                    daemonLabel: 'DHCPv4@localhost',
+                    hwAddress: '01:02:03:04:05:06',
+                    clientId: '51:52:53:54',
+                    hostname: 'faq.example.org',
+                    fqdnFwd: false,
+                    fqdnRev: true,
+                    subnetId: 123,
+                    cltt: 1616149050,
+                    validLifetime: 3600,
+                    userContext: {
+                        ISC: {
+                            'relay-agent-info': {
+                                'sub-options':
+                                    '0x0121416e646572736f6e5f434f5f45372d32303a312f372f312f32383030322f47313a020d000000000000009444244423a06110130303236202d2000000000512201f44',
+                            },
+                        },
+                    },
+                },
+            ],
             total: 1,
             conflicts: [],
             erredDaemons: [],
@@ -595,8 +600,7 @@ describe('LeaseSearchPageComponent', () => {
         expect(userContext).toEqual({
             'circuit-id': '0x416e646572736f6e5f434f5f45372d32303a312f372f312f32383030322f47313a',
             'remote-id': '0x000000000000009444244423a0',
-            'suboption-97': '0x130303236202d2000000000512201f44'
+            'suboption-97': '0x130303236202d2000000000512201f44',
         })
-
     }))
 })

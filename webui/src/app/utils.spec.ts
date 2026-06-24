@@ -581,8 +581,8 @@ describe('utils', () => {
             ISC: {
                 'relay-agent-info': {
                     'sub-options':
-                        // Line 1+2: Indices of bytes.
-                        // Line 3: Indices of suboptions.
+                        // Line 1+2: Indices for the hex string below, for easier reading.
+                        // Line 3: Indices of the sub-options.
                         // 0                   10                  20                  30                  40                  50                  60
                         // 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7
                         // 0                                                                     2                             3

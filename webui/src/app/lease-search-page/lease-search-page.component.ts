@@ -198,7 +198,7 @@ export class LeaseSearchPageComponent implements OnInit {
                             id++
                         }
 
-                        // Decode DHCP options stored in binary format in the 
+                        // Decode DHCP options stored in binary format in the
                         // user context.
                         for (const lease of data.items) {
                             decodeUserContextOptions(lease.userContext)
