@@ -2,6 +2,7 @@ package dbmodel
 
 import (
 	"fmt"
+	"math/rand"
 	"net"
 	"testing"
 
@@ -39,7 +40,7 @@ func TestUpsertMachineNetworkInterfaces(t *testing.T) {
 			Name:            "eth1",
 			Flags:           uint32(net.FlagUp),
 			HardwareAddress: []byte{1, 2, 3, 4, 5, 6},
-			IPAddresses:     []MachineNetworkInterfaceIPAddress{{IPAddress: "192.168.1.3"}, {IPAddress: "192.168.1.4"}},
+			IPAddresses:     []MachineNetworkInterfaceIPAddress{{IPAddress: "192.168.1.3/24"}, {IPAddress: "192.168.1.4/24"}},
 		},
 		// The interface with no IP addresses should be inserted as well.
 		{
@@ -57,8 +58,8 @@ func TestUpsertMachineNetworkInterfaces(t *testing.T) {
 	require.Len(t, ipAddresses, 4)
 	require.Equal(t, "192.168.1.1", ipAddresses[0].IPAddress)
 	require.Equal(t, "192.168.1.2", ipAddresses[1].IPAddress)
-	require.Equal(t, "192.168.1.3", ipAddresses[2].IPAddress)
-	require.Equal(t, "192.168.1.4", ipAddresses[3].IPAddress)
+	require.Equal(t, "192.168.1.3/24", ipAddresses[2].IPAddress)
+	require.Equal(t, "192.168.1.4/24", ipAddresses[3].IPAddress)
 
 	// Preserve one of the interfaces, replace the other one, remove the third
 	// one.
@@ -288,6 +289,53 @@ func TestGetMachinesByNetworkInterfaceIPAddress(t *testing.T) {
 	})
 }
 
+// Test that when the IP address stored in the database includes the prefix length,
+// it is possible to query this IP address with or without the suitable prefix length.
+func TestGetMachinesByNetworkInterfaceIPAddressWithPrefix(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Create a machine with a network interface and an IP address with a prefix.
+	m := &Machine{
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+
+	err := AddMachine(db, m)
+	require.NoError(t, err)
+	require.NotEqual(t, 0, m.ID)
+
+	// Insert an IP address with a prefix.
+	err = UpsertMachineNetworkInterfaces(db, m.ID, MachineNetworkInterface{
+		Name:            "eth0",
+		Flags:           uint32(net.FlagUp),
+		HardwareAddress: []byte{1, 2, 3, 4, 5, 6},
+		IPAddresses: []MachineNetworkInterfaceIPAddress{
+			{IPAddress: "192.168.1.1/24"},
+		},
+	})
+	require.NoError(t, err)
+
+	testCases := []string{
+		"192.168.1.1",
+		"192.168.1.1/24",
+		"192.168.1.1/32",
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase, func(t *testing.T) {
+			// Get machine by IP address.
+			machines, err := GetMachinesByNetworkInterfaceIPAddress(db, testCase, MachineRelationNetworkInterfacesIPAddresses)
+			require.NoError(t, err)
+			require.Len(t, machines, 1)
+			require.EqualValues(t, 1, machines[0].ID)
+			require.Len(t, machines[0].MachineNetworkInterfaces, 1)
+			require.Equal(t, "eth0", machines[0].MachineNetworkInterfaces[0].Name)
+			require.Len(t, machines[0].MachineNetworkInterfaces[0].IPAddresses, 1)
+			require.Equal(t, "192.168.1.1/24", machines[0].MachineNetworkInterfaces[0].IPAddresses[0].IPAddress)
+		})
+	}
+}
+
 // Test that inserting a network interface with no IP addresses works correctly.
 func TestUpsertMachineInterfaceHasNoIPAddresses(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
@@ -352,7 +400,7 @@ func TestUpsertMachineInterfaceHasNoIPAddresses(t *testing.T) {
 //	726198 ns/op      594139 B/op        131 allocs/op
 //
 // The third approach was chosen because it provides the best and most predictable
-// performance, with the following benchmark results:
+// performance, with the following benchmark results and the btree index:
 //
 // BenchmarkGetMachinesByNetworkInterfaceIPAddress/10_IP_addresses-12
 //
@@ -385,9 +433,55 @@ func TestUpsertMachineInterfaceHasNoIPAddresses(t *testing.T) {
 // The above results clearly show that the normalized schema has stable
 // performance, and it is the best choice for hot path queries by IP address.
 //
-// Note that the benchmark always gets the same IP address. Randomizing the
-// queries IP address would increase the results spread, but the conclusions
-// would remain the same.
+// The results above were obtained for a benchmark version that always got
+// the same IP address. The modified benchmark version below randomizes the
+// IP address for each query for better comparison of different index kinds.
+//
+// The originally used btree index is usually the best option for queries
+// using the equality operator. However, since the IP addresses stored by
+// Stork typically have the IP/prefix length format, the use of btree index would
+// require normalizing stored IP addresses on update or select (so they
+// include the prefix length in the queries or exclude the prefix length upon
+// insertion). This is problematic, so it seems that a better solution is to
+// use database network operators (e.g., host or containment operator) to
+// find the matching IP address whether or not the prefix length is included.
+// It obviously requires proper indexes to be created.
+//
+// The following cases were tested with this benchmark:
+//
+//   - no index
+//   - btree index using the equality operator (requires normalizing
+//     IP addresses),
+//   - btree index using the host operator (index by host(ip_address)
+//     and query by IP address lacking prefix),
+//   - gist index using the containment operator (index by ip_address
+//     using gist index and query using containment operator),
+//   - spgist index using the containment operator (index by ip_address
+//     using spgist index and query using containment operator).
+//
+// We have obtained the following results (using randomization of the
+// IP address for each query). The results are in ns/op (nanoseconds
+// per operation).
+//
+// test   no index    btree/equals  btree/host    gist     spgist
+//
+// 10     279725      283758        279465       286584    287261
+// 100    285424      295292        279983       308592    290024
+// 1000   329670      303758        292992       296247    295724
+// 10000  969716      406737        403515       435466    397117
+// 20000  1584417     559516        605701       764550    543232
+// 40000  2662356     1176452       1907433      2024974   2697658
+// 65535  3817406     1611669       2865828      419784    2740467
+//
+// The results are similar for all indexes up to 20000 IP addresses.
+// The query time increases significantly for 40000 IP addresses.
+// The btree/host and gist indexes perform similarly, while the spgist
+// index is significantly slower. The gist index in our test case
+// performed significantly better for gist index in the case of 65535
+// IP addresses. Based on these results, we have decided to use the gist
+// index for the IP address column, as it is more flexible than the
+// btree/host index and may perform better for a large number of IP
+// addresses.
 func BenchmarkGetMachinesByNetworkInterfaceIPAddress(b *testing.B) {
 	// Each test case creates the specified number of IP addresses.
 	tests := []int{10, 100, 1000, 10000, 20000, 40000, 65535}
@@ -452,7 +546,11 @@ func BenchmarkGetMachinesByNetworkInterfaceIPAddress(b *testing.B) {
 
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				_, _ = GetMachinesByNetworkInterfaceIPAddress(db, "192.168.0.5", MachineRelationNetworkInterfaces)
+				index := rand.Intn(test)
+				ipAddress := fmt.Sprintf("192.168.%d.%d", (index)&0xFF00>>8, (index)&0xFF)
+				machines, err := GetMachinesByNetworkInterfaceIPAddress(db, ipAddress, MachineRelationNetworkInterfaces)
+				require.NoError(b, err)
+				require.NotEmpty(b, machines)
 			}
 		})
 	}

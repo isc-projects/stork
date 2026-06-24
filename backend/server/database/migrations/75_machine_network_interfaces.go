@@ -35,14 +35,21 @@ func init() {
 					ON DELETE CASCADE
 			);
 
-			-- Create index on IP address to speed up queries for machines by IP address.
-			CREATE INDEX IF NOT EXISTS machine_network_interface_ip_address_idx
-				ON public.machine_network_interface_ip_address (ip_address);
+			-- Create B-tree index on IP address to speed up queries updating the IP addresses
+			-- when IN() operator is used. This is typically the case when deleting IP
+			-- addresses no longer present in the list of new IP addresses.
+			CREATE INDEX IF NOT EXISTS machine_network_interface_ip_address_btree_idx
+				ON public.machine_network_interface_ip_address USING btree (ip_address);
+
+			-- Create GiST index on IP address to speed up queries for machines by IP address.
+			CREATE INDEX IF NOT EXISTS machine_network_interface_ip_address_gist_idx
+				ON public.machine_network_interface_ip_address USING gist (ip_address inet_ops);
 		`)
 		return err
 	}, func(db migrations.DB) error {
 		_, err := db.Exec(`
-			DROP INDEX IF EXISTS machine_network_interface_ip_address_idx;
+			DROP INDEX IF EXISTS machine_network_interface_ip_address_gist_idx;
+			DROP INDEX IF EXISTS machine_network_interface_ip_address_btree_idx;
 			DROP TABLE IF EXISTS public.machine_network_interface_ip_address;
 			DROP TABLE IF EXISTS public.machine_network_interface;
 		`)

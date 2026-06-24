@@ -145,7 +145,7 @@ func GetMachineNetworkInterfaceIPAddresses(db *pg.DB, relations ...MachineNetwor
 		q = q.Relation(string(relation))
 	}
 	// Order by IP addresses.
-	q = q.OrderExpr("ip_address ASC")
+	q = q.OrderExpr("host(ip_address)::inet ASC")
 
 	// Select IP addresses.
 	err := q.Select()
@@ -156,9 +156,16 @@ func GetMachineNetworkInterfaceIPAddresses(db *pg.DB, relations ...MachineNetwor
 }
 
 // Returns all machines having the given IP address on one of their network interfaces.
-// Optionally, it can return interfaces and IP addresses associated with the machines.
-// However, joining this extra information affects query performance, and should be
-// avoided if possible.
+// It supports both cases when the IP address stored in the database includes or
+// lacks the prefix length. Suppose the database contains '192.168.1.1/24'. In that
+// case, all of the following queries will match:
+// - '192.168.1.1'
+// - '192.168.1.1/24'
+// - '192.168.1.1/32'
+//
+// Optionally, the function can return interfaces and IP addresses associated with
+// the machines. However, joining this extra information affects query performance,
+// and should be avoided if possible.
 func GetMachinesByNetworkInterfaceIPAddress(db *pg.DB, ipAddress string, relations ...MachineRelation) ([]Machine, error) {
 	var machines []Machine
 	q := db.Model(&machines).
@@ -166,7 +173,7 @@ func GetMachinesByNetworkInterfaceIPAddress(db *pg.DB, ipAddress string, relatio
 		JoinOn("machine.id = mni.machine_id").
 		Join("JOIN machine_network_interface_ip_address AS ip").
 		JoinOn("ip.machine_network_interface_id = mni.id").
-		Where("ip.ip_address = ?", ipAddress)
+		Where("?::inet <<= ip.ip_address", ipAddress)
 
 	for _, relation := range relations {
 		q = q.Relation(string(relation))
