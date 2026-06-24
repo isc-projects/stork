@@ -97,11 +97,27 @@ func (ctl *Controller) Configure(serverURL url.URL, dbSessionManager *dbsession.
 		log.WithError(err).Error("an error occurred in the OIDC session manager")
 	}
 	ctl.authSessionManager = inMemorySessionMgr
-	// Try to communicate with OpenID Provider and perform OIDC discovery to get information about OP endpoints.
+
 	ctx := context.Background()
-	op, err := oidc.NewProvider(ctx, ctl.settings.IssuerURL)
-	if err != nil {
-		return errors.Wrapf(err, "OIDC discovery failed using issuer %s", ctl.settings.IssuerURL)
+	var (
+		op  *oidc.Provider
+		err error
+	)
+	if len(ctl.settings.AuthorizationEndpoint) > 0 && len(ctl.settings.TokenEndpoint) > 0 && len(ctl.settings.JWKSURI) > 0 {
+		// User provided all settings for OpenID Provider config. OIDC discovery is not needed and will be skipped.
+		opConfig := oidc.ProviderConfig{
+			IssuerURL: ctl.settings.IssuerURL,
+			AuthURL:   ctl.settings.AuthorizationEndpoint,
+			TokenURL:  ctl.settings.TokenEndpoint,
+			JWKSURL:   ctl.settings.JWKSURI,
+		}
+		op = opConfig.NewProvider(ctx)
+	} else {
+		// Try to communicate with OpenID Provider Issuer and perform OIDC discovery to get information about OP endpoints.
+		op, err = oidc.NewProvider(ctx, ctl.settings.IssuerURL)
+		if err != nil {
+			return errors.Wrapf(err, "OIDC discovery failed using issuer %s", ctl.settings.IssuerURL)
+		}
 	}
 	tokenVerifier := op.Verifier(&oidc.Config{
 		ClientID: ctl.settings.ClientID,
