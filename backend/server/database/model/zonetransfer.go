@@ -17,22 +17,24 @@ import (
 // and start_time. Therefore, these fields must not be NULL, and for optional fields
 // use_zero tag must be used to avoid NOT NULL constraint violation.
 type ZoneTransferState struct {
-	ID             int64
-	DaemonID       int64
-	CreatedAt      time.Time
-	ViewName       string `pg:",use_zero"`
-	ZoneName       string
-	Serial         int64
-	Client         string `pg:",use_zero"`
-	Server         string
-	MessagesCount  int64
-	RecordsCount   int64
-	BytesCount     int64
-	Duration       time.Duration
-	Status         bind9xfr.Status
-	StartTime      time.Time `pg:",use_zero"`
-	CompletionTime time.Time
-	Message        string
+	ID              int64
+	DaemonID        int64
+	CreatedAt       time.Time
+	ViewName        string `pg:",use_zero"`
+	ZoneName        string
+	Serial          int64
+	Client          string `pg:",use_zero"`
+	Server          string
+	MessagesCount   int64
+	RecordsCount    int64
+	BytesCount      int64
+	Duration        time.Duration
+	Status          bind9xfr.Status
+	StartTime       time.Time `pg:",use_zero"`
+	CompletionTime  time.Time
+	Message         string
+	ClientMachineID int64
+	ServerMachineID int64
 }
 
 // Adds a zone transfer state into the database. It updates the existing record
@@ -52,6 +54,8 @@ func addZoneTransferState(dbi pg.DBI, zoneTransferState *ZoneTransferState) erro
 		Set("status = EXCLUDED.status").
 		Set("completion_time = EXCLUDED.completion_time").
 		Set("message = EXCLUDED.message").
+		Set("client_machine_id = EXCLUDED.client_machine_id").
+		Set("server_machine_id = EXCLUDED.server_machine_id").
 		Insert()
 	if err != nil {
 		return errors.Wrapf(err, "failed to insert zone transfer state for zone %s, view %s, daemon %d into the database", zoneTransferState.ZoneName, zoneTransferState.ViewName, zoneTransferState.DaemonID)

@@ -23,6 +23,13 @@ func TestGetZoneTransferStatesByPage(t *testing.T) {
 	err := AddMachine(db, machine)
 	require.NoError(t, err)
 
+	machine2 := &Machine{
+		Address:   "127.0.0.2",
+		AgentPort: 8080,
+	}
+	err = AddMachine(db, machine2)
+	require.NoError(t, err)
+
 	daemon := &Daemon{
 		MachineID: machine.ID,
 		AccessPoints: []*AccessPoint{
@@ -39,20 +46,22 @@ func TestGetZoneTransferStatesByPage(t *testing.T) {
 	testZoneTransfers := testutil.GetTestZoneTransfers()
 	for _, zoneTransfer := range testZoneTransfers {
 		zoneTransfer := &ZoneTransferState{
-			DaemonID:       daemon.ID,
-			ViewName:       zoneTransfer.ViewName,
-			ZoneName:       zoneTransfer.ZoneName,
-			Serial:         zoneTransfer.Serial,
-			Client:         zoneTransfer.Client,
-			Server:         zoneTransfer.Server,
-			MessagesCount:  zoneTransfer.MessagesCount,
-			RecordsCount:   zoneTransfer.RecordsCount,
-			BytesCount:     zoneTransfer.BytesCount,
-			Duration:       zoneTransfer.Duration,
-			Status:         zoneTransfer.Status,
-			StartTime:      zoneTransfer.StartTime,
-			CompletionTime: zoneTransfer.CompletionTime,
-			Message:        zoneTransfer.Message,
+			DaemonID:        daemon.ID,
+			ViewName:        zoneTransfer.ViewName,
+			ZoneName:        zoneTransfer.ZoneName,
+			Serial:          zoneTransfer.Serial,
+			Client:          zoneTransfer.Client,
+			Server:          zoneTransfer.Server,
+			MessagesCount:   zoneTransfer.MessagesCount,
+			RecordsCount:    zoneTransfer.RecordsCount,
+			BytesCount:      zoneTransfer.BytesCount,
+			Duration:        zoneTransfer.Duration,
+			Status:          zoneTransfer.Status,
+			StartTime:       zoneTransfer.StartTime,
+			CompletionTime:  zoneTransfer.CompletionTime,
+			Message:         zoneTransfer.Message,
+			ClientMachineID: machine.ID,
+			ServerMachineID: machine2.ID,
 		}
 		err = AddZoneTransferState(db, zoneTransfer)
 		require.NoError(t, err)
@@ -83,6 +92,8 @@ func TestGetZoneTransferStatesByPage(t *testing.T) {
 		require.Equal(t, testZoneTransfers[index].StartTime, zoneTransfer.StartTime)
 		require.Equal(t, testZoneTransfers[index].CompletionTime, zoneTransfer.CompletionTime)
 		require.Equal(t, testZoneTransfers[index].Message, zoneTransfer.Message)
+		require.Equal(t, machine.ID, zoneTransfer.ClientMachineID)
+		require.Equal(t, machine2.ID, zoneTransfer.ServerMachineID)
 
 		if i > 0 {
 			// Ensure correct sorting order.
@@ -102,6 +113,13 @@ func TestAddZoneTransfersOverrideStartedByCompleted(t *testing.T) {
 		AgentPort: 8080,
 	}
 	err := AddMachine(db, machine)
+	require.NoError(t, err)
+
+	machine2 := &Machine{
+		Address:   "127.0.0.2",
+		AgentPort: 8080,
+	}
+	err = AddMachine(db, machine2)
 	require.NoError(t, err)
 
 	daemon := &Daemon{
@@ -126,20 +144,22 @@ func TestAddZoneTransfersOverrideStartedByCompleted(t *testing.T) {
 	// should be identified as the same zone transfer. It should override the
 	// started zone transfer.
 	completed := &ZoneTransferState{
-		DaemonID:       daemon.ID,
-		CreatedAt:      time.Date(2026, 4, 16, 10, 42, 3, 71000, time.UTC),
-		ViewName:       "_default",
-		ZoneName:       "good.example.org",
-		Serial:         2026041600,
-		Client:         "127.0.0.1",
-		Status:         bind9xfr.StatusCompleted,
-		StartTime:      time.Date(2026, 4, 16, 10, 41, 27, 71000, time.UTC),
-		CompletionTime: time.Date(2026, 4, 16, 10, 45, 11, 124000, time.UTC),
-		Duration:       4 * time.Minute,
-		MessagesCount:  79,
-		RecordsCount:   24872,
-		BytesCount:     1320233,
-		Message:        "Transfer completed: 79 messages, 24872 records, 1320233 bytes, 0.052 secs (25389096 bytes/sec) (serial 2026041600)",
+		DaemonID:        daemon.ID,
+		CreatedAt:       time.Date(2026, 4, 16, 10, 42, 3, 71000, time.UTC),
+		ViewName:        "_default",
+		ZoneName:        "good.example.org",
+		Serial:          2026041600,
+		Client:          "127.0.0.1",
+		Status:          bind9xfr.StatusCompleted,
+		StartTime:       time.Date(2026, 4, 16, 10, 41, 27, 71000, time.UTC),
+		CompletionTime:  time.Date(2026, 4, 16, 10, 45, 11, 124000, time.UTC),
+		Duration:        4 * time.Minute,
+		MessagesCount:   79,
+		RecordsCount:    24872,
+		BytesCount:      1320233,
+		Message:         "Transfer completed: 79 messages, 24872 records, 1320233 bytes, 0.052 secs (25389096 bytes/sec) (serial 2026041600)",
+		ClientMachineID: machine.ID,
+		ServerMachineID: machine2.ID,
 	}
 	// Add them to the database sequentially.
 	for _, zoneTransfer := range []ZoneTransferState{*started, *completed} {
@@ -169,6 +189,8 @@ func TestAddZoneTransfersOverrideStartedByCompleted(t *testing.T) {
 	require.Equal(t, completed.RecordsCount, returned[0].RecordsCount)
 	require.Equal(t, completed.BytesCount, returned[0].BytesCount)
 	require.Equal(t, completed.Message, returned[0].Message)
+	require.Equal(t, machine.ID, returned[0].ClientMachineID)
+	require.Equal(t, machine2.ID, returned[0].ServerMachineID)
 }
 
 // Test different scenarios when started zone transfer inserted into the

@@ -22,6 +22,8 @@ func init() {
 				start_time TIMESTAMP WITHOUT TIME ZONE NOT NULL,
 				completion_time TIMESTAMP WITHOUT TIME ZONE NULL,
 				message TEXT NULL,
+				client_machine_id BIGINT NULL,
+				server_machine_id BIGINT NULL,
 				CONSTRAINT zone_transfer_state_pkey PRIMARY KEY (id),
 				CONSTRAINT zone_transfer_state_daemon_id_view_name_zone_name_client_start_time_unique
 					UNIQUE (daemon_id, view_name, zone_name, client, start_time),
