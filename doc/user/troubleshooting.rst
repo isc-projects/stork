@@ -479,7 +479,7 @@ This section describes the solutions for some common issues with the Stork serve
               permissions for the lease memfile. If the agent lacks permissions, it
               will report errors in its logs like this:
 
-							.. code-block:: console
+              .. code-block:: console
 
                 WARN[2026-06-16 19:32:16]          monitor.go:507   Failed to refresh state of the daemon         daemon="dhcp4: control: unix:///var/run/kea/kea4-ctrl-socket/ (auth key: not found)" error="open /var/lib/kea/kea-leases4.csv: permission denied" stackTrace="open /var/lib/kea/kea-leases4.csv: permission denied"
 

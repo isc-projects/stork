@@ -5,6 +5,20 @@
             configured in the Settings panel under the Configuration menu in the top bar. Kea must be configured to use
             a memfile, <em>not</em> an SQL database, for lease storage.
         </p>
+        <p>
+            By default, the agents do not attempt to collect lease data from the Kea servers for this feature. To
+            instruct them to do so, please start each agent with the flag <code>--enable-lease-tracking</code> or with
+            the environment variable <code>STORK_AGENT_ENABLE_LEASE_TRACKING=true</code>. For more information about
+            setting up this feature, consult
+            <a href="/stork/assets/arm/dhcp.html#leases-list"
+                >the Leases List section of the Stork Administrator Reference Manual</a
+            >. The
+            <a
+                href="/stork/assets/arm/troubleshooting.html#stork-server:~:text=The%20Stork%20server%20does%20not%20display%20any%20leases%20in%20the%20Leases%20List%20page"
+                >troubleshooting section of the ARM</a
+            >
+            contains additional information about resolving issues with enabling this feature.
+        </p>
     </div>
 </app-breadcrumbs>
 
