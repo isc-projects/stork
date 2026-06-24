@@ -673,14 +673,24 @@ export const TestDisplaySubnet4NoPools: Story = {
         },
     },
     play: async ({ canvasElement, userEvent }) => {
-        // Test that it should display an IPv4 shared network with minimal data.
+        // Test that it should display an IPv4 subnet without pools.
         const canvas = within(canvasElement)
         const title = canvasElement.querySelector('#tab-title-span')
 
-        await expect(title).toHaveTextContent('Subnet 192.0.2.0/24')
+        await expect(title).toHaveTextContent('Subnet 192.0.2.0/24 in shared network Fiber')
+
+        await expect(canvas.getByRole('group', { name: 'DHCP Servers Using the Subnet' })).toBeVisible()
+
+        await expect(canvas.getByText('12223')).toBeVisible()
+        await expect(canvas.getByText(/\[42\] DHCPv4@localhost/)).toBeVisible()
+        await expect(canvas.getByText('No pools configured.')).toBeVisible()
+
         await expect(canvas.getByRole('link', { name: 'Fiber' })).toBeVisible()
         await expect(canvas.getByText('No pools configured.')).toBeVisible()
         await expect(canvas.getByText('No user context configured.')).toBeVisible()
+
+        const poolsLegend = canvas.getByText('Pools /')
+        await expect(within(poolsLegend).getByText('All Servers')).toBeVisible()
 
         const dhcpParamsBtn = await canvas.findByRole('button', { name: 'DHCP Parameters' })
         await userEvent.click(dhcpParamsBtn)
