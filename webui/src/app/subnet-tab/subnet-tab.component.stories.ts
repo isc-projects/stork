@@ -689,8 +689,13 @@ export const TestDisplaySubnet4NoPools: Story = {
         await expect(canvas.getByText('No pools configured.')).toBeVisible()
         await expect(canvas.getByText('No user context configured.')).toBeVisible()
 
-        const poolsLegend = canvas.getByText('Pools /')
-        await expect(within(poolsLegend).getByText('All Servers')).toBeVisible()
+        await expect(canvas.getByRole('group', { name: /Pools\s\/\s+All Servers/ })).toBeVisible()
+
+        await expect(canvas.getByRole('group', { name: 'Statistics' })).toBeVisible()
+        // There should be 1 utilization pie chart. It appears as a <canvas> element with role "img".
+        const statsFieldset = canvas.getByRole('group', { name: 'Statistics' })
+        const charts = await within(statsFieldset).findAllByRole('img')
+        await expect(charts).toHaveLength(1)
 
         const dhcpParamsBtn = await canvas.findByRole('button', { name: 'DHCP Parameters' })
         await userEvent.click(dhcpParamsBtn)
@@ -735,7 +740,23 @@ export const TestDisplaySubnet6: Story = {
         const canvas = within(canvasElement)
 
         await expect(canvas.getByText('Subnet 2001:db8:1::/64')).toBeVisible()
+
+        await expect(canvas.getByRole('group', { name: 'DHCP Servers Using the Subnet' })).toBeVisible()
+        await expect(canvas.getByText('12223')).toBeVisible()
+        await expect(canvas.getByText(/\[42\] DHCPv6@localhost/)).toBeVisible()
+
+        await expect(canvas.getByText('No user context configured.')).toBeVisible()
+
+        await expect(canvas.getByRole('group', { name: /Pools\s\/\s+All Servers/ })).toBeVisible()
+
         await expect(canvas.getByText('2001:db8:1::2-2001:db8:1::786')).toBeVisible()
+
+        await expect(canvas.getByRole('group', { name: 'Statistics' })).toBeVisible()
+        // There should be 1 utilization pie chart. It appears as a <canvas> element with role "img".
+        const statsFieldset = canvas.getByRole('group', { name: 'Statistics' })
+        const charts = await within(statsFieldset).findAllByRole('img')
+        await expect(charts).toHaveLength(1)
+
         await expect(canvas.getByText('No user context configured.')).toBeVisible()
 
         const dhcpParamsBtn = await canvas.findByRole('button', { name: 'DHCP Parameters' })
@@ -748,7 +769,7 @@ export const TestDisplaySubnet6: Story = {
     },
 }
 
-export const TestDisplaySubnet6AddressPrefix: Story = {
+export const TestDisplaySubnet6AddressAndPrefix: Story = {
     args: {
         subnet: {
             id: 1,
@@ -790,6 +811,11 @@ export const TestDisplaySubnet6AddressPrefix: Story = {
         await expect(canvas.getByText('3000::')).toBeVisible()
         await expect(canvas.getByText('No user context configured.')).toBeVisible()
 
+        // There should be 2 utilization pie charts. It appears as a <canvas> element with role "img".
+        const statsFieldset = canvas.getByRole('group', { name: 'Statistics' })
+        const charts = await within(statsFieldset).findAllByRole('img')
+        await expect(charts).toHaveLength(2)
+
         const dhcpParamsBtn = await canvas.findByRole('button', { name: 'DHCP Parameters' })
         await userEvent.click(dhcpParamsBtn)
         await expect(canvas.getByText('No parameters configured.')).toBeVisible()
@@ -819,7 +845,7 @@ export const TestDisplaySubnet6DifferentServers: Story = {
                 {
                     id: 12223,
                     daemonId: 42,
-                    daemonLabel: 'DHCPv6@localhost',
+                    daemonLabel: 'DHCPv6@host1',
                     pools: [{ pool: '2001:db8:1::2-2001:db8:1::768' }],
                     prefixDelegationPools: [{ prefix: '3000::', delegatedLength: 80 }],
                     stats: {
@@ -848,7 +874,7 @@ export const TestDisplaySubnet6DifferentServers: Story = {
                 {
                     id: 25432,
                     daemonId: 43,
-                    daemonLabel: 'DHCPv6@localhost',
+                    daemonLabel: 'DHCPv6@host2',
                     pools: [{ pool: '2001:db8:1::2-2001:db8:1::768' }],
                     prefixDelegationPools: [
                         { prefix: '3000::/64', delegatedLength: 80 },
@@ -886,11 +912,37 @@ export const TestDisplaySubnet6DifferentServers: Story = {
 
         await expect(canvas.getByText('Subnet 2001:db8:1::/64')).toBeVisible()
         await expect(canvas.getByText('12223')).toBeVisible()
-        await expect(canvas.getByText('25432')).toBeVisible()
+
+        // This check is a bit more involved than in other test, because
+        // it has two servers. Simple search for "[42] DHCPv6@localhost"
+        // would return multiple matches.
+        const dhcpServersUsingSubnet = canvas.getByRole('group', { name: 'DHCP Servers Using the Subnet' })
+        await expect(dhcpServersUsingSubnet).toBeVisible()
+        await expect(within(dhcpServersUsingSubnet).getByText('12223')).toBeVisible()
+        await expect(within(dhcpServersUsingSubnet).getByText(/\[42\] DHCPv6@host1/)).toBeVisible()
+        await expect(within(dhcpServersUsingSubnet).getByText('25432')).toBeVisible()
+        await expect(within(dhcpServersUsingSubnet).getByText(/\[43\] DHCPv6@host2/)).toBeVisible()
+
+        // Pools at server 1:
+        const poolsAtServer1 = canvas.getByRole('group', { name: /Pools\s\/\s+\[42\]\s+DHCPv6@host1/ })
+        await expect(poolsAtServer1).toBeVisible()
+        await expect(within(poolsAtServer1).getByText('2001:db8:1::2-2001:db8:1::768')).toBeVisible()
+        await expect(within(poolsAtServer1).getByText('3000::')).toBeVisible()
+
+        // Pools at server 2:
+        const poolsAtServer2 = canvas.getByRole('group', { name: /Pools\s\/\s+\[43\]\s+DHCPv6@host2/ })
+        await expect(poolsAtServer2).toBeVisible()
+        await expect(within(poolsAtServer2).getByText('2001:db8:1::2-2001:db8:1::768')).toBeVisible()
+        await expect(within(poolsAtServer2).getByText('3000::/64')).toBeVisible()
+        await expect(within(poolsAtServer2).getByText('3000:1::/64')).toBeVisible()
+
+        // There should be 6 utilization pie charts. It appears as a <canvas> element with role "img".
+        const statsFieldset = canvas.getByRole('group', { name: 'Statistics' })
+        const charts = await within(statsFieldset).findAllByRole('img')
+        await expect(charts).toHaveLength(6)
+
         await expect(canvas.getByText('3000::')).toBeVisible()
-        await waitFor(async () => {
-            await expect(canvas.getByText('3000:1::/64')).toBeVisible()
-        })
+        await expect(canvas.getByText('3000:1::/64')).toBeVisible()
         await expect(canvas.getByText('user-context-is-here')).toBeVisible()
         await expect(canvas.getByText('No user context configured.')).toBeVisible()
 
