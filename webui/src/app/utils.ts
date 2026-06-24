@@ -851,6 +851,69 @@ export function getIconBySeverity(severity: Severity): string {
 }
 
 /**
+ * Names of the DHCPv4 relay agent information (option 82) sub-options
+ * by their codes, per RFC 3046 and related RFCs.
+ */
+const relayAgentSubOptionNames: { [code: number]: string } = {
+    1: 'circuit-id',
+    2: 'remote-id',
+    4: 'docsis-device-class',
+    5: 'link-selection',
+    6: 'subscriber-id',
+    7: 'radius-attributes',
+    8: 'authentication',
+    9: 'vendor-specific',
+    10: 'relay-agent-flags',
+    11: 'server-id-override',
+    12: 'relay-id',
+    151: 'virtual-subnet-selection',
+    152: 'virtual-subnet-selection-control',
+}
+
+/**
+ * Decodes the hex-encoded DHCP options in the user-context. Modifies the input
+ * object in place and returns it.
+ */
+export function decodeUserContextOptions(userContext: Record<string, any> | null | undefined) {
+    let suboptions = userContext?.['ISC']?.['relay-agent-info']?.['sub-options']
+    if (
+        // Must be defined and a string.
+        !suboptions ||
+        typeof suboptions !== 'string' ||
+        // Must be prefixed by 0x and have an even number of hex digits.
+        suboptions.length < 2 ||
+        suboptions.length % 2 !== 0 ||
+        suboptions.slice(0, 2).toLowerCase() !== '0x' ||
+        !/^[0-9a-fA-F]+$/.test(suboptions.slice(2))
+    ) {
+        return
+    }
+
+    suboptions = suboptions.slice(2) // Remove the 0x prefix.
+    const fields: Record<string, any> = {}
+    let pos = 0
+    const totalBytes = suboptions.length / 2
+
+    while (pos < totalBytes) {
+        // Need at least the code and length bytes.
+        if (pos + 2 > totalBytes) {
+            break
+        }
+        const code = parseInt(suboptions.substr(pos * 2, 2), 16)
+        const length = parseInt(suboptions.substr((pos + 1) * 2, 2), 16)
+        // The declared length must not run past the end of the data.
+        if (pos + 2 + length > totalBytes) {
+            break
+        }
+        const name = relayAgentSubOptionNames[code] || `suboption-${code}`
+        fields[name] = suboptions.substr((pos + 2) * 2, length * 2)
+
+        pos += 2 + length
+    }
+    userContext['ISC']['relay-agent-info']['sub-options'] = fields
+}
+
+/**
  * Convert array of 16 byte values to UUID string format of the form:
  * XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
  *

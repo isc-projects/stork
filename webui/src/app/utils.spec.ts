@@ -16,6 +16,7 @@ import {
     unhyphen,
     getVersionRange,
     deepEqual,
+    decodeUserContextOptions,
     durationToString,
     generateUUID,
     getAuthenticationMethodLabel,
@@ -573,6 +574,63 @@ describe('utils', () => {
         c.d = c
         expect(deepEqual(a, a)).toBeTrue()
         expect(deepEqual(a, c)).toBeFalse()
+    })
+
+    it('should decode relay agent sub-options in the user context', () => {
+        const userContext = {
+            ISC: {
+                'relay-agent-info': {
+                    'sub-options':
+                        // Line 1+2: Indices of bytes.
+                        // Line 3: Indices of suboptions.
+                        // 0                   10                  20                  30                  40                  50                  60
+                        // 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7
+                        // 0                                                                     2                             3
+                        '0x0121416e646572736f6e5f434f5f45372d32303a312f372f312f32383030322f47313a020d000000000000009444244423a06110130303236202d2000000000512201f44',
+                },
+            },
+        }
+        decodeUserContextOptions(userContext)
+        const suboptions = userContext['ISC']['relay-agent-info']['sub-options']
+        expect(typeof suboptions).toBe('object')
+        const suboptionsObject = suboptions as unknown as Record<string, any>
+        expect(suboptionsObject).toEqual({
+            'circuit-id': '416e646572736f6e5f434f5f45372d32303a312f372f312f32383030322f47313a',
+            'remote-id': '000000000000009444244423a0',
+            'suboption-97': '130303236202d2000000000512201f44',
+        })
+    })
+
+    it('should not decode relay agent sub-options if the user context is invalid', () => {
+        // Null user context.
+        let userContext = null
+        decodeUserContextOptions(userContext)
+        expect(userContext).toBeNull()
+
+        // Empty user context.
+        userContext = {}
+        decodeUserContextOptions(userContext)
+        expect(userContext).toEqual({})
+
+        // Non-hex sub-options.
+        userContext = { ISC: { 'relay-agent-info': { 'sub-options': 'invalid' } } }
+        decodeUserContextOptions(userContext)
+        expect(userContext['ISC']['relay-agent-info']['sub-options']).toBe('invalid')
+
+        // Missing 0x prefix in sub-options.
+        userContext = { ISC: { 'relay-agent-info': { 'sub-options': '00000000' } } }
+        decodeUserContextOptions(userContext)
+        expect(userContext['ISC']['relay-agent-info']['sub-options']).toBe('00000000')
+
+        // Odd number of characters in sub-options.
+        userContext = { ISC: { 'relay-agent-info': { 'sub-options': '0x0' } } }
+        decodeUserContextOptions(userContext)
+        expect(userContext['ISC']['relay-agent-info']['sub-options']).toBe('0x0')
+
+        // Invalid length of the second sub-options.
+        userContext = { ISC: { 'relay-agent-info': { 'sub-options': '0x010101FFFFFF' } } }
+        decodeUserContextOptions(userContext)
+        expect(userContext['ISC']['relay-agent-info']['sub-options']).toEqual({ 'circuit-id': '01' })
     })
 
     it('should return authentication method label', () => {
