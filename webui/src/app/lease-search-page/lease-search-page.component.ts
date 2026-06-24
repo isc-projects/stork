@@ -5,7 +5,7 @@ import { map } from 'rxjs/operators'
 import { MessageService } from '@openng/optimus-ui/api'
 
 import { DHCPService } from '../backend/api/api'
-import { getErrorMessage } from '../utils'
+import { decodeUserContextOptions, getErrorMessage } from '../utils'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { IconField } from '@openng/optimus-ui/iconfield'
 import { InputIcon } from '@openng/optimus-ui/inputicon'
@@ -196,6 +196,12 @@ export class LeaseSearchPageComponent implements OnInit {
                         for (const lease of data.items) {
                             lease.id = id
                             id++
+                        }
+
+                        // Decode DHCP options stored in binary format in the 
+                        // user context.
+                        for (const lease of data.items) {
+                            decodeUserContextOptions(lease.userContext)
                         }
                     }
                     return data
