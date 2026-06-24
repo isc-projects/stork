@@ -1136,3 +1136,84 @@ func TestRedirectURISettingNotUsed(t *testing.T) {
 	require.NotNil(t, controller.oauth2Config)
 	require.EqualValues(t, "http://localhost:8080/oidc/callback", controller.oauth2Config.RedirectURL)
 }
+
+// Test that callback handler authorizes a user when OID Provider
+// is manually configured and there was no Discovery
+// during the process.
+func TestCallbackEndpointAuthorizesUserNoDiscovery(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	issuerURL, srvTeardown, err := oidctest.PrepareTestOIDCServer()
+	require.NoError(t, err)
+	defer srvTeardown()
+	var authEndpoint, tokenEndpoint, keysURI string
+	authEndpoint = issuerURL + "/auth"
+	tokenEndpoint = issuerURL + "/token"
+	keysURI = issuerURL + "/keys"
+	settings := Settings{
+		IssuerURL:           issuerURL,
+		ClientID:            "clientID",
+		GroupsClaim:         "groups",
+		MandatoryAllowGroup: "stork-users",
+		IdentityProviderID:  "oidc",
+		EnableGroupMapping:  true,
+		GroupMapping: GroupMapping{
+			SuperAdmin: CommaSeparatedStrings{"stork-super-admins"},
+		},
+		AuthorizationEndpoint: authEndpoint,
+		TokenEndpoint:         tokenEndpoint,
+		JWKSURI:               keysURI,
+	}
+	controller := NewController(settings, db)
+	require.NotNil(t, controller)
+	testSM, err := dbsession.NewSessionMgr(db)
+	require.NoError(t, err)
+	err = controller.Configure(url.URL{Scheme: "http", Path: "localhost"}, testSM)
+	require.NoError(t, err)
+	require.True(t, controller.IsConfigured())
+
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// empty handler
+	})
+	handler := nonceModifier(controller.Middleware(nextHandler), controller, "test-nonce")
+
+	// Act
+	// First send request to login endpoint to retrieve random state for the authentication.
+	req := httptest.NewRequest("GET", "http://localhost"+loginURLPath, nil)
+	w := httptest.NewRecorder()
+	controller.authSessionManager.LoadAndSave(handler).ServeHTTP(w, req)
+	resp := w.Result()
+	resp.Body.Close()
+	require.Equal(t, http.StatusFound, resp.StatusCode)
+	require.Contains(t, resp.Header, "Location")
+	redirectURL := resp.Header.Get("Location")
+	parsedURL, err := url.Parse(redirectURL)
+	require.NoError(t, err)
+	state := parsedURL.Query().Get("state")
+
+	// Send request to callback endpoint.
+	req2 := httptest.NewRequest("GET", "http://localhost"+callbackURLPath+"?code=foobar&state="+state, nil)
+	w2 := httptest.NewRecorder()
+	populateCookies(resp, req2)
+	controller.authSessionManager.LoadAndSave(handler).ServeHTTP(w2, req2)
+	resp2 := w2.Result()
+	resp2.Body.Close()
+
+	// Assert
+	require.Equal(t, http.StatusFound, resp2.StatusCode)
+	// Check redirect Location header. It should redirect to home "/" path.
+	require.Contains(t, resp2.Header, "Location")
+	require.EqualValues(t, "/", resp2.Header.Get("Location"))
+	// Check if user was created in DB.
+	dbUser, err := dbmodel.GetUserByExternalID(db, "oidc", "foo")
+	require.NoError(t, err)
+	require.NotNil(t, dbUser)
+	dbUser, err = dbmodel.GetUserByID(db, dbUser.ID)
+	require.NoError(t, err)
+	require.NotNil(t, dbUser)
+	require.EqualValues(t, "foo@example.org", dbUser.Email)
+	require.NotNil(t, dbUser.Groups)
+	require.Len(t, dbUser.Groups, 1)
+	require.Equal(t, dbmodel.SuperAdminGroupID, dbUser.Groups[0].ID)
+}
