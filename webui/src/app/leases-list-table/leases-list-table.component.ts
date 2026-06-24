@@ -2,13 +2,11 @@ import { Component, OnDestroy, OnInit, ViewChild, inject } from '@angular/core'
 import { tableHasFilter, tableFiltersToQueryParams, convertSortingFields } from '../table'
 import { DHCPService, Lease, LeaseListSortField, Leases } from '../backend'
 import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table'
-import { Router, RouterLink } from '@angular/router'
+import { Router } from '@angular/router'
 import { MenuItem, MessageService, PrimeTemplate, TableState, FilterMetadata } from 'primeng/api'
 import { getErrorMessage } from '../utils'
 import { debounceTime, lastValueFrom, Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map } from 'rxjs/operators'
-import { ManagedAccessDirective } from '../managed-access.directive'
-import { ConfirmDialog } from 'primeng/confirmdialog'
 import { Button } from 'primeng/button'
 import { FormsModule } from '@angular/forms'
 import { FloatLabel } from 'primeng/floatlabel'
@@ -16,12 +14,8 @@ import { IconField } from 'primeng/iconfield'
 import { InputIcon } from 'primeng/inputicon'
 import { InputNumber } from 'primeng/inputnumber'
 import { InputText } from 'primeng/inputtext'
-import { Tag } from 'primeng/tag'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
-import { IdentifierComponent } from '../identifier/identifier.component'
 import { PluralizePipe } from '../pipes/pluralize.pipe'
-import { TriStateCheckboxComponent } from '../tri-state-checkbox/tri-state-checkbox.component'
-import { Tooltip } from 'primeng/tooltip'
 import { TableCaptionComponent } from '../table-caption/table-caption.component'
 import { SplitButton } from 'primeng/splitbutton'
 import { DaemonFilterComponent } from '../daemon-filter/daemon-filter.component'
@@ -38,23 +32,16 @@ import { stateToString } from '../lease-utils'
     templateUrl: './leases-list-table.component.html',
     styleUrls: ['./leases-list-table.component.sass'],
     imports: [
-        ManagedAccessDirective,
-        ConfirmDialog,
         Button,
-        RouterLink,
         TableModule,
-        Tag,
         PrimeTemplate,
         FloatLabel,
         InputNumber,
         FormsModule,
-        TriStateCheckboxComponent,
         IconField,
         InputIcon,
         InputText,
-        IdentifierComponent,
         EntityLinkComponent,
-        Tooltip,
         PluralizePipe,
         TableCaptionComponent,
         SplitButton,
