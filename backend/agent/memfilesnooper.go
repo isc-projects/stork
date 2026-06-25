@@ -57,12 +57,14 @@ func newLease4(record []string, cltt uint64, lifetime uint32) (*keadata.Lease, e
 		return nil, errors.Wrap(err, "the subnet ID is not valid")
 	}
 	subnet := uint32(subnet64)
-	stateRaw, err := strconv.ParseUint(record[v4State], 10, 32)
+	state64, err := strconv.ParseUint(record[v4State], 10, 32)
 	if err != nil {
 		return nil, errors.Wrap(err, "the lease state is not valid")
 	}
-	state := keadata.LeaseState(stateRaw)
-
+	if state64 > math.MaxUint8 {
+		return nil, errors.Errorf("the lease state is not valid: %d", state64)
+	}
+	state := uint32(state64)
 	lease := keadata.NewLease4(
 		record[v4IPAddr],
 		record[v4HWAddr],
@@ -82,21 +84,26 @@ func newLease6(record []string, cltt uint64, lifetime uint32) (*keadata.Lease, e
 		return nil, errors.Wrap(err, "the subnet ID is not valid")
 	}
 	if subnet64 < 0 || subnet64 > math.MaxUint32 {
-		return nil, errors.Errorf("the subnet ID must be between 0 and %d", math.MaxUint32)
+		return nil, errors.Errorf("the subnet ID is not valid: %d", subnet64)
 	}
-
 	subnet := uint32(subnet64)
-	stateRaw, err := strconv.ParseUint(record[v6State], 10, 32)
+	state64, err := strconv.ParseUint(record[v6State], 10, 32)
 	if err != nil {
 		return nil, errors.Wrap(err, "the lease state is not valid")
 	}
-	state := keadata.LeaseState(stateRaw)
-
+	if state64 > math.MaxUint8 {
+		return nil, errors.Errorf("the lease state is not valid: %d", state64)
+	}
+	state := uint32(state64)
 	prefixLen64, err := strconv.ParseUint(record[v6Prefix], 10, 8)
 	if err != nil {
 		return nil, errors.Wrap(err, "the prefix length is not valid")
 	}
-	prefixLen := uint8(prefixLen64)
+	var prefixLen uint8
+	if prefixLen64 > 128 {
+		return nil, errors.Errorf("the prefix length is too long: %d", prefixLen64)
+	}
+	prefixLen = uint8(prefixLen64)
 	lease := keadata.NewLease6(
 		record[v6IPAddr],
 		record[v6DUID],

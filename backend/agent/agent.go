@@ -5,8 +5,8 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"math"
 	"iter"
+	"math"
 	"net"
 	"runtime"
 	"slices"
@@ -327,7 +327,7 @@ func (sa *StorkAgent) GetState(ctx context.Context, in *agentapi.GetStateReq) (*
 		CpusLoad:             loadStr,
 		Memory:               memoryTotalSafe,
 		UsedMemory:           int64(vm.UsedPercent),
-		Uptime:               uptimeSafe, // in days
+		Uptime:               uptimeSafe,
 		Os:                   hostInfo.OS,
 		Platform:             hostInfo.Platform,
 		PlatformFamily:       hostInfo.PlatformFamily,

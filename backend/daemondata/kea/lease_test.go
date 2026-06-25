@@ -1,8 +1,6 @@
 package keadata
 
 import (
-	"encoding/json"
-	"math"
 	"testing"
 
 	require "github.com/stretchr/testify/require"
@@ -97,78 +95,7 @@ func TestToGRPC(t *testing.T) {
 	require.Equal(t, input.DUID.String(), result.Duid)
 	require.Equal(t, uint64(input.ValidLifetime), result.ValidLifetime)
 	require.Equal(t, input.LocalSubnetID, result.SubnetID)
-	require.Equal(t, uint32(input.State), result.State)
+	require.EqualValues(t, input.State, result.State)
 	require.Equal(t, uint32(input.PrefixLength), result.PrefixLen)
 	require.Empty(t, result.HwAddress)
-}
-
-// Test that the lease state is marshalled properly.
-func TestLeaseStateMarshal(t *testing.T) {
-	t.Run("small lease state", func(t *testing.T) {
-		// Arrange
-		state := LeaseStateDeclined
-
-		// Act
-		raw, err := json.Marshal(state)
-		require.NoError(t, err)
-
-		// Assert
-		require.NoError(t, err)
-		require.Equal(t, "1", string(raw))
-	})
-
-	t.Run("large lease state", func(t *testing.T) {
-		// Arrange
-		state := LeaseState(math.MaxUint32)
-
-		// Act
-		raw, err := json.Marshal(state)
-		require.NoError(t, err)
-
-		// Assert
-		require.NoError(t, err)
-		require.Equal(t, "4294967295", string(raw))
-	})
-}
-
-// Test that the lease state is unmarshaled properly.
-func TestLeaseStateUnmarshal(t *testing.T) {
-	t.Run("small lease state", func(t *testing.T) {
-		// Arrange
-		raw := []byte("1")
-
-		// Act
-		var state LeaseState
-		err := json.Unmarshal(raw, &state)
-		require.NoError(t, err)
-
-		// Assert
-		require.Equal(t, LeaseStateDeclined, state)
-	})
-
-	t.Run("large lease state", func(t *testing.T) {
-		// Arrange
-		raw := []byte("4294967295")
-
-		// Act
-		var state LeaseState
-		err := json.Unmarshal(raw, &state)
-		require.NoError(t, err)
-
-		// Assert
-		require.Equal(t, LeaseState(math.MaxUint32), state)
-	})
-
-	t.Run("negative lease state", func(t *testing.T) {
-		// Arrange
-		raw := []byte("-1")
-
-		// Act
-		var state LeaseState
-		err := json.Unmarshal(raw, &state)
-		require.NoError(t, err)
-
-		// Assert
-		require.Equal(t, LeaseState(math.MaxUint32), state)
-	})
 }

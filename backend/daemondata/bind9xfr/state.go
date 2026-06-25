@@ -3,7 +3,7 @@ package bind9xfr
 import "time"
 
 // The zone transfer status type.
-type Status int
+type Status int32
 
 const (
 	// This is a default status indicating that the parsed log message was unrecognized

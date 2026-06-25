@@ -79,8 +79,6 @@ func (r *RestAPI) GetLeases(ctx context.Context, params dhcp.GetLeasesParams) mi
 	for i := range keaLeases {
 		l := keaLeases[i]
 		daemonLabel := l.Daemon.GetLabel()
-		cltt := l.CLTT
-		state := uint32(l.State)
 		localSubnetID := int64(l.LocalSubnetID)
 		validLifetime := int64(l.ValidLifetime)
 
@@ -96,7 +94,7 @@ func (r *RestAPI) GetLeases(ctx context.Context, params dhcp.GetLeasesParams) mi
 			DaemonID:          &l.DaemonID,
 			DaemonLabel:       &daemonLabel,
 			ClientID:          l.ClientID.String(),
-			Cltt:              &cltt,
+			Cltt:              &l.CLTT,
 			Duid:              duid,
 			FqdnFwd:           l.FqdnFwd,
 			FqdnRev:           l.FqdnRev,
@@ -107,7 +105,7 @@ func (r *RestAPI) GetLeases(ctx context.Context, params dhcp.GetLeasesParams) mi
 			LeaseType:         l.Type,
 			PreferredLifetime: int64(l.PreferredLifetime),
 			PrefixLength:      int64(l.PrefixLength),
-			State:             &state,
+			State:             &l.State,
 			SubnetID:          &localSubnetID,
 			ValidLifetime:     &validLifetime,
 			UserContext:       l.UserContext,

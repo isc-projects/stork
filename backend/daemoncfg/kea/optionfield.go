@@ -476,7 +476,7 @@ func ConvertIntField(field dhcpmodel.DHCPOptionFieldAccessor, textFormat bool) (
 		}
 		if !textFormat {
 			// Cast integer to unsigned integer before hex conversion.
-			return fmt.Sprintf("%02X", uint8(ivalue.Int())), nil //nolint:gosec
+			return fmt.Sprintf("%02X", ivalue.Int()&0xFF), nil
 		}
 	case dhcpmodel.Int16Field:
 		if ivalue.Int() < math.MinInt16 || ivalue.Int() > math.MaxInt16 {
@@ -484,7 +484,7 @@ func ConvertIntField(field dhcpmodel.DHCPOptionFieldAccessor, textFormat bool) (
 		}
 		if !textFormat {
 			// Cast integer to unsigned integer before hex conversion.
-			return fmt.Sprintf("%04X", uint16(ivalue.Int())), nil //nolint:gosec
+			return fmt.Sprintf("%04X", ivalue.Int()&0xFFFF), nil
 		}
 	case dhcpmodel.Int32Field:
 		if ivalue.Int() < math.MinInt32 || ivalue.Int() > math.MaxInt32 {
@@ -492,7 +492,7 @@ func ConvertIntField(field dhcpmodel.DHCPOptionFieldAccessor, textFormat bool) (
 		}
 		if !textFormat {
 			// Cast integer to unsigned integer before hex conversion.
-			return fmt.Sprintf("%08X", uint32(ivalue.Int())), nil //nolint:gosec
+			return fmt.Sprintf("%08X", ivalue.Int()&0xFFFFFFFF), nil
 		}
 	}
 	return fmt.Sprintf("%d", ivalue.Int()), nil
