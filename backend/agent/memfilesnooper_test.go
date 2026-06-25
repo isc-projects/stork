@@ -1221,7 +1221,7 @@ func TestMemfileSnooperGetSnapshotDeduplicates(t *testing.T) {
 	// Assert
 	snapshot := memfileSnooper.GetSnapshot()
 	require.Len(t, snapshot, 1)
-	require.Equal(t, 0, snapshot[0].State)
+	require.Equal(t, keadata.LeaseStateDefault, snapshot[0].State)
 }
 
 // Ensure that EnsureWatching calls EnsureWatching on the underlying RowSource.

@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"math"
 	"iter"
 	"net"
 	"runtime"
@@ -37,7 +38,6 @@ import (
 	dnsmodel "isc.org/stork/datamodel/dns"
 	"isc.org/stork/pki"
 	storkutil "isc.org/stork/util"
-	"isc.org/stork/util/safeconvert"
 )
 
 // Global Stork Agent state.
@@ -292,31 +292,31 @@ func (sa *StorkAgent) GetState(ctx context.Context, in *agentapi.GetStateReq) (*
 			ipAddrs = append(ipAddrs, addr.String())
 		}
 
-		flags, err := safeconvert.FromUintToUint32(uint(iface.Flags))
-		if err != nil {
-			err = errors.WithMessage(err, "invalid interface flags")
+		flags := uint(iface.Flags)
+		if flags >= math.MaxUint32 {
+			err = errors.New("interface flags exceed uint32 limit")
 			errText = err.Error()
 			break
 		}
 
 		machineNetworkInterfaces = append(machineNetworkInterfaces, &agentapi.NetworkInterface{
 			Name:            iface.Name,
-			Flags:           flags,
+			Flags:           uint32(flags),
 			HardwareAddress: iface.HardwareAddr,
 			IpAddresses:     ipAddrs,
 		})
 	}
 
-	memoryTotal, err := safeconvert.FromUint64ToInt64(vm.Total / (1024 * 1024 * 1024)) // in GiB
-	if err != nil {
-		err = errors.WithMessage(err, "memory total exceeds int64 limit")
-		errText = err.Error()
+	memoryTotal := vm.Total / (1024 * 1024 * 1024) // in GB
+	var memoryTotalSafe int64 = math.MaxInt64
+	if memoryTotal <= math.MaxInt64 {
+		memoryTotalSafe = int64(memoryTotal)
 	}
 
-	uptime, err := safeconvert.FromUint64ToInt64(hostInfo.Uptime / (60 * 60 * 24)) // in days
-	if err != nil {
-		err = errors.WithMessage(err, "uptime exceeds int64 limit")
-		errText = err.Error()
+	uptime := hostInfo.Uptime / (60 * 60 * 24) // in days
+	var uptimeSafe int64 = math.MaxInt64
+	if uptime <= math.MaxInt64 {
+		uptimeSafe = int64(uptime)
 	}
 
 	state := agentapi.GetStateRsp{
@@ -325,9 +325,9 @@ func (sa *StorkAgent) GetState(ctx context.Context, in *agentapi.GetStateReq) (*
 		Hostname:             hostInfo.Hostname,
 		Cpus:                 int64(runtime.NumCPU()),
 		CpusLoad:             loadStr,
-		Memory:               memoryTotal,
+		Memory:               memoryTotalSafe,
 		UsedMemory:           int64(vm.UsedPercent),
-		Uptime:               uptime, // in days
+		Uptime:               uptimeSafe, // in days
 		Os:                   hostInfo.OS,
 		Platform:             hostInfo.Platform,
 		PlatformFamily:       hostInfo.PlatformFamily,

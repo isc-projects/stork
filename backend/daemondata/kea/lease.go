@@ -2,7 +2,6 @@ package keadata
 
 import (
 	"encoding/json"
-	"math"
 
 	"github.com/pkg/errors"
 	agentapi "isc.org/stork/api"
@@ -24,10 +23,7 @@ func (s *LeaseState) UnmarshalJSON(data []byte) error {
 		err = errors.Wrap(err, "failed to unmarshal lease state from JSON")
 		return err
 	}
-	if stateInt < 0 || stateInt > math.MaxUint32 {
-		return errors.Errorf("lease state value %d is out of range for uint32", stateInt)
-	}
-	*s = LeaseState(stateInt)
+	*s = LeaseState(stateInt) //nolint:gosec
 	return nil
 }
 
@@ -52,7 +48,7 @@ const (
 	// A lease where a client sent a decline message because it detected another client using the address already.
 	LeaseStateDeclined LeaseState = 1
 	// A lease where the valid lifetime has elapsed, but which is retained so that if the same client returns, they can get the same address.
-	LeaseStateExpiredReclaimed = 2
+	LeaseStateExpiredReclaimed LeaseState = 2
 	// A lease where a client sent a release message, but which is retained so that if they ask again, they can get the same address.
 	LeaseStateReleased LeaseState = 3
 	// A lease where the client made up their own IP address and has notified the DHCP server which address they picked. (Only supported by DHCPv6.)
