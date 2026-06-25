@@ -87,13 +87,21 @@ func TestGetZoneTransferStatesByPage(t *testing.T) {
 		require.Equal(t, testZoneTransfers[index].MessagesCount, zoneTransfer.MessagesCount)
 		require.Equal(t, testZoneTransfers[index].RecordsCount, zoneTransfer.RecordsCount)
 		require.Equal(t, testZoneTransfers[index].BytesCount, zoneTransfer.BytesCount)
-		require.Equal(t, testZoneTransfers[index].Duration, zoneTransfer.Duration)
 		require.Equal(t, testZoneTransfers[index].Status, zoneTransfer.Status)
 		require.Equal(t, testZoneTransfers[index].StartTime, zoneTransfer.StartTime)
 		require.Equal(t, testZoneTransfers[index].CompletionTime, zoneTransfer.CompletionTime)
 		require.Equal(t, testZoneTransfers[index].Message, zoneTransfer.Message)
 		require.Equal(t, machine.ID, zoneTransfer.ClientMachineID)
 		require.Equal(t, machine2.ID, zoneTransfer.ServerMachineID)
+
+		switch {
+		case testZoneTransfers[index].Duration > 0:
+			require.Equal(t, testZoneTransfers[index].Duration, zoneTransfer.Duration)
+		case testZoneTransfers[index].Duration == 0 && !zoneTransfer.StartTime.IsZero():
+			require.InDelta(t, zoneTransfer.Duration, time.Since(zoneTransfer.StartTime), float64(1*time.Second))
+		default:
+			require.Zero(t, zoneTransfer.Duration)
+		}
 
 		require.NotNil(t, zoneTransfer.ClientMachine)
 		require.Equal(t, machine.ID, zoneTransfer.ClientMachine.ID)
@@ -185,13 +193,21 @@ func TestGetZoneTransferStatesByPageNoRelations(t *testing.T) {
 		require.Equal(t, testZoneTransfers[index].MessagesCount, zoneTransfer.MessagesCount)
 		require.Equal(t, testZoneTransfers[index].RecordsCount, zoneTransfer.RecordsCount)
 		require.Equal(t, testZoneTransfers[index].BytesCount, zoneTransfer.BytesCount)
-		require.Equal(t, testZoneTransfers[index].Duration, zoneTransfer.Duration)
 		require.Equal(t, testZoneTransfers[index].Status, zoneTransfer.Status)
 		require.Equal(t, testZoneTransfers[index].StartTime, zoneTransfer.StartTime)
 		require.Equal(t, testZoneTransfers[index].CompletionTime, zoneTransfer.CompletionTime)
 		require.Equal(t, testZoneTransfers[index].Message, zoneTransfer.Message)
 		require.Equal(t, machine.ID, zoneTransfer.ClientMachineID)
 		require.Equal(t, machine2.ID, zoneTransfer.ServerMachineID)
+
+		switch {
+		case testZoneTransfers[index].Duration > 0:
+			require.Equal(t, testZoneTransfers[index].Duration, zoneTransfer.Duration)
+		case testZoneTransfers[index].Duration == 0 && !zoneTransfer.StartTime.IsZero():
+			require.InDelta(t, time.Since(zoneTransfer.StartTime), zoneTransfer.Duration, float64(10*time.Second))
+		default:
+			require.Zero(t, zoneTransfer.Duration)
+		}
 
 		require.Nil(t, zoneTransfer.ClientMachine)
 		require.Nil(t, zoneTransfer.ServerMachine)

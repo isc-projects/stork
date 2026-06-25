@@ -100,8 +100,42 @@ func AddOrUpdateZoneTransferState(dbi pg.DBI, zoneTransferState *ZoneTransferSta
 // Other fields are excluded for performance reasons.
 func GetZoneTransferStatesByPage(dbi pg.DBI, offset, limit int64, getZoneTransferStatesRelations ...ZoneTransferStateRelation) ([]*ZoneTransferState, int64, error) {
 	var zoneTransfers []*ZoneTransferState
+	// The duration is NULL when the zone transfer has not yet completed.
+	// In this case, we can calculate the duration by subtracting the start_time
+	// from the current time, if the start_time is set. This expression is used
+	// to conditionally calculate the duration.
+	const effectiveDurationExpr = `
+	CASE
+		WHEN COALESCE(zone_transfer_state.duration, 0) = 0
+			AND zone_transfer_state.start_time > '1970-01-01'
+		THEN (
+			EXTRACT(
+				EPOCH FROM (now() at time zone 'utc' - zone_transfer_state.start_time)
+			) * 1000000000)::bigint
+		ELSE zone_transfer_state.duration
+	END`
+
 	q := dbi.Model(&zoneTransfers).
-		Column("zone_transfer_state.*")
+		Column("zone_transfer_state.id").
+		Column("zone_transfer_state.created_at").
+		Column("zone_transfer_state.daemon_id").
+		Column("zone_transfer_state.view_name").
+		Column("zone_transfer_state.zone_name").
+		Column("zone_transfer_state.client").
+		Column("zone_transfer_state.start_time").
+		Column("zone_transfer_state.serial").
+		Column("zone_transfer_state.server").
+		Column("zone_transfer_state.messages_count").
+		Column("zone_transfer_state.records_count").
+		Column("zone_transfer_state.bytes_count").
+		Column("zone_transfer_state.duration").
+		Column("zone_transfer_state.status").
+		Column("zone_transfer_state.completion_time").
+		Column("zone_transfer_state.message").
+		Column("zone_transfer_state.client_machine_id").
+		Column("zone_transfer_state.server_machine_id").
+		ColumnExpr(effectiveDurationExpr + " AS duration")
+
 	for _, relation := range getZoneTransferStatesRelations {
 		// Optionally join the machine table to extract the machine
 		// address where the XFR client and/or server are running.
