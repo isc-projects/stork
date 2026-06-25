@@ -16,7 +16,7 @@
 Synopsis
 ~~~~~~~~
 
-:program:`stork-server` [**-h**] [**-v**] [**-m**] [**-u**] [**--dbhost**] [**-p**] [**-d**] [**--db-sslmode**] [**--db-sslcert**] [**--db-sslkey**] [**--db-sslrootcert**] [**--db-trace-queries=**] [**--db-tls-1-2-enabled**] [**--rest-cleanup-timeout**] [**--rest-graceful-timeout**] [**--rest-max-header-size**] [**--rest-max-body-size**] [**--rest-host**] [**--rest-port**] [**--rest-listen-limit**] [**--rest-keep-alive**] [**--rest-read-timeout**] [**--rest-write-timeout**] [**--rest-tls-certificate**] [**--rest-tls-key**] [**--rest-tls-ca**] [**--rest-tls-1-2-enabled**] [**--rest-static-files-dir**] [**--rest-base-url**] [**--rest-versions-url**] [**--oidc-issuer-url**] [**--oidc-client-id**] [**--oidc-client-secret**] [**--oidc-provider-name**] [**--oidc-group-allow**] [**--oidc-map-groups**] [**--oidc-scopes**] [**--oidc-groups-claim**] [**--oidc-redirect-uri**] [**--oidc-provider-id**] [**--oidc-group-admin**] [**--oidc-group-super-admin**] [**--oidc-group-read-only**]
+:program:`stork-server` [**-h**] [**-v**] [**-m**] [**-u**] [**--dbhost**] [**-p**] [**-d**] [**--db-sslmode**] [**--db-sslcert**] [**--db-sslkey**] [**--db-sslrootcert**] [**--db-trace-queries=**] [**--db-tls-1-2-enabled**] [**--rest-cleanup-timeout**] [**--rest-graceful-timeout**] [**--rest-max-header-size**] [**--rest-max-body-size**] [**--rest-host**] [**--rest-port**] [**--rest-listen-limit**] [**--rest-keep-alive**] [**--rest-read-timeout**] [**--rest-write-timeout**] [**--rest-tls-certificate**] [**--rest-tls-key**] [**--rest-tls-ca**] [**--rest-tls-1-2-enabled**] [**--rest-static-files-dir**] [**--rest-base-url**] [**--rest-versions-url**] [**--oidc-issuer-url**] [**--oidc-client-id**] [**--oidc-client-secret**] [**--oidc-provider-name**] [**--oidc-group-allow**] [**--oidc-map-groups**] [**--oidc-scopes**] [**--oidc-groups-claim**] [**--oidc-redirect-uri**] [**--oidc-provider-id**] [**--oidc-authorization-endpoint**] [**--oidc-token-endpoint**] [**--oidc-jwks-uri**] [**--oidc-group-admin**] [**--oidc-group-super-admin**] [**--oidc-group-read-only**]
 
 Description
 ~~~~~~~~~~~
@@ -202,6 +202,15 @@ variables are listed in square brackets, where applicable):
 ``--oidc-provider-id``
    Optional. The OID Provider identifier. Update it whenever you change the OID Provider in your Stork deployment so that each Provider has unique identifier. It will be used as authentication method identifier
    in Stork server. Stork UI will display it as authentication method for users authenticating via OIDC. (default: oidc) ``[$STORK_OIDC_PROVIDER_ID]``
+
+``--oidc-authorization-endpoint``
+   Optional. OID Provider endpoint that performs Authentication of the End-User. If your OID Provider Issuer doesn't support discovery process, you may configure this endpoint manually. ``[$STORK_OIDC_AUTHORIZATION_ENDPOINT]``
+
+``--oidc-token-endpoint``
+   Optional. OID Provider endpoint to obtain an ID Token after successful authentication. If your OID Provider Issuer doesn't support discovery process, you may configure this endpoint manually. ``[$STORK_OIDC_TOKEN_ENDPOINT]``
+
+``--oidc-jwks-uri``
+   Optional. OID Provider JWKS URI to obtain JSON Web Key Set that Stork will use to validate signatures from the OID Provider. If your OID Provider Issuer doesn't support discovery process, you may configure this URI manually. ``[$STORK_OIDC_JWKS_URI]``
 
 ``--oidc-group-admin``
    The claim value returned from OIDC token endpoint that can be mapped to Stork 'admin' group; also accepts a comma-separated list of group names (default: stork-admin) ``[$STORK_OIDC_GROUP_ADMIN]``
