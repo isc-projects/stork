@@ -1463,6 +1463,26 @@ common ``STORK_OIDC_`` prefix):
     ``STORK_OIDC_GROUP_ALLOW`` or ``STORK_OIDC_MAP_GROUPS`` setting is used.
     Defaults to ``groups``. Consult this setting with your OpenID Provider administrator.
 
+Configuration for OpenID Providers not supporting the Discovery
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In case your OpenID Provider Issuer does not support the OIDC Discovery, you may use the following settings to manually
+provide parameters required for Stork to communicate with the OpenID Provider.
+
+- ``STORK_OIDC_AUTHORIZATION_ENDPOINT`` (``oidc-authorization-endpoint`` in CLI)
+
+    The OpenID Provider endpoint that performs Authentication of the End-User. Stork will send the Authentication Request
+    to this endpoint.
+
+- ``STORK_OIDC_TOKEN_ENDPOINT`` (``oidc-token-endpoint`` in CLI)
+
+    The OpenID Provider endpoint to obtain an ID Token after successful authentication. Stork will send the Token Request
+    to this endpoint.
+
+- ``STORK_OIDC_JWKS_URI`` (``oidc-jwks-uri`` in CLI)
+
+    The OpenID Provider JWKS URI to obtain JSON Web Key Set that Stork will use to validate signatures from the OpenID Provider.
+
 User group/role related settings
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
