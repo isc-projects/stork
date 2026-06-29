@@ -140,4 +140,38 @@ describe('ServerDataService', () => {
 
         flush()
     }))
+
+    it('should return group names', () => {
+        const systemGroups = [
+            { description: 'This group of users can access all system components.', id: 1, name: 'super-admin' },
+            { description: 'This group of users can do everything except manage user accounts.', id: 2, name: 'admin' },
+            {
+                description:
+                    'This group of users can only have read access to system components and APIs. Users that belong to this group cannot perform Create, Update nor Delete actions.',
+                id: 3,
+                name: 'read-only',
+            },
+        ]
+        const allNames = service.getGroupNames([1, 2, 3, 4], systemGroups)
+        expect(allNames).toEqual('super-admin, admin, read-only')
+        const oneName = service.getGroupNames([2], systemGroups)
+        expect(oneName).toEqual('admin')
+    })
+
+    it('should not return group names for non matching ids', () => {
+        const systemGroups = [
+            { description: 'This group of users can access all system components.', id: 1, name: 'super-admin' },
+            { description: 'This group of users can do everything except manage user accounts.', id: 2, name: 'admin' },
+            {
+                description:
+                    'This group of users can only have read access to system components and APIs. Users that belong to this group cannot perform Create, Update nor Delete actions.',
+                id: 3,
+                name: 'read-only',
+            },
+        ]
+        const noNames = service.getGroupNames([-1, -2], systemGroups)
+        expect(noNames).toEqual('unknown')
+        const noName = service.getGroupNames([-1], systemGroups)
+        expect(noName).toEqual('unknown')
+    })
 })
