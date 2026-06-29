@@ -365,7 +365,8 @@ def create_manually_installed_file_task(path)
         # This check allows to use manually installed tasks as prerequisities of
         # other manually installed tasks.
         if which(path).nil?
-            fail "#{path} must be installed manually on your operating system"
+            program = File.basename(path)
+            fail "'#{program}' executable not found in PATH. Install it and ensure it is on your PATH."
         end
     end
 
