@@ -847,7 +847,7 @@ export const TestDisplaySubnet6DifferentServers: Story = {
             statsCollectedAt: '2023-06-05',
             localSubnets: [
                 {
-                    id: 12223,
+                    id: 123,
                     daemonId: 42,
                     daemonLabel: 'DHCPv6@host1',
                     pools: [{ pool: '2001:db8:1::2-2001:db8:1::768' }],
@@ -861,7 +861,7 @@ export const TestDisplaySubnet6DifferentServers: Story = {
                     },
                     keaConfigSubnetParameters: {
                         subnetLevelParameters: {
-                            cacheThreshold: 0.25,
+                            cacheThreshold: 0.12, // value for daemon 1 (daemons 2 uses different value)
                             options: [
                                 {
                                     code: 3,
@@ -871,12 +871,12 @@ export const TestDisplaySubnet6DifferentServers: Story = {
                             optionsHash: '123',
                         },
                         sharedNetworkLevelParameters: { cacheThreshold: 0.3 },
-                        globalParameters: { cacheThreshold: 0.29 },
+                        globalParameters: { cacheThreshold: 0.111 },
                     },
                     userContext: { foo: 'user-context-is-here' },
                 },
                 {
-                    id: 25432,
+                    id: 456,
                     daemonId: 43,
                     daemonLabel: 'DHCPv6@host2',
                     pools: [{ pool: '2001:db8:1::2-2001:db8:1::768' }],
@@ -893,7 +893,7 @@ export const TestDisplaySubnet6DifferentServers: Story = {
                     },
                     keaConfigSubnetParameters: {
                         subnetLevelParameters: {
-                            cacheThreshold: 0.25,
+                            cacheThreshold: 0.34, // different value for daemon 2 (daemons 1 uses different value)
                             options: [
                                 {
                                     code: 3,
@@ -903,7 +903,7 @@ export const TestDisplaySubnet6DifferentServers: Story = {
                             optionsHash: '234',
                         },
                         sharedNetworkLevelParameters: { cacheThreshold: 0.3 },
-                        globalParameters: { cacheThreshold: 0.29 },
+                        globalParameters: { cacheThreshold: 0.222 },
                     },
                 },
             ],
@@ -915,16 +915,16 @@ export const TestDisplaySubnet6DifferentServers: Story = {
         const canvas = within(canvasElement)
 
         await expect(canvas.getByText('Subnet 2001:db8:1::/64')).toBeVisible()
-        await expect(canvas.getByText('12223')).toBeVisible()
+        await expect(canvas.getByText('123')).toBeVisible()
 
         // This check is a bit more involved than in other test, because
         // it has two servers. Simple search for "[42] DHCPv6@localhost"
         // would return multiple matches.
         const dhcpServersUsingSubnet = canvas.getByRole('group', { name: 'DHCP Servers Using the Subnet' })
         await expect(dhcpServersUsingSubnet).toBeVisible()
-        await expect(within(dhcpServersUsingSubnet).getByText('12223')).toBeVisible()
+        await expect(within(dhcpServersUsingSubnet).getByText('123')).toBeVisible()
         await expect(within(dhcpServersUsingSubnet).getByText(/\[42\] DHCPv6@host1/)).toBeVisible()
-        await expect(within(dhcpServersUsingSubnet).getByText('25432')).toBeVisible()
+        await expect(within(dhcpServersUsingSubnet).getByText('456')).toBeVisible()
         await expect(within(dhcpServersUsingSubnet).getByText(/\[43\] DHCPv6@host2/)).toBeVisible()
 
         // Pools at server 1:
@@ -956,7 +956,8 @@ export const TestDisplaySubnet6DifferentServers: Story = {
         const dhcpParamsBtn = await canvas.findByRole('button', { name: 'DHCP Parameters' })
         await userEvent.click(dhcpParamsBtn)
         await expect(canvas.getByText('Cache Threshold')).toBeVisible()
-        await expect(canvas.getAllByText('0.25').length).toBeGreaterThan(0)
+        await expect(canvas.getAllByText('0.12').length).toBeGreaterThan(0)
+        await expect(canvas.getAllByText('0.34').length).toBeGreaterThan(0)
 
         const dhcpOptionsButtons = await canvas.findAllByRole('button', { name: /DHCP Options/ })
         await expect(dhcpOptionsButtons.length).toBe(2)
