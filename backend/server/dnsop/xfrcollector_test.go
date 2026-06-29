@@ -75,7 +75,7 @@ func TestXFRCollector(t *testing.T) {
 	xfrCollector.collect(context.Background())
 
 	// Validate the inserted zone transfer states.
-	xfrs, _, err := dbmodel.GetZoneTransferStatesByPage(db, 0, 100)
+	xfrs, _, err := dbmodel.GetZoneTransferStatesByPage(db, nil, "", dbmodel.SortDirAny)
 	require.NoError(t, err)
 	require.Len(t, xfrs, len(testXFRs))
 
@@ -99,7 +99,7 @@ func TestXFRCollector(t *testing.T) {
 				case testXFR.Duration > 0:
 					require.Equal(t, testXFR.Duration, xfr.Duration)
 				case testXFR.Duration == 0 && !xfr.StartTime.IsZero():
-					require.InDelta(t, time.Since(xfr.StartTime), xfr.Duration, float64(10*time.Second))
+					require.InDelta(t, time.Since(xfr.StartTime), xfr.EffectiveDuration, float64(10*time.Second))
 				default:
 					require.Zero(t, xfr.Duration)
 				}
@@ -332,7 +332,7 @@ func TestXFRCollectorNonExistingDaemon(t *testing.T) {
 	require.Equal(t, 1, yieldCount)
 
 	// Make sure that nothing was inserted into the database.
-	xfrs, _, err := dbmodel.GetZoneTransferStatesByPage(db, 0, 100)
+	xfrs, _, err := dbmodel.GetZoneTransferStatesByPage(db, nil, "", dbmodel.SortDirAny)
 	require.NoError(t, err)
 	require.Empty(t, xfrs)
 }
@@ -380,7 +380,7 @@ func TestXFRCollectorZoneTransferTrackingDisabledOnAgent(t *testing.T) {
 	xfrCollector.collect(t.Context())
 
 	// Make sure that nothing was inserted into the database.
-	xfrs, _, err := dbmodel.GetZoneTransferStatesByPage(db, 0, 100)
+	xfrs, _, err := dbmodel.GetZoneTransferStatesByPage(db, nil, "", dbmodel.SortDirAny)
 	require.NoError(t, err)
 	require.Empty(t, xfrs)
 }

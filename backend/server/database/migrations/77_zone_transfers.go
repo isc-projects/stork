@@ -35,10 +35,28 @@ func init() {
 					status IN ('started', 'connected', 'completed', 'message')
 				)
 			);
+
+			-- Create an index on the status column to speed up queries by status.
+			CREATE INDEX IF NOT EXISTS zone_transfer_state_status_idx
+				ON public.zone_transfer_state USING btree (status);
+
+			-- Create an index on the client machine ID column to speed up queries
+			-- by client machine ID.
+			CREATE INDEX IF NOT EXISTS zone_transfer_state_client_machine_id_idx
+				ON public.zone_transfer_state USING btree (client_machine_id);
+
+			-- Create an index on the server machine ID column to speed up queries
+			-- by server machine ID.
+			CREATE INDEX IF NOT EXISTS zone_transfer_state_server_machine_id_idx
+				ON public.zone_transfer_state USING btree (server_machine_id);
+
 		`)
 		return err
 	}, func(db migrations.DB) error {
 		_, err := db.Exec(`
+			DROP INDEX IF EXISTS zone_transfer_state_server_machine_id_idx;
+			DROP INDEX IF EXISTS zone_transfer_state_client_machine_id_idx;
+			DROP INDEX IF EXISTS zone_transfer_state_status_idx;
 			DROP TABLE IF EXISTS public.zone_transfer_state;
 		`)
 		return err

@@ -3,6 +3,9 @@ package dbmodel
 import (
 	"context"
 	"fmt"
+	"iter"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/go-pg/pg/v10"
@@ -28,27 +31,92 @@ const (
 // and start_time. Therefore, these fields must not be NULL, and for optional fields
 // use_zero tag must be used to avoid NOT NULL constraint violation.
 type ZoneTransferState struct {
-	ID              int64
-	DaemonID        int64
-	CreatedAt       time.Time
-	ViewName        string `pg:",use_zero"`
-	ZoneName        string
-	Serial          int64
-	Client          string `pg:",use_zero"`
-	Server          string
-	MessagesCount   int64
-	RecordsCount    int64
-	BytesCount      int64
-	Duration        time.Duration
-	Status          bind9xfr.Status
-	StartTime       time.Time `pg:",use_zero"`
-	CompletionTime  time.Time
-	Message         string
-	ClientMachineID int64
-	ServerMachineID int64
+	ID                int64
+	DaemonID          int64
+	CreatedAt         time.Time
+	ViewName          string `pg:",use_zero"`
+	ZoneName          string
+	Serial            int64
+	Client            string `pg:",use_zero"`
+	Server            string
+	MessagesCount     int64
+	RecordsCount      int64
+	BytesCount        int64
+	Duration          time.Duration
+	EffectiveDuration time.Duration `pg:"-"`
+	Status            bind9xfr.Status
+	StartTime         time.Time `pg:",use_zero"`
+	CompletionTime    time.Time
+	Message           string
+	ClientMachineID   int64
+	ServerMachineID   int64
 
 	ClientMachine *Machine `pg:"rel:has-one"`
 	ServerMachine *Machine `pg:"rel:has-one"`
+}
+
+// Holds a set of zone transfer statuses by which the zone transfers should be filtered.
+// If there are no statuses specified, all zone transfers are returned.
+// Otherwise, the zone transfers matching the enabled filters are returned.
+type GetZoneTransferStatesStatuses struct {
+	types map[bind9xfr.Status]bool
+}
+
+// Instantiates the zone types filter.
+func NewGetZoneTransferStatesStatuses() *GetZoneTransferStatesStatuses {
+	return &GetZoneTransferStatesStatuses{
+		types: make(map[bind9xfr.Status]bool),
+	}
+}
+
+// Enables a filter for a specific zone type. The zones of the matching
+// type are returned.
+func (f *GetZoneTransferStatesStatuses) Enable(status bind9xfr.Status) {
+	f.types[status] = true
+}
+
+// Returns an iterator over the enabled zone types.
+// Since primary is an alias of master, and the secondary is an alias of slave,
+// the iterator includes both primary and master, and/or secondary and slave,
+// if one in any pair is enabled. The GetZonesFilter.EnableZoneType() function
+// includes a special logic to enable both aliases if one of them is enabled.
+func (f *GetZoneTransferStatesStatuses) GetEnabled() iter.Seq[bind9xfr.Status] {
+	return func(yield func(bind9xfr.Status) bool) {
+		for zoneType, enabled := range f.types {
+			if enabled {
+				if !yield(zoneType) {
+					return
+				}
+			}
+		}
+	}
+}
+
+// Filter used in the GetZoneTransferStates function for complex filtering of
+// the zone transfer states returned from the database.
+type GetZoneTransferStatesFilter struct {
+	// Limit the number of zone transfer states returned.
+	Limit *int
+	// Filter by ID of the machine where the primary or secondary
+	// server for that zone transfer is running.
+	MachineID *int64
+	// Paging offset.
+	Offset *int
+	// Filter by partial zone serial number.
+	Serial *string
+	// Filter by multiple statuses of the zone transfers.
+	Statuses *GetZoneTransferStatesStatuses
+	// Filter by partial zone name, view name, client name,
+	// server name, or message text.
+	Text *string
+}
+
+// Convenience function to enable a zone transfer status filter.
+func (f *GetZoneTransferStatesFilter) EnableStatus(status bind9xfr.Status) {
+	if f.Statuses == nil {
+		f.Statuses = NewGetZoneTransferStatesStatuses()
+	}
+	f.Statuses.Enable(status)
 }
 
 // Adds a zone transfer state into the database. It updates the existing record
@@ -93,12 +161,12 @@ func AddOrUpdateZoneTransferState(dbi pg.DBI, zoneTransferState *ZoneTransferSta
 	return addOrUpdateZoneTransferState(dbi.(*pg.Tx), zoneTransferState)
 }
 
-// Returns a page of zone transfer states from the database. The returned records
-// are sorted by the creation time in descending order. The optional relations
-// can be used to join the machine table by the client and server machine IDs.
-// The joined machine table only contains the id, address and agent port fields.
-// Other fields are excluded for performance reasons.
-func GetZoneTransferStatesByPage(dbi pg.DBI, offset, limit int64, getZoneTransferStatesRelations ...ZoneTransferStateRelation) ([]*ZoneTransferState, int64, error) {
+// Returns a page of zone transfer states from the database with optional filtering
+// and relations. If no filtering is specified, all zone transfer states are returned.
+// The optional relations can be used to join the machine table by the
+// client and server machine IDs. The joined machine table only contains the id, address
+// and agent port fields.Other fields are excluded for performance reasons.
+func GetZoneTransferStatesByPage(dbi pg.DBI, filter *GetZoneTransferStatesFilter, sortField string, sortDir SortDirEnum, getZoneTransferStatesRelations ...ZoneTransferStateRelation) ([]*ZoneTransferState, int64, error) {
 	var zoneTransfers []*ZoneTransferState
 	// The duration is NULL when the zone transfer has not yet completed.
 	// In this case, we can calculate the duration by subtracting the start_time
@@ -129,12 +197,12 @@ func GetZoneTransferStatesByPage(dbi pg.DBI, offset, limit int64, getZoneTransfe
 		Column("zone_transfer_state.records_count").
 		Column("zone_transfer_state.bytes_count").
 		Column("zone_transfer_state.duration").
+		ColumnExpr(effectiveDurationExpr + " AS effective_duration").
 		Column("zone_transfer_state.status").
 		Column("zone_transfer_state.completion_time").
 		Column("zone_transfer_state.message").
 		Column("zone_transfer_state.client_machine_id").
-		Column("zone_transfer_state.server_machine_id").
-		ColumnExpr(effectiveDurationExpr + " AS duration")
+		Column("zone_transfer_state.server_machine_id")
 
 	for _, relation := range getZoneTransferStatesRelations {
 		// Optionally join the machine table to extract the machine
@@ -145,9 +213,73 @@ func GetZoneTransferStatesByPage(dbi pg.DBI, offset, limit int64, getZoneTransfe
 			Relation(fmt.Sprintf("%s.address", relation)).
 			Relation(fmt.Sprintf("%s.agent_port", relation))
 	}
-	q = q.Order("zone_transfer_state.created_at DESC").
-		Offset(int(offset)).
-		Limit(int(limit))
+
+	orderExpr, _ := prepareOrderAndDistinctExpr("zone_transfer_state", sortField, sortDir, func(sortField string, escapedTableName string, dirExpr string) (string, string, bool) {
+		if sortField == "effective_duration" {
+			// Effective duration is not a column in the database but an expression.
+			// We must use custom handler to avoid treating it as a column name.
+			return sortField + " " + dirExpr, sortField, true
+		}
+		return "", "", false
+	})
+	q = q.OrderExpr(orderExpr)
+
+	// Filtering is optional.
+	if filter == nil {
+		total, err := q.SelectAndCount()
+		if err != nil && !errors.Is(err, pg.ErrNoRows) {
+			return nil, 0, errors.Wrapf(err, "failed to select zone transfer states from the database")
+		}
+		return zoneTransfers, int64(total), err
+	}
+
+	// Paging from offset.
+	if filter.Offset != nil {
+		q = q.Offset(*filter.Offset)
+	}
+
+	// Limit the number of zone transfer states returned.
+	if filter.Limit != nil {
+		q = q.Limit(*filter.Limit)
+	}
+
+	// Filter by partial zone serial number.
+	if filter.Serial != nil {
+		q = q.Where("zone_transfer_state.serial::text ILIKE ?", "%"+*filter.Serial+"%")
+	}
+
+	// Filter by statuses.
+	if filter.Statuses != nil {
+		statuses := slices.Collect(filter.Statuses.GetEnabled())
+		if len(statuses) > 0 {
+			q = q.WhereIn("zone_transfer_state.status IN (?)", statuses)
+		}
+	}
+
+	// Filter by the ID of the machines where the primary or secondary
+	// DNS server is running.
+	if filter.MachineID != nil {
+		q = q.WhereGroup(func(q *pg.Query) (*pg.Query, error) {
+			q = q.WhereOr("zone_transfer_state.client_machine_id = ?", *filter.MachineID).
+				WhereOr("zone_transfer_state.server_machine_id = ?", *filter.MachineID)
+			return q, nil
+		})
+	}
+
+	// Filter by zone name, daemon name or local zone view using partial matching.
+	if filter.Text != nil {
+		// Ensure case-insensitive comparison against root and (root).
+		filterText := strings.ToLower(*filter.Text)
+		q = q.WhereGroup(func(q *pg.Query) (*pg.Query, error) {
+			q = q.WhereOr("zone_transfer_state.zone_name ILIKE ?", "%"+filterText+"%").
+				WhereOr("zone_transfer_state.view_name ILIKE ?", "%"+*filter.Text+"%").
+				WhereOr("zone_transfer_state.client ILIKE ?", "%"+*filter.Text+"%").
+				WhereOr("zone_transfer_state.server ILIKE ?", "%"+*filter.Text+"%").
+				WhereOr("zone_transfer_state.message ILIKE ?", "%"+*filter.Text+"%")
+			return q, nil
+		})
+	}
+
 	total, err := q.SelectAndCount()
 	if err != nil && !errors.Is(err, pg.ErrNoRows) {
 		return nil, 0, errors.Wrapf(err, "failed to select zone transfer states from the database")
