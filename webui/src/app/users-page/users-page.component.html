@@ -174,7 +174,7 @@
                     </td>
                     <td align="center">{{ u.name | placeholder }}</td>
                     <td align="center">{{ u.lastname | placeholder }}</td>
-                    <td align="center">{{ getGroupName(u.groups[0]) }}</td>
+                    <td align="center">{{ getGroupNames(u.groups) }}</td>
                     <td align="center">{{ u.authenticationMethodId }}</td>
                     <td align="center">{{ u.externalId | placeholder }}</td>
                 </tr>
@@ -240,7 +240,7 @@
                     <b>Group:</b>
                 </div>
                 <div class="col-12 sm:col-9">
-                    {{ getGroupName(user.groups[0]) }}
+                    {{ getGroupNames(user.groups) }}
                 </div>
                 <div class="col-12 sm:col-3">
                     <b>Authentication:</b>

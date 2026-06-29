@@ -227,26 +227,13 @@ export class UsersPageComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Return group name for the particular group id
+     * Return group names for the particular group IDs.
      *
-     * @param groupId group id for which the name should be returned.
-     * @returns group name.
+     * @param groupIDs group IDs for which the names should be returned.
+     * @returns comma separated list of group names
      */
-    public getGroupName(groupId): string {
-        // The super-admin group is well known and doesn't require
-        // iterating over the list of groups fetched from the server.
-        // Especially, if the server didn't respond properly for
-        // some reason, we still want to be able to handle the
-        // super-admin group.
-        if (groupId === 1) {
-            return 'super-admin'
-        }
-        for (const grp of this.groups) {
-            if (grp.id === groupId) {
-                return grp.name
-            }
-        }
-        return 'unknown'
+    public getGroupNames(groupIDs: number[]): string {
+        return this.serverData.getGroupNames(groupIDs, this.groups)
     }
 
     /**
