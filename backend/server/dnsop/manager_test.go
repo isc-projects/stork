@@ -2694,7 +2694,7 @@ func TestStartStopXFRTrackingForDaemon(t *testing.T) {
 			agents.EXPECT().ReceiveZoneTransfers(gomock.Any(), gomock.Cond(func(d any) bool {
 				return d.(*dbmodel.Daemon).ID == daemons[i].ID
 			}), true).
-				AnyTimes().
+				MinTimes(1).
 				Return(func(yield func(*bind9xfr.State, error) bool) {
 					// Returning an error ensures they will be actively reconnecting.
 					_ = yield(nil, &testError{})
