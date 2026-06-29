@@ -125,7 +125,7 @@ export const UpdateExternalUserExternallyManagedGroups: Story = {
         // Act + Assert
         const saveBtn = await canvas.findByRole('button', { name: 'Save' })
         await expect(saveBtn).toBeDisabled()
-        await expect(canvas.getByText(/group assignment for this user is disabled/i)).toBeInTheDocument()
+        await expect(canvas.getByText(/group assignment for this user account is disabled/i)).toBeInTheDocument()
         const groupSelect = await canvas.findByRole('combobox')
         await expect(userEvent.click(groupSelect)).rejects.toThrow(/unable to perform pointer interaction/i)
     },
