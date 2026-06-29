@@ -810,6 +810,10 @@ export const TestDisplaySubnet6AddressAndPrefix: Story = {
         await expect(canvas.getByText('2001:db8:1::2-2001:db8:1::768')).toBeVisible()
         await expect(canvas.getByText('3000::')).toBeVisible()
         await expect(canvas.getByText('No user context configured.')).toBeVisible()
+        await expect(canvas.getByRole('group', { name: 'DHCP Servers Using the Subnet' })).toBeVisible()
+        await expect(canvas.getByText('12223')).toBeVisible()
+        await expect(canvas.getByText(/\[42\] DHCPv6@localhost/)).toBeVisible()
+        await expect(canvas.getByRole('group', { name: /Pools\s\/\s+All Servers/ })).toBeVisible()
 
         // There should be 2 utilization pie charts. It appears as a <canvas> element with role "img".
         const statsFieldset = canvas.getByRole('group', { name: 'Statistics' })
