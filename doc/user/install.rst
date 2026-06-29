@@ -1471,17 +1471,17 @@ provide parameters required for Stork to communicate with the OpenID Provider.
 
 - ``STORK_OIDC_AUTHORIZATION_ENDPOINT`` (``oidc-authorization-endpoint`` in CLI)
 
-    The OpenID Provider endpoint that performs Authentication of the End-User. Stork will send the Authentication Request
+    The OpenID Provider `endpoint that performs Authentication of the End-User <https://openid.net/specs/openid-connect-core-1_0.html#AuthorizationEndpoint>`_. Stork will send the Authentication Request
     to this endpoint.
 
 - ``STORK_OIDC_TOKEN_ENDPOINT`` (``oidc-token-endpoint`` in CLI)
 
-    The OpenID Provider endpoint to obtain an ID Token after successful authentication. Stork will send the Token Request
+    The OpenID Provider `endpoint to obtain an ID Token <https://openid.net/specs/openid-connect-core-1_0.html#TokenEndpoint>`_ after successful authentication. Stork will send the Token Request
     to this endpoint.
 
 - ``STORK_OIDC_JWKS_URI`` (``oidc-jwks-uri`` in CLI)
 
-    The OpenID Provider JWKS URI to obtain JSON Web Key Set that Stork will use to validate signatures from the OpenID Provider.
+    The OpenID Provider `JWKS URI <https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderMetadata>`_ to obtain JSON Web Key Set that Stork will use to validate signatures from the OpenID Provider.
 
 User group/role related settings
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
