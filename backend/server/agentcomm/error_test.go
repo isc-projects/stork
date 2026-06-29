@@ -23,6 +23,5 @@ func TestNewZoneInventoryNotInitedError(t *testing.T) {
 // Test instantiating the ZoneTransferTrackingDisabledOnAgentError.
 func TestNewZoneTransferTrackingDisabledOnAgentError(t *testing.T) {
 	err := NewZoneTransferTrackingDisabledOnAgentError("agent-foo")
-	require.Error(t, err)
-	require.Equal(t, "Zone transfer tracking is disabled on the agent agent-foo", err.Error())
+	require.ErrorContains(t, err, "zone transfer tracking is disabled on the agent agent-foo")
 }

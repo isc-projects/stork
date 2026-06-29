@@ -45,6 +45,9 @@ type ZoneTransferTrackingDisabledOnAgentError struct {
 }
 
 // Instantiates the ZoneTransferTrackingDisabledOnAgentError.
+// The agent parameter should be the address or the name of the agent
+// where the zone transfer tracking is disabled. The port can be also
+// appended after a colon. It is used for logging purposes.
 func NewZoneTransferTrackingDisabledOnAgentError(agent string) *ZoneTransferTrackingDisabledOnAgentError {
 	return &ZoneTransferTrackingDisabledOnAgentError{
 		agent,
@@ -53,5 +56,5 @@ func NewZoneTransferTrackingDisabledOnAgentError(agent string) *ZoneTransferTrac
 
 // Returns an error string.
 func (err *ZoneTransferTrackingDisabledOnAgentError) Error() string {
-	return fmt.Sprintf("Zone transfer tracking is disabled on the agent %s", err.agent)
+	return fmt.Sprintf("zone transfer tracking is disabled on the agent %s", err.agent)
 }
