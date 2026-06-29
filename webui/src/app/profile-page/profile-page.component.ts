@@ -25,7 +25,7 @@ export class ProfilePageComponent implements OnInit, OnDestroy {
 
     currentUser: User = null
     private groups: any[]
-    public groupName: string
+    public groupNames: string
 
     /**
      * List of subscriptions created by the component.
@@ -47,9 +47,9 @@ export class ProfilePageComponent implements OnInit, OnDestroy {
         this.serverData.getGroups().subscribe((data) => {
             if (data.items) {
                 this.groups = data.items
-                if (this.currentUser.groups && this.currentUser.groups.length > 0) {
-                    // Set the group name to be displayed for the current user.
-                    this.groupName = this.serverData.getGroupName(this.currentUser.groups[0], this.groups)
+                if (this.currentUser?.groups && this.currentUser.groups.length > 0) {
+                    // Set the group names to be displayed for the current user.
+                    this.groupNames = this.serverData.getGroupNames(this.currentUser.groups, this.groups)
                 }
             }
         })

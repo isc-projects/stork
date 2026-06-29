@@ -4,9 +4,10 @@ import { Observable, Subject, merge, timer, EMPTY, of } from 'rxjs'
 import { switchMap, shareReplay, catchError, filter, map } from 'rxjs/operators'
 
 import { AuthService } from './auth.service'
-import { ServicesService, UsersService } from './backend/api/api'
-import { DaemonsStats } from './backend/model/daemonsStats'
-import { Groups } from './backend/model/groups'
+import { ServicesService, UsersService } from './backend'
+import { DaemonsStats } from './backend'
+import { Groups } from './backend'
+import { Group } from './backend'
 
 /**
  * Service for providing and caching data from the server.
@@ -37,7 +38,7 @@ export class ServerDataService {
             const refreshInterval = 1000 * 60 * 30 // 30 mins
             const refreshTimer = timer(0, refreshInterval)
 
-            // For each timer tick and and for each reload
+            // For each timer tick and for each reload
             // make an http request to fetch new data
             this.daemonsStats = merge(refreshTimer, this.reloadDaemonStats, this.auth.currentUser$).pipe(
                 filter((x) => x !== null), // filter out trigger which is logout ie user changed to null
@@ -84,26 +85,22 @@ export class ServerDataService {
     }
 
     /**
-     * Get name of the system group fetched from the database indicated by group ID.
+     * Get names of the system groups fetched from the database indicated by group IDs.
      *
-     * @param groupId Identifier of the group in the database, counted
-     *                from 1.
+     * @param groupIDs Identifiers of the system groups that user belongs to.
      * @param groupItems List of all groups returned by the server.
-     * @returns Group name or unknown string if the group is not found.
+     * @returns Group names or unknown string if no group is found.
      */
-    public getGroupName(groupId: number, groupItems: any[]): string {
-        // The superadmin group is well known and doesn't require
-        // iterating over the list of groups fetched from the server.
-        // Especially, if the server didn't respond properly for
-        // some reason, we still want to be able to handle the
-        // superadmin group.
-        if (groupId === 1) {
-            return 'superadmin'
-        }
+    public getGroupNames(groupIDs: number[], groupItems: Group[]): string {
+        const groupNames: string[] = []
         for (const grp of groupItems) {
-            if (grp.id === groupId) {
-                return grp.name
+            if (groupIDs.includes(grp.id)) {
+                groupNames.push(grp.name)
             }
+        }
+
+        if (groupNames.length > 0) {
+            return groupNames.join(', ')
         }
         return 'unknown'
     }
