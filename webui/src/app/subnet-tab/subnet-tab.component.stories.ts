@@ -947,8 +947,11 @@ export const TestDisplaySubnet6DifferentServers: Story = {
 
         await expect(canvas.getByText('3000::')).toBeVisible()
         await expect(canvas.getByText('3000:1::/64')).toBeVisible()
-        await expect(canvas.getByText('user-context-is-here')).toBeVisible()
-        await expect(canvas.getByText('No user context configured.')).toBeVisible()
+        const userCtx1 = await canvas.findByRole('group', { name: /User Context\s\/\s+\[42\]\s+DHCPv6@host1/ })
+        const userCtx2 = await canvas.findByRole('group', { name: /User Context\s\/\s+\[43\]\s+DHCPv6@host2/ })
+        await expect(within(userCtx1).getByText('foo')).toBeVisible()
+        await expect(within(userCtx1).getByText('user-context-is-here')).toBeVisible()
+        await expect(within(userCtx2).getByText('No user context configured.')).toBeVisible()
 
         const dhcpParamsBtn = await canvas.findByRole('button', { name: 'DHCP Parameters' })
         await userEvent.click(dhcpParamsBtn)
