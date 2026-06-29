@@ -63,7 +63,7 @@ func TestGetZoneTransferStatesByPage(t *testing.T) {
 			ClientMachineID: machine.ID,
 			ServerMachineID: machine2.ID,
 		}
-		err = AddZoneTransferState(db, zoneTransfer)
+		err = AddorUpdateZoneTransferState(db, zoneTransfer)
 		require.NoError(t, err)
 	}
 
@@ -104,7 +104,7 @@ func TestGetZoneTransferStatesByPage(t *testing.T) {
 
 // Test the case of adding a started zone transfer to the database and then
 // overriding it with the completed zone transfer for the same zone and view.
-func TestAddZoneTransfersOverrideStartedByCompleted(t *testing.T) {
+func TestAddOrUpdateZoneTransfersOverrideStartedByCompleted(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -163,7 +163,7 @@ func TestAddZoneTransfersOverrideStartedByCompleted(t *testing.T) {
 	}
 	// Add them to the database sequentially.
 	for _, zoneTransfer := range []ZoneTransferState{*started, *completed} {
-		err = AddZoneTransferState(db, &zoneTransfer)
+		err = AddorUpdateZoneTransferState(db, &zoneTransfer)
 		require.NoError(t, err)
 	}
 
@@ -195,7 +195,7 @@ func TestAddZoneTransfersOverrideStartedByCompleted(t *testing.T) {
 
 // Test different scenarios when started zone transfer inserted into the
 // database differs with the completed zone transfer by one field.
-func TestAddZoneTransfersOverrideDataMismatch(t *testing.T) {
+func TestAddOrUpdateZoneTransfersOverrideDataMismatch(t *testing.T) {
 	t.Parallel()
 
 	// Each test case contains two zone transfer states. The first is the
@@ -311,7 +311,7 @@ func TestAddZoneTransfersOverrideDataMismatch(t *testing.T) {
 
 			for _, zoneTransfer := range []ZoneTransferState{started, completed} {
 				// Add started and completed zone transfer state sequentially.
-				err = AddZoneTransferState(db, &zoneTransfer)
+				err = AddorUpdateZoneTransferState(db, &zoneTransfer)
 				require.NoError(t, err)
 			}
 

@@ -42,7 +42,7 @@ type ZoneTransferState struct {
 // and start_time already exists. The common use case is when the started zone transfer
 // was recorded in the database, and it subsequently ended. In this case, we must
 // mark it completed, and update the related statistics.
-func addZoneTransferState(dbi pg.DBI, zoneTransferState *ZoneTransferState) error {
+func addOrUpdateZoneTransferState(dbi pg.DBI, zoneTransferState *ZoneTransferState) error {
 	_, err := dbi.Model(zoneTransferState).
 		OnConflict("(daemon_id, view_name, zone_name, client, start_time) DO UPDATE").
 		Set("serial = EXCLUDED.serial").
@@ -70,13 +70,13 @@ func addZoneTransferState(dbi pg.DBI, zoneTransferState *ZoneTransferState) erro
 // mark it completed, and update the related statistics. The function creates a new
 // transaction if the database is not already in a transaction. Otherwise, it uses
 // the existing transaction.
-func AddZoneTransferState(dbi pg.DBI, zoneTransferState *ZoneTransferState) error {
+func AddorUpdateZoneTransferState(dbi pg.DBI, zoneTransferState *ZoneTransferState) error {
 	if db, ok := dbi.(*pg.DB); ok {
 		return db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
-			return addZoneTransferState(tx, zoneTransferState)
+			return addOrUpdateZoneTransferState(tx, zoneTransferState)
 		})
 	}
-	return addZoneTransferState(dbi.(*pg.Tx), zoneTransferState)
+	return addOrUpdateZoneTransferState(dbi.(*pg.Tx), zoneTransferState)
 }
 
 // Returns a page of zone transfer states from the database. The returned records

@@ -77,7 +77,7 @@ func (xfrCollector *xfrCollector) collect(ctx context.Context) {
 			}
 			// The connection was successfully established. Let's restart the backoff.
 			backoff = xfrCollector.backoffFactor
-			err = dbmodel.AddZoneTransferState(xfrCollector.db, &dbmodel.ZoneTransferState{
+			err = dbmodel.AddorUpdateZoneTransferState(xfrCollector.db, &dbmodel.ZoneTransferState{
 				DaemonID:       xfrCollector.daemon.ID,
 				ViewName:       xfr.ViewName,
 				ZoneName:       xfr.ZoneName,
