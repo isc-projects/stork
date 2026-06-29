@@ -78,9 +78,11 @@ func TestXFRCollector(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, xfrs, len(testXFRs))
 
+	var matchCount int
 	for _, xfr := range xfrs {
 		for _, testXFR := range testXFRs {
 			if xfr.ViewName == testXFR.ViewName && xfr.ZoneName == testXFR.ZoneName {
+				matchCount++
 				require.Equal(t, testXFR.Serial, xfr.Serial)
 				require.Equal(t, testXFR.Client, xfr.Client)
 				require.Equal(t, testXFR.Server, xfr.Server)
@@ -96,6 +98,7 @@ func TestXFRCollector(t *testing.T) {
 			}
 		}
 	}
+	require.Equal(t, len(xfrs), matchCount)
 }
 
 // Test starting and stopping the xfrCollector in a goroutine during a reconnect.
