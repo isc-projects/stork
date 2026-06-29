@@ -100,8 +100,9 @@ func (ctl *Controller) Configure(serverURL url.URL, dbSessionManager *dbsession.
 
 	ctx := context.Background()
 	var (
-		op  *oidc.Provider
-		err error
+		op                *oidc.Provider
+		err               error
+		oidcDiscoveryUsed bool
 	)
 	if len(ctl.settings.AuthorizationEndpoint) > 0 && len(ctl.settings.TokenEndpoint) > 0 && len(ctl.settings.JWKSURI) > 0 {
 		// User provided all settings for OpenID Provider config. OIDC discovery is not needed and will be skipped.
@@ -118,6 +119,7 @@ func (ctl *Controller) Configure(serverURL url.URL, dbSessionManager *dbsession.
 		if err != nil {
 			return errors.Wrapf(err, "OIDC discovery failed using issuer %s", ctl.settings.IssuerURL)
 		}
+		oidcDiscoveryUsed = true
 	}
 	tokenVerifier := op.Verifier(&oidc.Config{
 		ClientID: ctl.settings.ClientID,
@@ -134,8 +136,9 @@ func (ctl *Controller) Configure(serverURL url.URL, dbSessionManager *dbsession.
 		redirectURI = constructedURI.String()
 	}
 	logFields := log.Fields{
-		"redirectURI":    redirectURI,
-		"openIDProvider": ctl.settings.IssuerURL,
+		"redirectURI":       redirectURI,
+		"openIDProvider":    ctl.settings.IssuerURL,
+		"oidcDiscoveryUsed": oidcDiscoveryUsed,
 	}
 	log.WithFields(logFields).Info("Authentication using OpenID Connect is now enabled in Stork, and users will be authenticated by OpenID Provider if the redirectURI has been registered in this provider.")
 	scopes := []string{
