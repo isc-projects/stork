@@ -52,8 +52,7 @@
             <textarea class="monospace agent-install-cmds" readonly="" rows="3" #agentInstallationText>
 wget {{ getBaseUrl() }}/stork-install-agent.sh
 chmod a+x stork-install-agent.sh
-sudo ./stork-install-agent.sh</textarea
-            >
+sudo ./stork-install-agent.sh</textarea>
             <p-button
                 (click)="copyToClipboard(agentInstallationText)"
                 icon="pi pi-copy"
