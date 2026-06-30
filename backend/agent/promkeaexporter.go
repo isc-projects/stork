@@ -264,6 +264,48 @@ func NewPromKeaExporter(ctx context.Context, host string, port int, enablePerSub
 			Name:      "global4_addresses_reclaimed_total",
 			Help:      "Expired addresses that were reclaimed for all subnets",
 		}),
+		"v4-allocation-fail": factory.NewGauge(prometheus.GaugeOpts{
+			Namespace: keaNamespace,
+			Subsystem: "dhcp4",
+			Name:      "global4_allocation_fail_total",
+			Help:      "Address allocation failures for all subnets",
+		}),
+		"v4-allocation-fail-shared-network": factory.NewGauge(prometheus.GaugeOpts{
+			Namespace: keaNamespace,
+			Subsystem: "dhcp4",
+			Name:      "global4_allocation_fail_shared_network_total",
+			Help:      "Address allocation failures for all subnets in a shared network",
+		}),
+		"v4-allocation-fail-subnet": factory.NewGauge(prometheus.GaugeOpts{
+			Namespace: keaNamespace,
+			Subsystem: "dhcp4",
+			Name:      "global4_allocation_fail_subnet_total",
+			Help:      "Address allocation failures for all subnets not in a shared network",
+		}),
+		"v4-allocation-fail-no-pools": factory.NewGauge(prometheus.GaugeOpts{
+			Namespace: keaNamespace,
+			Subsystem: "dhcp4",
+			Name:      "global4_allocation_fail_no_pools_total",
+			Help:      "Address allocation failures for all subnets due to lack of configured pool",
+		}),
+		"v4-allocation-fail-classes": factory.NewGauge(prometheus.GaugeOpts{
+			Namespace: keaNamespace,
+			Subsystem: "dhcp4",
+			Name:      "global4_allocation_fail_classes_total",
+			Help:      "Address allocation failures for all subnets because client's packet belongs to one or more classes",
+		}),
+		"v4-lease-reuses": factory.NewGauge(prometheus.GaugeOpts{
+			Namespace: keaNamespace,
+			Subsystem: "dhcp4",
+			Name:      "global4_lease_reuses_total",
+			Help:      "Number of times IPv4 leases were reused from cache for all subnets",
+		}),
+		"v4-reservation-conflicts": factory.NewGauge(prometheus.GaugeOpts{
+			Namespace: keaNamespace,
+			Subsystem: "dhcp4",
+			Name:      "global4_reservation_conflicts_total",
+			Help:      "Number of host reservation allocation conflicts for all subnets",
+		}),
 	}
 
 	pke.Global6StatMap = map[string]prometheus.Gauge{
@@ -296,6 +338,54 @@ func NewPromKeaExporter(ctx context.Context, host string, port int, enablePerSub
 			Subsystem: "dhcp6",
 			Name:      "global6_addresses_reclaimed_total",
 			Help:      "Expired addresses that were reclaimed for all subnets",
+		}),
+		"v6-allocation-fail": factory.NewGauge(prometheus.GaugeOpts{
+			Namespace: keaNamespace,
+			Subsystem: "dhcp6",
+			Name:      "global6_allocation_fail_total",
+			Help:      "Address allocation failures for all subnets",
+		}),
+		"v6-allocation-fail-shared-network": factory.NewGauge(prometheus.GaugeOpts{
+			Namespace: keaNamespace,
+			Subsystem: "dhcp6",
+			Name:      "global6_allocation_fail_shared_network_total",
+			Help:      "Address allocation failures for all subnets in a shared network",
+		}),
+		"v6-allocation-fail-subnet": factory.NewGauge(prometheus.GaugeOpts{
+			Namespace: keaNamespace,
+			Subsystem: "dhcp6",
+			Name:      "global6_allocation_fail_subnet_total",
+			Help:      "Address allocation failures for all subnets not in a shared network",
+		}),
+		"v6-allocation-fail-no-pools": factory.NewGauge(prometheus.GaugeOpts{
+			Namespace: keaNamespace,
+			Subsystem: "dhcp6",
+			Name:      "global6_allocation_fail_no_pools_total",
+			Help:      "Address allocation failures for all subnets due to lack of configured pool",
+		}),
+		"v6-allocation-fail-classes": factory.NewGauge(prometheus.GaugeOpts{
+			Namespace: keaNamespace,
+			Subsystem: "dhcp6",
+			Name:      "global6_allocation_fail_classes_total",
+			Help:      "Address allocation failures for all subnets because client's packet belongs to one or more classes",
+		}),
+		"v6-ia-pd-lease-reuses": factory.NewGauge(prometheus.GaugeOpts{
+			Namespace: keaNamespace,
+			Subsystem: "dhcp6",
+			Name:      "global6_ia_pd_lease_reuses_total",
+			Help:      "Number of times IA_PD leases were reused from cache for all subnets",
+		}),
+		"v6-ia-na-lease-reuses": factory.NewGauge(prometheus.GaugeOpts{
+			Namespace: keaNamespace,
+			Subsystem: "dhcp6",
+			Name:      "global6_ia_na_lease_reuses_total",
+			Help:      "Number of times IA_NA leases were reused from cache for all subnets",
+		}),
+		"cumulative-registered": factory.NewGauge(prometheus.GaugeOpts{
+			Namespace: keaNamespace,
+			Subsystem: "dhcp6",
+			Name:      "global6_cumulutive_registered_total",
+			Help:      "Cumulative registered NA addresses since server startup for all subnets",
 		}),
 	}
 
@@ -429,6 +519,48 @@ func NewPromKeaExporter(ctx context.Context, host string, port int, enablePerSub
 			Name:      "cumulative_addresses_assigned_total",
 			Help:      "Cumulative number of assigned addresses since server startup",
 		}, subnetLabels)
+		addr4StatsMap["v4-allocation-fail"] = factory.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: keaNamespace,
+			Subsystem: "dhcp4",
+			Name:      "allocation_fail_total",
+			Help:      "Address allocation failures",
+		}, subnetLabels)
+		addr4StatsMap["v4-allocation-fail-shared-network"] = factory.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: keaNamespace,
+			Subsystem: "dhcp4",
+			Name:      "allocation_fail_shared_network_total",
+			Help:      "Address allocation failures in a shared network",
+		}, subnetLabels)
+		addr4StatsMap["v4-allocation-fail-subnet"] = factory.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: keaNamespace,
+			Subsystem: "dhcp4",
+			Name:      "allocation_fail_subnet_total",
+			Help:      "Address allocation failures not in a shared network",
+		}, subnetLabels)
+		addr4StatsMap["v4-allocation-fail-no-pools"] = factory.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: keaNamespace,
+			Subsystem: "dhcp4",
+			Name:      "allocation_fail_no_pools_total",
+			Help:      "Address allocation failures due to lack of configured pool",
+		}, subnetLabels)
+		addr4StatsMap["v4-allocation-fail-classes"] = factory.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: keaNamespace,
+			Subsystem: "dhcp4",
+			Name:      "allocation_fail_classes_total",
+			Help:      "Address allocation failures because client's packet belongs to one or more classes",
+		}, subnetLabels)
+		addr4StatsMap["v4-lease-reuses"] = factory.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: keaNamespace,
+			Subsystem: "dhcp4",
+			Name:      "lease_reuses_total",
+			Help:      "Number of times IPv4 leases were reused from cache",
+		}, subnetLabels)
+		addr4StatsMap["v4-reservation-conflicts"] = factory.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: keaNamespace,
+			Subsystem: "dhcp4",
+			Name:      "reservation_conflicts_total",
+			Help:      "Number of host reservation allocation conflicts",
+		}, subnetLabels)
 
 		// addresses dhcp6
 		addr6StatsMap := make(map[string]*prometheus.GaugeVec)
@@ -485,6 +617,54 @@ func NewPromKeaExporter(ctx context.Context, host string, port int, enablePerSub
 			Subsystem: "dhcp6",
 			Name:      "cumulative_pds_assigned_total",
 			Help:      "Cumulative number of assigned PD prefixes since server startup",
+		}, subnetLabels)
+		addr6StatsMap["v6-allocation-fail"] = factory.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: keaNamespace,
+			Subsystem: "dhcp6",
+			Name:      "allocation_fail_total",
+			Help:      "Address allocation failures",
+		}, subnetLabels)
+		addr6StatsMap["v6-allocation-fail-shared-network"] = factory.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: keaNamespace,
+			Subsystem: "dhcp6",
+			Name:      "allocation_fail_shared_network_total",
+			Help:      "Address allocation failures in a shared network",
+		}, subnetLabels)
+		addr6StatsMap["v6-allocation-fail-subnet"] = factory.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: keaNamespace,
+			Subsystem: "dhcp6",
+			Name:      "allocation_fail_subnet_total",
+			Help:      "Address allocation failures not in a shared network",
+		}, subnetLabels)
+		addr6StatsMap["v6-allocation-fail-no-pools"] = factory.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: keaNamespace,
+			Subsystem: "dhcp6",
+			Name:      "allocation_fail_no_pools_total",
+			Help:      "Address allocation failure due to lack of configured pool",
+		}, subnetLabels)
+		addr6StatsMap["v6-allocation-fail-classes"] = factory.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: keaNamespace,
+			Subsystem: "dhcp6",
+			Name:      "allocation_fail_classes_total",
+			Help:      "Address allocation failures subnets because client's packet belongs to one or more classes",
+		}, subnetLabels)
+		addr6StatsMap["v6-ia-pd-lease-reuses"] = factory.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: keaNamespace,
+			Subsystem: "dhcp6",
+			Name:      "ia_pd_lease_reuses_total",
+			Help:      "Number of times IA_PD leases were reused from cache",
+		}, subnetLabels)
+		addr6StatsMap["v6-ia-na-lease-reuses"] = factory.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: keaNamespace,
+			Subsystem: "dhcp6",
+			Name:      "ia_na_lease_reuses_total",
+			Help:      "Number of times IA_NA leases were reused from cache",
+		}, subnetLabels)
+		addr6StatsMap["cumulative-registered"] = factory.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: keaNamespace,
+			Subsystem: "dhcp6",
+			Name:      "cumulutive_registered_total",
+			Help:      "Cumulative registered NA addresses since server startup",
 		}, subnetLabels)
 
 		poolLabels := []string{"pool_id"}
