@@ -2000,8 +2000,12 @@ func TestStartHostsMigration(t *testing.T) {
 
 	migrationService := NewMockMigrationManager(ctrl)
 
+	dm := NewMockManager(ctrl)
+	dm.EXPECT().PopulateMachineIPAddressCache().AnyTimes().Return(nil)
+
 	statePuller, err := daemonsconfig.NewStatePuller(daemonsconfig.StatePullerState{
-		DB: db,
+		DB:         db,
+		DNSManager: dm,
 	})
 	require.NoError(t, err)
 	hostPuller, err := kea.NewHostsPuller(db, nil, nil, nil)

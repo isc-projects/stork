@@ -1,0 +1,88 @@
+package dnsop
+
+import (
+	"strings"
+	"sync"
+
+	"github.com/go-pg/pg/v10"
+	"github.com/pkg/errors"
+	dbmodel "isc.org/stork/server/database/model"
+)
+
+// Caches IP address to machines mappings to use in translating the
+// client and server IP addresses appearing the XFR states to
+// respective machines. This solution is aimed at avoiding excessive
+// database queries during the zone transfer tracking. The cache should
+// be periodically refreshed. However, if the queried IP address is not
+// found, the cache can pull this address from the database and update
+// itself without the need to re-populate the whole cache.
+type machineIPAddressCache struct {
+	db          *pg.DB
+	ipAddresses map[string][]dbmodel.Machine
+	mutex       sync.RWMutex
+}
+
+// Instantiates a new machine IP address cache.
+func newMachineIPAddressCache(db *pg.DB) *machineIPAddressCache {
+	return &machineIPAddressCache{
+		db: db,
+	}
+}
+
+// Populates the cache. It queries the database for all IP addresses and
+// stores them in the cache. The old cache is discarded.
+func (cache *machineIPAddressCache) populate() error {
+	ipAddresses, err := dbmodel.GetMachineNetworkInterfaceIPAddresses(cache.db, dbmodel.MachineNetworkInterfaceIPAddressRelationMachine)
+	if err != nil {
+		return errors.WithMessage(err, "failed to populate the cache mapping IP addresses to machines")
+	}
+	cache.mutex.Lock()
+	defer cache.mutex.Unlock()
+	// Re-create the cache.
+	cache.ipAddresses = make(map[string][]dbmodel.Machine)
+	// Save all IP addresses to the cache.
+	for _, ipAddress := range ipAddresses {
+		if ipAddress.Interface == nil || ipAddress.Interface.Machine == nil {
+			continue
+		}
+		// Ignore the prefix length.
+		key, _, _ := strings.Cut(ipAddress.IPAddress, "/")
+		cache.ipAddresses[key] = append(cache.ipAddresses[key], *ipAddress.Interface.Machine)
+	}
+	return nil
+}
+
+// Returns the machines having an interface with the given IP address.
+// The specified ipAddress must exclude the prefix length.
+func (cache *machineIPAddressCache) getMachines(ipAddress string) []dbmodel.Machine {
+	cache.mutex.RLock()
+	// Most of the time this should be successful if the cache is regularly refreshed.
+	machines, ok := cache.ipAddresses[ipAddress]
+	cache.mutex.RUnlock()
+	if ok {
+		return append([]dbmodel.Machine(nil), machines...)
+	}
+
+	// The cache doesn't have this IP address. Try to get it from the database.
+	dbMachines, err := dbmodel.GetMachinesByNetworkInterfaceIPAddress(cache.db, ipAddress, dbmodel.MachineRelationNetworkInterfacesIPAddresses)
+	if err != nil {
+		return nil
+	}
+
+	cache.mutex.Lock()
+	defer cache.mutex.Unlock()
+
+	// When we unlocked the read lock, the cache might have been updated by another
+	// goroutine. Let's check if the cache now has this IP address.
+	if machines, ok = cache.ipAddresses[ipAddress]; ok {
+		return append([]dbmodel.Machine(nil), machines...)
+	}
+	// Let's make sure that the cache is initialized.
+	if cache.ipAddresses == nil {
+		cache.ipAddresses = make(map[string][]dbmodel.Machine)
+	}
+	// Save the machines gathered from the database to the cache.
+	cache.ipAddresses[ipAddress] = dbMachines
+	// Return the machines.
+	return append([]dbmodel.Machine(nil), dbMachines...)
+}

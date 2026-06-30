@@ -213,6 +213,7 @@ func TestStatePullerPullData(t *testing.T) {
 
 	// Make sure that the zone transfer tracking is started for the BIND 9 daemon.
 	dm := NewMockManager(ctrl)
+	dm.EXPECT().PopulateMachineIPAddressCache().Return(nil)
 	dm.EXPECT().StartXFRTrackingForDaemon(gomock.Cond(func(daemon *dbmodel.Daemon) bool {
 		return daemon.Name == daemonname.Bind9
 	})).Return(nil)
@@ -728,13 +729,16 @@ func TestStatePullerAddAccessPoint(t *testing.T) {
 	fd := NewMockDispatcher(ctrl)
 	fd.EXPECT().BeginReview(gomock.Any(), gomock.Any(), gomock.Any())
 
+	dm := NewMockManager(ctrl)
+	dm.EXPECT().PopulateMachineIPAddressCache().Return(nil)
+
 	sp, err := NewStatePuller(StatePullerState{
 		DB:                         db,
 		Agents:                     fa,
 		EventCenter:                fec,
 		ReviewDispatcher:           fd,
 		DHCPOptionDefinitionLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
-		DNSManager:                 nil,
+		DNSManager:                 dm,
 	})
 	require.NoError(t, err)
 	defer sp.Shutdown()
@@ -797,13 +801,16 @@ func TestStatePullerModifyAccessPoint(t *testing.T) {
 	fd := NewMockDispatcher(ctrl)
 	fd.EXPECT().BeginReview(gomock.Any(), gomock.Any(), gomock.Any())
 
+	dm := NewMockManager(ctrl)
+	dm.EXPECT().PopulateMachineIPAddressCache().Return(nil)
+
 	sp, err := NewStatePuller(StatePullerState{
 		DB:                         db,
 		Agents:                     fa,
 		EventCenter:                fec,
 		ReviewDispatcher:           fd,
 		DHCPOptionDefinitionLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
-		DNSManager:                 nil,
+		DNSManager:                 dm,
 	})
 	require.NoError(t, err)
 	defer sp.Shutdown()

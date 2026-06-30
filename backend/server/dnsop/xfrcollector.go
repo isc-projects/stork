@@ -36,18 +36,21 @@ type xfrCollector struct {
 	// then 4s, etc. The factor can be decreased in the unit tests to shorten
 	// blocking time.
 	backoffFactor time.Duration
+	// The cache holding IP addresses to machines mappings.
+	machineIPAddressCache *machineIPAddressCache
 }
 
 // Instantiates a new collector instance. The owner is typically the dnsop.Manager
 // providing the common database and the connected agents instances. The daemon
 // points to the BIND 9 daemon instance to communicate with.
-func newXFRCollector(owner ManagerAccessors, daemon *dbmodel.Daemon) *xfrCollector {
+func newXFRCollector(owner ManagerAccessors, machineIPAddressCache *machineIPAddressCache, daemon *dbmodel.Daemon) *xfrCollector {
 	return &xfrCollector{
-		db:            owner.GetDB(),
-		agents:        owner.GetConnectedAgents(),
-		daemon:        daemon,
-		stopChan:      nil,
-		backoffFactor: 1 * time.Second,
+		db:                    owner.GetDB(),
+		agents:                owner.GetConnectedAgents(),
+		daemon:                daemon,
+		stopChan:              nil,
+		backoffFactor:         1 * time.Second,
+		machineIPAddressCache: machineIPAddressCache,
 	}
 }
 
@@ -77,21 +80,42 @@ func (xfrCollector *xfrCollector) collect(ctx context.Context) {
 			}
 			// The connection was successfully established. Let's restart the backoff.
 			backoff = xfrCollector.backoffFactor
+
+			var (
+				clientMachineID int64
+				serverMachineID int64
+			)
+			switch {
+			case xfr.Client != "":
+				clientMachines := xfrCollector.machineIPAddressCache.getMachines(xfr.Client)
+				if len(clientMachines) > 0 {
+					clientMachineID = clientMachines[0].ID
+				}
+				serverMachineID = xfrCollector.daemon.MachineID
+			case xfr.Server != "":
+				serverMachine := xfrCollector.machineIPAddressCache.getMachines(xfr.Server)
+				if len(serverMachine) > 0 {
+					serverMachineID = serverMachine[0].ID
+				}
+				clientMachineID = xfrCollector.daemon.MachineID
+			}
 			err = dbmodel.AddOrUpdateZoneTransferState(xfrCollector.db, &dbmodel.ZoneTransferState{
-				DaemonID:       xfrCollector.daemon.ID,
-				ViewName:       xfr.ViewName,
-				ZoneName:       xfr.ZoneName,
-				Serial:         xfr.Serial,
-				Client:         xfr.Client,
-				Server:         xfr.Server,
-				MessagesCount:  xfr.MessagesCount,
-				RecordsCount:   xfr.RecordsCount,
-				BytesCount:     xfr.BytesCount,
-				Duration:       xfr.Duration,
-				Status:         xfr.Status,
-				StartTime:      xfr.StartTime,
-				CompletionTime: xfr.CompletionTime,
-				Message:        xfr.Message,
+				DaemonID:        xfrCollector.daemon.ID,
+				ViewName:        xfr.ViewName,
+				ZoneName:        xfr.ZoneName,
+				Serial:          xfr.Serial,
+				Client:          xfr.Client,
+				Server:          xfr.Server,
+				MessagesCount:   xfr.MessagesCount,
+				RecordsCount:    xfr.RecordsCount,
+				BytesCount:      xfr.BytesCount,
+				Duration:        xfr.Duration,
+				Status:          xfr.Status,
+				StartTime:       xfr.StartTime,
+				CompletionTime:  xfr.CompletionTime,
+				Message:         xfr.Message,
+				ClientMachineID: clientMachineID,
+				ServerMachineID: serverMachineID,
 			})
 			if err != nil {
 				var pgErr pg.Error

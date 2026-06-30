@@ -5,6 +5,7 @@ import (
 	_ "embed"
 	"encoding/json"
 	iter "iter"
+	"net"
 	"strings"
 	"sync"
 	"testing"
@@ -2766,4 +2767,58 @@ func TestStartXFRTrackingForDaemonUnsupportedDaemon(t *testing.T) {
 	err = manager.StartXFRTrackingForDaemon(daemon)
 	require.Error(t, err)
 	require.ErrorContains(t, err, "zone transfer tracking is supported only for BIND 9 daemons")
+}
+
+// Test that the machine IP address cache is populated as a result of
+// calling the PopulateMachineIPAddressCache function.
+func TestPopulateMachineIPAddressCache(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Add a machine.
+	machine := &dbmodel.Machine{
+		ID:        0,
+		Address:   "localhost",
+		AgentPort: int64(8080),
+		MachineNetworkInterfaces: []dbmodel.MachineNetworkInterface{
+			{
+				Name:            "eth0",
+				Flags:           uint32(net.FlagUp),
+				HardwareAddress: []byte{1, 2, 3, 4, 5, 6},
+				IPAddresses: []dbmodel.MachineNetworkInterfaceIPAddress{
+					{IPAddress: "192.168.1.1/24"},
+				},
+			},
+		},
+	}
+	err := dbmodel.AddMachine(db, machine)
+	require.NoError(t, err)
+	err = dbmodel.UpsertMachineNetworkInterfaces(db, machine.ID, machine.MachineNetworkInterfaces...)
+	require.NoError(t, err)
+
+	// Create the manager.
+	manager, err := NewManager(&appstest.ManagerAccessorsWrapper{
+		DB: db,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, manager)
+	defer manager.Shutdown()
+
+	// Populate the cache. It should now contain the sole machine.
+	err = manager.PopulateMachineIPAddressCache()
+	require.NoError(t, err)
+
+	// Delete the machine from the database.
+	err = dbmodel.DeleteMachine(db, machine)
+	require.NoError(t, err)
+
+	// Use the manager to query the cache for the machine IP address.
+	// It should return the cached machine even though it is no longer present
+	// in the database.
+	managerImpl := manager.(*managerImpl)
+	require.NotNil(t, managerImpl.machineIPAddressCache)
+
+	machines := managerImpl.machineIPAddressCache.getMachines("192.168.1.1")
+	require.Len(t, machines, 1)
+	require.EqualValues(t, machine.ID, machines[0].ID)
 }

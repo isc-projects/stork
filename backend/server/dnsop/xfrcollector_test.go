@@ -68,7 +68,7 @@ func TestXFRCollector(t *testing.T) {
 	xfrCollector := newXFRCollector(daemonstest.ManagerAccessorsWrapper{
 		DB:     db,
 		Agents: agents,
-	}, daemon)
+	}, newMachineIPAddressCache(db), daemon)
 
 	// Collect the zone transfer states from the agent.
 	xfrCollector.collect(context.Background())
@@ -144,7 +144,7 @@ func TestXFRCollectorStartStopDuringReconnect(t *testing.T) {
 		xfrCollector := newXFRCollector(daemonstest.ManagerAccessorsWrapper{
 			DB:     db,
 			Agents: agents,
-		}, daemon)
+		}, newMachineIPAddressCache(db), daemon)
 		// The collector should be initially inactive.
 		require.False(t, xfrCollector.isActive())
 		// Start the collector.
@@ -228,7 +228,7 @@ func TestXFRCollectorReconnect(t *testing.T) {
 	xfrCollector := newXFRCollector(daemonstest.ManagerAccessorsWrapper{
 		DB:     db,
 		Agents: agents,
-	}, daemon)
+	}, newMachineIPAddressCache(db), daemon)
 
 	// Change the backoff factor to make sure the test runs faster.
 	xfrCollector.backoffFactor = time.Millisecond * 1
@@ -314,7 +314,7 @@ func TestXFRCollectorNonExistingDaemon(t *testing.T) {
 	xfrCollector := newXFRCollector(daemonstest.ManagerAccessorsWrapper{
 		DB:     db,
 		Agents: agents,
-	}, daemon)
+	}, newMachineIPAddressCache(db), daemon)
 
 	// Collect the zone transfer states from the agent.
 	xfrCollector.collect(t.Context())
@@ -365,7 +365,7 @@ func TestXFRCollectorZoneTransferTrackingDisabledOnAgent(t *testing.T) {
 	xfrCollector := newXFRCollector(daemonstest.ManagerAccessorsWrapper{
 		DB:     db,
 		Agents: agents,
-	}, daemon)
+	}, newMachineIPAddressCache(db), daemon)
 
 	// Collect the zone transfer states from the agent.
 	xfrCollector.collect(t.Context())

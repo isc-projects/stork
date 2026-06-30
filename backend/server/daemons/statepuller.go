@@ -86,6 +86,12 @@ func (puller *StatePuller) pullData() error {
 			okCnt++
 		}
 	}
+	// Updated machine states may include changes in IP addresses assigned on the
+	// respective machines. Let's refresh the cache of IP addresses to machines mappings.
+	err = puller.state.DNSManager.PopulateMachineIPAddressCache()
+	if err != nil {
+		errs = append(errs, err)
+	}
 	log.Printf("Completed pulling information from machines: %d/%d succeeded", okCnt, len(dbMachines))
 	return storkutil.CombineErrors("errors occurred while getting info from some machines", errs)
 }

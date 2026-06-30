@@ -126,6 +126,9 @@ type Manager interface {
 	StopXFRTrackingForDaemon(daemon *dbmodel.Daemon)
 	// Checks if zone transfers are being tracked for a selected BIND 9 daemon.
 	IsXFRTrackingActiveForDaemon(daemon *dbmodel.Daemon) bool
+	// Populates the machine IP address cache from the database. This function should
+	// be called periodically to ensure that the cache is up to date.
+	PopulateMachineIPAddressCache() error
 	// Shuts down the DNS manager by stopping background tasks.
 	Shutdown()
 }
@@ -428,6 +431,8 @@ type managerImpl struct {
 	xfrCollectors map[int64]*xfrCollector
 	// A mutex protecting the xfrCollectors map from concurrent access.
 	xfrCollectorsMutex sync.RWMutex
+	// A cache holding IP addresses to machines mappings.
+	machineIPAddressCache *machineIPAddressCache
 }
 
 // A structure returned over the channel when Manager completes asynchronous task.
@@ -452,8 +457,9 @@ func NewManager(owner ManagerAccessors) (Manager, error) {
 			requestChan: make(chan *bind9FormattedConfigRequest),
 			requests:    make(map[int64]bool),
 		},
-		cancel:        cancel,
-		xfrCollectors: make(map[int64]*xfrCollector),
+		cancel:                cancel,
+		xfrCollectors:         make(map[int64]*xfrCollector),
+		machineIPAddressCache: newMachineIPAddressCache(owner.GetDB()),
 	}
 	impl.startAsyncRequestWorkers(ctx)
 	return impl, nil
@@ -1048,6 +1054,10 @@ func (manager *managerImpl) GetBind9FormattedConfig(ctx context.Context, daemonI
 
 // Attempts to start tracking zone transfers for all BIND 9 daemons.
 func (manager *managerImpl) StartXFRTracking() error {
+	err := manager.machineIPAddressCache.populate()
+	if err != nil {
+		return errors.Wrap(err, "failed to populate the machine IP address cache while starting zone transfer tracking")
+	}
 	daemons, err := dbmodel.GetDaemonsByName(manager.db, daemonname.Bind9)
 	if err != nil {
 		return errors.Wrap(err, "failed to get BIND 9 daemons while starting zone transfer tracking")
@@ -1060,7 +1070,7 @@ func (manager *managerImpl) StartXFRTracking() error {
 		manager.xfrCollectorsMutex.Lock()
 		collector := manager.xfrCollectors[daemon.ID]
 		if collector == nil {
-			collector = newXFRCollector(manager, &daemon)
+			collector = newXFRCollector(manager, manager.machineIPAddressCache, &daemon)
 			manager.xfrCollectors[daemon.ID] = collector
 		}
 		manager.xfrCollectorsMutex.Unlock()
@@ -1077,7 +1087,7 @@ func (manager *managerImpl) StartXFRTrackingForDaemon(daemon *dbmodel.Daemon) er
 	manager.xfrCollectorsMutex.Lock()
 	collector := manager.xfrCollectors[daemon.ID]
 	if collector == nil {
-		collector = newXFRCollector(manager, daemon)
+		collector = newXFRCollector(manager, manager.machineIPAddressCache, daemon)
 		manager.xfrCollectors[daemon.ID] = collector
 	}
 	manager.xfrCollectorsMutex.Unlock()
@@ -1123,6 +1133,10 @@ func (manager *managerImpl) IsXFRTrackingActiveForDaemon(daemon *dbmodel.Daemon)
 	defer manager.xfrCollectorsMutex.RUnlock()
 	collector := manager.xfrCollectors[daemon.ID]
 	return collector != nil && collector.isActive()
+}
+
+func (manager *managerImpl) PopulateMachineIPAddressCache() error {
+	return manager.machineIPAddressCache.populate()
 }
 
 // Convenience function storing a value in a map with mutex protection.

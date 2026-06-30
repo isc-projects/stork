@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	gomock "go.uber.org/mock/gomock"
 	"isc.org/stork/server/daemons"
 	"isc.org/stork/server/daemons/bind9"
 	dbmodel "isc.org/stork/server/database/model"
@@ -22,8 +23,14 @@ func TestGetPullers(t *testing.T) {
 
 	rapiSettings := RestAPISettings{}
 
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	dm := NewMockManager(ctrl)
+	dm.EXPECT().PopulateMachineIPAddressCache().AnyTimes().Return(nil)
+
 	statePuller, _ := daemons.NewStatePuller(daemons.StatePullerState{
-		DB: db,
+		DB:         db,
+		DNSManager: dm,
 	})
 	bind9Puller, _ := bind9.NewStatsPuller(db, nil, nil)
 	pullers := &daemons.Pullers{
@@ -54,8 +61,14 @@ func TestGetPuller(t *testing.T) {
 
 	rapiSettings := RestAPISettings{}
 
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	dm := NewMockManager(ctrl)
+	dm.EXPECT().PopulateMachineIPAddressCache().AnyTimes().Return(nil)
+
 	statePuller, _ := daemons.NewStatePuller(daemons.StatePullerState{
-		DB: db,
+		DB:         db,
+		DNSManager: dm,
 	})
 	bind9Puller, _ := bind9.NewStatsPuller(db, nil, nil)
 	pullers := &daemons.Pullers{

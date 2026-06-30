@@ -67,6 +67,104 @@ func TestGetZoneTransferStatesByPage(t *testing.T) {
 		require.NoError(t, err)
 	}
 
+	zoneTransfers, total, err := GetZoneTransferStatesByPage(db, 0, 10, ZoneTransferStateRelationClientMachine, ZoneTransferStateRelationServerMachine)
+	require.NoError(t, err)
+	require.Len(t, zoneTransfers, len(testZoneTransfers))
+	require.EqualValues(t, total, len(testZoneTransfers))
+
+	// Validate the returned zone transfer states.
+	for i, zoneTransfer := range zoneTransfers {
+		// Find the corresponding test zone transfer.
+		index := slices.IndexFunc(testZoneTransfers, func(testZoneTransfer *bind9xfr.State) bool {
+			return testZoneTransfer.ViewName == zoneTransfer.ViewName && testZoneTransfer.ZoneName == zoneTransfer.ZoneName
+		})
+		require.GreaterOrEqual(t, index, 0)
+		require.Equal(t, testZoneTransfers[index].ViewName, zoneTransfer.ViewName)
+		require.Equal(t, testZoneTransfers[index].ZoneName, zoneTransfer.ZoneName)
+		require.Equal(t, testZoneTransfers[index].Serial, zoneTransfer.Serial)
+		require.Equal(t, testZoneTransfers[index].Client, zoneTransfer.Client)
+		require.Equal(t, testZoneTransfers[index].Server, zoneTransfer.Server)
+		require.Equal(t, testZoneTransfers[index].MessagesCount, zoneTransfer.MessagesCount)
+		require.Equal(t, testZoneTransfers[index].RecordsCount, zoneTransfer.RecordsCount)
+		require.Equal(t, testZoneTransfers[index].BytesCount, zoneTransfer.BytesCount)
+		require.Equal(t, testZoneTransfers[index].Duration, zoneTransfer.Duration)
+		require.Equal(t, testZoneTransfers[index].Status, zoneTransfer.Status)
+		require.Equal(t, testZoneTransfers[index].StartTime, zoneTransfer.StartTime)
+		require.Equal(t, testZoneTransfers[index].CompletionTime, zoneTransfer.CompletionTime)
+		require.Equal(t, testZoneTransfers[index].Message, zoneTransfer.Message)
+		require.Equal(t, machine.ID, zoneTransfer.ClientMachineID)
+		require.Equal(t, machine2.ID, zoneTransfer.ServerMachineID)
+
+		require.NotNil(t, zoneTransfer.ClientMachine)
+		require.Equal(t, machine.ID, zoneTransfer.ClientMachine.ID)
+		require.Equal(t, machine.Address, zoneTransfer.ClientMachine.Address)
+		require.NotNil(t, zoneTransfer.ServerMachine)
+		require.Equal(t, machine2.ID, zoneTransfer.ServerMachine.ID)
+		require.Equal(t, machine2.Address, zoneTransfer.ServerMachine.Address)
+
+		if i > 0 {
+			// Ensure correct sorting order.
+			require.LessOrEqual(t, zoneTransfer.CreatedAt, zoneTransfers[i-1].CreatedAt)
+		}
+	}
+}
+
+// Test getting the zone transfer states by page without relations.
+func TestGetZoneTransferStatesByPageNoRelations(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	machine := &Machine{
+		Address:   "127.0.0.1",
+		AgentPort: 8080,
+	}
+	err := AddMachine(db, machine)
+	require.NoError(t, err)
+
+	machine2 := &Machine{
+		Address:   "127.0.0.2",
+		AgentPort: 8080,
+	}
+	err = AddMachine(db, machine2)
+	require.NoError(t, err)
+
+	daemon := &Daemon{
+		MachineID: machine.ID,
+		AccessPoints: []*AccessPoint{
+			{
+				Type:    AccessPointControl,
+				Address: "127.0.0.1",
+				Port:    8080,
+			},
+		},
+	}
+	err = AddDaemon(db, daemon)
+	require.NoError(t, err)
+
+	testZoneTransfers := testutil.GetTestZoneTransfers()
+	for _, zoneTransfer := range testZoneTransfers {
+		zoneTransfer := &ZoneTransferState{
+			DaemonID:        daemon.ID,
+			ViewName:        zoneTransfer.ViewName,
+			ZoneName:        zoneTransfer.ZoneName,
+			Serial:          zoneTransfer.Serial,
+			Client:          zoneTransfer.Client,
+			Server:          zoneTransfer.Server,
+			MessagesCount:   zoneTransfer.MessagesCount,
+			RecordsCount:    zoneTransfer.RecordsCount,
+			BytesCount:      zoneTransfer.BytesCount,
+			Duration:        zoneTransfer.Duration,
+			Status:          zoneTransfer.Status,
+			StartTime:       zoneTransfer.StartTime,
+			CompletionTime:  zoneTransfer.CompletionTime,
+			Message:         zoneTransfer.Message,
+			ClientMachineID: machine.ID,
+			ServerMachineID: machine2.ID,
+		}
+		err = AddOrUpdateZoneTransferState(db, zoneTransfer)
+		require.NoError(t, err)
+	}
+
 	zoneTransfers, total, err := GetZoneTransferStatesByPage(db, 0, 10)
 	require.NoError(t, err)
 	require.Len(t, zoneTransfers, len(testZoneTransfers))
@@ -94,6 +192,9 @@ func TestGetZoneTransferStatesByPage(t *testing.T) {
 		require.Equal(t, testZoneTransfers[index].Message, zoneTransfer.Message)
 		require.Equal(t, machine.ID, zoneTransfer.ClientMachineID)
 		require.Equal(t, machine2.ID, zoneTransfer.ServerMachineID)
+
+		require.Nil(t, zoneTransfer.ClientMachine)
+		require.Nil(t, zoneTransfer.ServerMachine)
 
 		if i > 0 {
 			// Ensure correct sorting order.
@@ -169,7 +270,7 @@ func TestAddOrUpdateZoneTransfersOverrideStartedByCompleted(t *testing.T) {
 
 	// Make sure there is only one instance in the database, and it is
 	// the second one.
-	returned, total, err := GetZoneTransferStatesByPage(db, 0, 10)
+	returned, total, err := GetZoneTransferStatesByPage(db, 0, 10, ZoneTransferStateRelationClientMachine, ZoneTransferStateRelationServerMachine)
 	require.NoError(t, err)
 	require.Len(t, returned, 1)
 	require.EqualValues(t, total, 1)
@@ -191,6 +292,13 @@ func TestAddOrUpdateZoneTransfersOverrideStartedByCompleted(t *testing.T) {
 	require.Equal(t, completed.Message, returned[0].Message)
 	require.Equal(t, machine.ID, returned[0].ClientMachineID)
 	require.Equal(t, machine2.ID, returned[0].ServerMachineID)
+
+	require.NotNil(t, returned[0].ClientMachine)
+	require.Equal(t, machine.ID, returned[0].ClientMachine.ID)
+	require.Equal(t, machine.Address, returned[0].ClientMachine.Address)
+	require.NotNil(t, returned[0].ServerMachine)
+	require.Equal(t, machine2.ID, returned[0].ServerMachine.ID)
+	require.Equal(t, machine2.Address, returned[0].ServerMachine.Address)
 }
 
 // Test different scenarios when started zone transfer inserted into the

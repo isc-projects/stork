@@ -2,11 +2,22 @@ package dbmodel
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/go-pg/pg/v10"
 	"github.com/pkg/errors"
 	"isc.org/stork/daemondata/bind9xfr"
+)
+
+// Represents a relations between the zone_transfer_state and other tables.
+type ZoneTransferStateRelation string
+
+const (
+	// Relation to the machine where XFR client is running.
+	ZoneTransferStateRelationClientMachine ZoneTransferStateRelation = "ClientMachine"
+	// Relation to the machine where XFR server is running.
+	ZoneTransferStateRelationServerMachine ZoneTransferStateRelation = "ServerMachine"
 )
 
 // It represents a zone transfer state in the database. It holds the information
@@ -35,6 +46,9 @@ type ZoneTransferState struct {
 	Message         string
 	ClientMachineID int64
 	ServerMachineID int64
+
+	ClientMachine *Machine `pg:"rel:has-one"`
+	ServerMachine *Machine `pg:"rel:has-one"`
 }
 
 // Adds a zone transfer state into the database. It updates the existing record
@@ -80,11 +94,24 @@ func AddOrUpdateZoneTransferState(dbi pg.DBI, zoneTransferState *ZoneTransferSta
 }
 
 // Returns a page of zone transfer states from the database. The returned records
-// are sorted by the creation time in descending order.
-func GetZoneTransferStatesByPage(dbi pg.DBI, offset, limit int64) ([]*ZoneTransferState, int64, error) {
+// are sorted by the creation time in descending order. The optional relations
+// can be used to join the machine table by the client and server machine IDs.
+// The joined machine table only contains the id, address and agent port fields.
+// Other fields are excluded for performance reasons.
+func GetZoneTransferStatesByPage(dbi pg.DBI, offset, limit int64, getZoneTransferStatesRelations ...ZoneTransferStateRelation) ([]*ZoneTransferState, int64, error) {
 	var zoneTransfers []*ZoneTransferState
 	q := dbi.Model(&zoneTransfers).
-		Order("created_at DESC").
+		Column("zone_transfer_state.*")
+	for _, relation := range getZoneTransferStatesRelations {
+		// Optionally join the machine table to extract the machine
+		// address where the XFR client and/or server are running.
+		// Note that they can be nil if the client_machine_id or
+		// server_machine_id are nil.
+		q = q.Relation(fmt.Sprintf("%s.id", relation)).
+			Relation(fmt.Sprintf("%s.address", relation)).
+			Relation(fmt.Sprintf("%s.agent_port", relation))
+	}
+	q = q.Order("zone_transfer_state.created_at DESC").
 		Offset(int(offset)).
 		Limit(int(limit))
 	total, err := q.SelectAndCount()

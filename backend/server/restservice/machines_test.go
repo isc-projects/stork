@@ -85,11 +85,13 @@ func TestGetMachineStateOnly(t *testing.T) {
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
 	lookup := dbmodel.NewDHCPOptionDefinitionLookup()
-	dm, err := dnsop.NewManager(&daemonstest.ManagerAccessorsWrapper{
-		DB:     db,
-		Agents: fa,
-	})
-	require.NoError(t, err)
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	dm := NewMockManager(ctrl)
+	dm.EXPECT().StartXFRTrackingForDaemon(gomock.Any()).AnyTimes().Return(nil)
+	dm.EXPECT().PopulateMachineIPAddressCache().AnyTimes().Return(nil)
+
 	statePuller, err := daemons.NewStatePuller(daemons.StatePullerState{
 		DB:                         db,
 		Agents:                     fa,
@@ -176,11 +178,13 @@ func TestGetMachineState(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(mockGetDaemonsState, nil)
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
-	dm, err := dnsop.NewManager(&daemonstest.ManagerAccessorsWrapper{
-		DB:     db,
-		Agents: fa,
-	})
-	require.NoError(t, err)
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	dm := NewMockManager(ctrl)
+	dm.EXPECT().StartXFRTrackingForDaemon(gomock.Any()).AnyTimes().Return(nil)
+	dm.EXPECT().PopulateMachineIPAddressCache().AnyTimes().Return(nil)
+
 	statePuller, err := daemons.NewStatePuller(daemons.StatePullerState{
 		DB:                         db,
 		Agents:                     fa,
@@ -372,6 +376,12 @@ func TestGetMachineAndPowerDNSState(t *testing.T) {
 	mockAgents.EXPECT().GetConnectedAgentStatsWrapper(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 	fd := &storktest.FakeDispatcher{}
 	fc := &storktest.FakeEventCenter{}
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	dm := NewMockManager(ctrl)
+	dm.EXPECT().PopulateMachineIPAddressCache().AnyTimes().Return(nil)
+
 	statePuller, err := daemons.NewStatePuller(
 		daemons.StatePullerState{
 			DB:                         db,
@@ -379,7 +389,7 @@ func TestGetMachineAndPowerDNSState(t *testing.T) {
 			EventCenter:                fc,
 			ReviewDispatcher:           fd,
 			DHCPOptionDefinitionLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
-			DNSManager:                 nil,
+			DNSManager:                 dm,
 		},
 	)
 	require.NoError(t, err)
@@ -431,13 +441,19 @@ func TestCreateMachine(t *testing.T) {
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
 	ec := NewEndpointControl()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	dm := NewMockManager(ctrl)
+	dm.EXPECT().PopulateMachineIPAddressCache().AnyTimes().Return(nil)
+
 	statePuller, err := daemons.NewStatePuller(daemons.StatePullerState{
 		DB:                         db,
 		Agents:                     fa,
 		EventCenter:                fec,
 		ReviewDispatcher:           fd,
 		DHCPOptionDefinitionLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
-		DNSManager:                 nil,
+		DNSManager:                 dm,
 	})
 	require.NoError(t, err)
 	pullers := &daemons.Pullers{StatePuller: statePuller}
@@ -1140,13 +1156,19 @@ func TestUpdateMachine(t *testing.T) {
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	dm := NewMockManager(ctrl)
+	dm.EXPECT().PopulateMachineIPAddressCache().AnyTimes().Return(nil)
+
 	statePuller, _ := daemons.NewStatePuller(daemons.StatePullerState{
 		DB:                         db,
 		Agents:                     fa,
 		EventCenter:                fec,
 		ReviewDispatcher:           fd,
 		DHCPOptionDefinitionLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
-		DNSManager:                 nil,
+		DNSManager:                 dm,
 	})
 	pullers := &daemons.Pullers{StatePuller: statePuller}
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, fd, pullers)
