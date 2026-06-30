@@ -18,7 +18,7 @@ func init() {
 				records_count BIGINT NULL,
 				bytes_count BIGINT NULL,
 				duration BIGINT NULL,
-				status INTEGER NOT NULL,
+				status TEXT NOT NULL,
 				start_time TIMESTAMP WITHOUT TIME ZONE NOT NULL,
 				completion_time TIMESTAMP WITHOUT TIME ZONE NULL,
 				message TEXT NULL,
@@ -30,7 +30,10 @@ func init() {
 				CONSTRAINT zone_transfer_state_daemon_id_fkey FOREIGN KEY (daemon_id)
 					REFERENCES public.daemon (id) MATCH SIMPLE
 					ON UPDATE CASCADE
-					ON DELETE CASCADE
+					ON DELETE CASCADE,
+				CONSTRAINT zone_transfer_state_status_check CHECK (
+					status IN ('started', 'connected', 'completed', 'message')
+				)
 			);
 		`)
 		return err

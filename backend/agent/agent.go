@@ -1033,7 +1033,7 @@ func convertZoneTransferStateToAPI(state bind9xfr.State) *agentapi.ZoneTransfer 
 		RecordsCount:  state.RecordsCount,
 		BytesCount:    state.BytesCount,
 		Duration:      state.Duration.Milliseconds(),
-		Status:        agentapi.ZoneTransfer_XfrStatus(state.Status),
+		Status:        state.Status.String(),
 		Message:       state.Message,
 	}
 	if !state.StartTime.IsZero() {

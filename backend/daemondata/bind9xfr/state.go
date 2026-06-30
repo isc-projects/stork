@@ -1,28 +1,34 @@
 package bind9xfr
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
+
+var _ fmt.Stringer = (*Status)(nil)
 
 // The zone transfer status type.
-type Status int32
+type Status string
 
 const (
-	// This is a default status indicating that the parsed log message was unrecognized
-	// and could not be used to determine the actual zone transfer status. Messages with
-	// this status are discarded.
-	StatusUnknown Status = iota
 	// The zone transfer has started.
-	StatusStarted
+	StatusStarted Status = "started"
 	// The incoming zone transfer has started on the secondary server, and the last
 	// log message indicated that the secondary server successfully connected to the
 	// primary server.
-	StatusConnected
+	StatusConnected Status = "connected"
 	// The zone transfer has completed.
-	StatusCompleted
+	StatusCompleted Status = "completed"
 	// The last received log message neither marks the beginning nor the end of the zone
 	// transfer. It is typically a message received during the zone transfer indicating
 	// some kind of problem.
-	StatusMessage
+	StatusMessage Status = "message"
 )
+
+// Returns the string representation of the status.
+func (s Status) String() string {
+	return string(s)
+}
 
 // A time format used in the parsed log messages.
 type TimeFormat int

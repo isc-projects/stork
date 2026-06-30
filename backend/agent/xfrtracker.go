@@ -561,7 +561,7 @@ func parseTransferLogLine(logLine string) *bind9xfr.State {
 			}
 		}
 	}
-	if state.ZoneName == "" || state.Status == bind9xfr.StatusUnknown || (state.Status == bind9xfr.StatusConnected && state.Server == "") {
+	if state.ZoneName == "" || state.Status == "" || (state.Status == bind9xfr.StatusConnected && state.Server == "") {
 		// Zone name and status are required. If they are not set, the log message is
 		// malformed or not related to a zone transfer.
 		return nil

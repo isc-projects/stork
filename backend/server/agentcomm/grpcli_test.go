@@ -3135,7 +3135,7 @@ func TestReceiveZoneTransfers(t *testing.T) {
 				RecordsCount:  xfr.RecordsCount,
 				BytesCount:    xfr.BytesCount,
 				Duration:      xfr.Duration.Milliseconds(),
-				Status:        agentapi.ZoneTransfer_XfrStatus(xfr.Status),
+				Status:        xfr.Status.String(),
 				Message:       xfr.Message,
 			},
 		}

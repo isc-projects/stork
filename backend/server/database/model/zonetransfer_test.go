@@ -324,3 +324,44 @@ func TestAddOrUpdateZoneTransfersOverrideDataMismatch(t *testing.T) {
 		})
 	}
 }
+
+// Test that zone transfer status string is validated on the database side
+// against permitted values.
+func TestAddOrUpdateZoneTransferStateInvalidStatus(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	machine := &Machine{
+		Address:   "127.0.0.1",
+		AgentPort: 8080,
+	}
+	err := AddMachine(db, machine)
+	require.NoError(t, err)
+
+	daemon := &Daemon{
+		MachineID: machine.ID,
+		AccessPoints: []*AccessPoint{
+			{
+				Type:    AccessPointControl,
+				Address: "127.0.0.1",
+				Port:    8080,
+			},
+		},
+	}
+	err = AddDaemon(db, daemon)
+	require.NoError(t, err)
+
+	// Add a zone transfer state with an invalid status.
+	zoneTransfer := &ZoneTransferState{
+		DaemonID:  daemon.ID,
+		ViewName:  "_default",
+		ZoneName:  "good.example.org",
+		Client:    "127.0.0.1",
+		Status:    "invalid",
+		StartTime: time.Date(2026, 4, 16, 10, 41, 27, 71000, time.UTC),
+	}
+
+	// It should fail with a constraint violation error.
+	err = AddOrUpdateZoneTransferState(db, zoneTransfer)
+	require.ErrorContains(t, err, "zone_transfer_state_status_check")
+}
