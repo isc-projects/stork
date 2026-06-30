@@ -41,14 +41,15 @@ func init() {
 			CREATE INDEX IF NOT EXISTS machine_network_interface_ip_address_btree_idx
 				ON public.machine_network_interface_ip_address USING btree (ip_address);
 
-			-- Create GiST index on IP address to speed up queries for machines by IP address.
-			CREATE INDEX IF NOT EXISTS machine_network_interface_ip_address_gist_idx
-				ON public.machine_network_interface_ip_address USING gist (ip_address inet_ops);
+			-- Create B-tree index on host part of the IP address to speed up queries for
+			-- machines by IP address excluding the prefix length.
+			CREATE INDEX IF NOT EXISTS machine_network_interface_host_ip_address_btree_idx
+				ON public.machine_network_interface_ip_address USING btree (host(ip_address));
 		`)
 		return err
 	}, func(db migrations.DB) error {
 		_, err := db.Exec(`
-			DROP INDEX IF EXISTS machine_network_interface_ip_address_gist_idx;
+			DROP INDEX IF EXISTS machine_network_interface_host_ip_address_btree_idx;
 			DROP INDEX IF EXISTS machine_network_interface_ip_address_btree_idx;
 			DROP TABLE IF EXISTS public.machine_network_interface_ip_address;
 			DROP TABLE IF EXISTS public.machine_network_interface;

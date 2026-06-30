@@ -336,6 +336,40 @@ func TestGetMachinesByNetworkInterfaceIPAddressWithPrefix(t *testing.T) {
 	}
 }
 
+// Test that when the IP address stored in the database includes the prefix length,
+// and the query has an IP address that is contained within the prefix but the host
+// does not match, the machine is not returned.
+func TestGetMachinesByNetworkInterfaceIPAddressNonMatchingHost(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Create a machine with a network interface and an IP address with a prefix.
+	m := &Machine{
+		Address:   "localhost",
+		AgentPort: 8080,
+	}
+
+	err := AddMachine(db, m)
+	require.NoError(t, err)
+	require.NotEqual(t, 0, m.ID)
+
+	// Insert an IP address with a prefix.
+	err = UpsertMachineNetworkInterfaces(db, m.ID, MachineNetworkInterface{
+		Name:            "eth0",
+		Flags:           uint32(net.FlagUp),
+		HardwareAddress: []byte{1, 2, 3, 4, 5, 6},
+		IPAddresses: []MachineNetworkInterfaceIPAddress{
+			{IPAddress: "192.168.1.1/24"},
+		},
+	})
+	require.NoError(t, err)
+
+	// Get machine by IP address with non-matching host.
+	machines, err := GetMachinesByNetworkInterfaceIPAddress(db, "192.168.1.2", MachineRelationNetworkInterfacesIPAddresses)
+	require.NoError(t, err)
+	require.Empty(t, machines)
+}
+
 // Test that inserting a network interface with no IP addresses works correctly.
 func TestUpsertMachineInterfaceHasNoIPAddresses(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
@@ -478,10 +512,13 @@ func TestUpsertMachineInterfaceHasNoIPAddresses(t *testing.T) {
 // The btree/host and gist indexes perform similarly, while the spgist
 // index is significantly slower. The gist index in our test case
 // performed significantly better for gist index in the case of 65535
-// IP addresses. Based on these results, we have decided to use the gist
-// index for the IP address column, as it is more flexible than the
-// btree/host index and may perform better for a large number of IP
-// addresses.
+// IP addresses.
+//
+// The main issue with the gist and spgist indexes are that they support
+// containment operators, but they are not useful in cases when we want
+// to match the exact IP address excluding the prefix length. This is
+// only possible with the btree/host index. The gist index can be added
+// later if we need to query by networks containing specific IP address.
 func BenchmarkGetMachinesByNetworkInterfaceIPAddress(b *testing.B) {
 	// Each test case creates the specified number of IP addresses.
 	tests := []int{10, 100, 1000, 10000, 20000, 40000, 65535}

@@ -173,7 +173,7 @@ func GetMachinesByNetworkInterfaceIPAddress(db *pg.DB, ipAddress string, relatio
 		JoinOn("machine.id = mni.machine_id").
 		Join("JOIN machine_network_interface_ip_address AS ip").
 		JoinOn("ip.machine_network_interface_id = mni.id").
-		Where("?::inet <<= ip.ip_address", ipAddress)
+		Where("host(ip.ip_address) = host(?::inet)", ipAddress)
 
 	for _, relation := range relations {
 		q = q.Relation(string(relation))
