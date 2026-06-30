@@ -92,6 +92,10 @@ export class ServerDataService {
      * @returns Group names or unknown string if no group is found.
      */
     public getGroupNames(groupIDs: number[], groupItems: Group[]): string {
+        if (!groupIDs?.length || !groupItems?.length) {
+            return 'unknown'
+        }
+
         const groupNames: string[] = []
         for (const grp of groupItems) {
             if (groupIDs.includes(grp.id)) {
@@ -102,6 +106,7 @@ export class ServerDataService {
         if (groupNames.length > 0) {
             return groupNames.join(', ')
         }
+
         return 'unknown'
     }
 
