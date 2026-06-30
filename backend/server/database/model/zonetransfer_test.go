@@ -63,7 +63,7 @@ func TestGetZoneTransferStatesByPage(t *testing.T) {
 			ClientMachineID: machine.ID,
 			ServerMachineID: machine2.ID,
 		}
-		err = AddorUpdateZoneTransferState(db, zoneTransfer)
+		err = AddOrUpdateZoneTransferState(db, zoneTransfer)
 		require.NoError(t, err)
 	}
 
@@ -163,7 +163,7 @@ func TestAddOrUpdateZoneTransfersOverrideStartedByCompleted(t *testing.T) {
 	}
 	// Add them to the database sequentially.
 	for _, zoneTransfer := range []ZoneTransferState{*started, *completed} {
-		err = AddorUpdateZoneTransferState(db, &zoneTransfer)
+		err = AddOrUpdateZoneTransferState(db, &zoneTransfer)
 		require.NoError(t, err)
 	}
 
@@ -311,7 +311,7 @@ func TestAddOrUpdateZoneTransfersOverrideDataMismatch(t *testing.T) {
 
 			for _, zoneTransfer := range []ZoneTransferState{started, completed} {
 				// Add started and completed zone transfer state sequentially.
-				err = AddorUpdateZoneTransferState(db, &zoneTransfer)
+				err = AddOrUpdateZoneTransferState(db, &zoneTransfer)
 				require.NoError(t, err)
 			}
 

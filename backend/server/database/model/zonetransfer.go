@@ -70,7 +70,7 @@ func addOrUpdateZoneTransferState(dbi pg.DBI, zoneTransferState *ZoneTransferSta
 // mark it completed, and update the related statistics. The function creates a new
 // transaction if the database is not already in a transaction. Otherwise, it uses
 // the existing transaction.
-func AddorUpdateZoneTransferState(dbi pg.DBI, zoneTransferState *ZoneTransferState) error {
+func AddOrUpdateZoneTransferState(dbi pg.DBI, zoneTransferState *ZoneTransferState) error {
 	if db, ok := dbi.(*pg.DB); ok {
 		return db.RunInTransaction(context.Background(), func(tx *pg.Tx) error {
 			return addOrUpdateZoneTransferState(tx, zoneTransferState)
