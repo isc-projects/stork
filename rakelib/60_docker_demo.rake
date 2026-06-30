@@ -1,6 +1,68 @@
 # Demo
 # Run the demo containers in Docker
 
+# Displays the hint message with recommended content of the /etc/hosts file
+# to handle the Docker hostname resolving correctly.
+# Accepts list of all docker-compose files
+# Returns False if any hostname is unknown.
+def check_hosts_and_print_hint(compose_files)
+    require "yaml"
+
+    # List all hostnames of the services that contain Stork Agent.
+    # We read the parsed config to resolve the 'extends' statements.
+    cmd = [*DOCKER_COMPOSE]
+    compose_files.each do |f|
+        cmd.append "-f", f
+    end
+    cmd.append "config"
+
+    stdout, stderr, status = Open3.capture3 *cmd
+    if status != 0
+        puts stdout, stderr, status
+        fail
+    end
+
+    hostnames = []
+    compose = YAML.load(stdout)
+    compose["services"].each do |name, service|
+        # Ignore non-agent services
+        if !name.start_with? "agent"
+            next
+        end
+        # Default hostname
+        hostname = name
+        # Custom hostname
+        if service.key? "hostname"
+            hostname = service["hostname"]
+        end
+        hostnames.append hostname
+    end
+
+    # List all unknown hostnames
+    unknown_hostnames = []
+    hostnames.each do |h|
+        _, _, status = Open3.capture3 "ping", "-c", "1", h
+        if status != 0
+            unknown_hostnames.append h
+        end
+    end
+
+    # Print message
+    if !unknown_hostnames.empty?
+        puts "Some Docker hostnames cannot be resolved."
+        puts "You need to append the below entries to your /etc/hosts file."
+        puts "They redirect to localhost because the main docker-compose network uses the bridge mode."
+        puts "--- Start /etc/hosts content ---"
+        unknown_hostnames.each do |h|
+            print "127.0.0.1", "\t", h, "\n"
+        end
+        puts "--- End /etc/hosts content ---"
+    end
+
+    # OK - all hostnames are known
+    return unknown_hostnames.empty?
+end
+
 namespace :demo do
     ALL_DEMO_COMPOSE_FILES = FileList["docker/docker-compose.yaml"]
 
