@@ -174,4 +174,27 @@ describe('ServerDataService', () => {
         const noName = service.getGroupNames([-1], systemGroups)
         expect(noName).toEqual('unknown')
     })
+
+    it('should return unknown when getting group names for undefined or empty parameters', () => {
+        const systemGroups = [
+            { description: 'This group of users can access all system components.', id: 1, name: 'super-admin' },
+            { description: 'This group of users can do everything except manage user accounts.', id: 2, name: 'admin' },
+            {
+                description:
+                    'This group of users can only have read access to system components and APIs. Users that belong to this group cannot perform Create, Update nor Delete actions.',
+                id: 3,
+                name: 'read-only',
+            },
+        ]
+        const res1 = service.getGroupNames(undefined, systemGroups)
+        const res2 = service.getGroupNames(undefined, undefined)
+        const res3 = service.getGroupNames([-1, -2], undefined)
+        const res4 = service.getGroupNames([], systemGroups)
+        const res5 = service.getGroupNames([1], [])
+        expect(res1).toEqual('unknown')
+        expect(res2).toEqual('unknown')
+        expect(res3).toEqual('unknown')
+        expect(res4).toEqual('unknown')
+        expect(res5).toEqual('unknown')
+    })
 })
