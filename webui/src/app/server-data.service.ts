@@ -85,13 +85,13 @@ export class ServerDataService {
     }
 
     /**
-     * Get names of the system groups fetched from the database indicated by group IDs.
+     * Get names of the system groups fetched from the database indicated by group IDs as string.
      *
      * @param groupIDs Identifiers of the system groups that user belongs to.
      * @param groupItems List of all groups returned by the server.
-     * @returns Group names or unknown string if no group is found.
+     * @returns Comma-separated group names as string or `unknown` string if no group is found.
      */
-    public getGroupNames(groupIDs: number[], groupItems: Group[]): string {
+    public getGroupNamesAsString(groupIDs: number[], groupItems: Group[]): string {
         if (!groupIDs?.length || !groupItems?.length) {
             return 'unknown'
         }

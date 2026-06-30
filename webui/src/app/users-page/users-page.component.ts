@@ -233,7 +233,7 @@ export class UsersPageComponent implements OnInit, OnDestroy {
      * @returns comma separated list of group names
      */
     public getGroupNames(groupIDs: number[]): string {
-        return this.serverData.getGroupNames(groupIDs, this.groups)
+        return this.serverData.getGroupNamesAsString(groupIDs, this.groups)
     }
 
     /**

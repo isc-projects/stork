@@ -49,7 +49,7 @@ export class ProfilePageComponent implements OnInit, OnDestroy {
                 this.groups = data.items
                 if (!!this.currentUser?.groups?.length) {
                     // Set the group names to be displayed for the current user.
-                    this.groupNames = this.serverData.getGroupNames(this.currentUser.groups, this.groups)
+                    this.groupNames = this.serverData.getGroupNamesAsString(this.currentUser.groups, this.groups)
                 }
             }
         })

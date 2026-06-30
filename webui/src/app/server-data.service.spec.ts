@@ -152,9 +152,9 @@ describe('ServerDataService', () => {
                 name: 'read-only',
             },
         ]
-        const allNames = service.getGroupNames([1, 2, 3, 4], systemGroups)
+        const allNames = service.getGroupNamesAsString([1, 2, 3, 4], systemGroups)
         expect(allNames).toEqual('super-admin, admin, read-only')
-        const oneName = service.getGroupNames([2], systemGroups)
+        const oneName = service.getGroupNamesAsString([2], systemGroups)
         expect(oneName).toEqual('admin')
     })
 
@@ -169,9 +169,9 @@ describe('ServerDataService', () => {
                 name: 'read-only',
             },
         ]
-        const noNames = service.getGroupNames([-1, -2], systemGroups)
+        const noNames = service.getGroupNamesAsString([-1, -2], systemGroups)
         expect(noNames).toEqual('unknown')
-        const noName = service.getGroupNames([-1], systemGroups)
+        const noName = service.getGroupNamesAsString([-1], systemGroups)
         expect(noName).toEqual('unknown')
     })
 
@@ -186,11 +186,11 @@ describe('ServerDataService', () => {
                 name: 'read-only',
             },
         ]
-        const res1 = service.getGroupNames(undefined, systemGroups)
-        const res2 = service.getGroupNames(undefined, undefined)
-        const res3 = service.getGroupNames([-1, -2], undefined)
-        const res4 = service.getGroupNames([], systemGroups)
-        const res5 = service.getGroupNames([1], [])
+        const res1 = service.getGroupNamesAsString(undefined, systemGroups)
+        const res2 = service.getGroupNamesAsString(undefined, undefined)
+        const res3 = service.getGroupNamesAsString([-1, -2], undefined)
+        const res4 = service.getGroupNamesAsString([], systemGroups)
+        const res5 = service.getGroupNamesAsString([1], [])
         expect(res1).toEqual('unknown')
         expect(res2).toEqual('unknown')
         expect(res3).toEqual('unknown')
