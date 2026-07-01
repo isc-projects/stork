@@ -135,6 +135,6 @@ bootstrapApplication(AppComponent, {
             },
         }),
         provideAnimations(),
-        provideZoneChangeDetection({ eventCoalescing: true }),
+        provideZoneChangeDetection(),
     ],
 }).catch((err) => console.error(err))

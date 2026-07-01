@@ -16,5 +16,5 @@ const configureTestingModule = TestBed.configureTestingModule.bind(TestBed)
 TestBed.configureTestingModule = (moduleDef: TestModuleMetadata) =>
     configureTestingModule({
         ...moduleDef,
-        providers: [provideZoneChangeDetection({ eventCoalescing: true }), ...(moduleDef.providers ?? [])],
+        providers: [provideZoneChangeDetection(), ...(moduleDef.providers ?? [])],
     })
