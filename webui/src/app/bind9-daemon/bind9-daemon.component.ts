@@ -2,7 +2,7 @@ import { Component, Input } from '@angular/core'
 import { Bind9Daemon, Bind9DaemonView } from '../backend'
 import { VersionStatusComponent } from '../version-status/version-status.component'
 import { RouterLink } from '@angular/router'
-import { NgFor, NgIf } from '@angular/common'
+
 import { Tooltip } from 'primeng/tooltip'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
@@ -21,8 +21,6 @@ import { Bind9DaemonControlsComponent } from '../bind9-daemon-controls/bind9-dae
     imports: [
         VersionStatusComponent,
         RouterLink,
-        NgFor,
-        NgIf,
         Tooltip,
         LocaltimePipe,
         PlaceholderPipe,

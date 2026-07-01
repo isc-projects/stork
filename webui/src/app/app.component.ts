@@ -12,7 +12,7 @@ import { ServerDataService } from './server-data.service'
 import { Settings, User } from './backend'
 import { ThemeService } from './theme.service'
 import { Severity, VersionService } from './version.service'
-import { NgIf, AsyncPipe } from '@angular/common'
+import { AsyncPipe } from '@angular/common'
 import { Menubar } from 'primeng/menubar'
 import { Tooltip } from 'primeng/tooltip'
 import { Ripple } from 'primeng/ripple'
@@ -29,7 +29,6 @@ import { Toast } from 'primeng/toast'
     templateUrl: './app.component.html',
     styleUrls: ['./app.component.sass'],
     imports: [
-        NgIf,
         Menubar,
         RouterLink,
         Tooltip,

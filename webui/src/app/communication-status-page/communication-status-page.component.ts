@@ -4,7 +4,7 @@ import { lastValueFrom } from 'rxjs'
 import { getErrorMessage } from '../utils'
 import { MessageService } from 'primeng/api'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
-import { NgIf } from '@angular/common'
+
 import { CommunicationStatusTreeComponent } from '../communication-status-tree/communication-status-tree.component'
 import { Button } from 'primeng/button'
 import { ProgressSpinner } from 'primeng/progressspinner'
@@ -22,7 +22,7 @@ import { ProgressSpinner } from 'primeng/progressspinner'
     selector: 'app-communication-status-page',
     templateUrl: './communication-status-page.component.html',
     styleUrl: './communication-status-page.component.sass',
-    imports: [BreadcrumbsComponent, NgIf, CommunicationStatusTreeComponent, Button, ProgressSpinner],
+    imports: [BreadcrumbsComponent, CommunicationStatusTreeComponent, Button, ProgressSpinner],
 })
 export class CommunicationStatusPageComponent implements OnInit {
     /**

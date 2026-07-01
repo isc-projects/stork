@@ -7,10 +7,15 @@
         </p>
     </div>
 </app-breadcrumbs>
-<div *ngIf="!loading; else loadingBlock">
-    <app-communication-status-tree *ngIf="!loading" [daemons]="daemons"></app-communication-status-tree>
-    <p-button *ngIf="!loading" label="Reload" styleClass="mt-3" (onClick)="onReload()"></p-button>
-</div>
-<ng-template #loadingBlock>
+@if (!loading) {
+    <div>
+        @if (!loading) {
+            <app-communication-status-tree [daemons]="daemons"></app-communication-status-tree>
+        }
+        @if (!loading) {
+            <p-button label="Reload" styleClass="mt-3" (onClick)="onReload()"></p-button>
+        }
+    </div>
+} @else {
     <p-progressSpinner></p-progressSpinner>
-</ng-template>
+}

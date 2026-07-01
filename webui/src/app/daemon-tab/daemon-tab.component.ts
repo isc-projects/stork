@@ -9,7 +9,7 @@ import { Button } from 'primeng/button'
 import { Tooltip } from 'primeng/tooltip'
 import { isKeaDaemon } from '../version.service'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
-import { NgIf } from '@angular/common'
+
 import { ConfirmationService, MessageService } from 'primeng/api'
 import { last } from 'rxjs'
 import { ManagedAccessDirective } from '../managed-access.directive'
@@ -19,7 +19,6 @@ import { ManagedAccessDirective } from '../managed-access.directive'
     templateUrl: './daemon-tab.component.html',
     styleUrl: './daemon-tab.component.sass',
     imports: [
-        NgIf,
         Tooltip,
         Button,
         KeaDaemonComponent,

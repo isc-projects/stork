@@ -20,7 +20,7 @@ import { ConfirmDialog } from 'primeng/confirmdialog'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { Button } from 'primeng/button'
 import { ManagedAccessDirective } from '../managed-access.directive'
-import { NgIf } from '@angular/common'
+
 import { FloatLabel } from 'primeng/floatlabel'
 import { MultiSelect } from 'primeng/multiselect'
 import { FormsModule } from '@angular/forms'
@@ -57,7 +57,6 @@ function setDaemonStatusErred(daemon: AnyDaemon & { statusErred?: boolean }) {
         ManagedAccessDirective,
         Menu,
         TableModule,
-        NgIf,
         PrimeTemplate,
         FloatLabel,
         MultiSelect,

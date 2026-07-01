@@ -5,15 +5,21 @@
             <div class="font-semibold ml-2">
                 {{ getOptionTitle(node) }}
             </div>
-            <div *ngIf="node.data.alwaysSend" class="ml-2">
-                <p-tag>always sent</p-tag>
-            </div>
-            <div *ngIf="isEmpty(node)" class="ml-2">
-                <p-tag>empty option</p-tag>
-            </div>
-            <div *ngIf="!currentLevelOnlyMode && optionNodes.length >= 2 && node.data.level.length > 0" class="ml-2">
-                <p-tag [severity]="getLevelTagSeverity(node)">{{ node.data.level }}</p-tag>
-            </div>
+            @if (node.data.alwaysSend) {
+                <div class="ml-2">
+                    <p-tag>always sent</p-tag>
+                </div>
+            }
+            @if (isEmpty(node)) {
+                <div class="ml-2">
+                    <p-tag>empty option</p-tag>
+                </div>
+            }
+            @if (!currentLevelOnlyMode && optionNodes.length >= 2 && node.data.level.length > 0) {
+                <div class="ml-2">
+                    <p-tag [severity]="getLevelTagSeverity(node)">{{ node.data.level }}</p-tag>
+                </div>
+            }
             <div>
                 <app-help-tip subject="DHCP Option View">
                     Option fields and suboptions are displayed for the option {{ node.data.code }}. Hover the cursor
@@ -31,9 +37,11 @@
         <div class="flex align-items-center p-1">
             <i class="tree-icon fa fa-cog"></i>
             <div class="font-semibold ml-2">Suboption {{ node.data.code }}</div>
-            <div *ngIf="isEmpty(node)" class="ml-2">
-                <p-tag>empty suboption</p-tag>
-            </div>
+            @if (isEmpty(node)) {
+                <div class="ml-2">
+                    <p-tag>empty suboption</p-tag>
+                </div>
+            }
         </div>
     </ng-template>
     <ng-template let-node pTemplate="field">
@@ -45,7 +53,7 @@
         </div>
     </ng-template>
 </p-tree>
-<ng-container *ngIf="optionNodes.length >= 2 && combinedOptionNodes.length > 0">
+@if (optionNodes.length >= 2 && combinedOptionNodes.length > 0) {
     <p-divider type="dashed"></p-divider>
     <div class="flex align-items-center">
         <p-checkbox
@@ -57,4 +65,4 @@
         ></p-checkbox>
         <span class="ml-2">Show only {{ levels[0] }} options .</span>
     </div>
-</ng-container>
+}

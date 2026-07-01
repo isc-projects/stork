@@ -8,7 +8,7 @@ import { ConfirmDialog } from 'primeng/confirmdialog'
 import { Button } from 'primeng/button'
 import { ManagedAccessDirective } from '../managed-access.directive'
 import { RouterLink } from '@angular/router'
-import { NgIf } from '@angular/common'
+
 import { Tag } from 'primeng/tag'
 import { Tooltip } from 'primeng/tooltip'
 import { ProgressBar } from 'primeng/progressbar'
@@ -30,7 +30,6 @@ import { DurationPipe } from '../pipes/duration.pipe'
         ManagedAccessDirective,
         TableModule,
         RouterLink,
-        NgIf,
         Tag,
         Tooltip,
         ProgressBar,

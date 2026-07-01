@@ -3,7 +3,7 @@ import { AnyDaemon, Bind9Daemon } from '../backend'
 import { PrimeTemplate, TreeNode } from 'primeng/api'
 import { Tree } from 'primeng/tree'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
-import { NgIf } from '@angular/common'
+
 import { Tooltip } from 'primeng/tooltip'
 
 /**
@@ -59,7 +59,7 @@ interface CommunicationStatusNodeData {
     selector: 'app-communication-status-tree',
     templateUrl: './communication-status-tree.component.html',
     styleUrl: './communication-status-tree.component.sass',
-    imports: [Tree, PrimeTemplate, EntityLinkComponent, NgIf, Tooltip],
+    imports: [Tree, PrimeTemplate, EntityLinkComponent, Tooltip],
 })
 export class CommunicationStatusTreeComponent implements OnInit {
     /**

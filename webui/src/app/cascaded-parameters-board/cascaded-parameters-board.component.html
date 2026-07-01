@@ -1,63 +1,72 @@
-<p-table
-    *ngIf="rows.length > 0; else noRowsBlock"
-    [value]="rows"
-    dataKey="name"
-    styleClass="cascaded-parameters-table max-w-100vw"
->
-    <ng-template #header>
-        <tr>
-            <th *ngIf="showCascaded" class="w-3rem"></th>
-            <th></th>
-            <th *ngFor="let dataSet of data">
-                {{ dataSet.name }}
-            </th>
-        </tr>
-    </ng-template>
-    <ng-template #body let-row let-expanded="expanded">
-        <tr class="text-blue-500">
-            <td *ngIf="showCascaded">
-                <p-button
-                    [pRowToggler]="row"
-                    class="mr-2"
-                    [text]="true"
-                    [rounded]="true"
-                    severity="secondary"
-                    [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
-                ></p-button>
-            </td>
-            <td>
-                <span>{{ row.name }}</span>
-            </td>
-            <td *ngFor="let parameter of row.parameters">
-                <app-parameter-view [parameter]="parameter.effective"></app-parameter-view>
-            </td>
-        </tr>
-    </ng-template>
-    <ng-template #expandedrow let-row>
-        <tr *ngFor="let level of levels; let i = index">
-            <td></td>
-            <td class="pl-3 sm:pl-6">
-                <span>
-                    {{ level }}
-                </span>
-            </td>
-            <td *ngFor="let parameter of row.parameters; let j = index">
-                <app-parameter-view [parameter]="row.parameters[j].values[i]"></app-parameter-view>
-                <span
-                    *ngIf="level === row.parameters[j].level"
-                    class="fa-solid fa-check ml-2 sm:ml-3 text-green-600"
-                    pTooltip="Marks an effective value."
-                ></span>
-            </td>
-        </tr>
-    </ng-template>
-</p-table>
-<ng-template #noRowsBlock>
+@if (rows.length > 0) {
+    <p-table [value]="rows" dataKey="name" styleClass="cascaded-parameters-table max-w-100vw">
+        <ng-template #header>
+            <tr>
+                @if (showCascaded) {
+                    <th class="w-3rem"></th>
+                }
+                <th></th>
+                @for (dataSet of data; track dataSet) {
+                    <th>
+                        {{ dataSet.name }}
+                    </th>
+                }
+            </tr>
+        </ng-template>
+        <ng-template #body let-row let-expanded="expanded">
+            <tr class="text-blue-500">
+                @if (showCascaded) {
+                    <td>
+                        <p-button
+                            [pRowToggler]="row"
+                            class="mr-2"
+                            [text]="true"
+                            [rounded]="true"
+                            severity="secondary"
+                            [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
+                        ></p-button>
+                    </td>
+                }
+                <td>
+                    <span>{{ row.name }}</span>
+                </td>
+                @for (parameter of row.parameters; track parameter) {
+                    <td>
+                        <app-parameter-view [parameter]="parameter.effective"></app-parameter-view>
+                    </td>
+                }
+            </tr>
+        </ng-template>
+        <ng-template #expandedrow let-row>
+            @for (level of levels; track level; let i = $index) {
+                <tr>
+                    <td></td>
+                    <td class="pl-3 sm:pl-6">
+                        <span>
+                            {{ level }}
+                        </span>
+                    </td>
+                    @for (parameter of row.parameters; track parameter; let j = $index) {
+                        <td>
+                            <app-parameter-view [parameter]="row.parameters[j].values[i]"></app-parameter-view>
+                            @if (level === row.parameters[j].level) {
+                                <span
+                                    class="fa-solid fa-check ml-2 sm:ml-3 text-green-600"
+                                    pTooltip="Marks an effective value."
+                                ></span>
+                            }
+                        </td>
+                    }
+                </tr>
+            }
+        </ng-template>
+    </p-table>
+} @else {
     <!--
-     This small margin is necessary to have the empty placeholder at the same
-     level and the same height as in the p-tree component. It improves the look
-     when this empty component and the empty p-tree component are displayed
-     side-by-side.
-    -->
+  This small margin is necessary to have the empty placeholder at the same
+  level and the same height as in the p-tree component. It improves the look
+  when this empty component and the empty p-tree component are displayed
+  side-by-side.
+  -->
     <span class="block mt-1 mb-1">No parameters configured.</span>
-</ng-template>
+}

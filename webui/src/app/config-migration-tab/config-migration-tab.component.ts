@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, Output, inject } from '@angular/core'
 import { MigrationError, MigrationStatus } from '../backend'
 import { AuthService } from '../auth.service'
-import { NgIf, NgSwitch, NgSwitchCase, NgSwitchDefault } from '@angular/common'
+
 import { Fieldset } from 'primeng/fieldset'
 import { Tag } from 'primeng/tag'
 import { ProgressBar } from 'primeng/progressbar'
@@ -20,7 +20,6 @@ import { DurationPipe } from '../pipes/duration.pipe'
     templateUrl: './config-migration-tab.component.html',
     styleUrl: './config-migration-tab.component.sass',
     imports: [
-        NgIf,
         Fieldset,
         Tag,
         ProgressBar,
@@ -28,9 +27,6 @@ import { DurationPipe } from '../pipes/duration.pipe'
         Button,
         ManagedAccessDirective,
         TableModule,
-        NgSwitch,
-        NgSwitchCase,
-        NgSwitchDefault,
         LocaltimePipe,
         DurationPipe,
     ],

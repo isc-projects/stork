@@ -1,35 +1,43 @@
-<div class="mx-1 flex flex-column" *ngIf="daemon()">
-    <div class="my-4">
-        <div class="flex flex-1 justify-content-between flex-wrap gap-3 align-items-center">
-            <div class="flex align-items-center gap-3">
-                <div class="text-xl text-primary">
-                    <i class="fa fa-server pr-2"></i>
-                    Daemon
-                    <app-entity-link [showEntityName]="false" entity="daemon" [attrs]="daemon()"></app-entity-link>
-                    <i class="{{ daemonStatusIconClass() }} text-xl" pTooltip="{{ daemonStatusIconTooltip() }}"></i>
-                    on machine
-                    <app-entity-link [showEntityName]="false" [attrs]="daemon()" entity="machine"></app-entity-link>
+@if (daemon()) {
+    <div class="mx-1 flex flex-column">
+        <div class="my-4">
+            <div class="flex flex-1 justify-content-between flex-wrap gap-3 align-items-center">
+                <div class="flex align-items-center gap-3">
+                    <div class="text-xl text-primary">
+                        <i class="fa fa-server pr-2"></i>
+                        Daemon
+                        <app-entity-link [showEntityName]="false" entity="daemon" [attrs]="daemon()"></app-entity-link>
+                        <i class="{{ daemonStatusIconClass() }} text-xl" pTooltip="{{ daemonStatusIconTooltip() }}"></i>
+                        on machine
+                        <app-entity-link [showEntityName]="false" [attrs]="daemon()" entity="machine"></app-entity-link>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <p-button
+                        label="Refresh"
+                        icon="pi pi-refresh"
+                        (onClick)="refresh()"
+                        [disabled]="daemon().id === undefined"
+                    ></p-button>
+                    <p-button
+                        label="Delete"
+                        severity="danger"
+                        icon="pi pi-trash"
+                        (onClick)="confirmDelete()"
+                        appAccessEntity="daemon"
+                        appAccessType="delete"
+                    ></p-button>
                 </div>
             </div>
-            <div class="flex gap-2">
-                <p-button
-                    label="Refresh"
-                    icon="pi pi-refresh"
-                    (onClick)="refresh()"
-                    [disabled]="daemon().id === undefined"
-                ></p-button>
-                <p-button
-                    label="Delete"
-                    severity="danger"
-                    icon="pi pi-trash"
-                    (onClick)="confirmDelete()"
-                    appAccessEntity="daemon"
-                    appAccessType="delete"
-                ></p-button>
-            </div>
         </div>
+        @if (isKeaDaemon()) {
+            <app-kea-daemon [daemon]="daemon()"></app-kea-daemon>
+        }
+        @if (daemon().name === 'named') {
+            <app-bind9-daemon [daemon]="daemon()"></app-bind9-daemon>
+        }
+        @if (daemon().name === 'pdns') {
+            <app-pdns-daemon [daemon]="daemon()"></app-pdns-daemon>
+        }
     </div>
-    <app-kea-daemon *ngIf="isKeaDaemon()" [daemon]="daemon()"></app-kea-daemon>
-    <app-bind9-daemon *ngIf="daemon().name === 'named'" [daemon]="daemon()"></app-bind9-daemon>
-    <app-pdns-daemon *ngIf="daemon().name === 'pdns'" [daemon]="daemon()"></app-pdns-daemon>
-</div>
+}

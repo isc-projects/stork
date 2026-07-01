@@ -5,7 +5,7 @@ import { Popover } from 'primeng/popover'
 import { SearchService } from '../backend/api/api'
 import { FormsModule } from '@angular/forms'
 import { InputText } from 'primeng/inputtext'
-import { NgIf, NgFor } from '@angular/common'
+
 import { RouterLink } from '@angular/router'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { SearchResult } from '../backend'
@@ -20,7 +20,7 @@ const recordTypes = ['subnets', 'sharedNetworks', 'hosts', 'machines', 'daemons'
     selector: 'app-global-search',
     templateUrl: './global-search.component.html',
     styleUrls: ['./global-search.component.sass'],
-    imports: [FormsModule, InputText, Popover, NgIf, NgFor, RouterLink, EntityLinkComponent],
+    imports: [FormsModule, InputText, Popover, RouterLink, EntityLinkComponent],
 })
 export class GlobalSearchComponent implements OnInit {
     protected searchApi = inject(SearchService)

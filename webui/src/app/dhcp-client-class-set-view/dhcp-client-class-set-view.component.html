@@ -1,2 +1,6 @@
-<p-chip *ngFor="let clientClass of clientClasses" label="{{ clientClass }}" styleClass="mr-2"></p-chip>
-<span *ngIf="!(clientClasses?.length > 0)">No client classes configured.</span>
+@for (clientClass of clientClasses; track clientClass) {
+    <p-chip label="{{ clientClass }}" styleClass="mr-2"></p-chip>
+}
+@if (!(clientClasses?.length > 0)) {
+    <span>No client classes configured.</span>
+}

@@ -4,7 +4,7 @@ import { DHCPOption } from '../backend/model/dHCPOption'
 import { DhcpOptionsService } from '../dhcp-options.service'
 import { IPType } from '../iptype'
 import { Tree } from 'primeng/tree'
-import { NgIf } from '@angular/common'
+
 import { Tag } from 'primeng/tag'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { Tooltip } from 'primeng/tooltip'
@@ -51,7 +51,7 @@ export interface OptionFieldNode {
     selector: 'app-dhcp-option-set-view',
     templateUrl: './dhcp-option-set-view.component.html',
     styleUrls: ['./dhcp-option-set-view.component.sass'],
-    imports: [Tree, PrimeTemplate, NgIf, Tag, HelpTipComponent, Tooltip, Divider, Checkbox, FormsModule],
+    imports: [Tree, PrimeTemplate, Tag, HelpTipComponent, Tooltip, Divider, Checkbox, FormsModule],
 })
 export class DhcpOptionSetViewComponent implements OnInit {
     optionsService = inject(DhcpOptionsService)

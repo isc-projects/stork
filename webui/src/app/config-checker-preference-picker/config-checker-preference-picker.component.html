@@ -11,24 +11,32 @@
                 <p>
                     The table lists the available review checkers. Each of them is responsible for analyzing the daemon
                     configuration to detect a particular issue. The table contains the checker states
-                    <span *ngIf="minimal"> and names.</span>
-                    <span *ngIf="!minimal">, names, descriptions, selectors, and triggers.</span>
+                    @if (minimal) {
+                        <span> and names.</span>
+                    }
+                    @if (!minimal) {
+                        <span>, names, descriptions, selectors, and triggers.</span>
+                    }
                 </p>
                 <p>
                     The state indicates whether the checker is enabled or disabled.
-                    <span *ngIf="allowInheritState">
-                        The state may also be inherited from the global settings. In this case, the actual state is
-                        presented in brackets.
-                    </span>
+                    @if (allowInheritState) {
+                        <span>
+                            The state may also be inherited from the global settings. In this case, the actual state is
+                            presented in brackets.
+                        </span>
+                    }
                     The state changes must be confirmed by clicking the Submit button.
                 </p>
-                <p *ngIf="!minimal">
-                    The selectors define the daemon groups where the specific configuration checker runs.
-                </p>
-                <p *ngIf="!minimal">
-                    The triggers designate the condition that fires the checker (e.g. when a configuration or host
-                    reservation change has been detected, manually, etc.).
-                </p>
+                @if (!minimal) {
+                    <p>The selectors define the daemon groups where the specific configuration checker runs.</p>
+                }
+                @if (!minimal) {
+                    <p>
+                        The triggers designate the condition that fires the checker (e.g. when a configuration or host
+                        reservation change has been detected, manually, etc.).
+                    </p>
+                }
             </app-help-tip>
         </div>
     </ng-template>
@@ -69,20 +77,16 @@
             </td>
             <td class="picker__chip-cell picker__selector-column">
                 <div class="chips">
-                    <p-chip
-                        label="{{ selector }}"
-                        icon="{{ getSelectorIcon(selector) }}"
-                        *ngFor="let selector of checker.selectors"
-                    ></p-chip>
+                    @for (selector of checker.selectors; track selector) {
+                        <p-chip label="{{ selector }}" icon="{{ getSelectorIcon(selector) }}"></p-chip>
+                    }
                 </div>
             </td>
             <td class="picker__chip-cell picker__trigger-column">
                 <div class="chips">
-                    <p-chip
-                        label="{{ trigger }}"
-                        icon="{{ getTriggerIcon(trigger) }}"
-                        *ngFor="let trigger of checker.triggers"
-                    ></p-chip>
+                    @for (trigger of checker.triggers; track trigger) {
+                        <p-chip label="{{ trigger }}" icon="{{ getTriggerIcon(trigger) }}"></p-chip>
+                    }
                 </div>
             </td>
         </tr>
@@ -129,17 +133,22 @@
             appAccessType="update"
         ></app-tri-state-checkbox>
         <label class="form-check-label capitalize-first" for="select-{{ checker.name }}">
-            <span *ngIf="state !== 'inherit'">
-                <p-tag
-                    *ngIf="state === 'enabled' || state === 'disabled'"
-                    [value]="state"
-                    [severity]="state === 'enabled' ? 'success' : state === 'disabled' ? 'danger' : 'warn'"
-                    styleClass="capitalize-first"
-                />
-            </span>
-            <span class="picker__state-inherit-status" *ngIf="state === 'inherit'">
-                globally {{ checker.globallyEnabled ? 'enabled' : 'disabled' }}
-            </span>
+            @if (state !== 'inherit') {
+                <span>
+                    @if (state === 'enabled' || state === 'disabled') {
+                        <p-tag
+                            [value]="state"
+                            [severity]="state === 'enabled' ? 'success' : state === 'disabled' ? 'danger' : 'warn'"
+                            styleClass="capitalize-first"
+                        />
+                    }
+                </span>
+            }
+            @if (state === 'inherit') {
+                <span class="picker__state-inherit-status">
+                    globally {{ checker.globallyEnabled ? 'enabled' : 'disabled' }}
+                </span>
+            }
         </label>
     </div>
 </ng-template>

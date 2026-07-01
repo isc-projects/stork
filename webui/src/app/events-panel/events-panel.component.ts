@@ -9,7 +9,7 @@ import { daemonNameToFriendlyName, getErrorMessage } from '../utils'
 import { Daemon, Event, Events, EventSortField, Machine, User } from '../backend'
 import { ServerSentEventsService, SSEFilter } from '../server-sent-events.service'
 import { convertSortingFields } from '../table'
-import { NgIf, NgClass } from '@angular/common'
+import { NgClass } from '@angular/common'
 import { FormsModule } from '@angular/forms'
 import { Button } from 'primeng/button'
 import { ConfirmDialog } from 'primeng/confirmdialog'
@@ -40,7 +40,6 @@ interface DaemonNameOption {
     templateUrl: './events-panel.component.html',
     styleUrls: ['./events-panel.component.sass'],
     imports: [
-        NgIf,
         SelectButton,
         FormsModule,
         Select,

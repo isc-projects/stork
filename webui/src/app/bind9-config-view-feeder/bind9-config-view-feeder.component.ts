@@ -3,7 +3,7 @@ import { Bind9FormattedConfig, ServicesService } from '../backend'
 import { MessageService } from 'primeng/api'
 import { TextFileViewerComponent } from '../text-file-viewer/text-file-viewer.component'
 import { ProgressSpinnerModule } from 'primeng/progressspinner'
-import { CommonModule } from '@angular/common'
+
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { catchError, EMPTY, finalize, Subject, switchMap, takeUntil, tap } from 'rxjs'
 
@@ -12,7 +12,7 @@ import { catchError, EMPTY, finalize, Subject, switchMap, takeUntil, tap } from 
  */
 @Component({
     selector: 'app-bind9-config-view-feeder',
-    imports: [CommonModule, ProgressSpinnerModule, TextFileViewerComponent],
+    imports: [ProgressSpinnerModule, TextFileViewerComponent],
     templateUrl: './bind9-config-view-feeder.component.html',
     styleUrl: './bind9-config-view-feeder.component.sass',
 })

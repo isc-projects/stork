@@ -1,16 +1,19 @@
 <!-- Control is not clicked yet. -->
 <!-- Or control is clicked and key is loading. -->
-<p-button
-    icon="fas fa-eye-slash"
-    [text]="true"
-    severity="secondary"
-    (click)="onAuthenticationKeyRequest()"
-    [loading]="isKeyLoading"
-    *ngIf="!isKeyFetched"
-></p-button>
+@if (!isKeyFetched) {
+    <p-button
+        icon="fas fa-eye-slash"
+        [text]="true"
+        severity="secondary"
+        (click)="onAuthenticationKeyRequest()"
+        [loading]="isKeyLoading"
+    ></p-button>
+}
 <!-- Control is clicked and key is loaded. -->
-<ng-container *ngIf="isKeyFetched && !isKeyEmpty">
+@if (isKeyFetched && !isKeyEmpty) {
     {{ key }}
-</ng-container>
+}
 <!-- Key is loaded but it has no value. -->
-<ng-container *ngIf="isKeyFetched && isKeyEmpty"> (no value) </ng-container>
+@if (isKeyFetched && isKeyEmpty) {
+    (no value)
+}

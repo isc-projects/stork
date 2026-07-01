@@ -1,6 +1,6 @@
 import { Component, Input, inject } from '@angular/core'
 import { ServicesService } from '../backend'
-import { NgIf } from '@angular/common'
+
 import { Button } from 'primeng/button'
 
 /**
@@ -10,7 +10,7 @@ import { Button } from 'primeng/button'
     selector: 'app-access-point-key',
     templateUrl: './access-point-key.component.html',
     styleUrls: ['./access-point-key.component.sass'],
-    imports: [NgIf, Button],
+    imports: [Button],
 })
 export class AccessPointKeyComponent {
     private servicesApi = inject(ServicesService)

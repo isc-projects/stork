@@ -1,5 +1,5 @@
 import { Component, input, Input } from '@angular/core'
-import { NgSwitch, NgClass, NgSwitchCase, NgSwitchDefault, NgIf } from '@angular/common'
+import { NgClass } from '@angular/common'
 import { RouterLink } from '@angular/router'
 import { DaemonNiceNamePipe } from '../pipes/daemon-name.pipe'
 
@@ -17,7 +17,7 @@ import { DaemonNiceNamePipe } from '../pipes/daemon-name.pipe'
     selector: 'app-entity-link',
     templateUrl: './entity-link.component.html',
     styleUrls: ['./entity-link.component.sass'],
-    imports: [NgSwitch, NgIf, NgClass, NgSwitchCase, RouterLink, NgSwitchDefault, DaemonNiceNamePipe],
+    imports: [NgClass, RouterLink, DaemonNiceNamePipe],
 })
 export class EntityLinkComponent {
     /**

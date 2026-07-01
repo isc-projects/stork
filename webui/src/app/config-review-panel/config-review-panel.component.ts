@@ -7,7 +7,7 @@ import { concatMap, delay, map, retryWhen, take } from 'rxjs/operators'
 import { getErrorMessage } from '../utils'
 import { ConfigReport, ConfigReview } from '../backend'
 import { DataView } from 'primeng/dataview'
-import { NgIf, NgFor, NgClass } from '@angular/common'
+import { NgClass } from '@angular/common'
 import { Ripple } from 'primeng/ripple'
 import { ToggleButton } from 'primeng/togglebutton'
 import { FormsModule } from '@angular/forms'
@@ -46,13 +46,11 @@ import { LocaltimePipe } from '../pipes/localtime.pipe'
     styleUrls: ['./config-review-panel.component.sass'],
     imports: [
         DataView,
-        NgIf,
         Ripple,
         ToggleButton,
         FormsModule,
         Button,
         ManagedAccessDirective,
-        NgFor,
         Divider,
         Tag,
         NgClass,

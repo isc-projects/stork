@@ -15,11 +15,13 @@
 >
     <ng-template #header>
         <div class="review-header flex-wrap sm:flex-nowrap">
-            <div id="review-summary-div" *ngIf="review" class="font-normal mt-2 sm:mt-0">
-                <span class="font-bold"> {{ totalIssues }}</span> issue{{ totalIssues !== 1 ? 's' : '' }} found in
-                {{ totalReports }} report{{ totalReports !== 1 ? 's' : '' }} at
-                <span class="font-bold">{{ review.createdAt | localtime }} </span>
-            </div>
+            @if (review) {
+                <div id="review-summary-div" class="font-normal mt-2 sm:mt-0">
+                    <span class="font-bold"> {{ totalIssues }}</span> issue{{ totalIssues !== 1 ? 's' : '' }} found in
+                    {{ totalReports }} report{{ totalReports !== 1 ? 's' : '' }} at
+                    <span class="font-bold">{{ review.createdAt | localtime }} </span>
+                </div>
+            }
             <div id="review-buttons" class="flex-wrap sm:flex-nowrap flex-shrink-1 sm:flex-shrink-0">
                 <p-toggleButton
                     onLabel="Issues only"
@@ -38,19 +40,19 @@
                     icon="fa fa-cog"
                     (click)="selectCheckersPanel.toggle($event)"
                 ></p-button>
-                <p-button
-                    id="review-button"
-                    *ngIf="!refreshFailed; else refreshFailedElse"
-                    label="Run review"
-                    class="mb-2 sm:my-0"
-                    size="small"
-                    icon="fas fa-tasks"
-                    [loading]="busy"
-                    (click)="runReview()"
-                    appAccessEntity="daemon-config-review"
-                    appAccessType="update"
-                ></p-button>
-                <ng-template #refreshFailedElse>
+                @if (!refreshFailed) {
+                    <p-button
+                        id="review-button"
+                        label="Run review"
+                        class="mb-2 sm:my-0"
+                        size="small"
+                        icon="fas fa-tasks"
+                        [loading]="busy"
+                        (click)="runReview()"
+                        appAccessEntity="daemon-config-review"
+                        appAccessType="update"
+                    ></p-button>
+                } @else {
                     <p-button
                         id="refresh-button"
                         label="Refresh reports"
@@ -60,43 +62,45 @@
                         [loading]="busy"
                         (click)="refreshDaemonConfigReports(null)"
                     ></p-button>
-                </ng-template>
+                }
             </div>
         </div>
     </ng-template>
     <ng-template #list let-reports>
-        <div class="w-full" *ngFor="let report of reports">
-            <p-divider styleClass="report-divider" type="solid" align="left">
-                <p-tag [severity]="!report.content ? 'success' : undefined">
-                    {{ report.checker }}
-                </p-tag>
-            </p-divider>
-            <div class="ml-4 mr-4">
-                <span
-                    class="fas text-sm pr-2"
-                    [ngClass]="{
-                        'fa-pencil-alt': !!report.content,
-                        'fa-check-double': !report.content,
-                    }"
-                >
-                </span>
-                <span class="font-italic text-sm text-color">
-                    <app-event-text [text]="report.content ?? 'No issues found.'"></app-event-text>
-                </span>
+        @for (report of reports; track report) {
+            <div class="w-full">
+                <p-divider styleClass="report-divider" type="solid" align="left">
+                    <p-tag [severity]="!report.content ? 'success' : undefined">
+                        {{ report.checker }}
+                    </p-tag>
+                </p-divider>
+                <div class="ml-4 mr-4">
+                    <span
+                        class="fas text-sm pr-2"
+                        [ngClass]="{
+                            'fa-pencil-alt': !!report.content,
+                            'fa-check-double': !report.content,
+                        }"
+                    >
+                    </span>
+                    <span class="font-italic text-sm text-color">
+                        <app-event-text [text]="report.content ?? 'No issues found.'"></app-event-text>
+                    </span>
+                </div>
             </div>
-        </div>
+        }
     </ng-template>
     <ng-template #emptymessage>
         <span id="status-text" class="font-italic text-sm">
-            <ng-container *ngIf="refreshFailed"
-                >An error occurred while fetching the configuration review reports.</ng-container
-            >
-            <ng-container *ngIf="!refreshFailed && !!review"
-                >No configuration issues were found for this daemon.</ng-container
-            >
-            <ng-container *ngIf="!refreshFailed && !review"
-                >Configuration review was not performed for this daemon.</ng-container
-            >
+            @if (refreshFailed) {
+                An error occurred while fetching the configuration review reports.
+            }
+            @if (!refreshFailed && !!review) {
+                No configuration issues were found for this daemon.
+            }
+            @if (!refreshFailed && !review) {
+                Configuration review was not performed for this daemon.
+            }
         </span>
     </ng-template>
 </p-dataView>

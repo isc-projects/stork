@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core'
 import { ConfigChecker, ConfigCheckerPreference } from '../backend'
 import { TableModule } from 'primeng/table'
-import { NgClass, NgIf, NgTemplateOutlet, NgFor } from '@angular/common'
+import { NgClass, NgTemplateOutlet } from '@angular/common'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { Chip } from 'primeng/chip'
 import { Button } from 'primeng/button'
@@ -26,9 +26,7 @@ import { Tag } from 'primeng/tag'
         TableModule,
         NgClass,
         HelpTipComponent,
-        NgIf,
         NgTemplateOutlet,
-        NgFor,
         Chip,
         Button,
         ManagedAccessDirective,

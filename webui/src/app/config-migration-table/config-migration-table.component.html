@@ -58,23 +58,31 @@
             <td>{{ m.startDate | localtime }}</td>
             <td>
                 <div class="flex flex-wrap justify-center gap-2">
-                    <p-tag *ngIf="m.endDate" severity="success" value="Completed"></p-tag>
-                    <p-tag
-                        *ngIf="m.generalError"
-                        severity="danger"
-                        value="Failed"
-                        [pTooltip]="m.generalError"
-                        tooltipPosition="top"
-                    ></p-tag>
-                    <p-tag *ngIf="m.canceling" severity="warn" value="Canceling"></p-tag>
-                    <p-tag *ngIf="!m.endDate" severity="info" value="Running"></p-tag>
-                    <p-tag
-                        *ngIf="m.errors?.total > 0"
-                        severity="danger"
-                        [value]="m.errors.total + ' errors'"
-                        [pTooltip]="'This migration has ' + m.errors.total + ' errors.'"
-                        tooltipPosition="top"
-                    ></p-tag>
+                    @if (m.endDate) {
+                        <p-tag severity="success" value="Completed"></p-tag>
+                    }
+                    @if (m.generalError) {
+                        <p-tag
+                            severity="danger"
+                            value="Failed"
+                            [pTooltip]="m.generalError"
+                            tooltipPosition="top"
+                        ></p-tag>
+                    }
+                    @if (m.canceling) {
+                        <p-tag severity="warn" value="Canceling"></p-tag>
+                    }
+                    @if (!m.endDate) {
+                        <p-tag severity="info" value="Running"></p-tag>
+                    }
+                    @if (m.errors?.total > 0) {
+                        <p-tag
+                            severity="danger"
+                            [value]="m.errors.total + ' errors'"
+                            [pTooltip]="'This migration has ' + m.errors.total + ' errors.'"
+                            tooltipPosition="top"
+                        ></p-tag>
+                    }
                 </div>
             </td>
             <td>
