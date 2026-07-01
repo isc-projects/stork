@@ -763,4 +763,34 @@ describe('JsonTreeComponent-ExternalTemplates', () => {
         const content = nativeElement.textContent
         expect(content).toBe('biz')
     })
+
+
+    describe('hex to ascii', () => {
+        it('should correctly identify hex strings', () => {
+            component.value = null
+            expect(component.isHexString()).toBeFalse()
+
+            component.value = '123'
+            expect(component.isHexString()).toBeFalse()
+
+            component.value = '1234'
+            expect(component.isHexString()).toBeFalse()
+
+            component.value = '0x1234'
+            expect(component.isHexString()).toBeTrue()
+
+            component.value = 'abcdef'
+            expect(component.isHexString()).toBeTrue()
+
+            // Hex string from kea dhcp
+            component.value = '00020000000005830100000038383A32383A66623A35663A38353A32630000'
+            expect(component.isHexString()).toBeTrue()
+            
+            // Decimal looking string should not be considered hex unless prefixed
+            component.value = '1928374612341234'
+            expect(component.isHexString()).toBeFalse()
+        })
+
+        
+    })
 })

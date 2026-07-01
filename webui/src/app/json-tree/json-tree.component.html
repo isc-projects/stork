@@ -91,9 +91,14 @@
         }"
     >
         <!-- Primitive value or empty, but not object -->
-        <ng-container *ngIf="(isPrimitive() || isEmpty()) && !isObject() && hasAssignedValue()">{{
-            value + ''
-        }}</ng-container>
+        <ng-container *ngIf="(isPrimitive() || isEmpty()) && !isObject() && hasAssignedValue()">
+            <ng-container *ngIf="isHexString(); else plainValue">
+                <app-identifier [hexValue]="value" [defaultHexFormat]="true" styleClass="word-break-all"></app-identifier>
+            </ng-container>
+            <ng-template #plainValue>
+                {{ value + '' }}
+            </ng-template>
+        </ng-container>
         <!-- Not assigned value yet -->
         <ng-container *ngIf="!hasAssignedValue()"><i class="fa fa-spinner fa-spin"></i></ng-container>
         <!-- Complex, but recursion level reached -->

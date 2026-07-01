@@ -2,6 +2,7 @@ import { KeyValue, NgIf, NgClass, NgTemplateOutlet, NgFor, SlicePipe, KeyValuePi
 import { Component, Input, TemplateRef } from '@angular/core'
 import { Paginator } from 'primeng/paginator'
 import { InputText } from 'primeng/inputtext'
+import { IdentifierComponent } from '../identifier/identifier.component'
 
 /**
  * Typing for page changed event of PrimeNG navigation.
@@ -31,7 +32,7 @@ interface PageChangedEvent {
     selector: 'app-json-tree',
     templateUrl: './json-tree.component.html',
     styleUrls: ['./json-tree.component.sass'],
-    imports: [NgIf, NgClass, NgTemplateOutlet, NgFor, Paginator, InputText, SlicePipe, KeyValuePipe],
+    imports: [NgIf, NgClass, NgTemplateOutlet, NgFor, Paginator, InputText, SlicePipe, KeyValuePipe, IdentifierComponent],
 })
 export class JsonTreeComponent {
     private _value: any = null
@@ -615,5 +616,24 @@ export class JsonTreeComponent {
      */
     areChildrenLoading() {
         return this._childrenLoading
+    }
+
+    /**
+     * Determines whether the evaluated value is a hexadecimal string.
+     *
+     * It checks if it contains only hexadecimal characters, its length is
+     * even and greater than 0. The value can contain an optional '0x' prefix.
+     */
+    isHexString(): boolean {
+        if (!this.isString()) {
+            return false
+        }
+        const hex = this._value.replace(/^0x/i, '')
+        // Exclude strings that are just decimal numbers unless they start with 0x
+        if (!/^0x/i.test(this._value) && /^\d+$/.test(hex)) {
+            return false
+        }
+        // At least 4 characters long (2 hex bytes) to reduce false positives
+        return hex.length > 3 && hex.length % 2 === 0 && /^[0-9a-fA-F]+$/.test(hex)
     }
 }
