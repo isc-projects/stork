@@ -26,6 +26,7 @@ import { VersionPageComponent } from './version-page/version-page.component'
 import { ZonesPageComponent } from './zones-page/zones-page.component'
 import { ConfigMigrationPageComponent } from './config-migration-page/config-migration-page.component'
 import { NotFoundPageComponent } from './not-found-page/not-found-page.component'
+import { ZoneTransfersPageComponent } from './zone-transfers-page/zone-transfers-page.component'
 
 const routes: Routes = [
     {
@@ -148,6 +149,12 @@ const routes: Routes = [
         component: ZonesPageComponent,
         canActivate: [AuthGuard],
         data: { key: 'zones' },
+    },
+    {
+        path: 'dns/zone-transfers',
+        component: ZoneTransfersPageComponent,
+        canActivate: [AuthGuard],
+        data: { key: 'zone-transfers' },
     },
     {
         path: 'daemons/:daemonId/global-config',

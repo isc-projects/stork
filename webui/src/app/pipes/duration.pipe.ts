@@ -16,16 +16,12 @@ export class DurationPipe implements PipeTransform {
     }
 
     /**
-     * Maximum number of fractional digits to display.
-     */
-    fractionalDigits = 1
-
-    /**
      * Formats the duration into a human-readable string.
      * @param value Either a number (seconds) or a string in the format of "1h2m3.4567s"
+     * @param fractionalDigits Maximum number of fractional digits to display.
      * @returns formatted string in the format of "1 hour 2 minutes 3.4 seconds"
      */
-    transform(value: string | number): string | number {
+    transform(value: string | number, fractionalDigits = 1): string | number {
         if (value == null) {
             return value
         }
@@ -90,7 +86,7 @@ export class DurationPipe implements PipeTransform {
                 unitString += 's'
             }
 
-            const numberString = !Number.isInteger(number) ? number.toFixed(this.fractionalDigits) : number.toString()
+            const numberString = !Number.isInteger(number) ? number.toFixed(fractionalDigits) : number.toString()
             strings.push(`${numberString} ${unitString}`)
         }
 

@@ -1,0 +1,531 @@
+<app-breadcrumbs [items]="breadcrumbs">
+    <div page-help>
+        <p>This page displays a list of DNS zone transfers.</p>
+        <p>
+            Zone transfers are detected by Stork agents on the machines with running BIND 9 servers. The list presented
+            below is by default sorted from the most recently started zone transfers.
+        </p>
+        <p>
+            Looking into the zone transfers can be useful for troubleshooting issues between the primary and secondary
+            DNS servers. Specifically, it is interesting to look at the durations of the zone transfers, their
+            transmission rates (in B/s), and the status. For example, the
+            <span class="font-bold">completed</span> status indicates that the zone transfer has been completed
+            successfully. This status is typically indicating that the communication between the primary and secondary
+            is healthy. However, a longer than expected duration may indicate some issues with the link or the server
+            being overloaded. The duration of the <span class="font-bold">completed</span> zone transfer is extracted
+            from the BIND 9 logs.
+        </p>
+        <p>
+            The <span class="font-bold">started</span> status indicates that the zone transfer had not finished before
+            the list of transfers was displayed. Click the <span class="font-bold">Refresh List</span> button to check
+            whether the started transfers have already ended. The current duration of the started transfer is estimated
+            by subtracting the <span class="font-bold">Started at</span> timestamp from the current time.
+        </p>
+        <p>
+            The <span class="font-bold">message</span> status indicates that Stork did not find the log message in the
+            BIND 9 logs marking successful completion of the zone transfer. It is possible that BIND 9 emitted some
+            intermediate log messages during the transfer or the transfer was interrupted or failed.
+        </p>
+        <p>
+            The <span class="font-bold">Primary</span> and <span class="font-bold">Secondary</span>
+            columns include the machine names or IP addresses of the primary and secondary DNS servers participating in
+            the zone transfers. The machine names appear in cases when the zone transfer occurred on the machine
+            monitored by Stork. The IP addresses are shown for the external DNS servers. Suppose the secondary DNS
+            server is running on the monitored machine and transfers a zone from the external DNS server. In that case
+            the
+            <span class="font-bold">Secondary</span> column will contain the machine name. The
+            <span class="font-bold">Primary</span> column will contain an IP address.
+        </p>
+        <p>
+            The table rows are expandable. Expand the row for the selected transfer to see the details such as
+            timestamps, statistics, and the log messages (captured from BIND 9 instance) pertaining to this zone
+            transfer.
+        </p>
+        <p>
+            The <span class="font-bold">Started at</span> and <span class="font-bold">Completed at</span> timestamps
+            indicate when the transfer started and completed respectively. The
+            <span class="font-bold">Created at</span> timestamp indicates when the transfer was first captured and
+            recorded by Stork. It is often later than the <span class="font-bold">Started at</span> timestamp. It can be
+            later than the <span class="font-bold">Completed at</span> timestamp.
+        </p>
+        <p>
+            The logs in the expanded row can be helpful to investigate why the zone transfer status is set to
+            <span class="font-bold">message</span>. It may provide some error details.
+        </p>
+        <p>
+            Some zone transfers may be marked as <span class="font-bold">local</span>. These are the transfers where the
+            primary and the secondary run on the same machine. Note that Stork initiates such transfers to fetch the
+            zone contents from the DNS servers. In this case, Stork agent is a secondary and BIND 9 server is a primary.
+            Local transfers are by default excluded from the table. They can be shown by selecting the
+            <span class="font-bold">Include local transfers</span>
+            checkbox in the filtering panel.
+        </p>
+    </div>
+</app-breadcrumbs>
+
+<ng-template #clearFilterBtn let-value let-filterConstraint="filterConstraint">
+    <p-button
+        icon="pi pi-filter-slash"
+        [rounded]="true"
+        [text]="true"
+        severity="secondary"
+        [styleClass]="value ? '' : 'hidden-space'"
+        (onClick)="clearFilter(filterConstraint)"
+    />
+</ng-template>
+
+<app-tab-view
+    routePath="/dns/zone-transfers/"
+    firstTabTitle="Zone Transfers"
+    [tableQueryParamFilters]="supportedQueryParamFilters"
+    [entitiesTable]="zoneTransfersTable"
+>
+    <ng-template #firstTab>
+        <p-table
+            #zoneTransfersTable
+            id="zone-transfers-table"
+            [value]="zoneTransfers"
+            [lazyLoadOnInit]="false"
+            [lazy]="true"
+            (onLazyLoad)="onLazyLoadZoneTransfers($event)"
+            [paginator]="true"
+            [rows]="zoneTransfersRows"
+            [rowsPerPageOptions]="[10, 30, 100]"
+            [showCurrentPageReport]="true"
+            stateStorage="local"
+            currentPageReportTemplate="{currentPage} of {totalPages} pages"
+            styleClass="md:datatable-responsive"
+            [stripedRows]="true"
+            dataKey="id"
+            [loading]="zoneTransfersLoading"
+            [totalRecords]="zoneTransfersTotal"
+            (rowsChange)="storeZoneTransfersTableRowsPerPage($event)"
+            class="full-w-table"
+        >
+            <ng-template #caption>
+                <app-table-caption
+                    [tableElement]="zoneTransfersTable"
+                    [wideHelpTip]="true"
+                    tableKey="zone-transfers-table"
+                >
+                    <ng-template #helptip>
+                        <p>
+                            Zone transfers in the table below can be filtered by explicitly selected fields using text,
+                            dropdown or multiselect input filters. The currently supported fields for explicit filtering
+                            are:
+                        </p>
+                        <ul>
+                            <li>
+                                <span class="font-bold">Status</span> - multiple statuses can be specified. If
+                                unspecified, zone transfers with all statuses are returned.
+                            </li>
+                            <li><span class="font-bold">Serial</span> - partial or exact zone serial.</li>
+                            <li>
+                                <span class="font-bold">Primary</span> - zone transfers for a specific machine where the
+                                primary DNS server is running can be selected. In this case, the primary DNS server must
+                                be monitored by Stork.
+                            </li>
+                            <li>
+                                <span class="font-bold">Secondary</span> - zone transfers for a specific machine where
+                                the secondary DNS server is running can be selected. In this case, the secondary DNS
+                                server must be monitored by Stork.
+                            </li>
+                        </ul>
+                        <p>
+                            Zone transfers can also be filtered by entering text in the search box; the table shows all
+                            transfers matching the exact or partial filter text. The text is matched against the zone
+                            name, view, primary IP address, secondary IP address or log message emitted during the zone
+                            transfer. For clarity, the
+                            <span class="font-bold">(root)</span> keyword marks a root zone. Typing
+                            <span class="font-italic white-space-nowrap">(root)</span> or
+                            <span class="font-italic white-space-nowrap">root</span> will return the transfer for the
+                            root zone.
+                        </p>
+                        <p>
+                            The <span class="font-bold">Include local transfers</span> checkbox toggles the local zone
+                            transfers on/off. Turning them on will show all transfers initiated by Stork agent to get
+                            the zone contents from the DNS servers. It will also show all other local zone transfers.
+                        </p>
+                        <p>
+                            Multiple filtering conditions are combined using logical AND (i.e., filtered zone transfers
+                            match all specified conditions).
+                        </p>
+                        <p>
+                            Some operators may be interested in filtering the zone transfers for the specific
+                            primary/secondary server pair. It can be done by selecting the primary and the secondary
+                            machines using the <span class="font-bold">Primary</span> and
+                            <span class="font-bold">Secondary</span>
+                            dropdowns in the filtering panel. However, the dropdown cannot be used in cases when the
+                            primary or the secondary is external (i.e., is not monitored by Stork). In this case, use
+                            the text filter to search by the external server's IP address instead.
+                        </p>
+                    </ng-template>
+                    <ng-template #filters>
+                        <p-columnFilter
+                            field="zoneTransferStatus"
+                            matchMode="equals"
+                            [showMenu]="false"
+                            [showClearButton]="false"
+                        >
+                            <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
+                                <div class="flex align-items-center">
+                                    <p-floatlabel variant="on">
+                                        <p-multiSelect
+                                            inputId="zone-transfer-status"
+                                            [options]="zoneTransferStatuses"
+                                            [ngModel]="value"
+                                            styleClass="w-12rem"
+                                            (onChange)="filterZoneTransfersTable($event.value, filterConstraint)"
+                                        />
+                                        <label for="zone-transfer-status">Status</label>
+                                    </p-floatlabel>
+                                    <ng-container
+                                        *ngTemplateOutlet="
+                                            clearFilterBtn;
+                                            context: {
+                                                $implicit: value,
+                                                filterConstraint: filterConstraint,
+                                            }
+                                        "
+                                    ></ng-container>
+                                </div>
+                            </ng-template>
+                        </p-columnFilter>
+                        <p-columnFilter
+                            field="zoneSerial"
+                            matchMode="contains"
+                            [showMenu]="false"
+                            [showClearButton]="false"
+                        >
+                            <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
+                                <div class="flex align-items-center">
+                                    <p-floatlabel variant="on">
+                                        <input
+                                            pInputText
+                                            type="text"
+                                            (input)="filterZoneTransfersTable($event.target.value, filterConstraint)"
+                                            [ngModel]="value"
+                                            id="zone-serial"
+                                            class="w-8rem"
+                                        />
+                                        <label for="zone-serial">Serial</label>
+                                    </p-floatlabel>
+                                    <ng-container
+                                        *ngTemplateOutlet="
+                                            clearFilterBtn;
+                                            context: {
+                                                $implicit: value,
+                                                filterConstraint: filterConstraint,
+                                            }
+                                        "
+                                    ></ng-container>
+                                </div>
+                            </ng-template>
+                        </p-columnFilter>
+                        <p-columnFilter
+                            field="serverMachineId"
+                            matchMode="equals"
+                            [showMenu]="false"
+                            [showClearButton]="false"
+                        >
+                            <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
+                                <div class="flex align-items-center">
+                                    <p-floatlabel variant="on">
+                                        <p-select
+                                            inputId="zone-transfer-primary"
+                                            optionLabel="address"
+                                            optionValue="id"
+                                            [options]="machines"
+                                            [loading]="machinesLoading"
+                                            [ngModel]="value"
+                                            styleClass="w-12rem"
+                                            (onChange)="filterZoneTransfersTable($event.value, filterConstraint)"
+                                        />
+                                        <label for="zone-transfer-primary">Primary</label>
+                                    </p-floatlabel>
+                                    <ng-container
+                                        *ngTemplateOutlet="
+                                            clearFilterBtn;
+                                            context: {
+                                                $implicit: value,
+                                                filterConstraint: filterConstraint,
+                                            }
+                                        "
+                                    ></ng-container>
+                                </div>
+                            </ng-template>
+                        </p-columnFilter>
+                        <p-columnFilter
+                            field="clientMachineId"
+                            matchMode="equals"
+                            [showMenu]="false"
+                            [showClearButton]="false"
+                        >
+                            <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
+                                <div class="flex align-items-center">
+                                    <p-floatlabel variant="on">
+                                        <p-select
+                                            inputId="zone-transfer-secondary"
+                                            optionLabel="address"
+                                            optionValue="id"
+                                            [options]="machines"
+                                            [loading]="machinesLoading"
+                                            [ngModel]="value"
+                                            styleClass="w-12rem"
+                                            (onChange)="filterZoneTransfersTable($event.value, filterConstraint)"
+                                        />
+                                        <label for="zone-transfer-secondary">Secondary</label>
+                                    </p-floatlabel>
+                                    <ng-container
+                                        *ngTemplateOutlet="
+                                            clearFilterBtn;
+                                            context: {
+                                                $implicit: value,
+                                                filterConstraint: filterConstraint,
+                                            }
+                                        "
+                                    ></ng-container>
+                                </div>
+                            </ng-template>
+                        </p-columnFilter>
+                        <p-columnFilter field="text" matchMode="contains" [showMenu]="false" [showClearButton]="false">
+                            <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
+                                <div class="flex align-items-center">
+                                    <p-iconfield iconPosition="left">
+                                        <p-inputicon>
+                                            <i class="pi pi-search"></i>
+                                        </p-inputicon>
+                                        <input
+                                            pInputText
+                                            type="text"
+                                            id="text-filter"
+                                            (input)="filterZoneTransfersTable($event.target.value, filterConstraint)"
+                                            [ngModel]="value"
+                                            placeholder="Search"
+                                            class="max-w-13rem sm:w-18rem sm:max-w-18rem"
+                                        />
+                                    </p-iconfield>
+                                    <ng-container
+                                        *ngTemplateOutlet="
+                                            clearFilterBtn;
+                                            context: {
+                                                $implicit: value,
+                                                filterConstraint: filterConstraint,
+                                            }
+                                        "
+                                    ></ng-container>
+                                </div>
+                            </ng-template>
+                        </p-columnFilter>
+                        <p-columnFilter
+                            field="includeLocal"
+                            matchMode="equals"
+                            [showMenu]="false"
+                            [showClearButton]="false"
+                        >
+                            <ng-template pTemplate="filter" let-value let-filterConstraint="filterConstraint">
+                                <div class="flex align-items-center">
+                                    <div class="flex items-center gap-2">
+                                        <p-checkbox
+                                            inputId="include-local"
+                                            [binary]="true"
+                                            [ngModel]="value"
+                                            (onChange)="
+                                                filterZoneTransfersTable($event.checked || null, filterConstraint)
+                                            "
+                                        />
+                                        <label for="include-local">Include local transfers</label>
+                                    </div>
+                                </div>
+                            </ng-template>
+                        </p-columnFilter>
+                    </ng-template>
+
+                    <ng-template #buttons>
+                        <p-button
+                            label="Refresh List"
+                            icon="pi pi-refresh"
+                            (onClick)="onLazyLoadZoneTransfers(zoneTransfersTable.createLazyLoadMetadata())"
+                            id="refresh-zones-data"
+                        />
+                    </ng-template>
+                </app-table-caption>
+            </ng-template>
+
+            <ng-template #header>
+                <tr>
+                    <th class="w-3rem sm:w-5rem"></th>
+                    <th [pSortableColumn]="ZoneTransferSortField.StartedAt">
+                        <div class="flex gap-1 white-space-nowrap">
+                            Started At<p-sortIcon [field]="ZoneTransferSortField.StartedAt" />
+                        </div>
+                    </th>
+                    <th>Zone</th>
+                    <th>View</th>
+                    <th>Serial</th>
+                    <th [pSortableColumn]="ZoneTransferSortField.Duration">
+                        <div class="flex gap-1 white-space-nowrap">
+                            Duration<p-sortIcon [field]="ZoneTransferSortField.Duration" />
+                        </div>
+                    </th>
+                    <th [pSortableColumn]="ZoneTransferSortField.BytesPerSecond">
+                        <div class="flex gap-1 white-space-nowrap">
+                            Rate<p-sortIcon [field]="ZoneTransferSortField.BytesPerSecond" />
+                        </div>
+                    </th>
+                    <th [pSortableColumn]="ZoneTransferSortField.Status">
+                        <div class="flex gap-1 white-space-nowrap">
+                            Status<p-sortIcon [field]="ZoneTransferSortField.Status" />
+                        </div>
+                    </th>
+                    <th>Primary</th>
+                    <th>Secondary</th>
+                </tr>
+            </ng-template>
+            <ng-template #body let-zoneTransfer let-expanded="expanded">
+                <tr>
+                    <td>
+                        <p-button
+                            [pRowToggler]="zoneTransfer"
+                            [text]="true"
+                            severity="secondary"
+                            [rounded]="true"
+                            [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
+                        />
+                    </td>
+                    <td>{{ zoneTransfer.startedAt | localtime }}</td>
+                    <td>{{ zoneTransfer.zoneName | unroot }}</td>
+                    <td>{{ zoneTransfer.viewName | placeholder: 'N/A' }}</td>
+                    <td>{{ zoneTransfer.serial ?? 0 }}</td>
+                    <td>{{ zoneTransfer.duration ? (zoneTransfer.duration | duration: 3) : 'N/A' }}</td>
+                    <td>{{ zoneTransfer.bytesPerSecond | placeholder: 'N/A' | humanCount: 'B/s' }}</td>
+                    <td>
+                        <div
+                            pTooltip="{{ zoneTransfer.message ?? '(no message)' }}"
+                            class="flex gap-1 white-space-nowrap"
+                        >
+                            <span>
+                                {{ zoneTransfer.status }}
+                                @switch (zoneTransfer.status) {
+                                    @case ('started') {
+                                        <span class="pi pi-spinner pi-spin text-gray-400"></span>
+                                    }
+                                    @case ('connected') {
+                                        <span class="pi pi-spinner pi-spin text-gray-400"></span>
+                                    }
+                                    @case ('completed') {
+                                        <span class="pi pi-check text-green-500"></span>
+                                    }
+                                    @case ('message') {
+                                        <span class="pi pi-exclamation-triangle text-orange-400"></span>
+                                    }
+                                }
+                            </span>
+                        </div>
+                    </td>
+                    <td>
+                        @if (zoneTransfer.serverMachineAddress) {
+                            <app-entity-link
+                                pTooltip="Primary Address: {{ zoneTransfer.server ?? '(unknown)' }}"
+                                [showEntityName]="false"
+                                entity="machine"
+                                [attrs]="{
+                                    machineId: zoneTransfer.serverMachineID,
+                                    address: zoneTransfer.serverMachineAddress,
+                                }"
+                            ></app-entity-link>
+                        } @else {
+                            {{ zoneTransfer.server }}
+                        }
+                    </td>
+                    <td>
+                        @if (zoneTransfer.clientMachineAddress) {
+                            <app-entity-link
+                                pTooltip="Secondary Address: {{ zoneTransfer.client ?? '(unknown)' }}"
+                                [showEntityName]="false"
+                                entity="machine"
+                                [attrs]="{
+                                    machineId: zoneTransfer.clientMachineID,
+                                    address: zoneTransfer.clientMachineAddress,
+                                }"
+                            ></app-entity-link>
+                        } @else {
+                            <div class="flex flex-wrap justify-center align-items-center gap-2">
+                                <div>{{ zoneTransfer.client }}</div>
+                                @if (zoneTransfer.local) {
+                                    <p-tag value="local" severity="success" />
+                                }
+                            </div>
+                        }
+                    </td>
+                </tr>
+            </ng-template>
+            <ng-template #expandedrow let-zoneTransfer>
+                <tr>
+                    <td colspan="10">
+                        <div
+                            class="flex flex-column md:flex-row align-items-start md:align-items-stretch md:w-full gap-2"
+                        >
+                            <div class="flex-initial w-auto md:w-3">
+                                <p-fieldset legend="Transfer Details">
+                                    <table>
+                                        <tr>
+                                            <td class="pr-3">Created at:</td>
+                                            <td class="monospace">{{ zoneTransfer.createdAt | localtime }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="pr-3">Started at:</td>
+                                            <td class="monospace">{{ zoneTransfer.startedAt | localtime }}</td>
+                                        </tr>
+                                        @if (zoneTransfer.completedAt) {
+                                            <tr>
+                                                <td class="pr-3">Completed at:</td>
+                                                <td class="monospace">{{ zoneTransfer.completedAt | localtime }}</td>
+                                            </tr>
+                                        }
+                                    </table>
+                                </p-fieldset>
+                            </div>
+                            <div class="flex-initial w-auto md:w-3">
+                                <p-fieldset legend="Statistics">
+                                    <table>
+                                        <tr>
+                                            <td class="pr-3">Messages received:</td>
+                                            <td class="monospace">{{ zoneTransfer.messagesCount ?? 0 }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="pr-3">Records received:</td>
+                                            <td class="monospace">{{ zoneTransfer.recordsCount ?? 0 }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="pr-3">Bytes received:</td>
+                                            <td class="monospace">{{ zoneTransfer.bytesCount ?? 0 }}</td>
+                                        </tr>
+                                    </table>
+                                </p-fieldset>
+                            </div>
+                            <div class="flex-initial w-auto md:flex-1">
+                                <p-fieldset legend="Log message">
+                                    <div class="monospace">
+                                        {{ zoneTransfer.message | placeholder: 'N/A' }}
+                                    </div>
+                                </p-fieldset>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            </ng-template>
+            <ng-template #emptymessage>
+                <tr>
+                    <td [attr.colspan]="10">
+                        {{
+                            'No zone transfers were found in the Stork server database' +
+                                (tableHasFilter(zoneTransfersTable) ? ' for the applied filter' : '') +
+                                '.'
+                        }}
+                    </td>
+                </tr>
+            </ng-template>
+        </p-table>
+    </ng-template>
+</app-tab-view>

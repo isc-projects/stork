@@ -29,6 +29,8 @@ describe('DurationPipe', () => {
         const pipe = new DurationPipe()
         expect(pipe.transform(42)).toBe('42 seconds')
         expect(pipe.transform(42.1)).toBe('42.1 seconds')
+        expect(pipe.transform(67.123, 2)).toBe('1 minute 7.12 seconds')
+        expect(pipe.transform(243.243, 0)).toBe('4 minutes 3 seconds')
         expect(pipe.transform(100)).toBe('1 minute 40 seconds')
         expect(pipe.transform(3723)).toBe('1 hour 2 minutes 3 seconds')
     })

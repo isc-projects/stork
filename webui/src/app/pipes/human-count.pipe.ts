@@ -6,10 +6,11 @@ export class HumanCountPipe implements PipeTransform {
     /**
      * Formats the given number using the metric prefixes.
      * @param count Count to format, any object convertible to big integer.
+     * @param baseUnit Unit to append to the formatted count (e.g. 'B/s').
      * @returns Formatted count. If the object is not numeric, returns @count
      *          as is.
      */
-    transform(count: any): string {
+    transform(count: any, baseUnit: string = ''): string {
         if (typeof count === 'string') {
             try {
                 count = BigInt(count)
@@ -18,6 +19,6 @@ export class HumanCountPipe implements PipeTransform {
             }
         }
 
-        return humanCount(count)
+        return humanCount(count, baseUnit)
     }
 }

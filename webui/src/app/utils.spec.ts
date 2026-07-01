@@ -92,6 +92,11 @@ describe('utils', () => {
         expect(nullStr).toBe('null')
     })
 
+    it('human count should append the base unit if provided', () => {
+        expect(humanCount(2, 'B/s')).toBe('2B/s')
+        expect(humanCount(2323, 'm')).toBe('2.3km')
+    })
+
     it('human count should round the numbers properly', () => {
         expect(humanCount(999)).toBe('999')
         expect(humanCount(999n)).toBe('999')

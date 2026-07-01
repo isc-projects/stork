@@ -195,6 +195,12 @@ export class AppComponent implements OnInit, OnDestroy {
                         routerLink: '/dashboard',
                     },
                     { label: 'Zones', id: 'zones', icon: 'pi pi-sitemap', routerLink: '/dns/zones' },
+                    {
+                        label: 'Zone Transfers',
+                        id: 'zone-transfers',
+                        icon: 'fa fa-exchange-alt',
+                        routerLink: '/dns/zone-transfers',
+                    },
                 ],
             },
             {

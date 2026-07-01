@@ -53,6 +53,7 @@ export type ManagedAccessEntity =
     | 'shared-network'
     | 'subnet'
     | 'zones'
+    | 'zone-transfers'
     | 'access-point-key'
     | 'machine-address'
     | 'machine-authorization'

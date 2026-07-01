@@ -87,8 +87,10 @@ export function durationToString(duration: number, short = false) {
 /**
  * Present count in human readable way ie. big numbers get unit, e.g. 102.3 M
  * instead of 102342543.
+ * @param count Count to format - any object convertible to big integer.
+ * @param baseUnit Unit to append to the formatted count (e.g. 'B/s').
  */
-export function humanCount(count: string | bigint | number) {
+export function humanCount(count: string | bigint | number, baseUnit: string = '') {
     if (count == null || (typeof count !== 'number' && typeof count !== 'bigint') || Number.isNaN(count)) {
         return count + '' // Casting to string safe for null and undefined
     }
@@ -114,7 +116,7 @@ export function humanCount(count: string | bigint | number) {
     }
 
     const countStr = count.toFixed(exponent >= 3 ? 1 : 0)
-    return countStr + units[~~(exponent / 3)]
+    return countStr + units[~~(exponent / 3)] + baseUnit
 }
 
 /**
