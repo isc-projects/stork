@@ -1,7 +1,7 @@
 import { Component, Input, OnInit, inject } from '@angular/core'
 import { FormGroup, UntypedFormArray, UntypedFormControl, FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { KeaPoolParametersForm, PrefixPoolForm, SubnetSetFormService } from '../forms/subnet-set-form.service'
-import { SelectableDaemon } from '../forms/selectable-daemon'
+
 import { getSeverityByIndex, getVersionRange } from '../utils'
 import { createDefaultDhcpOptionFormGroup } from '../forms/dhcp-option-form'
 import { IPType } from '../iptype'
@@ -16,6 +16,7 @@ import { Checkbox } from 'primeng/checkbox'
 import { Divider } from 'primeng/divider'
 import { Tag } from 'primeng/tag'
 import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
+import { KeaDaemon } from '../backend'
 
 /**
  * A component providing a form for editing and adding a prefix delegation pool.
@@ -59,7 +60,7 @@ export class PrefixPoolFormComponent implements OnInit {
     /**
      * An array of daemons that can be associated with a pool.
      */
-    @Input() selectableDaemons: SelectableDaemon[]
+    @Input() selectableDaemons: KeaDaemon[]
 
     /**
      * An array of server names associated with the address pool.

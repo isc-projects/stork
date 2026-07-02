@@ -1,7 +1,7 @@
 import { Component, Input, OnInit, inject } from '@angular/core'
 import { FormGroup, UntypedFormArray, UntypedFormControl, FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { AddressPoolForm, KeaPoolParametersForm, SubnetSetFormService } from '../forms/subnet-set-form.service'
-import { SelectableDaemon } from '../forms/selectable-daemon'
+
 import { createDefaultDhcpOptionFormGroup } from '../forms/dhcp-option-form'
 import { IPType } from '../iptype'
 import { getSeverityByIndex, getVersionRange } from '../utils'
@@ -15,6 +15,7 @@ import { Checkbox } from 'primeng/checkbox'
 import { Divider } from 'primeng/divider'
 import { Tag } from 'primeng/tag'
 import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
+import { KeaDaemon } from '../backend'
 
 /**
  * A component providing a form for editing and adding an address pool.
@@ -52,7 +53,7 @@ export class AddressPoolFormComponent implements OnInit {
     /**
      * An array of daemons that can be associated with a pool.
      */
-    @Input() selectableDaemons: SelectableDaemon[]
+    @Input() selectableDaemons: KeaDaemon[]
 
     /**
      * Form group holding address pool data.

@@ -9,7 +9,7 @@ import {
     ViewChildren,
     inject,
 } from '@angular/core'
-import { CreateSubnetBeginResponse, DHCPService, Subnet, UpdateSubnetBeginResponse } from '../backend'
+import { CreateSubnetBeginResponse, DHCPService, KeaDaemon, Subnet, UpdateSubnetBeginResponse } from '../backend'
 import { getErrorMessage, getSeverityByIndex, getVersionRange } from '../utils'
 import { MessageService } from 'primeng/api'
 import {
@@ -30,7 +30,7 @@ import { createDefaultDhcpOptionFormGroup } from '../forms/dhcp-option-form'
 import { IPType } from '../iptype'
 import { SubnetFormState } from '../forms/subnet-form'
 import { AddressPoolFormComponent } from '../address-pool-form/address-pool-form.component'
-import { SelectableDaemon } from '../forms/selectable-daemon'
+
 import { PrefixPoolFormComponent } from '../prefix-pool-form/prefix-pool-form.component'
 import { lastValueFrom } from 'rxjs'
 import { NgIf, NgFor } from '@angular/common'
@@ -216,7 +216,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
         // The server should return new transaction id and a current list of
         // daemons to select.
         this.state.transactionID = response.id
-        this.state.allDaemons = response.daemons as SelectableDaemon[]
+        this.state.allDaemons = response.daemons
         // Initially, list all daemons.
         this.state.filteredDaemons = this.state.allDaemons
         this.state.allSharedNetworks4 = response.sharedNetworks4 || []
@@ -263,10 +263,10 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
      */
     private createSubnetBegin(): void {
         lastValueFrom(this.dhcpApi.createSubnetBegin())
-            .then((data) => {
+            .then((data: CreateSubnetBeginResponse) => {
                 this.state.savedSubnetBeginData = data
                 this.state.group = this.subnetSetFormService.createDefaultSubnetForm(
-                    getVersionRange(data.daemons.map((d) => d.version)),
+                    getVersionRange((data.daemons ?? []).filter((d) => !!d.version).map((d) => d.version as string)),
                     data.subnets || []
                 )
                 this.initializeState(data)
@@ -388,7 +388,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
      *
      * @returns A list of selected daemons.
      */
-    getSelectedDaemons(): SelectableDaemon[] {
+    getSelectedDaemons(): KeaDaemon[] {
         const selectedDaemons = this.state.group.get('selectedDaemons').value ?? []
         return selectedDaemons.map((sd) => this.state.allDaemons.find((d) => d.id === sd))
     }

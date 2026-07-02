@@ -1,7 +1,6 @@
 import { FormGroup } from '@angular/forms'
-import { CreateSharedNetworkBeginResponse, UpdateSharedNetworkBeginResponse } from '../backend'
+import { CreateSharedNetworkBeginResponse, KeaDaemon, UpdateSharedNetworkBeginResponse } from '../backend'
 import { SelectableClientClass } from './selectable-client-class'
-import { SelectableDaemon } from './selectable-daemon'
 import { SharedNetworkForm } from './subnet-set-form.service'
 import { IPType } from '../iptype'
 import { FormState } from '../tab-view/tab-view.component'
@@ -34,7 +33,7 @@ export class SharedNetworkFormState implements FormState {
     /**
      * A list of all daemons that can be selected from the drop down list.
      */
-    private _allDaemons: SelectableDaemon[] = []
+    private _allDaemons: KeaDaemon[] = []
 
     /**
      * A filtered list of daemons comprising only those that match the
@@ -43,7 +42,7 @@ export class SharedNetworkFormState implements FormState {
      * Maintaining a filtered list prevents the user from selecting the
      * servers of different kinds, e.g. one DHCPv4 and one DHCPv6 server.
      */
-    private _filteredDaemons: SelectableDaemon[] = []
+    private _filteredDaemons: KeaDaemon[] = []
 
     /**
      * An array of client classes.
@@ -122,7 +121,7 @@ export class SharedNetworkFormState implements FormState {
      * Maintaining a filtered list prevents the user from selecting the
      * servers of different kinds, e.g. one DHCPv4 and one DHCPv6 server.
      */
-    get filteredDaemons(): SelectableDaemon[] {
+    get filteredDaemons(): KeaDaemon[] {
         return this._filteredDaemons
     }
 
@@ -140,9 +139,9 @@ export class SharedNetworkFormState implements FormState {
      * Returns a daemon having the specified ID.
      *
      * @param id daemon ID.
-     * @returns specified daemon or null if it doesn't exist.
+     * @returns specified daemon or undefined if it doesn't exist.
      */
-    private getDaemonById(id: number): SelectableDaemon | null {
+    private getDaemonById(id: number): KeaDaemon | undefined {
         return this._allDaemons.find((d) => d.id === id)
     }
 
@@ -253,7 +252,7 @@ export class SharedNetworkFormState implements FormState {
         // daemons to select.
         this._transactionID = response.id
         this._allDaemons = []
-        this._allDaemons = response.daemons as SelectableDaemon[]
+        this._allDaemons = response.daemons
         // Initially, list all daemons.
         this._filteredDaemons = this._allDaemons
         this._allSharedNetworks4 =

@@ -1,7 +1,6 @@
 import { FormGroup } from '@angular/forms'
-import { CreateSubnetBeginResponse, SharedNetwork, UpdateSubnetBeginResponse } from '../backend'
+import { CreateSubnetBeginResponse, KeaDaemon, SharedNetwork, UpdateSubnetBeginResponse } from '../backend'
 import { SelectableClientClass } from './selectable-client-class'
-import { SelectableDaemon } from './selectable-daemon'
 import { SubnetForm } from './subnet-set-form.service'
 import { SelectableSharedNetwork } from './selectable-shared-network'
 import { FormState } from '../tab-view/tab-view.component'
@@ -49,7 +48,7 @@ export class SubnetFormState implements FormState {
     /**
      * A list of all daemons that can be selected from the drop down list.
      */
-    allDaemons: SelectableDaemon[]
+    allDaemons: KeaDaemon[]
 
     /**
      * A filtered list of daemons comprising only those that match the
@@ -58,7 +57,7 @@ export class SubnetFormState implements FormState {
      * Maintaining a filtered list prevents the user from selecting the
      * servers of different kinds, e.g. one DHCPv4 and one DHCPv6 server.
      */
-    filteredDaemons: SelectableDaemon[]
+    filteredDaemons: KeaDaemon[]
 
     /**
      * An array of client classes.
@@ -127,9 +126,9 @@ export class SubnetFormState implements FormState {
      * Returns a daemon having the specified ID.
      *
      * @param id daemon ID.
-     * @returns specified daemon or null if it doesn't exist.
+     * @returns specified daemon or undefined if it doesn't exist.
      */
-    getDaemonById(id: number): SelectableDaemon | null {
+    getDaemonById(id: number): KeaDaemon | undefined {
         return this.allDaemons.find((d) => d.id === id)
     }
 

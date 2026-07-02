@@ -26,7 +26,7 @@ import { Subnet } from '../backend/model/subnet'
 import { HostForm } from '../forms/host-form'
 import { createDefaultDhcpOptionFormGroup } from '../forms/dhcp-option-form'
 import { DhcpOptionSetFormService } from '../forms/dhcp-option-set-form.service'
-import { SelectableDaemon } from '../forms/selectable-daemon'
+
 import { IPType } from '../iptype'
 import { getErrorMessage, stringToHex } from '../utils'
 import { SelectableClientClass } from '../forms/selectable-client-class'
@@ -46,6 +46,7 @@ import { ToggleSwitch } from 'primeng/toggleswitch'
 import { DhcpClientClassSetFormComponent } from '../dhcp-client-class-set-form/dhcp-client-class-set-form.component'
 import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
+import { KeaDaemon } from '../backend'
 
 /**
  * A form validator checking if a subnet has been selected for
@@ -179,7 +180,7 @@ function addressInSubnetValidator(ipType: IPType, hostForm: HostForm): Validator
 export interface MappedHostBeginData {
     id: number
     subnets: Array<Subnet>
-    daemons: Array<SelectableDaemon>
+    daemons: Array<KeaDaemon>
     clientClasses: Array<SelectableClientClass>
     host?: Host
 }
@@ -520,7 +521,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
      * @returns processed data that includes friendly daemon names.
      */
     private _mapHostBeginData(data: CreateHostBeginResponse | UpdateHostBeginResponse): MappedHostBeginData {
-        const daemons = data.daemons as SelectableDaemon[]
+        const daemons = data.daemons
         const clientClasses: Array<SelectableClientClass> = []
         for (const c of data.clientClasses) {
             clientClasses.push({

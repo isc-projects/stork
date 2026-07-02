@@ -1,9 +1,10 @@
 import { UntypedFormGroup } from '@angular/forms'
 import { IPv4CidrRange, IPv6CidrRange, Validator } from 'ip-num'
 import { Subnet } from '../backend/model/subnet'
-import { SelectableDaemon } from '../forms/selectable-daemon'
+
 import { SelectableClientClass } from './selectable-client-class'
 import { FormState } from '../tab-view/tab-view.component'
+import { KeaDaemon } from '../backend'
 
 /**
  * Holds the state of the form created by the HostFormComponent.
@@ -43,7 +44,7 @@ export class HostForm implements FormState {
     /**
      * A list of all daemons that can be selected from the drop down list.
      */
-    allDaemons: SelectableDaemon[]
+    allDaemons: KeaDaemon[]
 
     /**
      * A filtered list of daemons comprising only those that match the
@@ -52,7 +53,7 @@ export class HostForm implements FormState {
      * Maintaining a filtered list prevents the user from selecting the
      * servers of different kinds, e.g. one DHCPv4 and one DHCPv6 server.
      */
-    filteredDaemons: SelectableDaemon[]
+    filteredDaemons: KeaDaemon[]
 
     /**
      * A list of subnets that can be selected from the drop down list.
@@ -90,9 +91,9 @@ export class HostForm implements FormState {
      * Returns a daemon having the specified ID.
      *
      * @param id daemon ID.
-     * @returns specified daemon or null if it doesn't exist.
+     * @returns specified daemon or undefined if it doesn't exist.
      */
-    getDaemonById(id: number): SelectableDaemon | null {
+    getDaemonById(id: number): KeaDaemon | undefined {
         return this.allDaemons.find((d) => d.id === id)
     }
 
