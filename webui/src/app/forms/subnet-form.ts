@@ -6,6 +6,34 @@ import { SelectableSharedNetwork } from './selectable-shared-network'
 import { FormState } from '../tab-view/tab-view.component'
 
 /**
+ * Holds daemons that must be configured at the same time (they cannot be
+ * configured individually).
+ */
+export class DaemonGroup {
+    /**
+     * The daemons belonging to the group.
+     */
+    daemons: KeaDaemon[] = []
+
+    /**
+     * A label describing the group.
+     * It is list of daemon labels separated by a comma.
+     */
+    label: string = ''
+
+    /**
+     * Global index of the group in the list of all daemon groups.
+     */
+    index: number = 0
+
+    constructor(index: number, daemons: KeaDaemon[]) {
+        this.index = index
+        this.daemons = daemons
+        this.label = daemons.map(d => d.label).join(', ')
+    }
+}
+
+/**
  * Holds the state of the form created by the SubnetFormComponent.
  *
  * The state is shared with the parent component via the event emitter
@@ -47,17 +75,22 @@ export class SubnetFormState implements FormState {
 
     /**
      * A list of all daemons that can be selected from the drop down list.
+     * They are grouped, daemons in the same group must be configured at the
+     * same time.
      */
-    allDaemons: KeaDaemon[]
+    allDaemons: DaemonGroup[] = []
 
     /**
      * A filtered list of daemons comprising only those that match the
      * type of the first selected daemon.
      *
+     * They are grouped, daemons in the same group must be configured at the
+     * same time.
+     * 
      * Maintaining a filtered list prevents the user from selecting the
      * servers of different kinds, e.g. one DHCPv4 and one DHCPv6 server.
      */
-    filteredDaemons: KeaDaemon[]
+    filteredDaemons: DaemonGroup[] = []
 
     /**
      * An array of client classes.
@@ -129,11 +162,11 @@ export class SubnetFormState implements FormState {
      * @returns specified daemon or undefined if it doesn't exist.
      */
     getDaemonById(id: number): KeaDaemon | undefined {
-        return this.allDaemons.find((d) => d.id === id)
+        return this.allDaemons.flatMap(g => g.daemons).find((d) => d.id === id)
     }
 
     /**
-     * Updates the form state according to the daemons selection.
+     * Updates the form state according to the daemon groups selection.
      *
      * Depending on whether the user selected DHCPv4 or DHCPv6 servers, the
      * list of filtered daemons must be updated to prevent selecting different
@@ -145,19 +178,20 @@ export class SubnetFormState implements FormState {
      * must be removed from the form because they may be in conflict with the
      * new daemons selection.
      *
-     * @param selectedDaemons new set of selected daemons' ids.
+     * @param selectedGroups new set of selected daemon groups' indexes.
      * @param subnet subnet prefix.
      * @returns true if the update results in a breaking change, false otherwise.
      */
-    updateFormForSelectedDaemons(selectedDaemons: number[], subnet?: string): boolean {
+    updateFormForSelectedDaemonGroups(selectedGroups: number[], subnet?: string): boolean {
+        const selectedDaemonIDs = selectedGroups.flatMap((g) => this.allDaemons[g].daemons.map((d) => d.id))
         let dhcpv6 = false
-        let dhcpv4 = selectedDaemons.some((ss) => {
-            return this.allDaemons.find((d) => d.id === ss && d.name === 'dhcp4')
+        let dhcpv4 = selectedGroups.some((g) => {
+            return this.allDaemons[g].daemons[0].name === 'dhcp4'
         })
         if (!dhcpv4) {
             // If user selected no DHCPv4 server, perhaps selected a DHCPv6 server?
-            dhcpv6 = selectedDaemons.some((ss) => {
-                return this.allDaemons.find((d) => d.id === ss && d.name === 'dhcp6')
+            dhcpv6 = selectedGroups.some((g) => {
+                return this.allDaemons[g].daemons[0].name === 'dhcp6'
             })
         }
         // If user unselected DHCPv4 servers, unselected DHCPv6 servers or selected
@@ -170,25 +204,25 @@ export class SubnetFormState implements FormState {
 
         // Filter selectable other selectable servers based on the current selection.
         if (dhcpv4 || subnet?.includes('.')) {
-            this.filteredDaemons = this.allDaemons.filter((d) => d.name === 'dhcp4')
+            this.filteredDaemons = this.allDaemons.filter((g) => g.daemons[0].name === 'dhcp4')
             this.selectableSharedNetworks =
                 this.allSharedNetworks4
                     ?.filter(
                         (sn) =>
-                            sn.localSharedNetworks.every((lsn) => selectedDaemons?.some((id) => id === lsn.daemonId)) &&
-                            sn.localSharedNetworks.length === selectedDaemons?.length
+                            sn.localSharedNetworks.every((lsn) => selectedDaemonIDs.some((id) => id === lsn.daemonId)) &&
+                            sn.localSharedNetworks.length === selectedDaemonIDs.length
                     )
                     .map((sn) => {
                         return { name: sn.name, id: sn.id }
                     }) || []
         } else if (this.dhcpv6 || subnet?.includes(':')) {
-            this.filteredDaemons = this.allDaemons.filter((d) => d.name === 'dhcp6')
+            this.filteredDaemons = this.allDaemons.filter((g) => g.daemons[0].name === 'dhcp6')
             this.selectableSharedNetworks =
                 this.allSharedNetworks6
                     ?.filter(
                         (sn) =>
-                            sn.localSharedNetworks.every((lsn) => selectedDaemons?.some((id) => id === lsn.daemonId)) &&
-                            sn.localSharedNetworks.length === selectedDaemons?.length
+                            sn.localSharedNetworks.every((lsn) => selectedDaemonIDs.some((id) => id === lsn.daemonId)) &&
+                            sn.localSharedNetworks.length === selectedDaemonIDs.length
                     )
                     .map((sn) => {
                         return { name: sn.name, id: sn.id }
