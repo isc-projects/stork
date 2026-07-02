@@ -36,6 +36,7 @@ import {
 } from '../subnets'
 import { AddressRange } from '../address-range'
 import { GenericFormService } from './generic-form.service'
+import type { DaemonGroup } from './subnet-form'
 
 /**
  * An interface to a {@link LocalSubnet}, {@link LocalPool} etc.
@@ -174,11 +175,11 @@ export interface AddressPoolForm {
     options: FormGroup<OptionsForm>
 
     /**
-     * Daemon IDs selected with a multi-select component.
+     * Daemon groups selected with a multi-select component.
      *
-     * Selected daemons are associated with the pool.
+     * Selected daemon groups are associated with the pool.
      */
-    selectedDaemons: FormControl<number[]>
+    selectedGroups: FormControl<number[]>
 }
 
 /**
@@ -221,11 +222,11 @@ export interface PrefixPoolForm {
     options: FormGroup<OptionsForm>
 
     /**
-     * Daemon IDs selected with a multi-select component.
+     * Daemon groups selected with a multi-select component.
      *
-     * Selected daemons are associated with the pool.
+     * Selected daemon groups are associated with the pool.
      */
-    selectedDaemons: FormControl<number[]>
+    selectedGroups: FormControl<number[]>
 }
 
 /**
@@ -263,11 +264,11 @@ export interface SubnetForm {
     options: FormGroup<OptionsForm>
 
     /**
-     * Daemon IDs selected with a multi-select component.
+     * Daemon group indexes selected with a multi-select component.
      *
-     * Selected daemons are associated with the subnet.
+     * Selected daemon groups are associated with the subnet.
      */
-    selectedDaemons: FormControl<number[]>
+    selectedGroups: FormControl<number[]>
 
     /**
      * User contexts for a subnet.
@@ -397,14 +398,91 @@ export class SubnetSetFormService {
     private optionService = inject(DhcpOptionSetFormService)
 
     /**
-     * Extract the index from the array by matching the daemon id.
+     * Expands selected daemon groups to daemons and maps each daemon to its group slot.
      *
-     * @param localData A {@link LocalSubnet} or {@link LocalPool} etc.
-     * @param selectedDaemons an array with identifiers of the selected daemons.
-     * @returns An index in the array.
+     * @param selectedGroups selected daemon group indexes.
+     * @param daemonGroups all daemon groups.
+     * @returns Expanded daemons and value indexes matching group slots.
      */
-    private getDaemonIndex(localData: LocalDaemonData, selectedDaemons: number[]) {
-        return selectedDaemons.findIndex((sd) => sd === localData.daemonId)
+    private expandSelectedGroups(
+        selectedGroups: number[],
+        daemonGroups: DaemonGroup[]
+    ): { daemons: VersionedDaemon[]; valueIndexes: number[] } {
+        const daemons: VersionedDaemon[] = []
+        const valueIndexes: number[] = []
+        for (const [valueIndex, groupIndex] of selectedGroups.entries()) {
+            const group = daemonGroups.find((daemonGroup) => daemonGroup.index === groupIndex)
+            if (!group) {
+                continue
+            }
+            for (const daemon of group.daemons) {
+                if (daemon.id == null) {
+                    continue
+                }
+                daemons.push({
+                    id: daemon.id,
+                    version: daemon.version ?? '',
+                })
+                valueIndexes.push(valueIndex)
+            }
+        }
+        return { daemons, valueIndexes }
+    }
+
+    /**
+     * Finds index of the local daemon in the expanded daemons array.
+     *
+     * @param localData local daemon container.
+     * @param daemons expanded daemons.
+     * @returns An index in the daemons array.
+     */
+    private getDaemonIndex(localData: LocalDaemonData, daemons: VersionedDaemon[]) {
+        return daemons.findIndex((daemon) => daemon.id === localData.daemonId)
+    }
+
+    /**
+     * Maps daemon identifiers to selected daemon group indexes.
+     *
+     * @param daemonIDs daemon identifiers.
+     * @param daemonGroups daemon groups.
+     * @returns Selected daemon group indexes.
+     */
+    private mapDaemonIDsToGroups(daemonIDs: number[], daemonGroups: DaemonGroup[]): number[] {
+        const selectedGroups: number[] = []
+        for (const group of daemonGroups) {
+            if (group.daemons.some((daemon) => daemon.id != null && daemonIDs.includes(daemon.id))) {
+                selectedGroups.push(group.index)
+            }
+        }
+        return selectedGroups
+    }
+
+    /**
+     * Selects one item per daemon group based on selected group indexes.
+     *
+     * @typeParam ItemType type extending daemon data.
+     * @param items items associated with daemons.
+     * @param selectedGroups selected daemon groups.
+     * @param daemonGroups daemon groups.
+     * @returns Representative items for the selected daemon groups.
+     */
+    private getBelongingToSelectedDaemonGroups<ItemType extends LocalDaemonData>(
+        items: ItemType[],
+        selectedGroups: number[],
+        daemonGroups: DaemonGroup[]
+    ): ItemType[] {
+        const representatives: ItemType[] = []
+        for (const selectedGroup of selectedGroups) {
+            const daemonIDs = daemonGroups
+                .find((daemonGroup) => daemonGroup.index === selectedGroup)
+                ?.daemons.filter((daemon) => daemon.id != null)
+                .map((daemon) => daemon.id as number)
+            const representative = items.find((item) => item.daemonId != null && daemonIDs?.includes(item.daemonId))
+            if (representative) {
+                representatives.push(representative)
+            }
+        }
+        return representatives
     }
 
     /**
@@ -418,6 +496,9 @@ export class SubnetSetFormService {
      * @param daemons an array of daemons including their software versions.
      * @param form a form group holding the parameters set by the {@link SharedParametersForm}
      * component.
+    * @param valueIndexes optional mapping from daemon index to form value index.
+    *        It is used when daemons are expanded from selected daemon groups,
+    *        where many daemons can share one group-specific form value.
      * @returns An array of the parameter sets.
      */
     private convertFormToKeaParameters<
@@ -425,7 +506,7 @@ export class SubnetSetFormService {
             [K in keyof FormType]: SharedParameterFormGroup<any, any> | FormRecord<SharedParameterFormGroup<any, any>>
         },
         ParamsType extends { [K in keyof ParamsType]: ParamsType[K] },
-    >(daemons: VersionedDaemon[], form: FormGroup<FormType>): ParamsType[] {
+    >(daemons: VersionedDaemon[], form: FormGroup<FormType>, valueIndexes?: number[]): ParamsType[] {
         let params: ParamsType[] = []
         // Iterate over all parameters.
         for (let key in form.controls) {
@@ -436,23 +517,34 @@ export class SubnetSetFormService {
                 const p = [
                     ...this.convertFormToKeaParameters<FormType, ParamsType>(
                         daemons,
-                        form.controls[key] as FormGroup<FormType>
+                        form.controls[key] as FormGroup<FormType>,
+                        valueIndexes
                     ),
                 ]
                 for (let i = 0; i < p.length; i++) {
-                    params[i]['unknown'] = p[i] || {}
+                    ;(params[i] as any)['unknown'] = p[i] || {}
                 }
                 continue
             }
-            const unlocked = form.get(key).get('unlocked')?.value
+            const parameterControl = form.get(key)
+            if (!parameterControl) {
+                continue
+            }
+            const unlocked = parameterControl.get('unlocked')?.value
             // Get the values of the parameter for different servers.
-            const values = form.get(key).get('values') as UntypedFormArray
+            const values = parameterControl.get('values') as UntypedFormArray
             let data = (form.controls[key] as SharedParameterFormGroup<any, any>)?.data
+            const conversionLength = valueIndexes?.length ?? values?.length ?? 0
             // For each server-specific value of the parameter.
-            for (let i = 0; i < values?.length; i++) {
+            for (let i = 0; i < conversionLength; i++) {
                 // If we haven't added the parameter set for the current index let's add one.
                 if (params.length <= i) {
                     params.push({} as ParamsType)
+                }
+                // A daemon can map to a shared group value slot in the form.
+                const valueIndex = valueIndexes?.[i] ?? i
+                if (valueIndex >= values?.length) {
+                    continue
                 }
                 // Some of the configured parameters may not be applicable to certain Kea
                 // server versions. We need to compare the daemon versions with the upper
@@ -467,8 +559,8 @@ export class SubnetSetFormService {
                 }
                 // If the parameter is unlocked, there should be a value dedicated
                 // for each server. Otherwise, we add the first (common) value.
-                if (values.at(!!unlocked ? i : 0).value != null) {
-                    params[i][key] = values.at(!!unlocked ? i : 0).value
+                if (values.at(!!unlocked ? valueIndex : 0).value != null) {
+                    params[i][key] = values.at(!!unlocked ? valueIndex : 0).value
                 }
             }
         }
@@ -589,7 +681,7 @@ export class SubnetSetFormService {
             ),
             parameters: this.createDefaultKeaPoolParametersForm(keaVersionRange),
             options: this.createDefaultOptionsForm(),
-            selectedDaemons: new FormControl([], Validators.required),
+            selectedGroups: new FormControl<number[]>([], Validators.required),
         })
         return formGroup
     }
@@ -617,7 +709,7 @@ export class SubnetSetFormService {
             ),
             parameters: this.createDefaultKeaPoolParametersForm(keaVersionRange),
             options: this.createDefaultOptionsForm(),
-            selectedDaemons: new FormControl([], Validators.required),
+            selectedGroups: new FormControl<number[]>([], Validators.required),
         })
         return formGroup
     }
@@ -1002,16 +1094,19 @@ export class SubnetSetFormService {
      *
      * @param daemons an array of daemons comprising their software versions.
      * @param form a form holding DHCP parameters for a subnet.
+    * @param valueIndexes optional mapping from daemon index to form value index.
+    *        It is forwarded to the generic conversion helper.
      * @returns An array of parameter sets for different servers.
      */
     convertFormToKeaSubnetParameters(
         daemons: VersionedDaemon[],
-        form: FormGroup<KeaSubnetParametersForm>
+        form: FormGroup<KeaSubnetParametersForm>,
+        valueIndexes?: number[]
     ): KeaConfigSubnetDerivedParameters[] {
         const convertedParameters = this.convertFormToKeaParameters<
             KeaSubnetParametersForm,
             KeaConfigSubnetDerivedParameters
-        >(daemons, form)
+        >(daemons, form, valueIndexes)
         for (let parameters of convertedParameters) {
             if ('relayAddresses' in parameters) {
                 parameters.relay = {
@@ -1059,7 +1154,8 @@ export class SubnetSetFormService {
      */
     convertAddressPoolsToForm(
         keaVersionRange: [string, string],
-        subnet: Subnet
+        subnet: Subnet,
+        daemonGroups: DaemonGroup[]
     ): FormArray<FormGroup<AddressPoolForm>> {
         const formArray = new FormArray<FormGroup<AddressPoolForm>>(
             [],
@@ -1076,6 +1172,11 @@ export class SubnetSetFormService {
         }
         // Iterate over the extracted pools and convert them to a form.
         for (const pool of subnetWithUniquePools[0]?.pools) {
+            const selectedGroups = this.mapDaemonIDsToGroups(
+                pool.localPools?.map((localPool) => localPool.daemonId) || [],
+                daemonGroups
+            )
+            const localPools = this.getBelongingToSelectedDaemonGroups(pool.localPools || [], selectedGroups, daemonGroups)
             // Attempt to validate and convert the pool range specified
             // as a string to an address range. It may throw.
             const addressRange = AddressRange.fromStringRange(pool.pool)
@@ -1093,24 +1194,21 @@ export class SubnetSetFormService {
                     // function.
                     parameters: this.convertKeaPoolParametersToForm(
                         keaVersionRange,
-                        pool.localPools?.map((lp) => lp.keaConfigPoolParameters) || []
+                        localPools.map((localPool) => localPool.keaConfigPoolParameters)
                     ),
                     // Convert the options to a form.
                     options: new FormGroup({
                         unlocked: new FormControl(hasDifferentLocalPoolOptions(pool)),
                         data: new UntypedFormArray(
-                            pool.localPools?.map((lp) =>
+                            localPools.map((localPool) =>
                                 this.optionService.convertOptionsToForm(
                                     subnet.subnet?.includes('.') ? IPType.IPv4 : IPType.IPv6,
-                                    lp.keaConfigPoolParameters?.options
+                                    localPool.keaConfigPoolParameters?.options
                                 )
-                            ) || []
+                            )
                         ),
                     }),
-                    selectedDaemons: new FormControl<number[]>(
-                        pool.localPools?.map((lp) => lp.daemonId) || [],
-                        Validators.required
-                    ),
+                    selectedGroups: new FormControl<number[]>(selectedGroups, Validators.required),
                 })
             )
         }
@@ -1127,21 +1225,23 @@ export class SubnetSetFormService {
      * @returns A pool instance converted from the form.
      */
     convertFormToAddressPools(
-        daemons: VersionedDaemon[],
+        daemonGroups: DaemonGroup[],
         localData: LocalDaemonData,
         form: FormArray<FormGroup<AddressPoolForm>>
     ): Pool[] {
         const pools: Pool[] = []
         for (let poolCtrl of form.controls) {
-            const selectedDaemons = poolCtrl.get('selectedDaemons')?.value
-            const index = this.getDaemonIndex(localData, selectedDaemons)
+            const selectedGroups = poolCtrl.get('selectedGroups')?.value ?? []
+            const expanded = this.expandSelectedGroups(selectedGroups, daemonGroups)
+            const index = this.getDaemonIndex(localData, expanded.daemons)
             if (index < 0) {
                 continue
             }
             const range = `${poolCtrl.get('range.start').value}-${poolCtrl.get('range.end').value}`
             const params = this.convertFormToKeaParameters(
-                daemons.filter((d) => selectedDaemons.includes(d.id)),
-                poolCtrl.get('parameters') as FormGroup<KeaPoolParametersForm>
+                expanded.daemons,
+                poolCtrl.get('parameters') as FormGroup<KeaPoolParametersForm>,
+                expanded.valueIndexes
             )
             const options = poolCtrl.get('options') as UntypedFormGroup
             const pool: Pool = {
@@ -1149,13 +1249,14 @@ export class SubnetSetFormService {
                 keaConfigPoolParameters: params?.length > index ? params[index] : null,
             }
             const data = options.get('data') as UntypedFormArray
-            if (data?.length > index) {
+            const valueIndex = expanded.valueIndexes[index] ?? index
+            if (data?.length > valueIndex) {
                 if (!pool.keaConfigPoolParameters) {
                     pool.keaConfigPoolParameters = {}
                 }
                 pool.keaConfigPoolParameters.options = this.optionService.convertFormToOptions(
                     range.includes(':') ? IPType.IPv6 : IPType.IPv4,
-                    data.at(!!options.get('unlocked')?.value ? index : 0) as UntypedFormArray
+                    data.at(!!options.get('unlocked')?.value ? valueIndex : 0) as UntypedFormArray
                 )
             }
             pools.push(pool)
@@ -1171,7 +1272,11 @@ export class SubnetSetFormService {
      * @param subnet a subnet instance holding the converted pools.
      * @returns An array of form groups representing the pools.
      */
-    convertPrefixPoolsToForm(keaVersionRange: [string, string], subnet: Subnet): FormArray<FormGroup<PrefixPoolForm>> {
+    convertPrefixPoolsToForm(
+        keaVersionRange: [string, string],
+        subnet: Subnet,
+        daemonGroups: DaemonGroup[]
+    ): FormArray<FormGroup<PrefixPoolForm>> {
         const formArray = new FormArray<FormGroup<PrefixPoolForm>>(
             [],
             [StorkValidators.ipv6PrefixOverlaps, StorkValidators.poolIDOverlaps]
@@ -1187,6 +1292,11 @@ export class SubnetSetFormService {
         }
         // Iterate over the extracted pools and convert them to a form.
         for (const pool of subnetWithUniquePools[0]?.prefixDelegationPools) {
+            const selectedGroups = this.mapDaemonIDsToGroups(
+                pool.localPools?.map((localPool) => localPool.daemonId) || [],
+                daemonGroups
+            )
+            const localPools = this.getBelongingToSelectedDaemonGroups(pool.localPools || [], selectedGroups, daemonGroups)
             formArray.push(
                 new FormGroup<PrefixPoolForm>({
                     prefixes: new FormGroup<PrefixForm>(
@@ -1209,24 +1319,21 @@ export class SubnetSetFormService {
                     // function.
                     parameters: this.convertKeaPoolParametersToForm(
                         keaVersionRange,
-                        pool.localPools?.map((lp) => lp.keaConfigPoolParameters) || []
+                        localPools.map((localPool) => localPool.keaConfigPoolParameters)
                     ),
                     // Convert the options to a form.
                     options: new FormGroup({
                         unlocked: new FormControl(hasDifferentLocalPoolOptions(pool)),
                         data: new UntypedFormArray(
-                            pool.localPools?.map((lp) =>
+                            localPools.map((localPool) =>
                                 this.optionService.convertOptionsToForm(
                                     subnet.subnet?.includes('.') ? IPType.IPv4 : IPType.IPv6,
-                                    lp.keaConfigPoolParameters?.options
+                                    localPool.keaConfigPoolParameters?.options
                                 )
-                            ) || []
+                            )
                         ),
                     }),
-                    selectedDaemons: new FormControl<number[]>(
-                        pool.localPools?.map((lp) => lp.daemonId) || [],
-                        Validators.required
-                    ),
+                    selectedGroups: new FormControl<number[]>(selectedGroups, Validators.required),
                 })
             )
         }
@@ -1243,21 +1350,23 @@ export class SubnetSetFormService {
      * @returns A pool instance converted from the form.
      */
     convertFormToPrefixPools(
-        daemons: VersionedDaemon[],
+        daemonGroups: DaemonGroup[],
         localData: LocalDaemonData,
         form: FormArray<FormGroup<PrefixPoolForm>>
     ): DelegatedPrefixPool[] {
         const pools: DelegatedPrefixPool[] = []
         for (let poolCtrl of form.controls) {
-            const selectedDaemons = poolCtrl.get('selectedDaemons')?.value
-            const index = this.getDaemonIndex(localData, selectedDaemons)
+            const selectedGroups = poolCtrl.get('selectedGroups')?.value ?? []
+            const expanded = this.expandSelectedGroups(selectedGroups, daemonGroups)
+            const index = this.getDaemonIndex(localData, expanded.daemons)
             if (index < 0) {
                 continue
             }
             const prefix = poolCtrl.get('prefixes.prefix').value
             const params = this.convertFormToKeaParameters(
-                daemons.filter((d) => selectedDaemons.includes(d.id)),
-                poolCtrl.get('parameters') as FormGroup<KeaPoolParametersForm>
+                expanded.daemons,
+                poolCtrl.get('parameters') as FormGroup<KeaPoolParametersForm>,
+                expanded.valueIndexes
             )
             const options = poolCtrl.get('options') as UntypedFormGroup
             const pool: DelegatedPrefixPool = {
@@ -1267,13 +1376,14 @@ export class SubnetSetFormService {
                 keaConfigPoolParameters: params?.length > index ? params[index] : null,
             }
             const data = options.get('data') as UntypedFormArray
-            if (data?.length > index) {
+            const valueIndex = expanded.valueIndexes[index] ?? index
+            if (data?.length > valueIndex) {
                 if (!pool.keaConfigPoolParameters) {
                     pool.keaConfigPoolParameters = {}
                 }
                 pool.keaConfigPoolParameters.options = this.optionService.convertFormToOptions(
                     prefix?.includes(':') ? IPType.IPv6 : IPType.IPv4,
-                    data.at(!!options.get('unlocked')?.value ? index : 0) as UntypedFormArray
+                    data.at(!!options.get('unlocked')?.value ? valueIndex : 0) as UntypedFormArray
                 )
             }
             pools.push(pool)
@@ -1290,32 +1400,42 @@ export class SubnetSetFormService {
      * @param subnet subnet data.
      * @returns A form created for a subnet.
      */
-    convertSubnetToForm(ipType: IPType, keaVersionRange: [string, string], subnet: Subnet): FormGroup<SubnetForm> {
+    convertSubnetToForm(
+        ipType: IPType,
+        keaVersionRange: [string, string],
+        subnet: Subnet,
+        daemonGroups: DaemonGroup[]
+    ): FormGroup<SubnetForm> {
+        const selectedGroups = this.mapDaemonIDsToGroups(
+            subnet.localSubnets?.map((localSubnet) => localSubnet.daemonId) || [],
+            daemonGroups
+        )
+        const localSubnets = this.getBelongingToSelectedDaemonGroups(subnet.localSubnets || [], selectedGroups, daemonGroups)
         let formGroup = new FormGroup<SubnetForm>({
             subnet: new FormControl({ value: subnet.subnet, disabled: true }),
             sharedNetwork: new FormControl(subnet.sharedNetworkId),
-            pools: this.convertAddressPoolsToForm(keaVersionRange, subnet),
-            prefixPools: this.convertPrefixPoolsToForm(keaVersionRange, subnet),
+            pools: this.convertAddressPoolsToForm(keaVersionRange, subnet, daemonGroups),
+            prefixPools: this.convertPrefixPoolsToForm(keaVersionRange, subnet, daemonGroups),
             parameters: this.convertKeaSubnetParametersToForm(
                 ipType,
                 keaVersionRange,
                 'subnet',
-                subnet.localSubnets?.map((ls) => ls.keaConfigSubnetParameters.subnetLevelParameters) || []
+                localSubnets.map((localSubnet) => localSubnet.keaConfigSubnetParameters.subnetLevelParameters)
             ),
             options: new FormGroup({
                 unlocked: new FormControl(hasDifferentSubnetLevelOptions(subnet)),
                 data: new UntypedFormArray(
-                    subnet.localSubnets?.map((ls) =>
+                    localSubnets.map((localSubnet) =>
                         this.optionService.convertOptionsToForm(
                             ipType,
-                            ls.keaConfigSubnetParameters.subnetLevelParameters.options
+                            localSubnet.keaConfigSubnetParameters.subnetLevelParameters.options
                         )
-                    ) || []
+                    )
                 ),
             }),
-            selectedDaemons: new FormControl<number[]>(
+            selectedGroups: new FormControl<number[]>(
                 {
-                    value: subnet.localSubnets?.map((ls) => ls.daemonId) || [],
+                    value: selectedGroups,
                     disabled: !!subnet.sharedNetworkId,
                 },
                 Validators.required
@@ -1323,10 +1443,10 @@ export class SubnetSetFormService {
             userContexts: new FormGroup({
                 unlocked: new FormControl(hasDifferentSubnetUserContexts(subnet)),
                 contexts: new FormArray<FormControl<object>>(
-                    subnet.localSubnets?.map((ls) => new FormControl(ls.userContext)) ?? []
+                    localSubnets.map((localSubnet) => new FormControl(localSubnet.userContext))
                 ),
                 names: new FormArray<FormControl<string>>(
-                    subnet.localSubnets?.map((ls) => new FormControl(ls.userContext?.['subnet-name'])) ?? []
+                    localSubnets.map((localSubnet) => new FormControl(localSubnet.userContext?.['subnet-name']))
                 ),
             }),
         })
@@ -1429,7 +1549,7 @@ export class SubnetSetFormService {
             prefixPools: new FormArray<FormGroup<PrefixPoolForm>>([], StorkValidators.ipv6PrefixOverlaps),
             parameters: this.createDefaultKeaSubnetParametersForm(IPType.IPv4, keaVersionRange),
             options: this.createDefaultOptionsForm(),
-            selectedDaemons: new FormControl<number[]>([], Validators.required),
+            selectedGroups: new FormControl<number[]>([], Validators.required),
             userContexts: new FormGroup({
                 unlocked: new FormControl({ value: false, disabled: true }),
                 contexts: new FormArray([new FormControl({})]),
@@ -1448,22 +1568,32 @@ export class SubnetSetFormService {
      * @param form a form comprising subnet data.
      * @returns A subnet instance converted from the form.
      */
-    convertFormToSubnet(daemons: VersionedDaemon[], form: FormGroup<SubnetForm>): Subnet {
+    convertFormToSubnet(daemons: VersionedDaemon[], form: FormGroup<SubnetForm>, daemonGroups: DaemonGroup[]): Subnet {
+        const daemonVersions = new Map(daemons.map((daemon) => [daemon.id, daemon.version ?? '']))
+        const daemonGroupsWithVersions: DaemonGroup[] = daemonGroups.map((daemonGroup) => ({
+            ...daemonGroup,
+            daemons: daemonGroup.daemons.map((daemon) => ({
+                ...daemon,
+                version: daemon.id != null ? (daemonVersions.get(daemon.id) ?? daemon.version ?? '') : daemon.version,
+            })),
+        }))
+        const selectedGroups = form.get('selectedGroups')?.value ?? []
+        const expanded = this.expandSelectedGroups(selectedGroups, daemonGroupsWithVersions)
         let subnet: Subnet = {
             subnet: form.get('subnet')?.value,
             sharedNetworkId: form.get('sharedNetwork')?.value,
-            localSubnets:
-                form.get('selectedDaemons')?.value.map((sd) => {
-                    let ls: LocalSubnet = {
-                        daemonId: sd,
-                    }
-                    return ls
-                }) || [],
+            localSubnets: expanded.daemons.map((daemon) => {
+                let localSubnet: LocalSubnet = {
+                    daemonId: daemon.id,
+                }
+                return localSubnet
+            }),
         }
         // Convert the simple DHCP parameters and options.
         const params = this.convertFormToKeaSubnetParameters(
-            daemons,
-            form.get('parameters') as FormGroup<KeaSubnetParametersForm>
+            expanded.daemons,
+            form.get('parameters') as FormGroup<KeaSubnetParametersForm>,
+            expanded.valueIndexes
         )
         const options = form.get('options') as UntypedFormGroup
         for (let i = 0; i < subnet.localSubnets.length; i++) {
@@ -1476,21 +1606,22 @@ export class SubnetSetFormService {
                 }
             }
             subnet.localSubnets[i].pools = this.convertFormToAddressPools(
-                daemons,
+                daemonGroupsWithVersions,
                 subnet.localSubnets[i],
                 form.get('pools') as FormArray<FormGroup<AddressPoolForm>>
             )
             subnet.localSubnets[i].prefixDelegationPools = this.convertFormToPrefixPools(
-                daemons,
+                daemonGroupsWithVersions,
                 subnet.localSubnets[i],
                 form.get('prefixPools') as FormArray<FormGroup<PrefixPoolForm>>
             )
             const data = options.get('data') as UntypedFormArray
-            if (data?.length > i) {
+            const valueIndex = expanded.valueIndexes[i] ?? i
+            if (data?.length > valueIndex) {
                 subnet.localSubnets[i].keaConfigSubnetParameters.subnetLevelParameters.options =
                     this.optionService.convertFormToOptions(
                         subnet.subnet?.includes(':') ? IPType.IPv6 : IPType.IPv4,
-                        data.at(!!options.get('unlocked')?.value ? i : 0) as UntypedFormArray
+                        data.at(!!options.get('unlocked')?.value ? valueIndex : 0) as UntypedFormArray
                     )
             }
         }
@@ -1499,11 +1630,12 @@ export class SubnetSetFormService {
         const names = group.get('names')?.value
         const unlocked = !!group.get('unlocked')?.value
         for (let i = 0; i < subnet.localSubnets.length; i++) {
-            if (contexts?.length <= i) {
+            const valueIndex = expanded.valueIndexes[i] ?? i
+            if (contexts?.length <= valueIndex) {
                 break
             }
-            let context = contexts[unlocked ? i : 0]
-            const name = names[unlocked ? i : 0]
+            let context = contexts[unlocked ? valueIndex : 0]
+            const name = names[unlocked ? valueIndex : 0]
 
             if (!context && name) {
                 context = {}
@@ -1940,24 +2072,30 @@ export class SubnetSetFormService {
      * daemons are unselected.
      *
      * @param formGroup form group holding the subnet or pool data.
-     * @param toggledDaemonIndex index of the selected or unselected daemon.
+     * @param toggleDaemonGroupIndex index of the selected or unselected daemon group.
      * @param prevSelectedDaemonsNum a number of previously selected daemons.
      */
     adjustFormForSelectedDaemons(
         formGroup: UntypedFormGroup,
-        toggledDaemonIndex: number,
+        toggleDaemonGroupIndex: number,
         prevSelectedDaemonsNum: number
     ): void {
         // If the number of daemons hasn't changed, there is nothing more to do.
-        const selectedDaemons = formGroup.get('selectedDaemons').value ?? []
-        if (prevSelectedDaemonsNum === selectedDaemons.length) {
+        const selectedAssignments =
+            (formGroup.get('selectedGroups') as UntypedFormControl | null)?.value ??
+            (formGroup.get('selectedDaemons') as UntypedFormControl | null)?.value ??
+            []
+        if (prevSelectedDaemonsNum === selectedAssignments.length) {
             return
         }
         const pools = formGroup.get('pools') as FormArray<FormGroup<AddressPoolForm>>
         if (pools) {
             for (const pool of pools.controls) {
-                pool.get('selectedDaemons').setValue(
-                    pool.get('selectedDaemons').value.filter((sd) => selectedDaemons.find((found) => found === sd))
+                const selectedPoolGroups = pool.get('selectedGroups') as UntypedFormControl
+                selectedPoolGroups?.setValue(
+                    (selectedPoolGroups?.value ?? []).filter((assignment) =>
+                        selectedAssignments.find((selected) => selected === assignment)
+                    )
                 )
             }
         }
@@ -1965,8 +2103,11 @@ export class SubnetSetFormService {
         const prefixPools = formGroup.get('prefixPools') as FormArray<FormGroup<PrefixPoolForm>>
         if (prefixPools) {
             for (const pool of prefixPools.controls) {
-                pool.get('selectedDaemons').setValue(
-                    pool.get('selectedDaemons').value.filter((sd) => selectedDaemons.find((found) => found === sd))
+                const selectedPoolGroups = pool.get('selectedGroups') as UntypedFormControl
+                selectedPoolGroups?.setValue(
+                    (selectedPoolGroups?.value ?? []).filter((assignment) =>
+                        selectedAssignments.find((selected) => selected === assignment)
+                    )
                 )
             }
         }
@@ -1978,18 +2119,18 @@ export class SubnetSetFormService {
         for (const key of Object.keys(parameters?.controls)) {
             const values = parameters.get(key).get('values') as UntypedFormArray
             const unlocked = parameters.get(key).get('unlocked') as UntypedFormControl
-            if (selectedDaemons.length < prevSelectedDaemonsNum) {
+            if (selectedAssignments.length < prevSelectedDaemonsNum) {
                 // We have removed a daemon from a list. Let's remove the
                 // controls pertaining to the removed daemon.
-                if (values?.length > selectedDaemons.length) {
+                if (values?.length > selectedAssignments.length) {
                     // If we have the index of the removed daemon let's remove the
                     // controls appropriate for this daemon. This will preserve the
                     // values specified for any other daemons. Otherwise, let's remove
                     // the last control.
-                    if (toggledDaemonIndex >= 0 && toggledDaemonIndex < values.controls.length) {
-                        values.controls.splice(toggledDaemonIndex, 1)
+                    if (toggleDaemonGroupIndex >= 0 && toggleDaemonGroupIndex < values.controls.length) {
+                        values.controls.splice(toggleDaemonGroupIndex, 1)
                     } else {
-                        values.controls.splice(selectedDaemons.length)
+                        values.controls.splice(selectedAssignments.length)
                     }
                 }
                 // Clear the unlock flag when there is only one server left.
@@ -2002,7 +2143,7 @@ export class SubnetSetFormService {
                 // for this server. Let's use the values associated with the first
                 // server. We should have at least one server at this point but
                 // let's double check.
-                if (values?.length > 0 && values.length < selectedDaemons.length) {
+                if (values?.length > 0 && values.length < selectedAssignments.length) {
                     values.push(this.genericFormService.cloneControl(values.at(0)))
                     unlocked?.enable()
                 }
@@ -2013,15 +2154,15 @@ export class SubnetSetFormService {
         const data = formGroup.get('options.data') as UntypedFormArray
         if (data?.controls?.length > 0) {
             const unlocked = formGroup.get('options')?.get('unlocked') as UntypedFormControl
-            if (selectedDaemons.length < prevSelectedDaemonsNum) {
+            if (selectedAssignments.length < prevSelectedDaemonsNum) {
                 // If we have the index of the removed daemon let's remove the
                 // controls appropriate for this daemon. This will preserve the
                 // values specified for any other daemons. Otherwise, let's remove
                 // the last control.
-                if (toggledDaemonIndex >= 0 && toggledDaemonIndex < data.controls.length && unlocked.value) {
-                    data.controls.splice(toggledDaemonIndex, 1)
+                if (toggleDaemonGroupIndex >= 0 && toggleDaemonGroupIndex < data.controls.length && unlocked.value) {
+                    data.controls.splice(toggleDaemonGroupIndex, 1)
                 } else {
-                    data.controls.splice(selectedDaemons.length)
+                    data.controls.splice(selectedAssignments.length)
                 }
                 // Clear the unlock flag when there is only one server left.
                 if (data.controls.length < 2) {
@@ -2029,7 +2170,7 @@ export class SubnetSetFormService {
                     unlocked?.disable()
                 }
             } else {
-                if (data.controls.length > 0 && data.controls.length < selectedDaemons.length) {
+                if (data.controls.length > 0 && data.controls.length < selectedAssignments.length) {
                     data.push(this.optionService.cloneControl(data.controls[0]))
                     unlocked?.enable()
                 }
@@ -2041,21 +2182,21 @@ export class SubnetSetFormService {
         const userContextsContexts = formGroup.get('userContexts.contexts') as UntypedFormArray
         if (userContextsNames?.controls?.length > 0) {
             const unlocked = formGroup.get('userContexts')?.get('unlocked') as UntypedFormControl
-            if (selectedDaemons.length < prevSelectedDaemonsNum) {
+            if (selectedAssignments.length < prevSelectedDaemonsNum) {
                 // If we have the index of the removed daemon let's remove the
                 // controls appropriate for this daemon. This will preserve the
                 // values specified for any other daemons. Otherwise, let's remove
                 // the last control.
                 if (
-                    toggledDaemonIndex >= 0 &&
-                    toggledDaemonIndex < userContextsNames.controls.length &&
+                    toggleDaemonGroupIndex >= 0 &&
+                    toggleDaemonGroupIndex < userContextsNames.controls.length &&
                     unlocked.value
                 ) {
-                    userContextsNames.controls.splice(toggledDaemonIndex, 1)
-                    userContextsContexts.controls.splice(toggledDaemonIndex, 1)
+                    userContextsNames.controls.splice(toggleDaemonGroupIndex, 1)
+                    userContextsContexts.controls.splice(toggleDaemonGroupIndex, 1)
                 } else {
-                    userContextsNames.controls.splice(selectedDaemons.length)
-                    userContextsContexts.controls.splice(selectedDaemons.length)
+                    userContextsNames.controls.splice(selectedAssignments.length)
+                    userContextsContexts.controls.splice(selectedAssignments.length)
                 }
                 // Clear the unlock flag when there is only one server left.
                 if (userContextsNames.controls.length < 2) {
@@ -2065,7 +2206,7 @@ export class SubnetSetFormService {
             } else {
                 if (
                     userContextsNames.controls.length > 0 &&
-                    userContextsNames.controls.length < selectedDaemons.length
+                    userContextsNames.controls.length < selectedAssignments.length
                 ) {
                     userContextsNames.push(this.genericFormService.cloneControl(userContextsNames.controls[0]))
                     userContextsContexts.push(this.genericFormService.cloneControl(userContextsContexts.controls[0]))
