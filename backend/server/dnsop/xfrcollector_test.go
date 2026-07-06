@@ -2,6 +2,7 @@ package dnsop
 
 import (
 	context "context"
+	"fmt"
 	iter "iter"
 	"math"
 	"sync"
@@ -374,4 +375,171 @@ func TestXFRCollectorZoneTransferTrackingDisabledOnAgent(t *testing.T) {
 	xfrs, _, err := dbmodel.GetZoneTransferStatesByPage(db, 0, 100)
 	require.NoError(t, err)
 	require.Empty(t, xfrs)
+}
+
+func TestXFRCollectorConvertXFRStateToDBModel(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Create two machines - one for the client and one for the server.
+	daemons := make([]*dbmodel.Daemon, 2)
+	for i := range 2 {
+		machine := &dbmodel.Machine{
+			Address:   "127.0.0.1",
+			AgentPort: int64(8080 + i),
+		}
+		err := dbmodel.AddMachine(db, machine)
+		require.NoError(t, err)
+
+		// Add IP address to machine mappings. The client gets the
+		// 2001:db8::1 IP address, the server gets the 2001:db8::2 IP address.
+		networkInterface := dbmodel.MachineNetworkInterface{
+			MachineID: machine.ID,
+			Name:      "eth0",
+			IPAddresses: []dbmodel.MachineNetworkInterfaceIPAddress{
+				{
+					IPAddress: fmt.Sprintf("2001:db8::%d", i+1),
+				},
+			},
+		}
+		require.NoError(t, err)
+
+		err = dbmodel.UpsertMachineNetworkInterfaces(db, machine.ID, networkInterface)
+		require.NoError(t, err)
+
+		// Add the daemons for the XFR client and server.
+		daemon := &dbmodel.Daemon{
+			MachineID: machine.ID,
+			AccessPoints: []*dbmodel.AccessPoint{
+				{
+					Type:    dbmodel.AccessPointControl,
+					Address: "localhost",
+					Port:    int64(5300 + i),
+				},
+			},
+		}
+		err = dbmodel.AddDaemon(db, daemon)
+		require.NoError(t, err)
+		daemons[i] = daemon
+	}
+
+	// client-side XFR collector.
+	xfrCollector := newXFRCollector(daemonstest.ManagerAccessorsWrapper{
+		DB:     db,
+		Agents: NewMockConnectedAgents(gomock.NewController(t)),
+	}, newMachineIPAddressCache(db), daemons[0])
+
+	// server-side XFR collector.
+	xfrCollector2 := newXFRCollector(daemonstest.ManagerAccessorsWrapper{
+		DB:     db,
+		Agents: NewMockConnectedAgents(gomock.NewController(t)),
+	}, newMachineIPAddressCache(db), daemons[1])
+
+	t.Run("no client and no server", func(t *testing.T) {
+		// There is neither client nor server IP address. It is an example of an
+		// incoming zone transfer where the client begins the transfer without logging
+		// the server IP address. The client IP address is not logged because it is
+		// initiated on the machine where the zone transfer is captured.
+		xfr := &bind9xfr.State{
+			ViewName: "view",
+			ZoneName: "zone",
+			Serial:   1234567890,
+		}
+		dbState := xfrCollector.convertXFRStateToDBModel(xfr)
+		require.Equal(t, daemons[0].ID, dbState.DaemonID)
+		// The client machine ID is the same as the ID of the machine
+		// where the zone transfer is captured.
+		require.Equal(t, daemons[0].MachineID, dbState.ClientMachineID)
+		// The server machine ID is unknown.
+		require.Zero(t, dbState.ServerMachineID)
+	})
+
+	t.Run("client and no server", func(t *testing.T) {
+		// The client IP address is logged for an outgoing zone transfer. It
+		// is expected that the client machine is obtained from the IP address.
+		// The server machine ID is the same as the ID of the machine
+		// where the zone transfer is captured.
+		xfr := &bind9xfr.State{
+			ViewName: "view",
+			ZoneName: "zone",
+			Serial:   1234567890,
+			Client:   "2001:db8::1",
+		}
+		dbState := xfrCollector2.convertXFRStateToDBModel(xfr)
+		require.Equal(t, daemons[1].ID, dbState.DaemonID)
+		// The client machine ID should be obtained from the IP address.
+		require.Equal(t, daemons[0].MachineID, dbState.ClientMachineID)
+		// The server machine ID should be the ID of the machine where
+		// the zone transfer is logged.
+		require.Equal(t, daemons[1].MachineID, dbState.ServerMachineID)
+	})
+
+	t.Run("no client and server", func(t *testing.T) {
+		// The server IP address is logged for an incoming zone transfer. In this
+		// case the client IP address is not logged as it is initiated on the machine
+		// where the zone transfer is captured.
+		xfr := &bind9xfr.State{
+			ViewName: "view",
+			ZoneName: "zone",
+			Serial:   1234567890,
+			Server:   "2001:db8::2",
+		}
+		dbState := xfrCollector.convertXFRStateToDBModel(xfr)
+		require.Equal(t, daemons[0].ID, dbState.DaemonID)
+		// The client machine ID is set to the ID of the machine where the zone transfer
+		// is captured.
+		require.Equal(t, daemons[0].MachineID, dbState.ClientMachineID)
+		// The server machine ID is obtained from the IP address.
+		require.Equal(t, daemons[1].MachineID, dbState.ServerMachineID)
+	})
+
+	t.Run("client and server", func(t *testing.T) {
+		xfr := &bind9xfr.State{
+			ViewName: "view",
+			ZoneName: "zone",
+			Serial:   1234567890,
+			Client:   "2001:db8::1",
+			Server:   "2001:db8::2",
+		}
+		dbState := xfrCollector2.convertXFRStateToDBModel(xfr)
+		require.Equal(t, daemons[1].ID, dbState.DaemonID)
+		// The client machine ID should be obtained from the IP address.
+		require.Equal(t, daemons[0].MachineID, dbState.ClientMachineID)
+		// The server machine ID should be obtained from the IP address.
+		require.Equal(t, daemons[1].MachineID, dbState.ServerMachineID)
+	})
+
+	t.Run("client unknown IP address", func(t *testing.T) {
+		// The client IP address is not mapped to any machine.
+		xfr := &bind9xfr.State{
+			ViewName: "view",
+			ZoneName: "zone",
+			Serial:   1234567890,
+			Client:   "2001:db8::3",
+		}
+		dbState := xfrCollector2.convertXFRStateToDBModel(xfr)
+		require.Equal(t, daemons[1].ID, dbState.DaemonID)
+		// The client machine ID is unknown.
+		require.Zero(t, dbState.ClientMachineID)
+		// The server machine ID is the ID of the machine where the zone transfer
+		// is logged.
+		require.Equal(t, daemons[1].MachineID, dbState.ServerMachineID)
+	})
+
+	t.Run("server unknown IP address", func(t *testing.T) {
+		// The server IP address is not mapped to any machine.
+		xfr := &bind9xfr.State{
+			ViewName: "view",
+			ZoneName: "zone",
+			Serial:   1234567890,
+			Server:   "2001:db8::3",
+		}
+		dbState := xfrCollector.convertXFRStateToDBModel(xfr)
+		require.Equal(t, daemons[0].ID, dbState.DaemonID)
+		// The client machine ID is the ID of the machine where the zone transfer
+		// is captured.
+		require.Equal(t, daemons[0].MachineID, dbState.ClientMachineID)
+		// The server machine ID is unknown.
+		require.Zero(t, dbState.ServerMachineID)
+	})
 }

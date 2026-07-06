@@ -8,6 +8,7 @@ import (
 	"github.com/go-pg/pg/v10"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"isc.org/stork/daemondata/bind9xfr"
 	agentcomm "isc.org/stork/server/agentcomm"
 	dbmodel "isc.org/stork/server/database/model"
 )
@@ -54,6 +55,66 @@ func newXFRCollector(owner ManagerAccessors, machineIPAddressCache *machineIPAdd
 	}
 }
 
+// Converts XFR state instances to the database model. In addition to copying the data
+// between the two structures, it also sets client and server machine IDs based on the
+// IP addresses carried in the xfr.Server and xfr.Client fields. This function is called
+// internally by the collect function and is extracted to a separate function to ease
+// unit testing.
+func (xfrCollector *xfrCollector) convertXFRStateToDBModel(xfr *bind9xfr.State) *dbmodel.ZoneTransferState {
+	var (
+		clientMachineID int64
+		serverMachineID int64
+	)
+	switch {
+	case xfr.Client != "":
+		// The client address is set for an outgoing zone transfer. Let's try to obtain
+		// the machine ID from the IP address. It may not be available if the IP address
+		// to machine mapping is not set (e.g., if the machine is not yet monitored).
+		clientMachines := xfrCollector.machineIPAddressCache.getMachines(xfr.Client)
+		if len(clientMachines) > 0 {
+			clientMachineID = clientMachines[0].ID
+		}
+		// For an outgoing zone tranfser the server machine ID is the ID of the machine
+		// where the zone transfer is captured.
+		serverMachineID = xfrCollector.daemon.MachineID
+	case xfr.Server != "":
+		// The server address can be set for an incoming zone transfer. Let's try to obtain
+		// the machine ID from the IP address. It may not be available if the IP address
+		// to machine mapping is not set (e.g., if the machine is not yet monitored).
+		serverMachine := xfrCollector.machineIPAddressCache.getMachines(xfr.Server)
+		if len(serverMachine) > 0 {
+			serverMachineID = serverMachine[0].ID
+		}
+		// For an incoming zone transfer the client machine ID is the ID of the machine
+		// where the zone transfer is captured.
+		clientMachineID = xfrCollector.daemon.MachineID
+	default:
+		// There is neither client nor server IP address. It is an example of an
+		// incoming zone transfer where the client begins the transfer without logging
+		// the server IP address. The client IP address is not logged because it is
+		// initiated on the machine where the zone transfer is captured.
+		clientMachineID = xfrCollector.daemon.MachineID
+	}
+	return &dbmodel.ZoneTransferState{
+		DaemonID:        xfrCollector.daemon.ID,
+		ViewName:        xfr.ViewName,
+		ZoneName:        xfr.ZoneName,
+		Serial:          xfr.Serial,
+		Client:          xfr.Client,
+		Server:          xfr.Server,
+		MessagesCount:   xfr.MessagesCount,
+		RecordsCount:    xfr.RecordsCount,
+		BytesCount:      xfr.BytesCount,
+		Duration:        xfr.Duration,
+		Status:          xfr.Status,
+		StartTime:       xfr.StartTime,
+		CompletionTime:  xfr.CompletionTime,
+		Message:         xfr.Message,
+		ClientMachineID: clientMachineID,
+		ServerMachineID: serverMachineID,
+	}
+}
+
 // The main goroutine implementation that receives the zone transfer states over
 // stream. It is called internally by the start function. In case of an error, it
 // tries to re-connect to the agent using the backoff mechanism. If the connection
@@ -81,42 +142,8 @@ func (xfrCollector *xfrCollector) collect(ctx context.Context) {
 			// The connection was successfully established. Let's restart the backoff.
 			backoff = xfrCollector.backoffFactor
 
-			var (
-				clientMachineID int64
-				serverMachineID int64
-			)
-			switch {
-			case xfr.Client != "":
-				clientMachines := xfrCollector.machineIPAddressCache.getMachines(xfr.Client)
-				if len(clientMachines) > 0 {
-					clientMachineID = clientMachines[0].ID
-				}
-				serverMachineID = xfrCollector.daemon.MachineID
-			case xfr.Server != "":
-				serverMachine := xfrCollector.machineIPAddressCache.getMachines(xfr.Server)
-				if len(serverMachine) > 0 {
-					serverMachineID = serverMachine[0].ID
-				}
-				clientMachineID = xfrCollector.daemon.MachineID
-			}
-			err = dbmodel.AddOrUpdateZoneTransferState(xfrCollector.db, &dbmodel.ZoneTransferState{
-				DaemonID:        xfrCollector.daemon.ID,
-				ViewName:        xfr.ViewName,
-				ZoneName:        xfr.ZoneName,
-				Serial:          xfr.Serial,
-				Client:          xfr.Client,
-				Server:          xfr.Server,
-				MessagesCount:   xfr.MessagesCount,
-				RecordsCount:    xfr.RecordsCount,
-				BytesCount:      xfr.BytesCount,
-				Duration:        xfr.Duration,
-				Status:          xfr.Status,
-				StartTime:       xfr.StartTime,
-				CompletionTime:  xfr.CompletionTime,
-				Message:         xfr.Message,
-				ClientMachineID: clientMachineID,
-				ServerMachineID: serverMachineID,
-			})
+			dbState := xfrCollector.convertXFRStateToDBModel(xfr)
+			err = dbmodel.AddOrUpdateZoneTransferState(xfrCollector.db, dbState)
 			if err != nil {
 				var pgErr pg.Error
 				if errors.As(err, &pgErr) && pgErr.Field('C') == "23503" && pgErr.Field('n') == "zone_transfer_state_daemon_id_fkey" {
