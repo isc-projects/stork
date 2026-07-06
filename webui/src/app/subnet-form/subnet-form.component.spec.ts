@@ -194,6 +194,171 @@ describe('SubnetFormComponent', () => {
     }
 
     // TODO: This structure doesn't implement CreateSubnetBeginResponse.
+    let cannedResponseGroupedDaemons: UpdateSubnetBeginResponse = {
+        id: 456,
+        daemons: [
+            {
+                id: 10,
+                name: 'dhcp4',
+                label: 'zeta',
+                serverTag: 'tag-a',
+                backends: [
+                    {
+                        backendType: 'postgresql',
+                        database: 'stork',
+                        host: 'db.example.org',
+                        port: 5432,
+                        dataTypes: ['Config Backend'],
+                    },
+                ],
+            },
+            {
+                id: 11,
+                name: 'dhcp4',
+                label: 'alpha',
+                serverTag: 'tag-a',
+                backends: [
+                    {
+                        backendType: 'postgresql',
+                        database: 'stork',
+                        host: 'db.example.org',
+                        port: 5432,
+                        dataTypes: ['Config Backend'],
+                    },
+                ],
+            },
+            {
+                id: 12,
+                name: 'dhcp4',
+                label: 'beta',
+                serverTag: 'tag-b',
+                backends: [
+                    {
+                        backendType: 'postgresql',
+                        database: 'stork',
+                        host: 'db.example.org',
+                        port: 5432,
+                        dataTypes: ['Config Backend'],
+                    },
+                ],
+            },
+        ],
+        sharedNetworks4: [],
+        sharedNetworks6: [],
+    }
+
+    // TODO: This structure doesn't implement CreateSubnetBeginResponse.
+    let cannedResponseSharedBackendUpdate: UpdateSubnetBeginResponse = {
+        id: 501,
+        subnet: {
+            id: 901,
+            subnet: '192.0.20.0/24',
+            localSubnets: [
+                {
+                    id: 901,
+                    daemonId: 1,
+                    daemonLabel: 'dhcp4-a',
+                    pools: [],
+                    prefixDelegationPools: [],
+                    keaConfigSubnetParameters: {
+                        subnetLevelParameters: {
+                            options: [],
+                        },
+                    },
+                },
+            ],
+        },
+        daemons: [
+            {
+                id: 1,
+                name: 'dhcp4',
+                label: 'dhcp4-a',
+                serverTag: 'tag-a',
+                backends: [
+                    {
+                        backendType: 'postgresql',
+                        database: 'stork',
+                        host: 'db.example.org',
+                        port: 5432,
+                        dataTypes: ['Config Backend'],
+                    },
+                ],
+            },
+            {
+                id: 4,
+                name: 'dhcp4',
+                label: 'dhcp4-b',
+                serverTag: 'tag-b',
+                backends: [
+                    {
+                        backendType: 'postgresql',
+                        database: 'stork',
+                        host: 'db.example.org',
+                        port: 5432,
+                        dataTypes: ['Config Backend'],
+                    },
+                ],
+            },
+        ],
+        sharedNetworks4: [],
+        sharedNetworks6: [],
+    }
+
+    // TODO: This structure doesn't implement CreateSubnetBeginResponse.
+    let cannedResponseNoBackendUpdate: UpdateSubnetBeginResponse = {
+        id: 502,
+        subnet: {
+            id: 777,
+            subnet: '192.0.30.0/24',
+            localSubnets: [
+                {
+                    id: 777,
+                    daemonId: 1,
+                    daemonLabel: 'dhcp4-1',
+                    pools: [],
+                    prefixDelegationPools: [],
+                    keaConfigSubnetParameters: {
+                        subnetLevelParameters: {
+                            options: [],
+                        },
+                    },
+                },
+                {
+                    id: 777,
+                    daemonId: 2,
+                    daemonLabel: 'dhcp4-2',
+                    pools: [],
+                    prefixDelegationPools: [],
+                    keaConfigSubnetParameters: {
+                        subnetLevelParameters: {
+                            options: [],
+                        },
+                    },
+                },
+            ],
+        },
+        daemons: [
+            {
+                id: 1,
+                name: 'dhcp4',
+                label: 'dhcp4-1',
+            },
+            {
+                id: 2,
+                name: 'dhcp4',
+                label: 'dhcp4-2',
+            },
+            {
+                id: 3,
+                name: 'dhcp4',
+                label: 'dhcp4-3',
+            },
+        ],
+        sharedNetworks4: [],
+        sharedNetworks6: [],
+    }
+
+    // TODO: This structure doesn't implement CreateSubnetBeginResponse.
     let cannedResponseBeginSubnet6: UpdateSubnetBeginResponse = {
         id: 345,
         subnet: {
@@ -488,6 +653,20 @@ describe('SubnetFormComponent', () => {
         expect(messageService.add).toHaveBeenCalled()
     }))
 
+    it('should group daemons by server tag and sort labels', fakeAsync(() => {
+        spyOn(dhcpApi, 'createSubnetBegin').and.returnValue(wrapInHttpResponse(cannedResponseGroupedDaemons))
+        component.subnetId = undefined
+        component.ngOnInit()
+        tick()
+        fixture.detectChanges()
+
+        expect(component.state.allDaemons.length).toBe(2)
+        expect(component.state.allDaemons[0].label).toBe('alpha, zeta')
+        expect(component.state.allDaemons[0].daemons.map((daemon) => daemon.id)).toEqual([10, 11])
+        expect(component.state.allDaemons[1].label).toBe('beta')
+        expect(component.state.allDaemons[1].daemons.map((daemon) => daemon.id)).toEqual([12])
+    }))
+
     it('should open a form for creating an IPv6 subnet', fakeAsync(() => {
         spyOn(dhcpApi, 'createSubnetBegin').and.returnValue(wrapInHttpResponse(cannedResponseBeginSubnet4))
         component.subnetId = undefined
@@ -577,6 +756,90 @@ describe('SubnetFormComponent', () => {
         expect(dhcpApi.createSubnetSubmit).toHaveBeenCalledWith(component.state.transactionID, subnet)
         expect(component.formSubmit.emit).toHaveBeenCalled()
         expect(messageService.add).toHaveBeenCalled()
+    }))
+
+    it('should reuse local subnet ID for a daemon sharing config backend', fakeAsync(() => {
+        spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(wrapInHttpResponse(cannedResponseSharedBackendUpdate))
+        component.subnetId = 901
+        component.ngOnInit()
+        tick()
+        fixture.detectChanges()
+
+        const daemon1GroupIndex = component.state.allDaemons.find((group) =>
+            group.daemons.some((daemon) => daemon.id === 1)
+        )?.index
+        const daemon4GroupIndex = component.state.allDaemons.find((group) =>
+            group.daemons.some((daemon) => daemon.id === 4)
+        )?.index
+        expect(daemon1GroupIndex).not.toBeUndefined()
+        expect(daemon4GroupIndex).not.toBeUndefined()
+        const selectedGroups = [daemon1GroupIndex, daemon4GroupIndex].filter(
+            (groupIndex): groupIndex is number => groupIndex != null
+        )
+
+        component.state.group.get('selectedGroups')?.setValue(selectedGroups)
+        component.onDaemonsChange({
+            itemValue: daemon4GroupIndex,
+        })
+        tick()
+        fixture.detectChanges()
+
+        const okResp: any = {
+            status: 200,
+        }
+        spyOn(dhcpApi, 'updateSubnetSubmit').and.returnValue(of(okResp))
+        component.onSubmit()
+        tick()
+        fixture.detectChanges()
+
+        const submittedSubnet = (dhcpApi.updateSubnetSubmit as jasmine.Spy).calls.mostRecent().args[2] as Subnet
+        const daemon1Subnet = submittedSubnet.localSubnets.find((localSubnet) => localSubnet.daemonId === 1)
+        const daemon4Subnet = submittedSubnet.localSubnets.find((localSubnet) => localSubnet.daemonId === 4)
+        expect(daemon1Subnet?.id).toBe(901)
+        expect(daemon4Subnet?.id).toBe(901)
+    }))
+
+    it('should set a non-zero local subnet ID for a newly selected daemon without backend data', fakeAsync(() => {
+        spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(wrapInHttpResponse(cannedResponseNoBackendUpdate))
+        component.subnetId = 777
+        component.ngOnInit()
+        tick()
+        fixture.detectChanges()
+
+        const daemon1GroupIndex = component.state.allDaemons.find((group) =>
+            group.daemons.some((daemon) => daemon.id === 1)
+        )?.index
+        const daemon2GroupIndex = component.state.allDaemons.find((group) =>
+            group.daemons.some((daemon) => daemon.id === 2)
+        )?.index
+        const daemon3GroupIndex = component.state.allDaemons.find((group) =>
+            group.daemons.some((daemon) => daemon.id === 3)
+        )?.index
+        expect(daemon1GroupIndex).not.toBeUndefined()
+        expect(daemon2GroupIndex).not.toBeUndefined()
+        expect(daemon3GroupIndex).not.toBeUndefined()
+        const selectedGroups = [daemon1GroupIndex, daemon2GroupIndex, daemon3GroupIndex].filter(
+            (groupIndex): groupIndex is number => groupIndex != null
+        )
+
+        component.state.group.get('selectedGroups')?.setValue(selectedGroups)
+        component.onDaemonsChange({
+            itemValue: daemon3GroupIndex,
+        })
+        tick()
+        fixture.detectChanges()
+
+        const okResp: any = {
+            status: 200,
+        }
+        spyOn(dhcpApi, 'updateSubnetSubmit').and.returnValue(of(okResp))
+        component.onSubmit()
+        tick()
+        fixture.detectChanges()
+
+        const submittedSubnet = (dhcpApi.updateSubnetSubmit as jasmine.Spy).calls.mostRecent().args[2] as Subnet
+        const daemon3Subnet = submittedSubnet.localSubnets.find((localSubnet) => localSubnet.daemonId === 3)
+        expect(daemon3Subnet?.id).toBe(777)
     }))
 
     it('should open a form for updating IPv4 subnet', fakeAsync(() => {

@@ -29,7 +29,11 @@ export class DaemonGroup {
     constructor(index: number, daemons: KeaDaemon[]) {
         this.index = index
         this.daemons = daemons
-        this.label = daemons.map((d) => d.label).join(', ')
+        this.label = daemons
+            .filter((d) => !!d.label)
+            .map((d) => d.label)
+            .sort((a, b) => a.localeCompare(b))
+            .join(', ')
     }
 }
 

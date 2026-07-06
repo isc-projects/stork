@@ -496,9 +496,9 @@ export class SubnetSetFormService {
      * @param daemons an array of daemons including their software versions.
      * @param form a form group holding the parameters set by the {@link SharedParametersForm}
      * component.
-    * @param valueIndexes optional mapping from daemon index to form value index.
-    *        It is used when daemons are expanded from selected daemon groups,
-    *        where many daemons can share one group-specific form value.
+     * @param valueIndexes optional mapping from daemon index to form value index.
+     *        It is used when daemons are expanded from selected daemon groups,
+     *        where many daemons can share one group-specific form value.
      * @returns An array of the parameter sets.
      */
     private convertFormToKeaParameters<
@@ -1094,8 +1094,8 @@ export class SubnetSetFormService {
      *
      * @param daemons an array of daemons comprising their software versions.
      * @param form a form holding DHCP parameters for a subnet.
-    * @param valueIndexes optional mapping from daemon index to form value index.
-    *        It is forwarded to the generic conversion helper.
+     * @param valueIndexes optional mapping from daemon index to form value index.
+     *        It is forwarded to the generic conversion helper.
      * @returns An array of parameter sets for different servers.
      */
     convertFormToKeaSubnetParameters(
@@ -1176,7 +1176,11 @@ export class SubnetSetFormService {
                 pool.localPools?.map((localPool) => localPool.daemonId) || [],
                 daemonGroups
             )
-            const localPools = this.getBelongingToSelectedDaemonGroups(pool.localPools || [], selectedGroups, daemonGroups)
+            const localPools = this.getBelongingToSelectedDaemonGroups(
+                pool.localPools || [],
+                selectedGroups,
+                daemonGroups
+            )
             // Attempt to validate and convert the pool range specified
             // as a string to an address range. It may throw.
             const addressRange = AddressRange.fromStringRange(pool.pool)
@@ -1198,7 +1202,10 @@ export class SubnetSetFormService {
                     ),
                     // Convert the options to a form.
                     options: new FormGroup({
-                        unlocked: new FormControl(hasDifferentLocalPoolOptions(pool)),
+                        unlocked: new FormControl({
+                            value: localPools.length > 1 && hasDifferentLocalPoolOptions(pool),
+                            disabled: localPools.length < 2,
+                        }),
                         data: new UntypedFormArray(
                             localPools.map((localPool) =>
                                 this.optionService.convertOptionsToForm(
@@ -1218,7 +1225,7 @@ export class SubnetSetFormService {
     /**
      * Converts a form holding pool data to a pool instance.
      *
-     * @param daemons an array of daemons including their software data.
+     * @param daemonGroups an array of daemon groups including software data.
      * @param localData an interface pointing to a local subnet, pool or shared
      * network for which the data should be converted.
      * @param form form a form comprising pool data.
@@ -1296,7 +1303,11 @@ export class SubnetSetFormService {
                 pool.localPools?.map((localPool) => localPool.daemonId) || [],
                 daemonGroups
             )
-            const localPools = this.getBelongingToSelectedDaemonGroups(pool.localPools || [], selectedGroups, daemonGroups)
+            const localPools = this.getBelongingToSelectedDaemonGroups(
+                pool.localPools || [],
+                selectedGroups,
+                daemonGroups
+            )
             formArray.push(
                 new FormGroup<PrefixPoolForm>({
                     prefixes: new FormGroup<PrefixForm>(
@@ -1323,7 +1334,10 @@ export class SubnetSetFormService {
                     ),
                     // Convert the options to a form.
                     options: new FormGroup({
-                        unlocked: new FormControl(hasDifferentLocalPoolOptions(pool)),
+                        unlocked: new FormControl({
+                            value: localPools.length > 1 && hasDifferentLocalPoolOptions(pool),
+                            disabled: localPools.length < 2,
+                        }),
                         data: new UntypedFormArray(
                             localPools.map((localPool) =>
                                 this.optionService.convertOptionsToForm(
@@ -1343,7 +1357,7 @@ export class SubnetSetFormService {
     /**
      * Converts a form holding delegated prefix pool data to a pool instance.
      *
-     * @param daemons an array of daemons including their software versions.
+     * @param daemonGroups an array of daemon groups including software versions.
      * @param localData an interface pointing to a local subnet, pool or shared
      * network for which the data should be converted.
      * @param form form a form comprising pool data.
@@ -1410,7 +1424,11 @@ export class SubnetSetFormService {
             subnet.localSubnets?.map((localSubnet) => localSubnet.daemonId) || [],
             daemonGroups
         )
-        const localSubnets = this.getBelongingToSelectedDaemonGroups(subnet.localSubnets || [], selectedGroups, daemonGroups)
+        const localSubnets = this.getBelongingToSelectedDaemonGroups(
+            subnet.localSubnets || [],
+            selectedGroups,
+            daemonGroups
+        )
         let formGroup = new FormGroup<SubnetForm>({
             subnet: new FormControl({ value: subnet.subnet, disabled: true }),
             sharedNetwork: new FormControl(subnet.sharedNetworkId),
@@ -1423,7 +1441,10 @@ export class SubnetSetFormService {
                 localSubnets.map((localSubnet) => localSubnet.keaConfigSubnetParameters.subnetLevelParameters)
             ),
             options: new FormGroup({
-                unlocked: new FormControl(hasDifferentSubnetLevelOptions(subnet)),
+                unlocked: new FormControl({
+                    value: localSubnets.length > 1 && hasDifferentSubnetLevelOptions(subnet),
+                    disabled: localSubnets.length < 2,
+                }),
                 data: new UntypedFormArray(
                     localSubnets.map((localSubnet) =>
                         this.optionService.convertOptionsToForm(
@@ -1441,7 +1462,10 @@ export class SubnetSetFormService {
                 Validators.required
             ),
             userContexts: new FormGroup({
-                unlocked: new FormControl(hasDifferentSubnetUserContexts(subnet)),
+                unlocked: new FormControl({
+                    value: localSubnets.length > 1 && hasDifferentSubnetUserContexts(subnet),
+                    disabled: localSubnets.length < 2,
+                }),
                 contexts: new FormArray<FormControl<object>>(
                     localSubnets.map((localSubnet) => new FormControl(localSubnet.userContext))
                 ),

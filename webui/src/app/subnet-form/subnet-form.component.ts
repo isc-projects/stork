@@ -144,6 +144,14 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
     @Output() formCancel = new EventEmitter<number>()
 
     /**
+     * Previously selected daemon group indexes.
+     *
+     * They are used to determine which value slot was toggled when
+     * a selection changes.
+     */
+    private previousSelectedGroups: number[] = []
+
+    /**
      * A component lifecycle hook invoked when the component is initialized.
      *
      * It creates a form state if the state is not provided by the parent.
@@ -165,6 +173,9 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
         // edits.
         if (this.state.preserved) {
             this.state.loaded = true
+            this.previousSelectedGroups = (
+                (this.state.group?.get('selectedGroups') as UntypedFormControl | null)?.value ?? []
+            ).slice()
             if (!this.state.transactionID) {
                 this._beginTransaction()
             }
@@ -227,7 +238,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
                     }
                     const configBackend = configBackends[0]
 
-                    const key = `${d.name}:${configBackend.backendType}:${configBackend.database}:${configBackend.host}:${configBackend.port}`
+                    const key = `${d.name}:${configBackend.backendType}:${configBackend.database}:${configBackend.host}:${configBackend.port}:${d.serverTag ?? ''}:`
                     if (!acc[key]) {
                         acc[key] = []
                     }
@@ -257,6 +268,9 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
             // Initialize the subnet form controls.
             this.initializeSubnet(response)
         }
+        this.previousSelectedGroups = (
+            (this.state.group?.get('selectedGroups') as UntypedFormControl | null)?.value ?? []
+        ).slice()
         // After the form has been initialized we need to filter out the daemons
         // that can be selected by a user for our subnet.
         this.handleDaemonsChange()
@@ -426,12 +440,15 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
      * @param toggledDaemonId optional id of the removed daemon in the controls.
      */
     handleDaemonsChange(toggledDaemonId?: number): void {
+        const selectedGroups: number[] = this.state.group.get('selectedGroups').value ?? []
         const toggleDaemonGroupIndex =
-            toggledDaemonId != null ? this.state.filteredDaemons.findIndex((fd) => fd.index === toggledDaemonId) : -1
+            toggledDaemonId != null
+                ? this.previousSelectedGroups.findIndex((selectedGroup) => selectedGroup === toggledDaemonId)
+                : -1
         this.subnetSetFormService.adjustFormForSelectedDaemons(
             this.state.group,
             toggleDaemonGroupIndex,
-            this.state.servers.length
+            this.previousSelectedGroups.length
         )
         this.addressPoolComponents.forEach((apc) => {
             apc.handleDaemonsChange(toggledDaemonId)
@@ -445,17 +462,22 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
         // Selecting new daemons may have a large impact on the data already
         // inserted to the form. Update the form state accordingly and see
         // if it is breaking change.
-        const selectedGroups: number[] = this.state.group.get('selectedGroups').value ?? []
         const subnetPrefix = this.state.group.get('subnet').value ?? ''
         if (this.state.updateFormForSelectedDaemonGroups(selectedGroups, subnetPrefix)) {
             // The breaking change puts us at risk of having irrelevant form contents.
             this.resetOptionsArray()
             this.resetParametersArray()
             this.resetUserContextsArray()
+            if (selectedGroups.length > 1) {
+                this.subnetSetFormService.adjustFormForSelectedDaemons(this.state.group, -1, 1)
+            }
+            this.state.servers = this.getSelectedDaemonGroups().map((dg) => dg.label)
+            this.previousSelectedGroups = selectedGroups.slice()
             return
         }
         // If the number of selected daemons has changed we must update selected servers list.
         this.state.servers = this.getSelectedDaemonGroups().map((dg) => dg.label)
+        this.previousSelectedGroups = selectedGroups.slice()
     }
 
     /**
@@ -612,12 +634,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
         if (this.subnetId) {
             // Updating an existing subnet.
             const savedBeginData = this.state.savedSubnetBeginData as UpdateSubnetBeginResponse
-            const originalSubnet = savedBeginData.subnet
-            for (let ls of subnet.localSubnets) {
-                const originalLocalSubnet =
-                    originalSubnet.localSubnets.find((ols) => ols.daemonId === ls.daemonId) || subnet.localSubnets[0]
-                ls.id = originalLocalSubnet?.id
-            }
+            this.assignLocalSubnetIDsForUpdate(subnet, savedBeginData)
             subnet.id = this.subnetId
             this.dhcpApi
                 .updateSubnetSubmit(this.subnetId, this.state.transactionID, subnet)
@@ -666,6 +683,86 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
                     life: 10000,
                 })
             })
+    }
+
+    /**
+     * Gets a key identifying a config backend used by a daemon.
+     *
+     * @param daemon daemon data.
+     * @returns Backend key or null when no config backend is present.
+     */
+    private getConfigBackendKey(daemon: KeaDaemon): string | null {
+        const configBackend = daemon.backends?.find((backend) => backend.dataTypes?.includes('Config Backend'))
+        if (!configBackend) {
+            return null
+        }
+        return `${daemon.name}:${configBackend.backendType}:${configBackend.database}:${configBackend.host}:${configBackend.port}`
+    }
+
+    /**
+     * Assigns local subnet IDs in update mode.
+     *
+     * Existing daemon assignments retain their original local subnet IDs.
+     * Newly added daemons first try to reuse an ID from another daemon
+     * sharing the same config backend. If no match is found, a known valid
+     * ID from the edited subnet is used as a fallback to avoid sending 0.
+     *
+     * @param subnet converted subnet payload.
+     * @param savedBeginData subnet begin response.
+     */
+    private assignLocalSubnetIDsForUpdate(subnet: Subnet, savedBeginData: UpdateSubnetBeginResponse): void {
+        const originalSubnet = savedBeginData.subnet
+        if (!originalSubnet?.localSubnets?.length || !subnet?.localSubnets?.length) {
+            return
+        }
+
+        const daemonsByID = new Map<number, KeaDaemon>(
+            (savedBeginData.daemons ?? [])
+                .filter((daemon) => daemon.id != null)
+                .map((daemon) => [daemon.id as number, daemon])
+        )
+
+        const originalByDaemonID = new Map<number, number>()
+        const originalByConfigBackendKey = new Map<string, number>()
+        let fallbackLocalSubnetID: number | null = originalSubnet.id ?? null
+
+        for (const originalLocalSubnet of originalSubnet.localSubnets) {
+            if (originalLocalSubnet.id == null) {
+                continue
+            }
+            if (fallbackLocalSubnetID == null) {
+                fallbackLocalSubnetID = originalLocalSubnet.id
+            }
+            if (originalLocalSubnet.daemonId != null) {
+                originalByDaemonID.set(originalLocalSubnet.daemonId, originalLocalSubnet.id)
+                const backendKey = this.getConfigBackendKey(daemonsByID.get(originalLocalSubnet.daemonId))
+                if (backendKey && !originalByConfigBackendKey.has(backendKey)) {
+                    originalByConfigBackendKey.set(backendKey, originalLocalSubnet.id)
+                }
+            }
+        }
+
+        for (const localSubnet of subnet.localSubnets) {
+            if (localSubnet.id != null) {
+                continue
+            }
+            if (localSubnet.daemonId != null) {
+                const originalID = originalByDaemonID.get(localSubnet.daemonId)
+                if (originalID != null) {
+                    localSubnet.id = originalID
+                    continue
+                }
+                const backendKey = this.getConfigBackendKey(daemonsByID.get(localSubnet.daemonId))
+                const backendID = backendKey ? originalByConfigBackendKey.get(backendKey) : null
+                if (backendID != null) {
+                    localSubnet.id = backendID
+                    continue
+                }
+            }
+            if (fallbackLocalSubnetID != null) {
+                localSubnet.id = fallbackLocalSubnetID
+            }
+        }
     }
 
     /**
