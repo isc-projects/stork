@@ -353,6 +353,22 @@ definitions:
       - machine_address
       - machine_hostname
 
+  ZoneTransferStatus:
+    type: string
+    enum: &ZONETRANSFERSTATUS
+      - started
+      - completed
+      - connected
+      - message
+
+  ZoneTransferSortField:
+    type: string
+    enum: &ZONETRANSFERSORTFIELD
+      - started_at
+      - duration
+      - bytes_per_second
+      - status
+
   SortDir:
     type: string
     enum: &SORTDIR
@@ -521,3 +537,23 @@ parameters:
      description: Field name by which returned results shall be sorted.
      type: string
      enum: *LEASELISTSORTFIELD
+
+  zoneTransferSortField:
+    name: sortField
+    in: query
+    description: Field name by which returned results shall be sorted.
+    type: string
+    enum: *ZONETRANSFERSORTFIELD
+
+  zoneTransferStatus:
+    name: status
+    in: query
+    description: >-
+      Limit returned list of zone transfer states to the ones with the given status.
+      Multiple statuses can be specified. If unspecified, zone transfers with all
+      statuses are returned.
+    type: array
+    items:
+      type: string
+      enum: *ZONETRANSFERSTATUS
+    collectionFormat: multi

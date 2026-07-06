@@ -202,3 +202,61 @@
           description: generic error response
           schema:
             $ref: "#/definitions/ApiError"
+
+  /zone-transfer-states:
+    get:
+      summary: Get a list of the zone transfer states.
+      description: >-
+        A list of zone transfer states combines ongoing and completed zone transfers
+        between BIND 9 instances running on the monitored machines. A list of the zone
+        transfer states is returned in items field accompanied by total count which
+        indicates total available number of records for the given filtering parameters.
+      operationId: getZoneTransferStates
+      tags:
+        - DNS
+      parameters:
+        - $ref: '#/parameters/paginationStartParam'
+        - $ref: '#/parameters/paginationLimitParam'
+        - $ref: '#/parameters/zoneTransferStatus'
+        - name: text
+          in: query
+          description: >-
+            Limit the returned list of zone transfer states to the ones matching the specified text.
+            The text is matched against the zone name, view name, client (secondary) name, server (primary) name,
+            or message text.
+          type: string
+        - name: serverMachineId
+          in: query
+          description: >-
+            Limit the returned list of zone transfer states to the ones where the server
+            for that zone transfer is running on the machine with the given ID.
+          type: integer
+        - name: clientMachineId
+          in: query
+          description: >-
+            Limit the returned list of zone transfer states to the ones where the client
+            for that zone transfer is running on the machine with the given ID.
+          type: integer
+        - name: serial
+          in: query
+          description: >-
+            Limit the returned list of zone transfer states to the ones with the given partial serial number.
+          type: string
+        - name: includeLocal
+          in: query
+          description: >-
+            Include local zone transfers (i.e., transfers initiated by the client
+            running on the same machine as the server) in the results. It would
+            include the transfers initiated by Stork.
+          type: boolean
+        - $ref: '#/parameters/zoneTransferSortField'
+        - $ref: '#/parameters/sortDir'
+      responses:
+        200:
+          description: List of zone transfer states.
+          schema:
+            $ref: "#/definitions/ZoneTransferStates"
+        default:
+          description: generic error response
+          schema:
+            $ref: "#/definitions/ApiError"

@@ -78,3 +78,17 @@ func GetTestZoneTransfers() []*bind9xfr.State {
 		},
 	}
 }
+
+// Generates test local zone transfer states (i.e., zone transfers where
+// the client and server are running on the same machine).
+func GetTestLocalZoneTransfers() []*bind9xfr.State {
+	return []*bind9xfr.State{
+		{
+			ZoneName: "local.example.org",
+			Client:   "127.0.0.1",
+			Server:   "127.0.0.1",
+			Status:   bind9xfr.StatusMessage,
+			Message:  "Transfer failed: AXFR timed out after 0 seconds (serial 0)",
+		},
+	}
+}

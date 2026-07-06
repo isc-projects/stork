@@ -126,3 +126,69 @@
           $ref: '#/definitions/Zone'
       total:
         type: integer
+
+  # ZoneTransferState
+  ZoneTransferState:
+    type: object
+    properties:
+      id:
+        type: integer
+      createdAt:
+        type: string
+        format: date-time
+      viewName:
+        type: string
+      zoneName:
+        type: string
+      serial:
+        type: integer
+      client:
+        type: string
+      server:
+        type: string
+      messagesCount:
+        type: integer
+      recordsCount:
+        type: integer
+      bytesCount:
+        type: integer
+      bytesPerSecond:
+        type: integer
+      duration:
+        type: string
+        format: duration
+      status:
+        type: string
+        enum: [started, connected, completed, message]
+      startedAt:
+        type: string
+        format: date-time
+      completedAt:
+        type: string
+        format: date-time
+        x-nullable: true
+      message:
+        type: string
+      clientMachineID:
+        type: integer
+      clientMachineAddress:
+        type: string
+      clientMachineAgentPort:
+        type: integer
+      serverMachineID:
+        type: integer
+      serverMachineAddress:
+        type: string
+      serverMachineAgentPort:
+        type: integer
+
+  # ZoneTransferStates
+  ZoneTransferStates:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/ZoneTransferState'
+      total:
+        type: integer
