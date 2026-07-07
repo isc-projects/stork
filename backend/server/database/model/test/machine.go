@@ -10,12 +10,12 @@ import (
 
 // Returns 32-bit random integer.
 func getRandInt31() int32 {
-	return rand.Int31() //nolint:gosec
+	return rand.Int31() // #nosec: G404
 }
 
 // Returns 64-bit random integer.
 func getRandInt63() int64 {
-	return rand.Int63() //nolint:gosec
+	return rand.Int63() // #nosec: G404
 }
 
 // A wrapper for a machine representation in the database.

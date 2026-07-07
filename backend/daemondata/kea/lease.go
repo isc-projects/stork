@@ -76,7 +76,7 @@ func NewLease6(ip, duid string, cltt uint64, validLifetime, subnetID uint32, sta
 // gRPC API.
 func (lease *Lease) ToGRPC() agentapi.Lease {
 	return agentapi.Lease{
-		Family:        agentapi.Lease_IPAddrFamily(lease.Family), //nolint:gosec
+		Family:        agentapi.Lease_IPAddrFamily(lease.Family), // #nosec: G115
 		IpAddress:     lease.IPAddress,
 		HwAddress:     lease.HWAddress,
 		Duid:          lease.DUID.String(),

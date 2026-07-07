@@ -11,7 +11,7 @@ type PgPasswordEncryption string
 // The password encryptions supported by Postgres.
 const (
 	PgPasswordEncryptionMD5         PgPasswordEncryption = "md5"
-	PgPasswordEncryptionScramSHA256 PgPasswordEncryption = "scram-sha-256" //nolint:gosec
+	PgPasswordEncryptionScramSHA256 PgPasswordEncryption = "scram-sha-256" // #nosec: G101
 )
 
 // Create user with a given name.

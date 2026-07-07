@@ -17,8 +17,6 @@ type Zone struct {
 
 // This function generates a collection of zones used in the benchmarks.
 // The function argument specifies the number of zones to be generated.
-//
-//nolint:gosec
 func generateRandomZones(existingZones []*Zone, num int, class, zoneType string, serial int64, rpz bool) []*Zone {
 	// We construct labels from this set of characters.
 	const charset = "abcdefghijklmnopqrstuvwxyz"
@@ -43,7 +41,7 @@ func generateRandomZones(existingZones []*Zone, num int, class, zoneType string,
 		// Generated zone name will be stored here.
 		var name string
 		// Generate the name that has up to 6 labels.
-		labelsCount := rand.IntN(5) + 1
+		labelsCount := rand.IntN(5) + 1 // #nosec: G404
 		// Generate the labels.
 		for j := 0; j < labelsCount; j++ {
 			// Next label.
@@ -57,9 +55,9 @@ func generateRandomZones(existingZones []*Zone, num int, class, zoneType string,
 			} else {
 				// Label is not cached for this position, so we have to generate one.
 				// The label length is between 1 and 16.
-				for k := 0; k < rand.IntN(15)+1; k++ {
+				for k := 0; k < rand.IntN(15)+1; k++ { // #nosec: G404
 					// Get a random set of characters.
-					label += string(charset[rand.IntN(len(charset)-1)])
+					label += string(charset[rand.IntN(len(charset)-1)]) // #nosec: G404
 				}
 				// Cache this label for generating child zones.
 				labels = append(labels, label)
@@ -118,11 +116,9 @@ func GenerateMoreZonesWithRPZ(existingZones []*Zone, num int, rpz bool) []*Zone 
 }
 
 // Randomize serial numbers in existing zones.
-//
-//nolint:gosec
 func RandomizeZoneSerials(existingZones []*Zone, maxSerial int64) []*Zone {
 	for _, zone := range existingZones {
-		zone.Serial = rand.Int64N(maxSerial)
+		zone.Serial = rand.Int64N(maxSerial) // #nosec: G404
 	}
 	return existingZones
 }

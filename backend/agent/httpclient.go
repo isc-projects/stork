@@ -109,8 +109,8 @@ func NewHTTPClient(config HTTPClientConfig) *httpClient {
 
 	transport.TLSClientConfig = &tls.Config{
 		MinVersion: tls.VersionTLS13,
-		//nolint:gosec // It may be insecure, but it is required in some cases.
-		InsecureSkipVerify: config.SkipTLSVerification,
+		// It may be insecure, but it is required in some cases.
+		InsecureSkipVerify: config.SkipTLSVerification, // #nosec: G402
 		RootCAs:            config.TLSRootCA,
 	}
 

@@ -92,7 +92,7 @@ func createDatabaseTestCase() (settings *dbops.DatabaseSettings, maintenanceSett
 			"that other users are accessing it.")
 	}
 
-	dbName := fmt.Sprintf("%s%d", templateDBName, rand.Int63()) //nolint:gosec
+	dbName := fmt.Sprintf("%s%d", templateDBName, rand.Int63()) // #nosec: G404
 
 	if err = maintenance.DropDatabaseIfExists(db, dbName); err != nil {
 		return
@@ -137,7 +137,7 @@ func restoreDatabaseTestCase(backupFilePath string) (settings *dbops.DatabaseSet
 
 	defer db.Close()
 
-	dbName := fmt.Sprintf("%s%d", settings.DBName, rand.Int63()) //nolint:gosec
+	dbName := fmt.Sprintf("%s%d", settings.DBName, rand.Int63()) // #nosec: G404
 
 	if err = maintenance.DropDatabaseIfExists(db, dbName); err != nil {
 		return settings, maintenanceSettings, err

@@ -188,7 +188,7 @@ func generateV4Subnet(rangeOfOuterScope int, rangeOfInnerScope int) interface{} 
 					},
 				},
 				"subnet":       fmt.Sprintf("%d.%d.0.0/%d", outerScope, innerScope, netmask),
-				"option-data":  optionData4[rand.Intn(len(optionData4))], //nolint:gosec
+				"option-data":  optionData4[rand.Intn(len(optionData4))], // #nosec: G404
 				"client-class": "class-00-00",
 				"relay": map[string]interface{}{
 					"ip-addresses": []string{"172.100.0.200"},
