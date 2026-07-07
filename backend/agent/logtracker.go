@@ -344,7 +344,10 @@ type logTracker struct {
 // by the systemd log readers. The textLogReaderConfig is used to configure the text
 // file log readers (e.g., enable polling in the tests).
 func newLogTracker(executor storkutil.CommandExecutor, config logTrackerConfig) *logTracker {
-	ctx, cancel := context.WithCancel(context.Background())
+	// The cancel function is called later on demand or in teardown. Suppress
+	// the linter as it is false-positive here.
+	// G118: context cancellation (...) is not called
+	ctx, cancel := context.WithCancel(context.Background()) // #nosec G118
 	return &logTracker{
 		ctx:      ctx,
 		cancel:   cancel,
