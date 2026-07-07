@@ -2818,7 +2818,8 @@ func TestPopulateMachineIPAddressCache(t *testing.T) {
 	managerImpl := manager.(*managerImpl)
 	require.NotNil(t, managerImpl.machineIPAddressCache)
 
-	machines := managerImpl.machineIPAddressCache.getMachines("192.168.1.1")
+	machines, loopback := managerImpl.machineIPAddressCache.getMachines("192.168.1.1")
+	require.False(t, loopback)
 	require.Len(t, machines, 1)
 	require.EqualValues(t, machine.ID, machines[0].ID)
 }

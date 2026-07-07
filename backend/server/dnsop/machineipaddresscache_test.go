@@ -42,6 +42,15 @@ func TestMachineIPAddressCache(t *testing.T) {
 						{IPAddress: fmt.Sprintf("192.168.1.%d/24", i+4)},
 					},
 				},
+				{
+					Name:            "lo",
+					Flags:           uint32(net.FlagLoopback),
+					HardwareAddress: []byte{1, 2, 3, 4, 5, 6},
+					IPAddresses: []dbmodel.MachineNetworkInterfaceIPAddress{
+						{IPAddress: "127.0.0.1/8"},
+						{IPAddress: "::1/128"},
+					},
+				},
 			},
 		}
 		err := dbmodel.AddMachine(db, m)
@@ -57,22 +66,33 @@ func TestMachineIPAddressCache(t *testing.T) {
 	require.NoError(t, err)
 
 	// First address does not overlap with any other machine's IP addresses.
-	machines := cache.getMachines("192.168.1.1")
+	machines, loopback := cache.getMachines("192.168.1.1")
+	require.False(t, loopback)
 	require.Len(t, machines, 1)
 	require.EqualValues(t, 1, machines[0].ID)
 
 	// Second address overlaps with the first machine's second interface.
-	machines = cache.getMachines("192.168.1.2")
+	machines, loopback = cache.getMachines("192.168.1.2")
+	require.False(t, loopback)
 	require.Len(t, machines, 1)
 	require.EqualValues(t, 1, machines[0].ID)
 
 	// Third address overlaps with the second machine's first interface.
-	machines = cache.getMachines("192.168.1.3")
+	machines, loopback = cache.getMachines("192.168.1.3")
 	require.Len(t, machines, 2)
 
 	// Fourth address overlaps with the second machine's second interface.
-	machines = cache.getMachines("192.168.1.4")
+	machines, loopback = cache.getMachines("192.168.1.4")
 	require.Len(t, machines, 2)
+
+	// Loopback address is not included in the cache.
+	machines, loopback = cache.getMachines("127.0.0.1")
+	require.True(t, loopback)
+	require.Empty(t, machines)
+
+	machines, loopback = cache.getMachines("::1")
+	require.True(t, loopback)
+	require.Empty(t, machines)
 }
 
 // Test that if the cache is empty, the getMachines method returns an empty list.
@@ -86,7 +106,8 @@ func TestMachineIPAddressEmptyCache(t *testing.T) {
 	require.NoError(t, err)
 
 	// Make sure that no machine is returned from the empty cache.
-	machines := cache.getMachines("192.168.1.1")
+	machines, loopback := cache.getMachines("192.168.1.1")
+	require.False(t, loopback)
 	require.Empty(t, machines)
 }
 
@@ -124,13 +145,15 @@ func TestMachineIPAddressCacheGetMachinesPullAddress(t *testing.T) {
 
 	// Query the cache for the IP address. It is not in the cache but the machine
 	// with this IP address is present. It should be added to the cache.
-	machines := cache.getMachines("192.168.1.1")
+	machines, loopback := cache.getMachines("192.168.1.1")
+	require.False(t, loopback)
 	require.Len(t, machines, 1)
 	require.EqualValues(t, machine.ID, machines[0].ID)
 
 	// Querying for the IP address that is not present in the database should
 	// return an empty list.
-	machines = cache.getMachines("192.168.1.2")
+	machines, loopback = cache.getMachines("192.168.1.2")
+	require.False(t, loopback)
 	require.Empty(t, machines)
 }
 
@@ -189,11 +212,13 @@ func TestMachineIPAddressCacheRepopulate(t *testing.T) {
 	require.NoError(t, err)
 
 	// Make sure that both IP addresses and machines are present in the cache.
-	machines := cache.getMachines("192.168.1.1")
+	machines, loopback := cache.getMachines("192.168.1.1")
+	require.False(t, loopback)
 	require.Len(t, machines, 1)
 	require.EqualValues(t, machine1.ID, machines[0].ID)
 
-	machines = cache.getMachines("192.168.1.2")
+	machines, loopback = cache.getMachines("192.168.1.2")
+	require.False(t, loopback)
 	require.Len(t, machines, 1)
 	require.EqualValues(t, machine2.ID, machines[0].ID)
 }
