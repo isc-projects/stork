@@ -114,7 +114,7 @@ func TestCollectorHandlerResponse(t *testing.T) {
 	defer collector.Shutdown()
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	handler := collector.GetHTTPHandler(nextHandler)
-	req := httptest.NewRequest("GET", "http://localhost/abc", nil)
+	req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost/abc", nil)
 	w := httptest.NewRecorder()
 
 	// Act
@@ -140,7 +140,7 @@ func TestCollectorCollectUsingDatabase(t *testing.T) {
 
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	handler := collector.GetHTTPHandler(nextHandler)
-	req := httptest.NewRequest("GET", "http://localhost/abc", nil)
+	req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost/abc", nil)
 
 	_ = dbmodel.AddMachine(db, &dbmodel.Machine{
 		Address:    "127.0.0.1",

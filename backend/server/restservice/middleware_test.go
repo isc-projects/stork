@@ -53,7 +53,7 @@ func TestFileServerMiddleware(t *testing.T) {
 	}
 
 	t.Run("request non-existing static file", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "http://localhost/abc", nil)
+		req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost/abc", nil)
 		w := httptest.NewRecorder()
 		handler.ServeHTTP(w, req)
 		resp := w.Result()
@@ -62,7 +62,7 @@ func TestFileServerMiddleware(t *testing.T) {
 	})
 
 	t.Run("request existing static file", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "http://localhost/file.ext", nil)
+		req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost/file.ext", nil)
 		w := httptest.NewRecorder()
 		handler.ServeHTTP(w, req)
 		resp := w.Result()
@@ -72,14 +72,14 @@ func TestFileServerMiddleware(t *testing.T) {
 	})
 
 	t.Run("request some API URL, it should be forwarded to apiHandler", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "http://localhost/api/users", nil)
+		req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost/api/users", nil)
 		w := httptest.NewRecorder()
 		handler.ServeHTTP(w, req)
 		require.True(t, apiRequestReceived)
 	})
 
 	t.Run("request for swagger.json also should be forwarded to apiHandler", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "http://localhost/swagger.json", nil)
+		req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost/swagger.json", nil)
 		w := httptest.NewRecorder()
 		apiRequestReceived = false
 		handler.ServeHTTP(w, req)
@@ -87,7 +87,7 @@ func TestFileServerMiddleware(t *testing.T) {
 	})
 
 	t.Run("request non-existing static content file directory", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "http://localhost/assets/static-page-content/xyz.abc", nil)
+		req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost/assets/static-page-content/xyz.abc", nil)
 		w := httptest.NewRecorder()
 		apiRequestReceived = false
 		handler.ServeHTTP(w, req)
@@ -97,7 +97,7 @@ func TestFileServerMiddleware(t *testing.T) {
 	})
 
 	t.Run("request a root directory, it should return index.html content", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "http://localhost", nil)
+		req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost", nil)
 		w := httptest.NewRecorder()
 		handler.ServeHTTP(w, req)
 		resp := w.Result()
@@ -106,7 +106,7 @@ func TestFileServerMiddleware(t *testing.T) {
 	})
 
 	t.Run("request a directory inside the static files directory", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "http://localhost/dir", nil)
+		req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost/dir", nil)
 		w := httptest.NewRecorder()
 		handler.ServeHTTP(w, req)
 		resp := w.Result()
@@ -115,7 +115,7 @@ func TestFileServerMiddleware(t *testing.T) {
 	})
 
 	t.Run("request a file outside of the static files directory using path traversal", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "http://localhost/../private/file.ext", nil)
+		req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost/../private/file.ext", nil)
 		w := httptest.NewRecorder()
 		handler.ServeHTTP(w, req)
 		resp := w.Result()
@@ -124,7 +124,7 @@ func TestFileServerMiddleware(t *testing.T) {
 	})
 
 	t.Run("request a directory outside of the static files directory using path traversal", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "http://localhost/../private/dir", nil)
+		req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost/../private/dir", nil)
 		w := httptest.NewRecorder()
 		handler.ServeHTTP(w, req)
 		resp := w.Result()
@@ -133,7 +133,7 @@ func TestFileServerMiddleware(t *testing.T) {
 	})
 
 	t.Run("request a file outside of the static files directory by a symlink in a public directory", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "http://localhost/link", nil)
+		req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost/link", nil)
 		w := httptest.NewRecorder()
 		handler.ServeHTTP(w, req)
 		resp := w.Result()
@@ -144,7 +144,7 @@ func TestFileServerMiddleware(t *testing.T) {
 	t.Run("static files directory doesn't exist", func(t *testing.T) {
 		handler := fileServerMiddleware(apiHandler, filepath.Join(staticRoot, "non-exist"))
 		require.NotNil(t, handler)
-		req := httptest.NewRequest("GET", "http://localhost/file.ext", nil)
+		req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost/file.ext", nil)
 		w := httptest.NewRecorder()
 		handler.ServeHTTP(w, req)
 		resp := w.Result()
@@ -155,7 +155,7 @@ func TestFileServerMiddleware(t *testing.T) {
 	t.Run("static files directory doesn't exist - api calls still work", func(t *testing.T) {
 		handler := fileServerMiddleware(apiHandler, filepath.Join(staticRoot, "non-exist"))
 		require.NotNil(t, handler)
-		req := httptest.NewRequest("GET", "http://localhost/api/version", nil)
+		req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost/api/version", nil)
 		w := httptest.NewRecorder()
 		handler.ServeHTTP(w, req)
 		resp := w.Result()
@@ -191,7 +191,7 @@ func TestSSEMiddleware(t *testing.T) {
 	handler := sseMiddleware(nextHandler, fec)
 
 	// let request sse
-	req := httptest.NewRequest("GET", "http://localhost/sse", nil)
+	req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost/sse", nil)
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
 	resp := w.Result()
@@ -200,7 +200,7 @@ func TestSSEMiddleware(t *testing.T) {
 	require.False(t, requestReceived)
 
 	// let request something else than sse, it should be forwarded to nextHandler
-	req = httptest.NewRequest("GET", "http://localhost/api/users", nil)
+	req = httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost/api/users", nil)
 	w = httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
 	require.True(t, requestReceived)
@@ -225,7 +225,7 @@ func TestAgentInstallerMiddleware(t *testing.T) {
 
 	// let do some request but when there is no folder with static content
 	t.Run("missing package folder", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "http://localhost/stork-install-agent.sh", nil)
+		req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost/stork-install-agent.sh", nil)
 		w := httptest.NewRecorder()
 		handler.ServeHTTP(w, req)
 		resp := w.Result()
@@ -239,7 +239,7 @@ func TestAgentInstallerMiddleware(t *testing.T) {
 
 	t.Run("empty package directory", func(t *testing.T) {
 		// let do some request
-		req := httptest.NewRequest("GET", "http://localhost/stork-install-agent.sh", nil)
+		req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost/stork-install-agent.sh", nil)
 		w := httptest.NewRecorder()
 		handler.ServeHTTP(w, req)
 		resp := w.Result()
@@ -255,7 +255,7 @@ func TestAgentInstallerMiddleware(t *testing.T) {
 		defer os.Remove(f.Name())
 
 		// let do some request
-		req := httptest.NewRequest("GET", "http://localhost/stork-install-agent.sh", nil)
+		req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost/stork-install-agent.sh", nil)
 		w := httptest.NewRecorder()
 		handler.ServeHTTP(w, req)
 
@@ -280,7 +280,7 @@ func TestAgentInstallerMiddleware(t *testing.T) {
 		defer os.Remove(f.Name())
 
 		// let do some request
-		req := httptest.NewRequest("GET", "http://localhost/stork-install-agent.sh", nil)
+		req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost/stork-install-agent.sh", nil)
 		w := httptest.NewRecorder()
 		handler.ServeHTTP(w, req)
 
@@ -305,7 +305,7 @@ func TestAgentInstallerMiddleware(t *testing.T) {
 		defer os.Remove(f.Name())
 
 		// let do some request
-		req := httptest.NewRequest("GET", "http://localhost/stork-install-agent.sh", nil)
+		req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost/stork-install-agent.sh", nil)
 		w := httptest.NewRecorder()
 		handler.ServeHTTP(w, req)
 
@@ -333,7 +333,7 @@ func TestAgentInstallerMiddleware(t *testing.T) {
 		}
 
 		// let do some request
-		req := httptest.NewRequest("GET", "http://localhost/stork-install-agent.sh", nil)
+		req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost/stork-install-agent.sh", nil)
 		w := httptest.NewRecorder()
 		handler.ServeHTTP(w, req)
 
@@ -371,7 +371,7 @@ func TestAgentInstallerMiddleware(t *testing.T) {
 		handler := agentInstallerMiddleware(nextHandler, url, sb.BasePath)
 
 		// let do some request
-		req := httptest.NewRequest("GET", "https://localhost/stork-install-agent.sh", nil)
+		req := httptest.NewRequestWithContext(t.Context(), "GET", "https://localhost/stork-install-agent.sh", nil)
 		w := httptest.NewRecorder()
 		handler.ServeHTTP(w, req)
 
@@ -393,7 +393,7 @@ func TestAgentInstallerMiddleware(t *testing.T) {
 
 	t.Run("unsupported request", func(t *testing.T) {
 		// let request something else, it should be forwarded to nextHandler
-		req := httptest.NewRequest("GET", "http://localhost/api/users", nil)
+		req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost/api/users", nil)
 		w := httptest.NewRecorder()
 		handler.ServeHTTP(w, req)
 		require.True(t, requestReceived)
@@ -422,7 +422,7 @@ func TestAgentInstallerMiddlewareServerAddressFromConfig(t *testing.T) {
 	handler := agentInstallerMiddleware(nextHandler, url, sb.BasePath)
 
 	// Act
-	req := httptest.NewRequest("GET", "http://localhost/stork-install-agent.sh", nil)
+	req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost/stork-install-agent.sh", nil)
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
 
@@ -451,7 +451,7 @@ func TestMetricsMiddleware(t *testing.T) {
 	handler := metricsMiddleware(nextHandler, metrics)
 
 	// Act
-	req := httptest.NewRequest("GET", "http://localhost/metrics", nil)
+	req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost/metrics", nil)
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
 
@@ -466,7 +466,7 @@ func TestMetricsMiddlewarePlaceholder(t *testing.T) {
 	handler := metricsMiddleware(nextHandler, nil)
 
 	// Act
-	req := httptest.NewRequest("GET", "http://localhost/metrics", nil)
+	req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost/metrics", nil)
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
 	resp := w.Result()
@@ -534,7 +534,7 @@ func TestFileServerMiddlewareExtensive(t *testing.T) {
 	middleware := fileServerMiddleware(nextHandler, publicDirectory)
 
 	requestFileContent := func(path string) (string, int, error) {
-		request := httptest.NewRequest("GET", fmt.Sprintf("http://localhost/%s", path), nil)
+		request := httptest.NewRequestWithContext(t.Context(), "GET", fmt.Sprintf("http://localhost/%s", path), nil)
 		writer := httptest.NewRecorder()
 		middleware.ServeHTTP(writer, request)
 		response := writer.Result()
@@ -695,7 +695,7 @@ func TestTrimBaseURLMiddleware(t *testing.T) {
 
 	request := func(path string) *url.URL {
 		path = strings.TrimPrefix(path, "/")
-		request := httptest.NewRequest("GET", fmt.Sprintf("http://localhost/%s", path), nil)
+		request := httptest.NewRequestWithContext(t.Context(), "GET", fmt.Sprintf("http://localhost/%s", path), nil)
 		writer := httptest.NewRecorder()
 		middleware.ServeHTTP(writer, request)
 		return request.URL
@@ -755,7 +755,7 @@ func TestMaxBodySizeMiddleware(t *testing.T) {
 	}
 
 	request := func(body string) *http.Request {
-		req := httptest.NewRequest("POST", "http://localhost/", strings.NewReader(body))
+		req := httptest.NewRequestWithContext(t.Context(), "POST", "http://localhost/", strings.NewReader(body))
 		return req
 	}
 
@@ -820,7 +820,7 @@ func TestMaxBodySizeMiddleware(t *testing.T) {
 	t.Run("request body is empty", func(t *testing.T) {
 		// Act
 		middleware, getBody := createMiddleware()
-		req := httptest.NewRequest("POST", "http://localhost/", nil)
+		req := httptest.NewRequestWithContext(t.Context(), "POST", "http://localhost/", nil)
 		writer := httptest.NewRecorder()
 		middleware.ServeHTTP(writer, req)
 
@@ -901,7 +901,7 @@ func TestSecurityHeadersMiddleware(t *testing.T) {
 
 	// Act
 	handler := securityHeadersMiddleware(nextHandler)
-	req := httptest.NewRequest("GET", "http://localhost/api/version", nil)
+	req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost/api/version", nil)
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
 	resp := w.Result()

@@ -86,7 +86,7 @@ func TestMiddlewareIsTransparent(t *testing.T) {
 
 	// Act
 	handler := controller.Middleware(nextHandler)
-	req := httptest.NewRequest("GET", "http://localhost/", nil)
+	req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost/", nil)
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
 	resp := w.Result()
@@ -120,7 +120,7 @@ func TestMiddlewareIsTransparent2(t *testing.T) {
 	err = controller.Configure(url.URL{Scheme: "https"}, testSM)
 	require.NoError(t, err)
 	handler := controller.Middleware(nextHandler)
-	req := httptest.NewRequest("GET", "http://localhost/", nil) // This URL path does not match OIDC login or callback path.
+	req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost/", nil) // This URL path does not match OIDC login or callback path.
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
 	resp := w.Result()
@@ -154,7 +154,7 @@ func TestSessionStorage(t *testing.T) {
 	handler := controller.Middleware(nextHandler)
 	// Additionally force adding session manager context. It shouldn't be added for non-OIDC related URL paths.
 	handler = controller.dbSessionManager.SessionMiddleware(controller.authSessionManager.LoadAndSave(handler))
-	req := httptest.NewRequest("GET", "http://localhost/", nil)
+	req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost/", nil)
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
 	resp := w.Result()
@@ -402,7 +402,7 @@ func TestMiddlewareHandlesLoginEndpoint(t *testing.T) {
 	err = controller.Configure(url.URL{Scheme: "https"}, testSM)
 	require.NoError(t, err)
 	handler := controller.Middleware(nextHandler)
-	req := httptest.NewRequest("GET", "http://localhost"+loginURLPath, nil)
+	req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost"+loginURLPath, nil)
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
 	resp := w.Result()
@@ -478,7 +478,7 @@ func TestMiddlewareHandlesCallbackEndpoint(t *testing.T) {
 	handler := controller.Middleware(nextHandler)
 
 	// Act
-	req := httptest.NewRequest("GET", "http://localhost"+callbackURLPath+"?state=state", nil)
+	req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost"+callbackURLPath+"?state=state", nil)
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
 	resp := w.Result()
@@ -526,7 +526,7 @@ func TestCallbackEndpointHandlesError(t *testing.T) {
 
 	// Act
 	// First send request to login endpoint to retrieve random state for the authentication.
-	req := httptest.NewRequest("GET", "http://localhost"+loginURLPath, nil)
+	req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost"+loginURLPath, nil)
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
 	resp := w.Result()
@@ -539,7 +539,7 @@ func TestCallbackEndpointHandlesError(t *testing.T) {
 	state := parsedURL.Query().Get("state")
 
 	// Send request to callback endpoint.
-	req2 := httptest.NewRequest("GET", "http://localhost"+callbackURLPath+"?state="+state+"&error=123&error_description=testError&code=foobar", nil)
+	req2 := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost"+callbackURLPath+"?state="+state+"&error=123&error_description=testError&code=foobar", nil)
 	w2 := httptest.NewRecorder()
 	populateCookies(resp, req2)
 	handler.ServeHTTP(w2, req2)
@@ -594,7 +594,7 @@ func TestCallbackEndpointHandlesTokenExchangeError(t *testing.T) {
 
 	// Act
 	// First send request to login endpoint to retrieve random state for the authentication.
-	req := httptest.NewRequest("GET", "http://localhost"+loginURLPath, nil)
+	req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost"+loginURLPath, nil)
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
 	resp := w.Result()
@@ -607,7 +607,7 @@ func TestCallbackEndpointHandlesTokenExchangeError(t *testing.T) {
 	state := parsedURL.Query().Get("state")
 
 	// Send request to callback endpoint.
-	req2 := httptest.NewRequest("GET", "http://localhost"+callbackURLPath+"?code=foobar&state="+state, nil)
+	req2 := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost"+callbackURLPath+"?code=foobar&state="+state, nil)
 	w2 := httptest.NewRecorder()
 	populateCookies(resp, req2)
 	handler.ServeHTTP(w2, req2)
@@ -646,7 +646,7 @@ func TestCallbackEndpointHandlesTokenRespVerificationError(t *testing.T) {
 
 	// Act
 	// First send request to login endpoint to retrieve random state for the authentication.
-	req := httptest.NewRequest("GET", "http://localhost"+loginURLPath, nil)
+	req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost"+loginURLPath, nil)
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
 	resp := w.Result()
@@ -659,7 +659,7 @@ func TestCallbackEndpointHandlesTokenRespVerificationError(t *testing.T) {
 	state := parsedURL.Query().Get("state")
 
 	// Send request to callback endpoint.
-	req2 := httptest.NewRequest("GET", "http://localhost"+callbackURLPath+"?code=foobar&state="+state, nil)
+	req2 := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost"+callbackURLPath+"?code=foobar&state="+state, nil)
 	w2 := httptest.NewRecorder()
 	populateCookies(resp, req2)
 	handler.ServeHTTP(w2, req2)
@@ -697,7 +697,7 @@ func TestCallbackEndpointHandlesWrongNonce(t *testing.T) {
 
 	// Act
 	// First send request to login endpoint to retrieve random state for the authentication.
-	req := httptest.NewRequest("GET", "http://localhost"+loginURLPath, nil)
+	req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost"+loginURLPath, nil)
 	w := httptest.NewRecorder()
 	controller.authSessionManager.LoadAndSave(handler).ServeHTTP(w, req)
 	resp := w.Result()
@@ -710,7 +710,7 @@ func TestCallbackEndpointHandlesWrongNonce(t *testing.T) {
 	state := parsedURL.Query().Get("state")
 
 	// Send request to callback endpoint.
-	req2 := httptest.NewRequest("GET", "http://localhost"+callbackURLPath+"?code=foobar&state="+state, nil)
+	req2 := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost"+callbackURLPath+"?code=foobar&state="+state, nil)
 	w2 := httptest.NewRecorder()
 	populateCookies(resp, req2)
 	controller.authSessionManager.LoadAndSave(handler).ServeHTTP(w2, req2)
@@ -747,7 +747,7 @@ func TestCallbackEndpointHandlesUnauthorizedUser(t *testing.T) {
 
 	// Act
 	// First send request to login endpoint to retrieve random state for the authentication.
-	req := httptest.NewRequest("GET", "http://localhost"+loginURLPath, nil)
+	req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost"+loginURLPath, nil)
 	w := httptest.NewRecorder()
 	controller.authSessionManager.LoadAndSave(handler).ServeHTTP(w, req)
 	resp := w.Result()
@@ -760,7 +760,7 @@ func TestCallbackEndpointHandlesUnauthorizedUser(t *testing.T) {
 	state := parsedURL.Query().Get("state")
 
 	// Send request to callback endpoint.
-	req2 := httptest.NewRequest("GET", "http://localhost"+callbackURLPath+"?code=foobar&state="+state, nil)
+	req2 := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost"+callbackURLPath+"?code=foobar&state="+state, nil)
 	w2 := httptest.NewRecorder()
 	populateCookies(resp, req2)
 	controller.authSessionManager.LoadAndSave(handler).ServeHTTP(w2, req2)
@@ -808,7 +808,7 @@ func TestCallbackEndpointAuthorizesUser(t *testing.T) {
 
 	// Act
 	// First send request to login endpoint to retrieve random state for the authentication.
-	req := httptest.NewRequest("GET", "http://localhost"+loginURLPath, nil)
+	req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost"+loginURLPath, nil)
 	w := httptest.NewRecorder()
 	controller.authSessionManager.LoadAndSave(handler).ServeHTTP(w, req)
 	resp := w.Result()
@@ -821,7 +821,7 @@ func TestCallbackEndpointAuthorizesUser(t *testing.T) {
 	state := parsedURL.Query().Get("state")
 
 	// Send request to callback endpoint.
-	req2 := httptest.NewRequest("GET", "http://localhost"+callbackURLPath+"?code=foobar&state="+state, nil)
+	req2 := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost"+callbackURLPath+"?code=foobar&state="+state, nil)
 	w2 := httptest.NewRecorder()
 	populateCookies(resp, req2)
 	controller.authSessionManager.LoadAndSave(handler).ServeHTTP(w2, req2)
@@ -876,7 +876,7 @@ func TestCallbackEndpointAuthorizesUserGroupMappingDisabled(t *testing.T) {
 
 	// Act
 	// First send request to login endpoint to retrieve random state for the authentication.
-	req := httptest.NewRequest("GET", "http://localhost"+loginURLPath, nil)
+	req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost"+loginURLPath, nil)
 	w := httptest.NewRecorder()
 	controller.authSessionManager.LoadAndSave(handler).ServeHTTP(w, req)
 	resp := w.Result()
@@ -889,7 +889,7 @@ func TestCallbackEndpointAuthorizesUserGroupMappingDisabled(t *testing.T) {
 	state := parsedURL.Query().Get("state")
 
 	// Send request to callback endpoint.
-	req2 := httptest.NewRequest("GET", "http://localhost"+callbackURLPath+"?code=foobar&state="+state, nil)
+	req2 := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost"+callbackURLPath+"?code=foobar&state="+state, nil)
 	w2 := httptest.NewRecorder()
 	populateCookies(resp, req2)
 	controller.authSessionManager.LoadAndSave(handler).ServeHTTP(w2, req2)
@@ -1002,7 +1002,7 @@ func TestCallbackEndpointHandlesEmptyState(t *testing.T) {
 	handler := controller.Middleware(nextHandler)
 
 	// Act
-	req := httptest.NewRequest("GET", "http://localhost"+callbackURLPath+"?code=foobar", nil) // state is missing.
+	req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost"+callbackURLPath+"?code=foobar", nil) // state is missing.
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
 	resp := w.Result()
@@ -1042,7 +1042,7 @@ func TestCallbackEndpointHandlesEmptyCode(t *testing.T) {
 
 	// Act
 	// First send request to login endpoint to retrieve random state for the authentication.
-	req := httptest.NewRequest("GET", "http://localhost"+loginURLPath, nil)
+	req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost"+loginURLPath, nil)
 	w := httptest.NewRecorder()
 	controller.authSessionManager.LoadAndSave(handler).ServeHTTP(w, req)
 	resp := w.Result()
@@ -1055,7 +1055,7 @@ func TestCallbackEndpointHandlesEmptyCode(t *testing.T) {
 	state := parsedURL.Query().Get("state")
 
 	// Send request to callback endpoint.
-	req2 := httptest.NewRequest("GET", "http://localhost"+callbackURLPath+"?state="+state, nil) // code is missing.
+	req2 := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost"+callbackURLPath+"?state="+state, nil) // code is missing.
 	w2 := httptest.NewRecorder()
 	populateCookies(resp, req2)
 	controller.authSessionManager.LoadAndSave(handler).ServeHTTP(w2, req2)
@@ -1180,7 +1180,7 @@ func TestCallbackEndpointAuthorizesUserNoDiscovery(t *testing.T) {
 
 	// Act
 	// First send request to login endpoint to retrieve random state for the authentication.
-	req := httptest.NewRequest("GET", "http://localhost"+loginURLPath, nil)
+	req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost"+loginURLPath, nil)
 	w := httptest.NewRecorder()
 	controller.authSessionManager.LoadAndSave(handler).ServeHTTP(w, req)
 	resp := w.Result()
@@ -1193,7 +1193,7 @@ func TestCallbackEndpointAuthorizesUserNoDiscovery(t *testing.T) {
 	state := parsedURL.Query().Get("state")
 
 	// Send request to callback endpoint.
-	req2 := httptest.NewRequest("GET", "http://localhost"+callbackURLPath+"?code=foobar&state="+state, nil)
+	req2 := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost"+callbackURLPath+"?code=foobar&state="+state, nil)
 	w2 := httptest.NewRecorder()
 	populateCookies(resp, req2)
 	controller.authSessionManager.LoadAndSave(handler).ServeHTTP(w2, req2)
