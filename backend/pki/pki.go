@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 )
 
 // The constants used to generate certificates.
@@ -44,13 +43,13 @@ func genECDSAKey() (*ecdsa.PrivateKey, []byte, error) {
 	// because it is the most popular currently.
 	priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
-		log.Fatalf("Cannot generate ECDSA key: %v", err)
+		err = errors.Wrapf(err, "cannot generate ECDSA key")
 		return nil, nil, err
 	}
 
 	privBytes, err := x509.MarshalPKCS8PrivateKey(priv)
 	if err != nil {
-		log.Fatalf("Unable to marshal private key: %v", err)
+		err = errors.Wrapf(err, "unable to marshal private key")
 		return nil, nil, err
 	}
 
