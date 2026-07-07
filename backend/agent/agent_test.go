@@ -257,7 +257,7 @@ func TestGetState(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, rsp.AgentVersion, stork.Version)
 	require.Equal(t, stork.Version, rsp.AgentVersion)
-	require.False(t, rsp.AgentUsesHTTPCredentials) //nolint:staticcheck,deprecated
+	require.False(t, rsp.AgentUsesHTTPCredentials) //nolint:staticcheck
 	require.Len(t, rsp.Daemons, 2)
 
 	daemonKea := rsp.Daemons[0]
@@ -265,7 +265,7 @@ func TestGetState(t *testing.T) {
 	point := daemonKea.AccessPoints[0]
 	require.Equal(t, AccessPointControl, point.Type)
 	require.Equal(t, "1.2.3.1", point.Address)
-	require.False(t, point.UseSecureProtocol) //nolint:staticcheck,deprecated
+	require.False(t, point.UseSecureProtocol) //nolint:staticcheck
 	require.EqualValues(t, 1234, point.Port)
 	require.Empty(t, point.Key)
 
@@ -277,12 +277,12 @@ func TestGetState(t *testing.T) {
 	require.Equal(t, "2.3.4.4", point.Address)
 	require.EqualValues(t, 2345, point.Port)
 	require.Equal(t, "abcd", point.Key)
-	require.True(t, point.UseSecureProtocol) //nolint:staticcheck,deprecated
+	require.True(t, point.UseSecureProtocol) //nolint:staticcheck
 	point = daemonBind9.AccessPoints[1]
 	require.Equal(t, AccessPointStatistics, point.Type)
 	require.Equal(t, "2.3.4.5", point.Address)
 	require.EqualValues(t, 2346, point.Port)
-	require.False(t, point.UseSecureProtocol) //nolint:staticcheck,deprecated
+	require.False(t, point.UseSecureProtocol) //nolint:staticcheck
 	require.EqualValues(t, "foo", point.Key)
 
 	// Recreate Stork agent.
@@ -297,7 +297,7 @@ func TestGetState(t *testing.T) {
 	rsp, err = sa.GetState(ctx, &agentapi.GetStateReq{})
 	require.NoError(t, err)
 	// Deprecated parameter. Always false.
-	require.False(t, rsp.AgentUsesHTTPCredentials) //nolint:staticcheck,deprecated
+	require.False(t, rsp.AgentUsesHTTPCredentials) //nolint:staticcheck
 
 	// Make sure that the network interfaces are returned correctly.
 	ifaces, err := net.Interfaces()
