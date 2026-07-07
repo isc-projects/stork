@@ -85,7 +85,14 @@ func (fqdn Fqdn) IsPartial() bool {
 func (fqdn Fqdn) ToBytes() (buf []byte, err error) {
 	var buffer bytes.Buffer
 	for _, label := range fqdn.labels {
-		if err = buffer.WriteByte(byte(len(label))); err != nil {
+		var labelLen byte = 255
+		if actualLen := len(label); actualLen <= 255 {
+			labelLen = byte(actualLen)
+		} else {
+			label = label[:255]
+		}
+
+		if err = buffer.WriteByte(labelLen); err != nil {
 			err = errors.WithStack(err)
 			return
 		}
