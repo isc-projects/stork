@@ -1,4 +1,6 @@
 // Config generator for test purposes
+//
+//nolint:goconst
 package storktestgen
 
 import (
