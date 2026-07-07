@@ -917,7 +917,15 @@ func (agents *connectedAgentsImpl) ForwardToKeaOverHTTP(ctx context.Context, dae
 			// the Kea CA and Kea daemon.
 			continue
 		}
-		commandResponse := cmdResponses[idx]
+
+		var commandResponse any
+		if idx < len(cmdResponses) {
+			commandResponse = cmdResponses[idx]
+		} else {
+			// This should never happen because the number of responses should match
+			// the number of commands sent.
+			continue
+		}
 
 		// Try to parse the json response from the on-wire format.
 		err = json.Unmarshal(response.Response, commandResponse)
