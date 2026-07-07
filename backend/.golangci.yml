@@ -11,12 +11,11 @@ linters:
     - gochecknoglobals
     - gochecknoinits
     - gocognit
-    - goconst
     - gocritic
     - gocyclo
     - godot
     - goheader
-    - gomodguard
+    - gomodguard_v2
     - goprintffuncname
     - gosec
     - misspell
@@ -36,6 +35,7 @@ linters:
     - depguard        # From 1.54.2 it requires to be strictly configured. Otherwise, it blocks all dependencies, including internals.
     - dupl            # there are some false positives (identical code but operating on different types so no possibility to unify)
     - funlen
+    - goconst         # Interferes with logrus and go-pg usage.
     - godox
     - lll
     - mnd              # This may be useful but in many cases creating artificial constants, e.g. in tests is counter productive.
@@ -60,7 +60,7 @@ linters:
       ignore-tests: true
       eval-const-expressions: true
       # find-duplicates: true  # TODO: Nice to have but it requires some refactoring.
-      # ignore-calls: false
+      # ignore-calls: false # It is incompatible with go-pg.
     nakedret:
       # Operation of this checker was changed. Previously, it allowed to use
       # naked returns to a particular line. Now, it disallows naked returns if
@@ -121,6 +121,9 @@ linters:
       - linters:
           - gochecknoinits
         path: server/database/settings.go
+      - linters:
+          - goconst
+        path: testutil/*\.go
     paths:
       - third_party$
       - builtin$
