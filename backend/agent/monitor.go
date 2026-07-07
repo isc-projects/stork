@@ -127,7 +127,7 @@ func (d *daemon) GetAccessPoint(accessPointType string) *AccessPoint {
 // String representation of a daemon.
 func (d *daemon) String() string {
 	var b strings.Builder
-	b.WriteString(fmt.Sprintf("%s: ", d.Name))
+	fmt.Fprintf(&b, "%s: ", d.Name)
 
 	for i := 0; i < len(d.AccessPoints)-1; i++ {
 		b.WriteString(d.AccessPoints[i].String())
