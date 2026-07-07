@@ -35,10 +35,25 @@ func addLease(tx *pg.Tx, lease *Lease) (err error) {
 		OnConflict("(ip_address, daemon_id) DO UPDATE").
 		Insert()
 	if err != nil {
+		// go-pg already handles nil pointers appropriately. This error handler is unlike
+		// the ones for other `addX()` functions because the error message dereferences
+		// fields of the referenced structure in order to produce more useful output.
+		// It is easy to make a mistake matching unlabeled structure fields from `%v`
+		// to their proper labels, particularly when three of them are colon-separated
+		// hexadecimal strings. Explicitly labeling them removes an error-prone step when
+		// troubleshooting.
 		if lease == nil {
 			err = pkgerrors.Wrapf(err, "cannot insert nil lease into database")
 		} else {
-			err = pkgerrors.Wrapf(err, "problem inserting lease for %s to (mac:%s/duid:%s/clientid:%s)", lease.IPAddress, lease.HWAddress, lease.DUID, lease.ClientID)
+			err = pkgerrors.Wrapf(
+				err,
+				"problem inserting lease (%v) for %s to (mac:%s/duid:%s/clientid:%s)",
+				lease,
+				lease.IPAddress,
+				lease.HWAddress,
+				lease.DUID,
+				lease.ClientID,
+			)
 		}
 		return err
 	}
