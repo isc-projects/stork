@@ -385,6 +385,7 @@ func TestXFRCollectorZoneTransferTrackingDisabledOnAgent(t *testing.T) {
 	require.Empty(t, xfrs)
 }
 
+// Test converting the XFR state to the database model.
 func TestXFRCollectorConvertXFRStateToDBModel(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -460,6 +461,8 @@ func TestXFRCollectorConvertXFRStateToDBModel(t *testing.T) {
 		require.Equal(t, daemons[0].MachineID, dbState.ClientMachineID)
 		// The server machine ID is unknown.
 		require.Zero(t, dbState.ServerMachineID)
+		// The zone transfer is not local.
+		require.False(t, dbState.Local)
 	})
 
 	t.Run("client and no server", func(t *testing.T) {
@@ -480,6 +483,8 @@ func TestXFRCollectorConvertXFRStateToDBModel(t *testing.T) {
 		// The server machine ID should be the ID of the machine where
 		// the zone transfer is logged.
 		require.Equal(t, daemons[1].MachineID, dbState.ServerMachineID)
+		// The zone transfer is not local.
+		require.False(t, dbState.Local)
 	})
 
 	t.Run("no client and server", func(t *testing.T) {
@@ -499,6 +504,8 @@ func TestXFRCollectorConvertXFRStateToDBModel(t *testing.T) {
 		require.Equal(t, daemons[0].MachineID, dbState.ClientMachineID)
 		// The server machine ID is obtained from the IP address.
 		require.Equal(t, daemons[1].MachineID, dbState.ServerMachineID)
+		// The zone transfer is not local.
+		require.False(t, dbState.Local)
 	})
 
 	t.Run("client and server", func(t *testing.T) {
@@ -515,6 +522,8 @@ func TestXFRCollectorConvertXFRStateToDBModel(t *testing.T) {
 		require.Equal(t, daemons[0].MachineID, dbState.ClientMachineID)
 		// The server machine ID should be obtained from the IP address.
 		require.Equal(t, daemons[1].MachineID, dbState.ServerMachineID)
+		// The zone transfer is not local.
+		require.False(t, dbState.Local)
 	})
 
 	t.Run("client unknown IP address", func(t *testing.T) {
@@ -532,6 +541,8 @@ func TestXFRCollectorConvertXFRStateToDBModel(t *testing.T) {
 		// The server machine ID is the ID of the machine where the zone transfer
 		// is logged.
 		require.Equal(t, daemons[1].MachineID, dbState.ServerMachineID)
+		// The zone transfer is not local.
+		require.False(t, dbState.Local)
 	})
 
 	t.Run("server unknown IP address", func(t *testing.T) {
@@ -549,5 +560,31 @@ func TestXFRCollectorConvertXFRStateToDBModel(t *testing.T) {
 		require.Equal(t, daemons[0].MachineID, dbState.ClientMachineID)
 		// The server machine ID is unknown.
 		require.Zero(t, dbState.ServerMachineID)
+		// The zone transfer is not local.
+		require.False(t, dbState.Local)
+	})
+
+	t.Run("local client zone transfer", func(t *testing.T) {
+		xfr := &bind9xfr.State{
+			ViewName: "view",
+			ZoneName: "zone",
+			Serial:   1234567890,
+			Client:   "127.0.0.1",
+		}
+		dbState := xfrCollector.convertXFRStateToDBModel(xfr)
+		require.Equal(t, daemons[0].ID, dbState.DaemonID)
+		require.True(t, dbState.Local)
+	})
+
+	t.Run("local server zone transfer", func(t *testing.T) {
+		xfr := &bind9xfr.State{
+			ViewName: "view",
+			ZoneName: "zone",
+			Serial:   1234567890,
+			Server:   "127.0.0.1",
+		}
+		dbState := xfrCollector2.convertXFRStateToDBModel(xfr)
+		require.Equal(t, daemons[1].ID, dbState.DaemonID)
+		require.True(t, dbState.Local)
 	})
 }

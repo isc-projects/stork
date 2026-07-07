@@ -48,6 +48,7 @@ type ZoneTransferState struct {
 	StartTime         time.Time `pg:",use_zero"`
 	CompletionTime    time.Time
 	Message           string
+	Local             bool `pg:",use_zero"`
 	ClientMachineID   int64
 	ServerMachineID   int64
 
@@ -109,6 +110,10 @@ type GetZoneTransferStatesFilter struct {
 	// Filter by partial zone name, view name, client name,
 	// server name, or message text.
 	Text *string
+	// Exclude local zone transfers (i.e., transfers initiated by the client
+	// running on the same machine as the server) in the results. It would
+	// exclude the transfers initiated by Stork.
+	ExcludeLocal bool
 }
 
 // Convenience function to enable a zone transfer status filter.
@@ -136,6 +141,7 @@ func addOrUpdateZoneTransferState(dbi pg.DBI, zoneTransferState *ZoneTransferSta
 		Set("status = EXCLUDED.status").
 		Set("completion_time = EXCLUDED.completion_time").
 		Set("message = EXCLUDED.message").
+		Set("local = EXCLUDED.local").
 		Set("client_machine_id = EXCLUDED.client_machine_id").
 		Set("server_machine_id = EXCLUDED.server_machine_id").
 		Insert()
@@ -201,6 +207,7 @@ func GetZoneTransferStatesByPage(dbi pg.DBI, filter *GetZoneTransferStatesFilter
 		Column("zone_transfer_state.status").
 		Column("zone_transfer_state.completion_time").
 		Column("zone_transfer_state.message").
+		Column("zone_transfer_state.local").
 		Column("zone_transfer_state.client_machine_id").
 		Column("zone_transfer_state.server_machine_id")
 
@@ -278,6 +285,11 @@ func GetZoneTransferStatesByPage(dbi pg.DBI, filter *GetZoneTransferStatesFilter
 				WhereOr("zone_transfer_state.message ILIKE ?", "%"+*filter.Text+"%")
 			return q, nil
 		})
+	}
+
+	if filter.ExcludeLocal {
+		// Exclude local zone transfers (e.g., transfers initiated by Stork).
+		q = q.Where("zone_transfer_state.local = ?", false)
 	}
 
 	total, err := q.SelectAndCount()

@@ -79,10 +79,12 @@ func TestMachineIPAddressCache(t *testing.T) {
 
 	// Third address overlaps with the second machine's first interface.
 	machines, loopback = cache.getMachines("192.168.1.3")
+	require.False(t, loopback)
 	require.Len(t, machines, 2)
 
 	// Fourth address overlaps with the second machine's second interface.
 	machines, loopback = cache.getMachines("192.168.1.4")
+	require.False(t, loopback)
 	require.Len(t, machines, 2)
 
 	// Loopback address is not included in the cache.

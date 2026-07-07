@@ -22,6 +22,7 @@ func init() {
 				start_time TIMESTAMP WITHOUT TIME ZONE NOT NULL,
 				completion_time TIMESTAMP WITHOUT TIME ZONE NULL,
 				message TEXT NULL,
+				local BOOLEAN NOT NULL DEFAULT FALSE,
 				client_machine_id BIGINT NULL,
 				server_machine_id BIGINT NULL,
 				CONSTRAINT zone_transfer_state_pkey PRIMARY KEY (id),

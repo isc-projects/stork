@@ -61,6 +61,7 @@ func TestGetZoneTransferStatesByPage(t *testing.T) {
 			StartTime:       zoneTransfer.StartTime,
 			CompletionTime:  zoneTransfer.CompletionTime,
 			Message:         zoneTransfer.Message,
+			Local:           false,
 			ClientMachineID: machine.ID,
 			ServerMachineID: machine2.ID,
 		}
@@ -94,6 +95,7 @@ func TestGetZoneTransferStatesByPage(t *testing.T) {
 		require.Equal(t, testZoneTransfers[index].StartTime, zoneTransfer.StartTime)
 		require.Equal(t, testZoneTransfers[index].CompletionTime, zoneTransfer.CompletionTime)
 		require.Equal(t, testZoneTransfers[index].Message, zoneTransfer.Message)
+		require.False(t, zoneTransfer.Local)
 		require.Equal(t, machine.ID, zoneTransfer.ClientMachineID)
 		require.Equal(t, machine2.ID, zoneTransfer.ServerMachineID)
 
@@ -201,6 +203,7 @@ func TestGetZoneTransferStatesByPageNoRelations(t *testing.T) {
 		require.Equal(t, testZoneTransfers[index].StartTime, zoneTransfer.StartTime)
 		require.Equal(t, testZoneTransfers[index].CompletionTime, zoneTransfer.CompletionTime)
 		require.Equal(t, testZoneTransfers[index].Message, zoneTransfer.Message)
+		require.False(t, zoneTransfer.Local)
 		require.Equal(t, machine.ID, zoneTransfer.ClientMachineID)
 		require.Equal(t, machine2.ID, zoneTransfer.ServerMachineID)
 
@@ -279,6 +282,7 @@ func TestAddOrUpdateZoneTransfersOverrideStartedByCompleted(t *testing.T) {
 		RecordsCount:    24872,
 		BytesCount:      1320233,
 		Message:         "Transfer completed: 79 messages, 24872 records, 1320233 bytes, 0.052 secs (25389096 bytes/sec) (serial 2026041600)",
+		Local:           true,
 		ClientMachineID: machine.ID,
 		ServerMachineID: machine2.ID,
 	}
@@ -310,6 +314,7 @@ func TestAddOrUpdateZoneTransfersOverrideStartedByCompleted(t *testing.T) {
 	require.Equal(t, completed.RecordsCount, returned[0].RecordsCount)
 	require.Equal(t, completed.BytesCount, returned[0].BytesCount)
 	require.Equal(t, completed.Message, returned[0].Message)
+	require.True(t, returned[0].Local)
 	require.Equal(t, machine.ID, returned[0].ClientMachineID)
 	require.Equal(t, machine2.ID, returned[0].ServerMachineID)
 
@@ -480,7 +485,7 @@ func TestGetZoneTransferStatesByPageWithFiltering(t *testing.T) {
 	require.NoError(t, err)
 
 	testZoneTransfers := testutil.GetTestZoneTransfers()
-	for _, zoneTransfer := range testZoneTransfers {
+	for i, zoneTransfer := range testZoneTransfers {
 		zoneTransfer := &ZoneTransferState{
 			DaemonID:        daemon.ID,
 			ViewName:        zoneTransfer.ViewName,
@@ -496,6 +501,7 @@ func TestGetZoneTransferStatesByPageWithFiltering(t *testing.T) {
 			StartTime:       zoneTransfer.StartTime,
 			CompletionTime:  zoneTransfer.CompletionTime,
 			Message:         zoneTransfer.Message,
+			Local:           i%2 == 0,
 			ClientMachineID: machine.ID,
 			ServerMachineID: machine2.ID,
 		}
@@ -613,6 +619,20 @@ func TestGetZoneTransferStatesByPageWithFiltering(t *testing.T) {
 		require.NoError(t, err)
 		require.Zero(t, 0, total)
 		require.Empty(t, zoneTransfers3)
+	})
+
+	t.Run("filter excluding local", func(t *testing.T) {
+		filter := &GetZoneTransferStatesFilter{
+			ExcludeLocal: true,
+		}
+		zoneTransfers, total, err := GetZoneTransferStatesByPage(db, filter, "", SortDirAny)
+		require.NoError(t, err)
+		require.EqualValues(t, 3, total)
+		require.Len(t, zoneTransfers, 3)
+
+		for _, zoneTransfer := range zoneTransfers {
+			require.False(t, zoneTransfer.Local)
+		}
 	})
 }
 

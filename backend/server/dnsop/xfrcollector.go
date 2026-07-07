@@ -64,13 +64,15 @@ func (xfrCollector *xfrCollector) convertXFRStateToDBModel(xfr *bind9xfr.State) 
 	var (
 		clientMachineID int64
 		serverMachineID int64
+		local           bool
 	)
 	switch {
 	case xfr.Client != "":
 		// The client address is set for an outgoing zone transfer. Let's try to obtain
 		// the machine ID from the IP address. It may not be available if the IP address
 		// to machine mapping is not set (e.g., if the machine is not yet monitored).
-		clientMachines, _ := xfrCollector.machineIPAddressCache.getMachines(xfr.Client)
+		clientMachines, loopback := xfrCollector.machineIPAddressCache.getMachines(xfr.Client)
+		local = loopback
 		if len(clientMachines) > 0 {
 			clientMachineID = clientMachines[0].ID
 		}
@@ -81,7 +83,8 @@ func (xfrCollector *xfrCollector) convertXFRStateToDBModel(xfr *bind9xfr.State) 
 		// The server address can be set for an incoming zone transfer. Let's try to obtain
 		// the machine ID from the IP address. It may not be available if the IP address
 		// to machine mapping is not set (e.g., if the machine is not yet monitored).
-		serverMachine, _ := xfrCollector.machineIPAddressCache.getMachines(xfr.Server)
+		serverMachine, loopback := xfrCollector.machineIPAddressCache.getMachines(xfr.Server)
+		local = loopback
 		if len(serverMachine) > 0 {
 			serverMachineID = serverMachine[0].ID
 		}
@@ -110,6 +113,7 @@ func (xfrCollector *xfrCollector) convertXFRStateToDBModel(xfr *bind9xfr.State) 
 		StartTime:       xfr.StartTime,
 		CompletionTime:  xfr.CompletionTime,
 		Message:         xfr.Message,
+		Local:           local,
 		ClientMachineID: clientMachineID,
 		ServerMachineID: serverMachineID,
 	}
