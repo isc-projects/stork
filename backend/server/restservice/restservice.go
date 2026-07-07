@@ -146,7 +146,7 @@ func NewRestAPI(args ...interface{}) (*RestAPI, error) {
 		}
 
 		// Make sure that the specified argument is a pointer.
-		if argType.Kind() != reflect.Ptr {
+		if argType.Kind() != reflect.Pointer {
 			return nil, pkgerrors.Errorf("non-pointer argument specified for NewRestAPI at position %d", i)
 		}
 

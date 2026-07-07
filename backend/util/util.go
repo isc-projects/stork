@@ -453,7 +453,7 @@ func FormatNoun(count int64, noun, postfix string) string {
 // Source: https://stackoverflow.com/a/50487104 .
 // See: https://groups.google.com/g/golang-nuts/c/wnH302gBa4I
 func IsNilPtr(obj interface{}) bool {
-	return obj == nil || reflect.ValueOf(obj).Kind() == reflect.Ptr && reflect.ValueOf(obj).IsNil()
+	return obj == nil || reflect.ValueOf(obj).Kind() == reflect.Pointer && reflect.ValueOf(obj).IsNil()
 }
 
 // Returns a pointer to the specified value. It is useful to

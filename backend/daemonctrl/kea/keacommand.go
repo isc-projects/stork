@@ -65,7 +65,7 @@ func newCommand(command CommandName, daemon daemonname.Name, arguments any) *Com
 			switch argsType.Kind() {
 			case reflect.Map, reflect.Struct:
 				break
-			case reflect.Ptr:
+			case reflect.Pointer:
 				if argsType.Elem().Kind() != reflect.Struct {
 					return nil
 				}
