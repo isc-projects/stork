@@ -135,7 +135,9 @@ func (s *CertStore) write(path string, content []byte) error {
 		return err
 	}
 
-	err := os.WriteFile(path, content, 0o600)
+	// This method is called only with a fixed set of paths that are hardcoded
+	// in the production code.
+	err := os.WriteFile(path, content, 0o600) // #nosec G703
 	if err != nil {
 		return errors.Wrapf(err, "could not write the file: %s", path)
 	}

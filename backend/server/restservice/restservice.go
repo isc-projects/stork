@@ -433,7 +433,10 @@ func setBaseURLInIndexFile(baseURL, staticFilesDir string) error {
 
 	// Edit the index file.
 	indexFileContent = baseHrefPattern.ReplaceAll(indexFileContent, []byte(baseHrefReplacement))
-	err = os.WriteFile(indexFilePath, indexFileContent, 0)
+	// It is a configuration step. The administrator can provide any path
+	// that it wants. There is no way to validate it or limit it to specific
+	// directories.
+	err = os.WriteFile(indexFilePath, indexFileContent, 0) // #nosec G703
 
 	if errors.Is(err, os.ErrPermission) {
 		// The backend doesn't have the permission to operate on index.file.
