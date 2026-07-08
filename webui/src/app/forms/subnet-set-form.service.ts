@@ -2105,9 +2105,7 @@ export class SubnetSetFormService {
             []
 
         const getPoolAssignments = (selectedPoolAssignments: number[]): number[] => {
-            const assignments = selectedPoolAssignments.filter((assignment) =>
-                selectedAssignments.includes(assignment)
-            )
+            const assignments = selectedPoolAssignments.filter((assignment) => selectedAssignments.includes(assignment))
             return assignments
         }
 
