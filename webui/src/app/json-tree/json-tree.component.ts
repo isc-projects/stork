@@ -1,4 +1,4 @@
-import { KeyValue, NgIf, NgClass, NgTemplateOutlet, NgFor, SlicePipe, KeyValuePipe } from '@angular/common'
+import { KeyValue, NgClass, NgTemplateOutlet, SlicePipe, KeyValuePipe } from '@angular/common'
 import { Component, Input, TemplateRef } from '@angular/core'
 import { Paginator } from 'primeng/paginator'
 import { InputText } from 'primeng/inputtext'
@@ -31,7 +31,7 @@ interface PageChangedEvent {
     selector: 'app-json-tree',
     templateUrl: './json-tree.component.html',
     styleUrls: ['./json-tree.component.sass'],
-    imports: [NgIf, NgClass, NgTemplateOutlet, NgFor, Paginator, InputText, SlicePipe, KeyValuePipe],
+    imports: [NgClass, NgTemplateOutlet, Paginator, InputText, SlicePipe, KeyValuePipe],
 })
 export class JsonTreeComponent {
     private _value: any = null
