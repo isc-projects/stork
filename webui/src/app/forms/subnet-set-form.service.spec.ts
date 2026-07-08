@@ -2205,6 +2205,36 @@ describe('SubnetSetFormService', () => {
         expect(form.get('selectedGroups').value.length).toBe(0)
     })
 
+    it('should keep pool assignments for daemon group index zero during synchronization', () => {
+        const form = service.createDefaultSubnetForm(null, '192.0.2.0/24')
+        const pools = form.get('pools') as UntypedFormArray
+        const pool = service.createDefaultAddressPoolForm(null, '192.0.2.0/24')
+        pools.push(pool)
+
+        form.get('selectedGroups')?.setValue([0, 1])
+        pool.get('selectedGroups')?.setValue([0, 1])
+
+        // Simulate initialization path where selected groups and pool assignments
+        // are synchronized while the number of selected groups remains unchanged.
+        service.adjustFormForSelectedDaemons(form as unknown as UntypedFormGroup, -1, 2)
+
+        expect(pool.get('selectedGroups')?.value).toEqual([0, 1])
+    })
+
+    it('should not auto-assign pool groups when assignments do not overlap', () => {
+        const form = service.createDefaultSubnetForm(null, '192.0.2.0/24')
+        const pools = form.get('pools') as UntypedFormArray
+        const pool = service.createDefaultAddressPoolForm(null, '192.0.2.0/24')
+        pools.push(pool)
+
+        form.get('selectedGroups')?.setValue([2])
+        pool.get('selectedGroups')?.setValue([1])
+
+        service.adjustFormForSelectedDaemons(form as unknown as UntypedFormGroup, -1, 1)
+
+        expect(pool.get('selectedGroups')?.value).toEqual([])
+    })
+
     it('should convert IPv4 subnet data to a form', () => {
         const subnet: Subnet = {
             subnet: '192.0.2.0/24',

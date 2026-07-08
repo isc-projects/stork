@@ -2099,23 +2099,23 @@ export class SubnetSetFormService {
         toggleDaemonGroupIndex: number,
         prevSelectedDaemonsNum: number
     ): void {
-        // If the number of daemons hasn't changed, there is nothing more to do.
         const selectedAssignments =
             (formGroup.get('selectedGroups') as UntypedFormControl | null)?.value ??
             (formGroup.get('selectedDaemons') as UntypedFormControl | null)?.value ??
             []
-        if (prevSelectedDaemonsNum === selectedAssignments.length) {
-            return
+
+        const getPoolAssignments = (selectedPoolAssignments: number[]): number[] => {
+            const assignments = selectedPoolAssignments.filter((assignment) =>
+                selectedAssignments.includes(assignment)
+            )
+            return assignments
         }
+
         const pools = formGroup.get('pools') as FormArray<FormGroup<AddressPoolForm>>
         if (pools) {
             for (const pool of pools.controls) {
                 const selectedPoolGroups = pool.get('selectedGroups') as UntypedFormControl
-                selectedPoolGroups?.setValue(
-                    (selectedPoolGroups?.value ?? []).filter((assignment) =>
-                        selectedAssignments.find((selected) => selected === assignment)
-                    )
-                )
+                selectedPoolGroups?.setValue(getPoolAssignments(selectedPoolGroups?.value ?? []))
             }
         }
 
@@ -2123,12 +2123,13 @@ export class SubnetSetFormService {
         if (prefixPools) {
             for (const pool of prefixPools.controls) {
                 const selectedPoolGroups = pool.get('selectedGroups') as UntypedFormControl
-                selectedPoolGroups?.setValue(
-                    (selectedPoolGroups?.value ?? []).filter((assignment) =>
-                        selectedAssignments.find((selected) => selected === assignment)
-                    )
-                )
+                selectedPoolGroups?.setValue(getPoolAssignments(selectedPoolGroups?.value ?? []))
             }
+        }
+
+        // If the number of daemons hasn't changed, there is nothing more to do.
+        if (prevSelectedDaemonsNum === selectedAssignments.length) {
+            return
         }
 
         // Get form controls pertaining to the servers before the selection change.
