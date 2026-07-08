@@ -17,6 +17,7 @@ func init() {
 				messages_count BIGINT NULL,
 				records_count BIGINT NULL,
 				bytes_count BIGINT NULL,
+				bytes_per_second BIGINT NULL,
 				duration BIGINT NULL,
 				status TEXT NOT NULL,
 				started_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,

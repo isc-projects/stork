@@ -65,6 +65,9 @@ func TestGetZoneTransferStatesByPage(t *testing.T) {
 			ClientMachineID: machine.ID,
 			ServerMachineID: machine2.ID,
 		}
+		if zoneTransfer.Duration.Nanoseconds() > 0 {
+			zoneTransfer.BytesPerSecond = zoneTransfer.BytesCount * int64(time.Second) / zoneTransfer.Duration.Nanoseconds()
+		}
 		err = AddOrUpdateZoneTransferState(db, zoneTransfer)
 		require.NoError(t, err)
 	}
@@ -100,12 +103,14 @@ func TestGetZoneTransferStatesByPage(t *testing.T) {
 		require.Equal(t, machine2.ID, zoneTransfer.ServerMachineID)
 
 		switch {
-		case testZoneTransfers[index].Duration > 0:
+		case testZoneTransfers[index].Duration.Nanoseconds() > 0:
 			require.Equal(t, testZoneTransfers[index].Duration, zoneTransfer.Duration)
-		case testZoneTransfers[index].Duration == 0 && !zoneTransfer.StartedAt.IsZero():
+			require.Equal(t, testZoneTransfers[index].BytesCount*int64(time.Second)/testZoneTransfers[index].Duration.Nanoseconds(), zoneTransfer.BytesPerSecond)
+		case testZoneTransfers[index].Duration.Nanoseconds() == 0 && !zoneTransfer.StartedAt.IsZero():
 			require.InDelta(t, zoneTransfer.EffectiveDuration, time.Since(zoneTransfer.StartedAt), float64(1*time.Second))
 		default:
 			require.Zero(t, zoneTransfer.Duration)
+			require.Zero(t, zoneTransfer.BytesPerSecond)
 		}
 
 		require.NotNil(t, zoneTransfer.ClientMachine)
@@ -208,9 +213,9 @@ func TestGetZoneTransferStatesByPageNoRelations(t *testing.T) {
 		require.Equal(t, machine2.ID, zoneTransfer.ServerMachineID)
 
 		switch {
-		case testZoneTransfers[index].Duration > 0:
+		case testZoneTransfers[index].Duration.Nanoseconds() > 0:
 			require.Equal(t, testZoneTransfers[index].Duration, zoneTransfer.Duration)
-		case testZoneTransfers[index].Duration == 0 && !zoneTransfer.StartedAt.IsZero():
+		case testZoneTransfers[index].Duration.Nanoseconds() == 0 && !zoneTransfer.StartedAt.IsZero():
 			require.InDelta(t, time.Since(zoneTransfer.StartedAt), zoneTransfer.EffectiveDuration, float64(10*time.Second))
 		default:
 			require.Zero(t, zoneTransfer.Duration)

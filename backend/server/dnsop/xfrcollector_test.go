@@ -96,9 +96,9 @@ func TestXFRCollector(t *testing.T) {
 				require.Equal(t, testXFR.Message, xfr.Message)
 
 				switch {
-				case testXFR.Duration > 0:
+				case testXFR.Duration.Nanoseconds() > 0:
 					require.Equal(t, testXFR.Duration, xfr.Duration)
-				case testXFR.Duration == 0 && !xfr.StartedAt.IsZero():
+				case testXFR.Duration.Nanoseconds() == 0 && !xfr.StartedAt.IsZero():
 					require.InDelta(t, time.Since(xfr.StartedAt), xfr.EffectiveDuration, float64(10*time.Second))
 				default:
 					require.Zero(t, xfr.Duration)
@@ -385,8 +385,9 @@ func TestXFRCollectorZoneTransferTrackingDisabledOnAgent(t *testing.T) {
 	require.Empty(t, xfrs)
 }
 
-// Test converting the XFR state to the database model.
-func TestXFRCollectorConvertXFRStateToDBModel(t *testing.T) {
+// Test converting the XFR state to the database model for different
+// values of the XFR client and server.
+func TestXFRCollectorConvertXFRStateToDBModelPrimarySecondary(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -587,4 +588,70 @@ func TestXFRCollectorConvertXFRStateToDBModel(t *testing.T) {
 		require.Equal(t, daemons[1].ID, dbState.DaemonID)
 		require.True(t, dbState.Local)
 	})
+}
+
+// Test converting the XFR state to the database model for different
+// values of the bytes count and duration.
+func TestXFRCollectorConvertXFRStateToDBModelBytesPerSecond(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	machine := &dbmodel.Machine{
+		Address:   "127.0.0.1",
+		AgentPort: 8080,
+	}
+	err := dbmodel.AddMachine(db, machine)
+	require.NoError(t, err)
+
+	daemon := &dbmodel.Daemon{
+		MachineID: machine.ID,
+	}
+	err = dbmodel.AddDaemon(db, daemon)
+	require.NoError(t, err)
+
+	xfrCollector := newXFRCollector(daemonstest.ManagerAccessorsWrapper{
+		DB:     db,
+		Agents: NewMockConnectedAgents(gomock.NewController(t)),
+	}, newMachineIPAddressCache(db), daemon)
+
+	t.Run("non zero bytes per second", func(t *testing.T) {
+		xfr := &bind9xfr.State{
+			ZoneName:   "zone",
+			BytesCount: 1250,
+			Duration:   50 * time.Millisecond,
+		}
+		dbState := xfrCollector.convertXFRStateToDBModel(xfr)
+		require.EqualValues(t, 25000, dbState.BytesPerSecond)
+	})
+
+	t.Run("zero duration", func(t *testing.T) {
+		xfr := &bind9xfr.State{
+			ZoneName:   "zone",
+			BytesCount: 1250,
+			Duration:   0,
+		}
+		dbState := xfrCollector.convertXFRStateToDBModel(xfr)
+		require.Zero(t, dbState.BytesPerSecond)
+	})
+
+	t.Run("zero bytes count", func(t *testing.T) {
+		xfr := &bind9xfr.State{
+			ZoneName:   "zone",
+			BytesCount: 0,
+			Duration:   25 * time.Millisecond,
+		}
+		dbState := xfrCollector.convertXFRStateToDBModel(xfr)
+		require.Zero(t, dbState.BytesPerSecond)
+	})
+
+	t.Run("nanosecond duration", func(t *testing.T) {
+		xfr := &bind9xfr.State{
+			ZoneName:   "zone",
+			BytesCount: 1250,
+			Duration:   1 * time.Nanosecond,
+		}
+		dbState := xfrCollector.convertXFRStateToDBModel(xfr)
+		require.EqualValues(t, 1250000000000, dbState.BytesPerSecond)
+	})
+
 }

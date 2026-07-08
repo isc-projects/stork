@@ -98,7 +98,7 @@ func (xfrCollector *xfrCollector) convertXFRStateToDBModel(xfr *bind9xfr.State) 
 		// initiated on the machine where the zone transfer is captured.
 		clientMachineID = xfrCollector.daemon.MachineID
 	}
-	return &dbmodel.ZoneTransferState{
+	state := &dbmodel.ZoneTransferState{
 		DaemonID:        xfrCollector.daemon.ID,
 		ViewName:        xfr.ViewName,
 		ZoneName:        xfr.ZoneName,
@@ -117,6 +117,10 @@ func (xfrCollector *xfrCollector) convertXFRStateToDBModel(xfr *bind9xfr.State) 
 		ClientMachineID: clientMachineID,
 		ServerMachineID: serverMachineID,
 	}
+	if ns := state.Duration.Nanoseconds(); ns > 0 {
+		state.BytesPerSecond = state.BytesCount * int64(time.Second) / ns
+	}
+	return state
 }
 
 // The main goroutine implementation that receives the zone transfer states over

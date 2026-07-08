@@ -42,6 +42,7 @@ type ZoneTransferState struct {
 	MessagesCount     int64
 	RecordsCount      int64
 	BytesCount        int64
+	BytesPerSecond    int64
 	Duration          time.Duration
 	EffectiveDuration time.Duration `pg:"-"`
 	Status            bind9xfr.Status
@@ -137,6 +138,7 @@ func addOrUpdateZoneTransferState(dbi pg.DBI, zoneTransferState *ZoneTransferSta
 		Set("messages_count = EXCLUDED.messages_count").
 		Set("records_count = EXCLUDED.records_count").
 		Set("bytes_count = EXCLUDED.bytes_count").
+		Set("bytes_per_second = EXCLUDED.bytes_per_second").
 		Set("duration = EXCLUDED.duration").
 		Set("status = EXCLUDED.status").
 		Set("completed_at = EXCLUDED.completed_at").
@@ -202,6 +204,7 @@ func GetZoneTransferStatesByPage(dbi pg.DBI, filter *GetZoneTransferStatesFilter
 		Column("zone_transfer_state.messages_count").
 		Column("zone_transfer_state.records_count").
 		Column("zone_transfer_state.bytes_count").
+		Column("zone_transfer_state.bytes_per_second").
 		Column("zone_transfer_state.duration").
 		ColumnExpr(effectiveDurationExpr + " AS effective_duration").
 		Column("zone_transfer_state.status").
