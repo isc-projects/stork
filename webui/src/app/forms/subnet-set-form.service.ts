@@ -534,9 +534,9 @@ export class SubnetSetFormService {
             // Get the values of the parameter for different servers.
             const values = parameterControl.get('values') as UntypedFormArray
             let data = (form.controls[key] as SharedParameterFormGroup<any, any>)?.data
-            const conversionLength = valueIndexes?.length ?? values?.length ?? 0
+            const valueIndexesLength = valueIndexes?.length ?? values?.length ?? 0
             // For each server-specific value of the parameter.
-            for (let i = 0; i < conversionLength; i++) {
+            for (let i = 0; i < valueIndexesLength; i++) {
                 // If we haven't added the parameter set for the current index let's add one.
                 if (params.length <= i) {
                     params.push({} as ParamsType)
