@@ -31,6 +31,10 @@ import {
 } from '@angular/forms'
 import { IPType } from '../iptype'
 
+/**
+ * Creates a daemon group from an array of expected daemon IDs.
+ * All daemons are DHCPv4 daemons.
+ */
 function createDaemonGroups(...daemonIDs: number[]): DaemonGroup[] {
     return daemonIDs.map((daemonID) => ({
         index: daemonID,
@@ -46,6 +50,9 @@ function createDaemonGroups(...daemonIDs: number[]): DaemonGroup[] {
     }))
 }
 
+/**
+ * Creates a daemon groups from the local subnets of a subnet.
+ */
 function createDaemonGroupsFromSubnet(subnet: Subnet): DaemonGroup[] {
     const daemonIDs =
         subnet.localSubnets
