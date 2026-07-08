@@ -653,5 +653,4 @@ func TestXFRCollectorConvertXFRStateToDBModelBytesPerSecond(t *testing.T) {
 		dbState := xfrCollector.convertXFRStateToDBModel(xfr)
 		require.EqualValues(t, 1250000000000, dbState.BytesPerSecond)
 	})
-
 }
