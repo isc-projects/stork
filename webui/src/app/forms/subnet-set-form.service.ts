@@ -398,6 +398,17 @@ export class SubnetSetFormService {
     private optionService = inject(DhcpOptionSetFormService)
 
     /**
+     * Finds index of the local daemon in the expanded daemons array.
+     *
+     * @param localData local daemon container.
+     * @param daemons expanded daemons.
+     * @returns An index in the daemons array.
+     */
+    private getDaemonIndex(localData: LocalDaemonData, daemons: VersionedDaemon[]) {
+        return daemons.findIndex((daemon) => daemon.id === localData.daemonId)
+    }
+
+    /**
      * Expands selected daemon groups to daemons and maps each daemon to its group slot.
      *
      * @param selectedGroups selected daemon group indexes.
@@ -427,17 +438,6 @@ export class SubnetSetFormService {
             }
         }
         return { daemons, valueIndexes }
-    }
-
-    /**
-     * Finds index of the local daemon in the expanded daemons array.
-     *
-     * @param localData local daemon container.
-     * @param daemons expanded daemons.
-     * @returns An index in the daemons array.
-     */
-    private getDaemonIndex(localData: LocalDaemonData, daemons: VersionedDaemon[]) {
-        return daemons.findIndex((daemon) => daemon.id === localData.daemonId)
     }
 
     /**
