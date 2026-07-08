@@ -441,44 +441,45 @@ export class SubnetSetFormService {
     }
 
     /**
-     * Maps daemon identifiers to selected daemon group indexes.
+     * Maps daemon identifiers to selected daemon groups.
      *
      * @param daemonIDs daemon identifiers.
      * @param daemonGroups daemon groups.
-     * @returns Selected daemon group indexes.
+     * @returns Selected daemon groups.
      */
-    private mapDaemonIDsToGroups(daemonIDs: number[], daemonGroups: DaemonGroup[]): number[] {
-        const selectedGroups: number[] = []
+    private mapDaemonIDsToGroups(daemonIDs: number[], daemonGroups: DaemonGroup[]): DaemonGroup[] {
+        const selectedGroups: DaemonGroup[] = []
         for (const group of daemonGroups) {
             if (group.daemons.some((daemon) => daemon.id != null && daemonIDs.includes(daemon.id))) {
-                selectedGroups.push(group.index)
+                selectedGroups.push(group)
             }
         }
         return selectedGroups
     }
 
     /**
-     * Selects one item per daemon group based on selected group indexes.
+     * Selects one item per selected daemon group.
      *
      * @typeParam ItemType type extending daemon data.
      * @param items items associated with daemons.
      * @param selectedGroups selected daemon groups.
-     * @param daemonGroups daemon groups.
      * @returns Representative items for the selected daemon groups.
      */
-    private getBelongingToSelectedDaemonGroups<ItemType extends LocalDaemonData>(
+    private getFirstForEachDaemonGroup<ItemType extends LocalDaemonData>(
         items: ItemType[],
-        selectedGroups: number[],
-        daemonGroups: DaemonGroup[]
+        selectedGroups: DaemonGroup[]
     ): ItemType[] {
         const representatives: ItemType[] = []
         for (const selectedGroup of selectedGroups) {
-            const daemonIDs = daemonGroups
-                .find((daemonGroup) => daemonGroup.index === selectedGroup)
-                ?.daemons.filter((daemon) => daemon.id != null)
+            const daemonIDs = selectedGroup.daemons
+                // Select daemon IDs from the current group.
+                .filter((daemon) => daemon.id != null)
                 .map((daemon) => daemon.id as number)
-            const representative = items.find((item) => item.daemonId != null && daemonIDs?.includes(item.daemonId))
+            // Find a first item associated with the current group.
+            const representative = items.find((item) => item.daemonId != null && daemonIDs.includes(item.daemonId))
             if (representative) {
+                // If there is any item associated with the current group, add
+                // it to the representatives.
                 representatives.push(representative)
             }
         }
@@ -1172,15 +1173,11 @@ export class SubnetSetFormService {
         }
         // Iterate over the extracted pools and convert them to a form.
         for (const pool of subnetWithUniquePools[0]?.pools) {
-            const selectedGroups = this.mapDaemonIDsToGroups(
+            const selectedDaemonGroups = this.mapDaemonIDsToGroups(
                 pool.localPools?.map((localPool) => localPool.daemonId) || [],
                 daemonGroups
             )
-            const localPools = this.getBelongingToSelectedDaemonGroups(
-                pool.localPools || [],
-                selectedGroups,
-                daemonGroups
-            )
+            const localPools = this.getFirstForEachDaemonGroup(pool.localPools || [], selectedDaemonGroups)
             // Attempt to validate and convert the pool range specified
             // as a string to an address range. It may throw.
             const addressRange = AddressRange.fromStringRange(pool.pool)
@@ -1215,7 +1212,10 @@ export class SubnetSetFormService {
                             )
                         ),
                     }),
-                    selectedGroups: new FormControl<number[]>(selectedGroups, Validators.required),
+                    selectedGroups: new FormControl<number[]>(
+                        selectedDaemonGroups.map((group) => group.index),
+                        Validators.required
+                    ),
                 })
             )
         }
@@ -1299,15 +1299,11 @@ export class SubnetSetFormService {
         }
         // Iterate over the extracted pools and convert them to a form.
         for (const pool of subnetWithUniquePools[0]?.prefixDelegationPools) {
-            const selectedGroups = this.mapDaemonIDsToGroups(
+            const selectedDaemonGroups = this.mapDaemonIDsToGroups(
                 pool.localPools?.map((localPool) => localPool.daemonId) || [],
                 daemonGroups
             )
-            const localPools = this.getBelongingToSelectedDaemonGroups(
-                pool.localPools || [],
-                selectedGroups,
-                daemonGroups
-            )
+            const localPools = this.getFirstForEachDaemonGroup(pool.localPools || [], selectedDaemonGroups)
             formArray.push(
                 new FormGroup<PrefixPoolForm>({
                     prefixes: new FormGroup<PrefixForm>(
@@ -1347,7 +1343,10 @@ export class SubnetSetFormService {
                             )
                         ),
                     }),
-                    selectedGroups: new FormControl<number[]>(selectedGroups, Validators.required),
+                    selectedGroups: new FormControl<number[]>(
+                        selectedDaemonGroups.map((group) => group.index),
+                        Validators.required
+                    ),
                 })
             )
         }
@@ -1420,15 +1419,11 @@ export class SubnetSetFormService {
         subnet: Subnet,
         daemonGroups: DaemonGroup[]
     ): FormGroup<SubnetForm> {
-        const selectedGroups = this.mapDaemonIDsToGroups(
+        const selectedDaemonGroups = this.mapDaemonIDsToGroups(
             subnet.localSubnets?.map((localSubnet) => localSubnet.daemonId) || [],
             daemonGroups
         )
-        const localSubnets = this.getBelongingToSelectedDaemonGroups(
-            subnet.localSubnets || [],
-            selectedGroups,
-            daemonGroups
-        )
+        const localSubnets = this.getFirstForEachDaemonGroup(subnet.localSubnets || [], selectedDaemonGroups)
         let formGroup = new FormGroup<SubnetForm>({
             subnet: new FormControl({ value: subnet.subnet, disabled: true }),
             sharedNetwork: new FormControl(subnet.sharedNetworkId),
@@ -1456,7 +1451,7 @@ export class SubnetSetFormService {
             }),
             selectedGroups: new FormControl<number[]>(
                 {
-                    value: selectedGroups,
+                    value: selectedDaemonGroups.map((group) => group.index),
                     disabled: !!subnet.sharedNetworkId,
                 },
                 Validators.required
