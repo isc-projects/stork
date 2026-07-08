@@ -1,312 +1,359 @@
 <div>
     <h3 class="underlined">High Availability</h3>
-    <div *ngIf="hasStatus" class="mb-4">
-        <p-table [value]="status" rowGroupMode="subheader" groupRowsBy="relationship.name">
-            <ng-template #header>
-                <tr>
-                    <th></th>
-                    <th>This Server</th>
-                    <th *ngIf="hasPartnerColumn">Partner</th>
-                </tr>
-            </ng-template>
-            <ng-template #groupheader let-statusRow let-expanded="expanded">
-                <tr pRowGroupHeader class="relationship-pane">
-                    <td>
-                        <div class="flex align-items-center justify-content-between">
-                            <div class="flex align-items-center">
-                                <p-button
-                                    [text]="true"
-                                    [rounded]="true"
-                                    severity="secondary"
-                                    [pRowToggler]="statusRow"
-                                    class="mr-2"
-                                    [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
-                                ></p-button>
-                                <span *ngIf="statusRow.relationship.name">
-                                    {{ statusRow.relationship.name }}
-                                </span>
-                            </div>
-                        </div>
-                    </td>
-                    <td *ngFor="let column of statusRow.relationship.cells; let index = index">
-                        <span *ngIf="column.value !== undefined" class="ha-ok">{{ column.value }}</span>
-                        @if (column.daemonId && column.daemonLabel) {
-                            at
-                            <app-entity-link
-                                entity="daemon"
-                                [showEntityName]="false"
-                                [attrs]="column"
-                            ></app-entity-link>
-                        } @else if (index !== 0) {
-                            at non-monitored machine
+    @if (hasStatus) {
+        <div class="mb-4">
+            <p-table [value]="status" rowGroupMode="subheader" groupRowsBy="relationship.name">
+                <ng-template #header>
+                    <tr>
+                        <th></th>
+                        <th>This Server</th>
+                        @if (hasPartnerColumn) {
+                            <th>Partner</th>
                         }
-                        <ng-container [ngSwitch]="column.iconType">
-                            <span *ngSwitchCase="'ok'" class="ml-2 pi pi-check icon-ok"></span>
-                            <span *ngSwitchCase="'warn'" class="ml-2 pi pi-exclamation-triangle icon-warn"></span>
-                            <span *ngSwitchCase="'error'" class="ml-2 pi pi-exclamation-circle icon-error"></span>
-                            <span *ngSwitchCase="'pending'" class="ml-2 pi pi-spin pi-spinner icon-pending"></span>
-                        </ng-container>
-                        <p-progressBar
-                            *ngIf="column.hasOwnProperty('progress')"
-                            [value]="column.progress"
-                        ></p-progressBar>
-                    </td>
-                </tr>
-            </ng-template>
-            <ng-template #expandedrow let-statusRow>
-                <tr>
-                    <td>
-                        <div class="flex align-items-center justify-content-between">
-                            <div>
-                                {{ statusRow.title }}
+                    </tr>
+                </ng-template>
+                <ng-template #groupheader let-statusRow let-expanded="expanded">
+                    <tr pRowGroupHeader class="relationship-pane">
+                        <td>
+                            <div class="flex align-items-center justify-content-between">
+                                <div class="flex align-items-center">
+                                    <p-button
+                                        [text]="true"
+                                        [rounded]="true"
+                                        severity="secondary"
+                                        [pRowToggler]="statusRow"
+                                        class="mr-2"
+                                        [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
+                                    ></p-button>
+                                    @if (statusRow.relationship.name) {
+                                        <span>
+                                            {{ statusRow.relationship.name }}
+                                        </span>
+                                    }
+                                </div>
                             </div>
-                            <div>
-                                <ng-container [ngSwitch]="statusRow.title">
-                                    <app-help-tip *ngSwitchCase="'Status time'" [subject]="statusRow.title | lowercase">
-                                        <p>
-                                            This is the time when the server last reported its state; it is not
-                                            necessarily the time when the state information was refreshed in the UI. The
-                                            presented state information is typically delayed by 10 to 30 seconds because
-                                            it is cached by both the Kea servers and the Stork backend. Caching
-                                            minimizes the performance impact on the DHCP servers reporting their states
-                                            over the control channel.
-                                        </p>
-                                    </app-help-tip>
-                                    <app-help-tip *ngSwitchCase="'Status age'" [subject]="statusRow.title | lowercase">
-                                        <p>
-                                            This is the duration between the "Status Time" and now, i.e. it indicates
-                                            how long ago the server reported its state. A long duration indicates that
-                                            there is a communication problem with the server. The typical duration is
-                                            between 10 and 30 seconds.
-                                        </p>
-                                    </app-help-tip>
-                                    <app-help-tip
-                                        *ngSwitchCase="'Control status'"
-                                        [subject]="statusRow.title | lowercase"
-                                    >
-                                        <p>
-                                            An <span class="font-bold">online</span> control status indicates that the
-                                            server is responding to commands over the control channel.
-                                        </p>
-                                        <p>
-                                            An <span class="font-bold">offline</span> control status indicates that the
-                                            server is not responding and may be down.
-                                        </p>
-                                        <p>
-                                            The <b>unknown</b> control status may appear during the server's startup,
-                                            when the information about its actual status is not yet available.
-                                        </p>
-                                    </app-help-tip>
-                                    <app-help-tip
-                                        *ngSwitchCase="'Heartbeat status'"
-                                        [subject]="statusRow.title | lowercase"
-                                        width="40vw"
-                                    >
-                                        <p>
-                                            The heartbeat status reports whether the server is responding to the
-                                            heartbeat commands from its partner. Heartbeat commands are exchanged
-                                            between the partners regularly to check whether the servers remain
-                                            operational, and to gather and respond to their current states.
-                                        </p>
-                                        <p>
-                                            An <b>OK</b> status is desired at all times. It indicates a healthy
-                                            heartbeat communication with the server.
-                                        </p>
-                                        <p>
-                                            A <span class="font-bold">failed</span> status occurs when the most recent
-                                            attempt to send a heartbeat to the server fails. In this case, the partners
-                                            enter the <span class="font-italic">communication-interrupted</span> state.
-                                            They may recover from this state if the communication problem is transient.
-                                            If communication is interrupted for a longer period, the failover procedure
-                                            is triggered, resulting in the partner's transition to the
-                                            <span class="font-bold">partner-down</span>
-                                            state.
-                                        </p>
-                                        <p>
-                                            An <span class="font-bold">unknown</span> status may occur when the servers
-                                            have not yet tried to exchange heartbeats.
-                                        </p>
-                                    </app-help-tip>
-                                    <app-help-tip
-                                        *ngSwitchCase="'State'"
-                                        [subject]="statusRow.title | lowercase"
-                                        width="40vw"
-                                    >
-                                        <p>The following are the possible server states:</p>
-                                        <ul>
-                                            <li>
-                                                <span class="font-bold white-space-nowrap">hot-standby</span> - normal
-                                                operation in the
-                                                <span class="font-italic white-space-nowrap">hot-standby</span> mode.
-                                            </li>
-                                            <li>
-                                                <span class="font-bold white-space-nowrap">load-balancing</span> -
-                                                normal operation in the
-                                                <span class="font-italic white-space-nowrap">load-balancing</span> mode.
-                                            </li>
-                                            <li>
-                                                <span class="font-bold white-space-nowrap">passive-backup</span> - the
-                                                server has no active partner, unlike in the
-                                                <span class="font-italic white-space-nowrap">load-balancing</span> or
-                                                <span class="font-italic white-space-nowrap">hot-standby</span> mode.
-                                                This server may be configured to send lease updates to the backup
-                                                servers, but there is no automatic failover triggered in case of a
-                                                failure.
-                                            </li>
-                                            <li>
-                                                <span class="font-bold">waiting</span> - the server is booting up and
-                                                will try to synchronize its lease database.
-                                            </li>
-                                            <li>
-                                                <span class="font-bold">syncing</span> - the server is synchronizing its
-                                                database after a failure.
-                                            </li>
-                                            <li>
-                                                <span class="font-bold">ready</span> - the server has synchronized its
-                                                lease database and will start normal operation shortly.
-                                            </li>
-                                            <li>
-                                                <span class="font-bold">terminated</span> - the server is no longer
-                                                participating in the HA setup because the clock skew is too high.
-                                            </li>
-                                            <li>
-                                                <span class="font-bold">maintained</span> - the server is under
-                                                maintenance.
-                                            </li>
-                                            <li>
-                                                <span class="font-bold">partner-maintained</span> - the server is
-                                                responding to all DHCP queries while its partner is in maintenance.
-                                            </li>
-                                            <li>
-                                                <span class="font-bold">unavailable</span> - communication with the
-                                                server failed. It may have crashed or have been shut down.
-                                            </li>
-                                        </ul>
-                                    </app-help-tip>
-                                    <app-help-tip *ngSwitchCase="'Scopes'" [subject]="statusRow.title | lowercase">
-                                        <p>
-                                            This is a list of HA scopes currently being served by this server. If the
-                                            server is responding to the DHCP queries as a
-                                            <span class="font-bold">primary</span> or
-                                            <span class="font-bold">secondary</span> in the
-                                            <span class="font-bold white-space-nowrap">load-balancing</span> mode or as
-                                            a <span class="font-bold">primary</span> in the
-                                            <span class="font-bold white-space-nowrap">hot-standby</span> mode, there is
-                                            typically a single scope shown. Two scopes may be shown if a
-                                            <span class="font-bold white-space-nowrap">load-balancing</span> server is
-                                            currently serving all DHCP clients while its partner is down. There may be
-                                            no scopes shown when a <span class="font-bold">standby</span> server is in
-                                            <span class="font-bold white-space-nowrap">hot-standby</span> mode, because
-                                            such a server is not responding to any DHCP queries; instead, it is
-                                            passively receiving lease updates from the
-                                            <span class="font-bold">primary</span>. The
-                                            <span class="font-bold">standby</span> server will start serving the
-                                            <span class="font-bold">primary</span> server scope in the event of the
-                                            <span class="font-bold">primary</span> failure.
-                                        </p>
-                                    </app-help-tip>
-                                    <app-help-tip
-                                        *ngSwitchCase="'Last in partner-down'"
-                                        [subject]="statusRow.title | lowercase"
-                                    >
-                                        <p>
-                                            This is the last time when the server transitioned to the
-                                            <span class="font-bold white-space-nowrap">partner-down</span> state because
-                                            its partner was considered offline as a result of an unexpected termination
-                                            or shutdown.
-                                        </p>
-                                    </app-help-tip>
-                                    <app-help-tip
-                                        *ngSwitchCase="'Unacked clients'"
-                                        [subject]="statusRow.title | lowercase"
-                                    >
-                                        <p>
-                                            This is the number of clients considered unacked by the partner. This value
-                                            is only set when the partner has lost heartbeat communication with this
-                                            server and has started the failover procedure, by monitoring whether the
-                                            server is responding to DHCP traffic. The unacked number indicates clients
-                                            that have been trying to get leases from this server longer than the time
-                                            specified by the
-                                            <span class="font-bold white-space-nowrap">max-ack-delay</span>
-                                            configuration parameter.
-                                        </p>
-                                    </app-help-tip>
-                                    <app-help-tip
-                                        *ngSwitchCase="'Connecting clients'"
-                                        [subject]="statusRow.title | lowercase"
-                                    >
-                                        <p>
-                                            This is the total number of clients trying to get new leases from the
-                                            partner server, while the current server is unable to communicate with its
-                                            partner via
-                                            <span class="font-bold white-space-nowrap">ha-heartbeat</span>. This figure
-                                            includes both unacked clients and clients for which the secs field or
-                                            elapsed time option is below the
-                                            <span class="font-bold white-space-nowrap">max-ack-delay</span>.
-                                        </p>
-                                    </app-help-tip>
-                                    <app-help-tip
-                                        *ngSwitchCase="'Analyzed packets'"
-                                        [subject]="statusRow.title | lowercase"
-                                    >
-                                        <p>
-                                            This is the total number of packets directed to the partner server, while
-                                            the current server is unable to communicate using
-                                            <span class="font-bold white-space-nowrap">ha-heartbeat</span>. It may
-                                            include several packets from the same client who tried to resend a
-                                            DHCPDISCOVER or Solicit after the server failed to respond to previous
-                                            queries.
-                                        </p>
-                                    </app-help-tip>
-                                    <app-help-tip
-                                        *ngSwitchCase="'Failover progress'"
-                                        [subject]="statusRow.title | lowercase"
-                                    >
-                                        <p>
-                                            This shows a progress bar for the failover procedure. When it hits 100%, the
-                                            server considers its partner offline, and transitions to the
-                                            <span class="font-bold white-space-nowrap">partner-down</span>
-                                            state. The progress is calculated from the number of unacked clients
-                                            relative to the maximum number of unacked clients.
-                                        </p>
-                                    </app-help-tip>
-                                    <app-help-tip *ngSwitchCase="'Summary'" [subject]="statusRow.title | lowercase">
-                                        <p>This is summary text describing the status of the HA setup.</p>
-                                    </app-help-tip>
-                                </ng-container>
+                        </td>
+                        @for (column of statusRow.relationship.cells; track column; let index = $index) {
+                            <td>
+                                @if (column.value !== undefined) {
+                                    <span class="ha-ok">{{ column.value }}</span>
+                                }
+                                @if (column.daemonId && column.daemonLabel) {
+                                    at
+                                    <app-entity-link
+                                        entity="daemon"
+                                        [showEntityName]="false"
+                                        [attrs]="column"
+                                    ></app-entity-link>
+                                } @else if (index !== 0) {
+                                    at non-monitored machine
+                                }
+                                @switch (column.iconType) {
+                                    @case ('ok') {
+                                        <span class="ml-2 pi pi-check icon-ok"></span>
+                                    }
+                                    @case ('warn') {
+                                        <span class="ml-2 pi pi-exclamation-triangle icon-warn"></span>
+                                    }
+                                    @case ('error') {
+                                        <span class="ml-2 pi pi-exclamation-circle icon-error"></span>
+                                    }
+                                    @case ('pending') {
+                                        <span class="ml-2 pi pi-spin pi-spinner icon-pending"></span>
+                                    }
+                                }
+                                @if (column.hasOwnProperty('progress')) {
+                                    <p-progressBar [value]="column.progress"></p-progressBar>
+                                }
+                            </td>
+                        }
+                    </tr>
+                </ng-template>
+                <ng-template #expandedrow let-statusRow>
+                    <tr>
+                        <td>
+                            <div class="flex align-items-center justify-content-between">
+                                <div>
+                                    {{ statusRow.title }}
+                                </div>
+                                <div>
+                                    @switch (statusRow.title) {
+                                        @case ('Status time') {
+                                            <app-help-tip [subject]="statusRow.title | lowercase">
+                                                <p>
+                                                    This is the time when the server last reported its state; it is not
+                                                    necessarily the time when the state information was refreshed in the
+                                                    UI. The presented state information is typically delayed by 10 to 30
+                                                    seconds because it is cached by both the Kea servers and the Stork
+                                                    backend. Caching minimizes the performance impact on the DHCP
+                                                    servers reporting their states over the control channel.
+                                                </p>
+                                            </app-help-tip>
+                                        }
+                                        @case ('Status age') {
+                                            <app-help-tip [subject]="statusRow.title | lowercase">
+                                                <p>
+                                                    This is the duration between the "Status Time" and now, i.e. it
+                                                    indicates how long ago the server reported its state. A long
+                                                    duration indicates that there is a communication problem with the
+                                                    server. The typical duration is between 10 and 30 seconds.
+                                                </p>
+                                            </app-help-tip>
+                                        }
+                                        @case ('Control status') {
+                                            <app-help-tip [subject]="statusRow.title | lowercase">
+                                                <p>
+                                                    An <span class="font-bold">online</span> control status indicates
+                                                    that the server is responding to commands over the control channel.
+                                                </p>
+                                                <p>
+                                                    An <span class="font-bold">offline</span> control status indicates
+                                                    that the server is not responding and may be down.
+                                                </p>
+                                                <p>
+                                                    The <b>unknown</b> control status may appear during the server's
+                                                    startup, when the information about its actual status is not yet
+                                                    available.
+                                                </p>
+                                            </app-help-tip>
+                                        }
+                                        @case ('Heartbeat status') {
+                                            <app-help-tip [subject]="statusRow.title | lowercase" width="40vw">
+                                                <p>
+                                                    The heartbeat status reports whether the server is responding to the
+                                                    heartbeat commands from its partner. Heartbeat commands are
+                                                    exchanged between the partners regularly to check whether the
+                                                    servers remain operational, and to gather and respond to their
+                                                    current states.
+                                                </p>
+                                                <p>
+                                                    An <b>OK</b> status is desired at all times. It indicates a healthy
+                                                    heartbeat communication with the server.
+                                                </p>
+                                                <p>
+                                                    A <span class="font-bold">failed</span> status occurs when the most
+                                                    recent attempt to send a heartbeat to the server fails. In this
+                                                    case, the partners enter the
+                                                    <span class="font-italic">communication-interrupted</span> state.
+                                                    They may recover from this state if the communication problem is
+                                                    transient. If communication is interrupted for a longer period, the
+                                                    failover procedure is triggered, resulting in the partner's
+                                                    transition to the
+                                                    <span class="font-bold">partner-down</span>
+                                                    state.
+                                                </p>
+                                                <p>
+                                                    An <span class="font-bold">unknown</span> status may occur when the
+                                                    servers have not yet tried to exchange heartbeats.
+                                                </p>
+                                            </app-help-tip>
+                                        }
+                                        @case ('State') {
+                                            <app-help-tip [subject]="statusRow.title | lowercase" width="40vw">
+                                                <p>The following are the possible server states:</p>
+                                                <ul>
+                                                    <li>
+                                                        <span class="font-bold white-space-nowrap">hot-standby</span> -
+                                                        normal operation in the
+                                                        <span class="font-italic white-space-nowrap">hot-standby</span>
+                                                        mode.
+                                                    </li>
+                                                    <li>
+                                                        <span class="font-bold white-space-nowrap">load-balancing</span>
+                                                        - normal operation in the
+                                                        <span class="font-italic white-space-nowrap"
+                                                            >load-balancing</span
+                                                        >
+                                                        mode.
+                                                    </li>
+                                                    <li>
+                                                        <span class="font-bold white-space-nowrap">passive-backup</span>
+                                                        - the server has no active partner, unlike in the
+                                                        <span class="font-italic white-space-nowrap"
+                                                            >load-balancing</span
+                                                        >
+                                                        or
+                                                        <span class="font-italic white-space-nowrap">hot-standby</span>
+                                                        mode. This server may be configured to send lease updates to the
+                                                        backup servers, but there is no automatic failover triggered in
+                                                        case of a failure.
+                                                    </li>
+                                                    <li>
+                                                        <span class="font-bold">waiting</span> - the server is booting
+                                                        up and will try to synchronize its lease database.
+                                                    </li>
+                                                    <li>
+                                                        <span class="font-bold">syncing</span> - the server is
+                                                        synchronizing its database after a failure.
+                                                    </li>
+                                                    <li>
+                                                        <span class="font-bold">ready</span> - the server has
+                                                        synchronized its lease database and will start normal operation
+                                                        shortly.
+                                                    </li>
+                                                    <li>
+                                                        <span class="font-bold">terminated</span> - the server is no
+                                                        longer participating in the HA setup because the clock skew is
+                                                        too high.
+                                                    </li>
+                                                    <li>
+                                                        <span class="font-bold">maintained</span> - the server is under
+                                                        maintenance.
+                                                    </li>
+                                                    <li>
+                                                        <span class="font-bold">partner-maintained</span> - the server
+                                                        is responding to all DHCP queries while its partner is in
+                                                        maintenance.
+                                                    </li>
+                                                    <li>
+                                                        <span class="font-bold">unavailable</span> - communication with
+                                                        the server failed. It may have crashed or have been shut down.
+                                                    </li>
+                                                </ul>
+                                            </app-help-tip>
+                                        }
+                                        @case ('Scopes') {
+                                            <app-help-tip [subject]="statusRow.title | lowercase">
+                                                <p>
+                                                    This is a list of HA scopes currently being served by this server.
+                                                    If the server is responding to the DHCP queries as a
+                                                    <span class="font-bold">primary</span> or
+                                                    <span class="font-bold">secondary</span> in the
+                                                    <span class="font-bold white-space-nowrap">load-balancing</span>
+                                                    mode or as a <span class="font-bold">primary</span> in the
+                                                    <span class="font-bold white-space-nowrap">hot-standby</span> mode,
+                                                    there is typically a single scope shown. Two scopes may be shown if
+                                                    a
+                                                    <span class="font-bold white-space-nowrap">load-balancing</span>
+                                                    server is currently serving all DHCP clients while its partner is
+                                                    down. There may be no scopes shown when a
+                                                    <span class="font-bold">standby</span> server is in
+                                                    <span class="font-bold white-space-nowrap">hot-standby</span> mode,
+                                                    because such a server is not responding to any DHCP queries;
+                                                    instead, it is passively receiving lease updates from the
+                                                    <span class="font-bold">primary</span>. The
+                                                    <span class="font-bold">standby</span> server will start serving the
+                                                    <span class="font-bold">primary</span> server scope in the event of
+                                                    the <span class="font-bold">primary</span> failure.
+                                                </p>
+                                            </app-help-tip>
+                                        }
+                                        @case ('Last in partner-down') {
+                                            <app-help-tip [subject]="statusRow.title | lowercase">
+                                                <p>
+                                                    This is the last time when the server transitioned to the
+                                                    <span class="font-bold white-space-nowrap">partner-down</span> state
+                                                    because its partner was considered offline as a result of an
+                                                    unexpected termination or shutdown.
+                                                </p>
+                                            </app-help-tip>
+                                        }
+                                        @case ('Unacked clients') {
+                                            <app-help-tip [subject]="statusRow.title | lowercase">
+                                                <p>
+                                                    This is the number of clients considered unacked by the partner.
+                                                    This value is only set when the partner has lost heartbeat
+                                                    communication with this server and has started the failover
+                                                    procedure, by monitoring whether the server is responding to DHCP
+                                                    traffic. The unacked number indicates clients that have been trying
+                                                    to get leases from this server longer than the time specified by the
+                                                    <span class="font-bold white-space-nowrap">max-ack-delay</span>
+                                                    configuration parameter.
+                                                </p>
+                                            </app-help-tip>
+                                        }
+                                        @case ('Connecting clients') {
+                                            <app-help-tip [subject]="statusRow.title | lowercase">
+                                                <p>
+                                                    This is the total number of clients trying to get new leases from
+                                                    the partner server, while the current server is unable to
+                                                    communicate with its partner via
+                                                    <span class="font-bold white-space-nowrap">ha-heartbeat</span>. This
+                                                    figure includes both unacked clients and clients for which the secs
+                                                    field or elapsed time option is below the
+                                                    <span class="font-bold white-space-nowrap">max-ack-delay</span>.
+                                                </p>
+                                            </app-help-tip>
+                                        }
+                                        @case ('Analyzed packets') {
+                                            <app-help-tip [subject]="statusRow.title | lowercase">
+                                                <p>
+                                                    This is the total number of packets directed to the partner server,
+                                                    while the current server is unable to communicate using
+                                                    <span class="font-bold white-space-nowrap">ha-heartbeat</span>. It
+                                                    may include several packets from the same client who tried to resend
+                                                    a DHCPDISCOVER or Solicit after the server failed to respond to
+                                                    previous queries.
+                                                </p>
+                                            </app-help-tip>
+                                        }
+                                        @case ('Failover progress') {
+                                            <app-help-tip [subject]="statusRow.title | lowercase">
+                                                <p>
+                                                    This shows a progress bar for the failover procedure. When it hits
+                                                    100%, the server considers its partner offline, and transitions to
+                                                    the
+                                                    <span class="font-bold white-space-nowrap">partner-down</span>
+                                                    state. The progress is calculated from the number of unacked clients
+                                                    relative to the maximum number of unacked clients.
+                                                </p>
+                                            </app-help-tip>
+                                        }
+                                        @case ('Summary') {
+                                            <app-help-tip [subject]="statusRow.title | lowercase">
+                                                <p>This is summary text describing the status of the HA setup.</p>
+                                            </app-help-tip>
+                                        }
+                                    }
+                                </div>
                             </div>
-                        </div>
-                    </td>
-                    <td *ngFor="let column of statusRow.cells">
-                        <span *ngIf="column.value !== undefined" class="ha-ok">{{ column.value }}</span>
-                        <span *ngIf="column.daemonId && column.daemonLabel">
-                            at
-                            <app-entity-link
-                                entity="daemon"
-                                [showEntityName]="false"
-                                [attrs]="column"
-                            ></app-entity-link>
-                        </span>
-                        <ng-container [ngSwitch]="column.iconType">
-                            <span *ngSwitchCase="'ok'" class="ml-2 pi pi-check icon-ok"></span>
-                            <span *ngSwitchCase="'warn'" class="ml-2 pi pi-exclamation-triangle icon-warn"></span>
-                            <span *ngSwitchCase="'error'" class="ml-2 pi pi-exclamation-circle icon-error"></span>
-                            <span *ngSwitchCase="'pending'" class="ml-2 pi pi-spin pi-spinner icon-pending"></span>
-                        </ng-container>
-                        <p-progressBar
-                            *ngIf="column.hasOwnProperty('progress')"
-                            [value]="column.progress"
-                        ></p-progressBar>
-                    </td>
-                </tr>
-            </ng-template>
-        </p-table>
-        <div class="mt-2">
-            <span class="font-italic text-sm">Status refresh in {{ refreshCountdown }} s.</span>
+                        </td>
+                        @for (column of statusRow.cells; track column) {
+                            <td>
+                                @if (column.value !== undefined) {
+                                    <span class="ha-ok">{{ column.value }}</span>
+                                }
+                                @if (column.daemonId && column.daemonLabel) {
+                                    <span>
+                                        at
+                                        <app-entity-link
+                                            entity="daemon"
+                                            [showEntityName]="false"
+                                            [attrs]="column"
+                                        ></app-entity-link>
+                                    </span>
+                                }
+                                @switch (column.iconType) {
+                                    @case ('ok') {
+                                        <span class="ml-2 pi pi-check icon-ok"></span>
+                                    }
+                                    @case ('warn') {
+                                        <span class="ml-2 pi pi-exclamation-triangle icon-warn"></span>
+                                    }
+                                    @case ('error') {
+                                        <span class="ml-2 pi pi-exclamation-circle icon-error"></span>
+                                    }
+                                    @case ('pending') {
+                                        <span class="ml-2 pi pi-spin pi-spinner icon-pending"></span>
+                                    }
+                                }
+                                @if (column.hasOwnProperty('progress')) {
+                                    <p-progressBar [value]="column.progress"></p-progressBar>
+                                }
+                            </td>
+                        }
+                    </tr>
+                </ng-template>
+            </p-table>
+            <div class="mt-2">
+                <span class="font-italic text-sm">Status refresh in {{ refreshCountdown }} s.</span>
+            </div>
         </div>
-    </div>
-    <p-progressSpinner *ngIf="!hasStatus && !loadedOnce"></p-progressSpinner>
-    <span *ngIf="!hasStatus && loadedOnce" class="font-italic text-sm">
-        High Availability is not enabled on this server.
-    </span>
+    }
+    @if (!hasStatus && !loadedOnce) {
+        <p-progressSpinner></p-progressSpinner>
+    }
+    @if (!hasStatus && loadedOnce) {
+        <span class="font-italic text-sm"> High Availability is not enabled on this server. </span>
+    }
 </div>

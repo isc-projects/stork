@@ -11,22 +11,24 @@
             <span class="panel-header__title flex-auto font-semibold">JSON</span>
 
             <!-- Collapse/expand button -->
-            <p-button
-                class="flex-none"
-                icon="fa fa-expand-alt"
-                label="Expand"
-                (click)="onClickToggleNodes()"
-                *ngIf="autoExpand === 'none'"
-                [disabled]="configuration === null"
-            ></p-button>
-            <p-button
-                class="flex-none"
-                icon="fa fa-compress-alt"
-                label="Collapse"
-                (click)="onClickToggleNodes()"
-                *ngIf="autoExpand === 'all'"
-                [disabled]="configuration === null"
-            ></p-button>
+            @if (autoExpand === 'none') {
+                <p-button
+                    class="flex-none"
+                    icon="fa fa-expand-alt"
+                    label="Expand"
+                    (click)="onClickToggleNodes()"
+                    [disabled]="configuration === null"
+                ></p-button>
+            }
+            @if (autoExpand === 'all') {
+                <p-button
+                    class="flex-none"
+                    icon="fa fa-compress-alt"
+                    label="Collapse"
+                    (click)="onClickToggleNodes()"
+                    [disabled]="configuration === null"
+                ></p-button>
+            }
 
             <!-- Refresh button -->
             <p-button
@@ -45,6 +47,10 @@
     </ng-template>
 
     <!-- JSON viewer -->
-    <app-json-tree-root *ngIf="!failedFetch" [value]="configuration" [autoExpand]="autoExpand"></app-json-tree-root>
-    <p-message *ngIf="failedFetch" severity="warn" text="Fetching daemon configuration failed"></p-message>
+    @if (!failedFetch) {
+        <app-json-tree-root [value]="configuration" [autoExpand]="autoExpand"></app-json-tree-root>
+    }
+    @if (failedFetch) {
+        <p-message severity="warn" text="Fetching daemon configuration failed"></p-message>
+    }
 </p-panel>

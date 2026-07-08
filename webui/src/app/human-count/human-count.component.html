@@ -1,3 +1,9 @@
-<span *ngIf="hasValidValue" pTooltip="{{ value | localNumber }}">{{ value | humanCount }}</span>
-<span *ngIf="hasInvalidValue" pTooltip="Invalid value">{{ value }}</span>
-<span *ngIf="!hasValue" pTooltip="No value">-</span>
+@if (hasValidValue) {
+    <span pTooltip="{{ value | localNumber }}">{{ value | humanCount }}</span>
+}
+@if (hasInvalidValue) {
+    <span pTooltip="Invalid value">{{ value }}</span>
+}
+@if (!hasValue) {
+    <span pTooltip="No value">-</span>
+}

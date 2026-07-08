@@ -1,5 +1,5 @@
 import { Component, Input } from '@angular/core'
-import { NgIf } from '@angular/common'
+
 import { Tag } from 'primeng/tag'
 import { Tooltip } from 'primeng/tooltip'
 
@@ -10,7 +10,7 @@ import { Tooltip } from 'primeng/tooltip'
     selector: 'app-host-data-source-label',
     templateUrl: './host-data-source-label.component.html',
     styleUrls: ['./host-data-source-label.component.sass'],
-    imports: [NgIf, Tag, Tooltip],
+    imports: [Tag, Tooltip],
 })
 export class HostDataSourceLabelComponent {
     /**

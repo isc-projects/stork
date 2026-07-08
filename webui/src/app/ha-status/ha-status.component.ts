@@ -4,7 +4,7 @@ import { ServicesService } from '../backend/api/api'
 import { KeaHAServerStatus, ServiceStatus } from '../backend'
 import { MessageService } from 'primeng/api'
 import { datetimeToLocal, getErrorMessage } from '../utils'
-import { NgIf, NgFor, NgSwitch, NgSwitchCase, LowerCasePipe } from '@angular/common'
+import { LowerCasePipe } from '@angular/common'
 import { Button } from 'primeng/button'
 import { ProgressBar } from 'primeng/progressbar'
 import { ProgressSpinner } from 'primeng/progressspinner'
@@ -64,19 +64,7 @@ type RelationshipNodeCellFunction = (serverStatus: KeaHAServerStatus) => Relatio
     selector: 'app-ha-status',
     templateUrl: './ha-status.component.html',
     styleUrls: ['./ha-status.component.sass'],
-    imports: [
-        NgIf,
-        TableModule,
-        Button,
-        NgFor,
-        EntityLinkComponent,
-        NgSwitch,
-        NgSwitchCase,
-        ProgressBar,
-        HelpTipComponent,
-        ProgressSpinner,
-        LowerCasePipe,
-    ],
+    imports: [TableModule, Button, EntityLinkComponent, ProgressBar, HelpTipComponent, ProgressSpinner, LowerCasePipe],
 })
 export class HaStatusComponent implements OnInit, OnDestroy {
     private servicesApi = inject(ServicesService)

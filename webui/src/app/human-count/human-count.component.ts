@@ -1,5 +1,5 @@
 import { Component, Input } from '@angular/core'
-import { NgIf } from '@angular/common'
+
 import { Tooltip } from 'primeng/tooltip'
 import { HumanCountPipe } from '../pipes/human-count.pipe'
 import { LocalNumberPipe } from '../pipes/local-number.pipe'
@@ -15,7 +15,7 @@ type ValueType = number | string | bigint | null
     selector: 'app-human-count',
     templateUrl: './human-count.component.html',
     styleUrls: ['./human-count.component.sass'],
-    imports: [NgIf, Tooltip, HumanCountPipe, LocalNumberPipe],
+    imports: [Tooltip, HumanCountPipe, LocalNumberPipe],
 })
 export class HumanCountComponent {
     /**
