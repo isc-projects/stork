@@ -3,6 +3,7 @@
         <!-- daemon -->
         @case ('daemon') {
             {{ showEntityName ? 'daemon' : '' }}
+            <!-- prettier-ignore -->
             <a
                 id="daemon-link-{{ attrs.daemonId || attrs.id || 0 }}"
                 routerLink="/daemons/{{ attrs.daemonId || +attrs.id || '' }}"
@@ -15,11 +16,10 @@
         printing the full label and use the name.
         - LocalSubnet/LocalSharedNetwork/LocalHost/LocalZone: they provide 'daemonId' and
         'daemonLabel' attributes (note they also have their own 'id')
-        - LeasesSearchErredDaemon: they provide 'id' and 'label' attributes -->
+        - LeasesSearchErredDaemon: they provide 'id' and 'label'
+          attributes -->
                 @if (attrs.daemonId || +attrs.id) {
-                    [{{ attrs.daemonId || attrs.id }}]&nbsp;
-                }
-                {{ attrs.daemonLabel || (attrs.name | daemonNiceName) || attrs.label }}
+                    [{{ attrs.daemonId || attrs.id }}]&nbsp;}{{ attrs.daemonLabel || (attrs.name | daemonNiceName) || attrs.label }}
             </a>
         }
         <!-- machine -->
@@ -38,8 +38,8 @@
                 @if (showIdentifier()) {
                     [{{ attrs.id }}]
                 }
-                {{ attrs.subnet || attrs.prefix }}</a
-            >
+                {{ attrs.subnet || attrs.prefix }}
+            </a>
         }
         <!-- user -->
         @case ('user') {
@@ -51,21 +51,17 @@
         <!-- host reservation -->
         @case ('host') {
             {{ showEntityName ? 'host' : '' }}
+            <!-- prettier-ignore -->
             <a id="host-link" routerLink="/dhcp/hosts/{{ attrs.id }}">
-                @if (showIdentifier()) {
-                    [{{ attrs.id }}]&nbsp;
-                }
-                {{ attrs.label }}</a
+                @if (showIdentifier()) {[{{ attrs.id }}]&nbsp;}{{ attrs.label }}</a
             >
         }
         <!-- shared network -->
         @case ('shared-network') {
             {{ showEntityName ? 'shared network' : '' }}
+            <!-- prettier-ignore -->
             <a id="shared-network-link" routerLink="/dhcp/shared-networks/{{ attrs.id }}">
-                @if (showIdentifier()) {
-                    [{{ attrs.id }}]&nbsp;
-                }
-                {{ attrs.name }}</a
+                @if (showIdentifier()) {[{{ attrs.id }}]&nbsp;}{{ attrs.name }}</a
             >
         }
         <!-- unsupported -->
