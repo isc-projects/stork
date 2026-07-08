@@ -1,6 +1,6 @@
 module isc.org/stork
 
-go 1.25.11
+go 1.26.5
 
 require (
 	github.com/Showmax/go-fqdn v1.0.0
