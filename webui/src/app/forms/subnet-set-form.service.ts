@@ -681,7 +681,7 @@ export class SubnetSetFormService {
             ),
             parameters: this.createDefaultKeaPoolParametersForm(keaVersionRange),
             options: this.createDefaultOptionsForm(),
-            selectedGroups: new FormControl<number[]>([], Validators.required),
+            selectedGroups: new FormControl([], Validators.required),
         })
         return formGroup
     }
@@ -709,7 +709,7 @@ export class SubnetSetFormService {
             ),
             parameters: this.createDefaultKeaPoolParametersForm(keaVersionRange),
             options: this.createDefaultOptionsForm(),
-            selectedGroups: new FormControl<number[]>([], Validators.required),
+            selectedGroups: new FormControl([], Validators.required),
         })
         return formGroup
     }
@@ -1573,7 +1573,7 @@ export class SubnetSetFormService {
             prefixPools: new FormArray<FormGroup<PrefixPoolForm>>([], StorkValidators.ipv6PrefixOverlaps),
             parameters: this.createDefaultKeaSubnetParametersForm(IPType.IPv4, keaVersionRange),
             options: this.createDefaultOptionsForm(),
-            selectedGroups: new FormControl<number[]>([], Validators.required),
+            selectedGroups: new FormControl([], Validators.required),
             userContexts: new FormGroup({
                 unlocked: new FormControl({ value: false, disabled: true }),
                 contexts: new FormArray([new FormControl({})]),
