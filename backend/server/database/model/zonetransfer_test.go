@@ -58,8 +58,8 @@ func TestGetZoneTransferStatesByPage(t *testing.T) {
 			BytesCount:      zoneTransfer.BytesCount,
 			Duration:        zoneTransfer.Duration,
 			Status:          zoneTransfer.Status,
-			StartTime:       zoneTransfer.StartTime,
-			CompletionTime:  zoneTransfer.CompletionTime,
+			StartedAt:       zoneTransfer.StartTime,
+			CompletedAt:     zoneTransfer.CompletionTime,
 			Message:         zoneTransfer.Message,
 			Local:           false,
 			ClientMachineID: machine.ID,
@@ -92,8 +92,8 @@ func TestGetZoneTransferStatesByPage(t *testing.T) {
 		require.Equal(t, testZoneTransfers[index].BytesCount, zoneTransfer.BytesCount)
 		require.Equal(t, testZoneTransfers[index].Duration, zoneTransfer.Duration)
 		require.Equal(t, testZoneTransfers[index].Status, zoneTransfer.Status)
-		require.Equal(t, testZoneTransfers[index].StartTime, zoneTransfer.StartTime)
-		require.Equal(t, testZoneTransfers[index].CompletionTime, zoneTransfer.CompletionTime)
+		require.Equal(t, testZoneTransfers[index].StartTime, zoneTransfer.StartedAt)
+		require.Equal(t, testZoneTransfers[index].CompletionTime, zoneTransfer.CompletedAt)
 		require.Equal(t, testZoneTransfers[index].Message, zoneTransfer.Message)
 		require.False(t, zoneTransfer.Local)
 		require.Equal(t, machine.ID, zoneTransfer.ClientMachineID)
@@ -102,8 +102,8 @@ func TestGetZoneTransferStatesByPage(t *testing.T) {
 		switch {
 		case testZoneTransfers[index].Duration > 0:
 			require.Equal(t, testZoneTransfers[index].Duration, zoneTransfer.Duration)
-		case testZoneTransfers[index].Duration == 0 && !zoneTransfer.StartTime.IsZero():
-			require.InDelta(t, zoneTransfer.EffectiveDuration, time.Since(zoneTransfer.StartTime), float64(1*time.Second))
+		case testZoneTransfers[index].Duration == 0 && !zoneTransfer.StartedAt.IsZero():
+			require.InDelta(t, zoneTransfer.EffectiveDuration, time.Since(zoneTransfer.StartedAt), float64(1*time.Second))
 		default:
 			require.Zero(t, zoneTransfer.Duration)
 		}
@@ -168,8 +168,8 @@ func TestGetZoneTransferStatesByPageNoRelations(t *testing.T) {
 			BytesCount:      zoneTransfer.BytesCount,
 			Duration:        zoneTransfer.Duration,
 			Status:          zoneTransfer.Status,
-			StartTime:       zoneTransfer.StartTime,
-			CompletionTime:  zoneTransfer.CompletionTime,
+			StartedAt:       zoneTransfer.StartTime,
+			CompletedAt:     zoneTransfer.CompletionTime,
 			Message:         zoneTransfer.Message,
 			ClientMachineID: machine.ID,
 			ServerMachineID: machine2.ID,
@@ -200,8 +200,8 @@ func TestGetZoneTransferStatesByPageNoRelations(t *testing.T) {
 		require.Equal(t, testZoneTransfers[index].BytesCount, zoneTransfer.BytesCount)
 		require.Equal(t, testZoneTransfers[index].Duration, zoneTransfer.Duration)
 		require.Equal(t, testZoneTransfers[index].Status, zoneTransfer.Status)
-		require.Equal(t, testZoneTransfers[index].StartTime, zoneTransfer.StartTime)
-		require.Equal(t, testZoneTransfers[index].CompletionTime, zoneTransfer.CompletionTime)
+		require.Equal(t, testZoneTransfers[index].StartTime, zoneTransfer.StartedAt)
+		require.Equal(t, testZoneTransfers[index].CompletionTime, zoneTransfer.CompletedAt)
 		require.Equal(t, testZoneTransfers[index].Message, zoneTransfer.Message)
 		require.False(t, zoneTransfer.Local)
 		require.Equal(t, machine.ID, zoneTransfer.ClientMachineID)
@@ -210,8 +210,8 @@ func TestGetZoneTransferStatesByPageNoRelations(t *testing.T) {
 		switch {
 		case testZoneTransfers[index].Duration > 0:
 			require.Equal(t, testZoneTransfers[index].Duration, zoneTransfer.Duration)
-		case testZoneTransfers[index].Duration == 0 && !zoneTransfer.StartTime.IsZero():
-			require.InDelta(t, time.Since(zoneTransfer.StartTime), zoneTransfer.EffectiveDuration, float64(10*time.Second))
+		case testZoneTransfers[index].Duration == 0 && !zoneTransfer.StartedAt.IsZero():
+			require.InDelta(t, time.Since(zoneTransfer.StartedAt), zoneTransfer.EffectiveDuration, float64(10*time.Second))
 		default:
 			require.Zero(t, zoneTransfer.Duration)
 		}
@@ -261,7 +261,7 @@ func TestAddOrUpdateZoneTransfersOverrideStartedByCompleted(t *testing.T) {
 		ZoneName:  "good.example.org",
 		Client:    "127.0.0.1",
 		Status:    bind9xfr.StatusStarted,
-		StartTime: time.Date(2026, 4, 16, 10, 41, 27, 71000, time.UTC),
+		StartedAt: time.Date(2026, 4, 16, 10, 41, 27, 71000, time.UTC),
 	}
 	// Add the corresponding completed zone transfer to the database. It has
 	// the same daemon ID, start time, zone name, view name and client, so it
@@ -275,8 +275,8 @@ func TestAddOrUpdateZoneTransfersOverrideStartedByCompleted(t *testing.T) {
 		Serial:          2026041600,
 		Client:          "127.0.0.1",
 		Status:          bind9xfr.StatusCompleted,
-		StartTime:       time.Date(2026, 4, 16, 10, 41, 27, 71000, time.UTC),
-		CompletionTime:  time.Date(2026, 4, 16, 10, 45, 11, 124000, time.UTC),
+		StartedAt:       time.Date(2026, 4, 16, 10, 41, 27, 71000, time.UTC),
+		CompletedAt:     time.Date(2026, 4, 16, 10, 45, 11, 124000, time.UTC),
 		Duration:        4 * time.Minute,
 		MessagesCount:   79,
 		RecordsCount:    24872,
@@ -307,8 +307,8 @@ func TestAddOrUpdateZoneTransfersOverrideStartedByCompleted(t *testing.T) {
 	require.Equal(t, completed.Serial, returned[0].Serial)
 	require.Equal(t, completed.Client, returned[0].Client)
 	require.Equal(t, completed.Status, returned[0].Status)
-	require.Equal(t, completed.StartTime, returned[0].StartTime)
-	require.Equal(t, completed.CompletionTime, returned[0].CompletionTime)
+	require.Equal(t, completed.StartedAt, returned[0].StartedAt)
+	require.Equal(t, completed.CompletedAt, returned[0].CompletedAt)
 	require.Equal(t, completed.Duration, returned[0].Duration)
 	require.Equal(t, completed.MessagesCount, returned[0].MessagesCount)
 	require.Equal(t, completed.RecordsCount, returned[0].RecordsCount)
@@ -347,14 +347,14 @@ func TestAddOrUpdateZoneTransfersOverrideDataMismatch(t *testing.T) {
 					ZoneName:  "good.example.org",
 					Client:    "127.0.0.1",
 					Status:    bind9xfr.StatusStarted,
-					StartTime: time.Date(2026, 4, 16, 10, 41, 27, 71000, time.UTC),
+					StartedAt: time.Date(2026, 4, 16, 10, 41, 27, 71000, time.UTC),
 				},
 				{
 					ViewName:  "view2",
 					ZoneName:  "good.example.org",
 					Client:    "127.0.0.1",
 					Status:    bind9xfr.StatusCompleted,
-					StartTime: time.Date(2026, 4, 16, 10, 41, 27, 71000, time.UTC),
+					StartedAt: time.Date(2026, 4, 16, 10, 41, 27, 71000, time.UTC),
 				},
 			},
 		},
@@ -366,14 +366,14 @@ func TestAddOrUpdateZoneTransfersOverrideDataMismatch(t *testing.T) {
 					ZoneName:  "zone1.example.org",
 					Client:    "127.0.0.1",
 					Status:    bind9xfr.StatusStarted,
-					StartTime: time.Date(2026, 4, 16, 10, 41, 27, 71000, time.UTC),
+					StartedAt: time.Date(2026, 4, 16, 10, 41, 27, 71000, time.UTC),
 				},
 				{
 					ViewName:  "_default",
 					ZoneName:  "zone2.example.org",
 					Client:    "127.0.0.1",
 					Status:    bind9xfr.StatusCompleted,
-					StartTime: time.Date(2026, 4, 16, 10, 41, 27, 71000, time.UTC),
+					StartedAt: time.Date(2026, 4, 16, 10, 41, 27, 71000, time.UTC),
 				},
 			},
 		},
@@ -385,14 +385,14 @@ func TestAddOrUpdateZoneTransfersOverrideDataMismatch(t *testing.T) {
 					ZoneName:  "good.example.org",
 					Client:    "1.1.1.1",
 					Status:    bind9xfr.StatusStarted,
-					StartTime: time.Date(2026, 4, 16, 10, 41, 27, 71000, time.UTC),
+					StartedAt: time.Date(2026, 4, 16, 10, 41, 27, 71000, time.UTC),
 				},
 				{
 					ViewName:  "_default",
 					ZoneName:  "good.example.org",
 					Client:    "2.2.2.2",
 					Status:    bind9xfr.StatusCompleted,
-					StartTime: time.Date(2026, 4, 16, 10, 41, 27, 71000, time.UTC),
+					StartedAt: time.Date(2026, 4, 16, 10, 41, 27, 71000, time.UTC),
 				},
 			},
 		},
@@ -404,14 +404,14 @@ func TestAddOrUpdateZoneTransfersOverrideDataMismatch(t *testing.T) {
 					ZoneName:  "good.example.org",
 					Client:    "1.1.1.1",
 					Status:    bind9xfr.StatusStarted,
-					StartTime: time.Date(2026, 4, 16, 10, 41, 27, 71000, time.UTC),
+					StartedAt: time.Date(2026, 4, 16, 10, 41, 27, 71000, time.UTC),
 				},
 				{
 					ViewName:  "_default",
 					ZoneName:  "good.example.org",
 					Client:    "1.1.1.1",
 					Status:    bind9xfr.StatusCompleted,
-					StartTime: time.Date(2026, 4, 16, 10, 41, 28, 71000, time.UTC),
+					StartedAt: time.Date(2026, 4, 16, 10, 41, 28, 71000, time.UTC),
 				},
 			},
 		},
@@ -498,8 +498,8 @@ func TestGetZoneTransferStatesByPageWithFiltering(t *testing.T) {
 			BytesCount:      zoneTransfer.BytesCount,
 			Duration:        zoneTransfer.Duration,
 			Status:          zoneTransfer.Status,
-			StartTime:       zoneTransfer.StartTime,
-			CompletionTime:  zoneTransfer.CompletionTime,
+			StartedAt:       zoneTransfer.StartTime,
+			CompletedAt:     zoneTransfer.CompletionTime,
 			Message:         zoneTransfer.Message,
 			Local:           i%2 == 0,
 			ClientMachineID: machine.ID,
@@ -658,20 +658,20 @@ func TestGetZoneTransferStatesByPageWithTextFilter(t *testing.T) {
 	testZoneTransfers := testutil.GetTestZoneTransfers()
 	for _, zoneTransfer := range testZoneTransfers {
 		zoneTransfer := &ZoneTransferState{
-			DaemonID:       daemon.ID,
-			ViewName:       zoneTransfer.ViewName,
-			ZoneName:       zoneTransfer.ZoneName,
-			Serial:         zoneTransfer.Serial,
-			Client:         zoneTransfer.Client,
-			Server:         zoneTransfer.Server,
-			MessagesCount:  zoneTransfer.MessagesCount,
-			RecordsCount:   zoneTransfer.RecordsCount,
-			BytesCount:     zoneTransfer.BytesCount,
-			Duration:       zoneTransfer.Duration,
-			Status:         zoneTransfer.Status,
-			StartTime:      zoneTransfer.StartTime,
-			CompletionTime: zoneTransfer.CompletionTime,
-			Message:        zoneTransfer.Message,
+			DaemonID:      daemon.ID,
+			ViewName:      zoneTransfer.ViewName,
+			ZoneName:      zoneTransfer.ZoneName,
+			Serial:        zoneTransfer.Serial,
+			Client:        zoneTransfer.Client,
+			Server:        zoneTransfer.Server,
+			MessagesCount: zoneTransfer.MessagesCount,
+			RecordsCount:  zoneTransfer.RecordsCount,
+			BytesCount:    zoneTransfer.BytesCount,
+			Duration:      zoneTransfer.Duration,
+			Status:        zoneTransfer.Status,
+			StartedAt:     zoneTransfer.StartTime,
+			CompletedAt:   zoneTransfer.CompletionTime,
+			Message:       zoneTransfer.Message,
 		}
 		err = AddOrUpdateZoneTransferState(db, zoneTransfer)
 		require.NoError(t, err)
@@ -762,20 +762,20 @@ func TestGetZoneTransferStatesByPageWithSorting(t *testing.T) {
 	testZoneTransfers := testutil.GetTestZoneTransfers()
 	for _, zoneTransfer := range testZoneTransfers {
 		zoneTransfer := &ZoneTransferState{
-			DaemonID:       daemon.ID,
-			ViewName:       zoneTransfer.ViewName,
-			ZoneName:       zoneTransfer.ZoneName,
-			Serial:         zoneTransfer.Serial,
-			Client:         zoneTransfer.Client,
-			Server:         zoneTransfer.Server,
-			MessagesCount:  zoneTransfer.MessagesCount,
-			RecordsCount:   zoneTransfer.RecordsCount,
-			BytesCount:     zoneTransfer.BytesCount,
-			Duration:       zoneTransfer.Duration,
-			Status:         zoneTransfer.Status,
-			StartTime:      zoneTransfer.StartTime,
-			CompletionTime: zoneTransfer.CompletionTime,
-			Message:        zoneTransfer.Message,
+			DaemonID:      daemon.ID,
+			ViewName:      zoneTransfer.ViewName,
+			ZoneName:      zoneTransfer.ZoneName,
+			Serial:        zoneTransfer.Serial,
+			Client:        zoneTransfer.Client,
+			Server:        zoneTransfer.Server,
+			MessagesCount: zoneTransfer.MessagesCount,
+			RecordsCount:  zoneTransfer.RecordsCount,
+			BytesCount:    zoneTransfer.BytesCount,
+			Duration:      zoneTransfer.Duration,
+			Status:        zoneTransfer.Status,
+			StartedAt:     zoneTransfer.StartTime,
+			CompletedAt:   zoneTransfer.CompletionTime,
+			Message:       zoneTransfer.Message,
 		}
 		err = AddOrUpdateZoneTransferState(db, zoneTransfer)
 		require.NoError(t, err)
@@ -888,7 +888,7 @@ func TestAddOrUpdateZoneTransferStateInvalidStatus(t *testing.T) {
 		ZoneName:  "good.example.org",
 		Client:    "127.0.0.1",
 		Status:    "invalid",
-		StartTime: time.Date(2026, 4, 16, 10, 41, 27, 71000, time.UTC),
+		StartedAt: time.Date(2026, 4, 16, 10, 41, 27, 71000, time.UTC),
 	}
 
 	// It should fail with a constraint violation error.

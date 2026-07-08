@@ -19,15 +19,15 @@ func init() {
 				bytes_count BIGINT NULL,
 				duration BIGINT NULL,
 				status TEXT NOT NULL,
-				start_time TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-				completion_time TIMESTAMP WITHOUT TIME ZONE NULL,
+				started_at TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+				completed_at TIMESTAMP WITHOUT TIME ZONE NULL,
 				message TEXT NULL,
 				local BOOLEAN NOT NULL DEFAULT FALSE,
 				client_machine_id BIGINT NULL,
 				server_machine_id BIGINT NULL,
 				CONSTRAINT zone_transfer_state_pkey PRIMARY KEY (id),
 				CONSTRAINT zone_transfer_state_daemon_id_view_name_zone_name_client_start_time_unique
-					UNIQUE (daemon_id, view_name, zone_name, client, start_time),
+					UNIQUE (daemon_id, view_name, zone_name, client, started_at),
 				CONSTRAINT zone_transfer_state_daemon_id_fkey FOREIGN KEY (daemon_id)
 					REFERENCES public.daemon (id) MATCH SIMPLE
 					ON UPDATE CASCADE

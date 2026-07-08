@@ -91,15 +91,15 @@ func TestXFRCollector(t *testing.T) {
 				require.Equal(t, testXFR.RecordsCount, xfr.RecordsCount)
 				require.Equal(t, testXFR.BytesCount, xfr.BytesCount)
 				require.Equal(t, testXFR.Status, xfr.Status)
-				require.Equal(t, testXFR.StartTime, xfr.StartTime)
-				require.Equal(t, testXFR.CompletionTime, xfr.CompletionTime)
+				require.Equal(t, testXFR.StartTime, xfr.StartedAt)
+				require.Equal(t, testXFR.CompletionTime, xfr.CompletedAt)
 				require.Equal(t, testXFR.Message, xfr.Message)
 
 				switch {
 				case testXFR.Duration > 0:
 					require.Equal(t, testXFR.Duration, xfr.Duration)
-				case testXFR.Duration == 0 && !xfr.StartTime.IsZero():
-					require.InDelta(t, time.Since(xfr.StartTime), xfr.EffectiveDuration, float64(10*time.Second))
+				case testXFR.Duration == 0 && !xfr.StartedAt.IsZero():
+					require.InDelta(t, time.Since(xfr.StartedAt), xfr.EffectiveDuration, float64(10*time.Second))
 				default:
 					require.Zero(t, xfr.Duration)
 				}

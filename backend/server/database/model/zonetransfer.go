@@ -28,7 +28,7 @@ const (
 // with the BIND 9 daemon where is information was captured.
 // The zone transfer state is inserted with ON CONFLICT DO UPDATE clause, and the
 // conflict is checked for the following fields: daemon_id, view_name, zone_name, client,
-// and start_time. Therefore, these fields must not be NULL, and for optional fields
+// and started_at. Therefore, these fields must not be NULL, and for optional fields
 // use_zero tag must be used to avoid NOT NULL constraint violation.
 type ZoneTransferState struct {
 	ID                int64
@@ -45,8 +45,8 @@ type ZoneTransferState struct {
 	Duration          time.Duration
 	EffectiveDuration time.Duration `pg:"-"`
 	Status            bind9xfr.Status
-	StartTime         time.Time `pg:",use_zero"`
-	CompletionTime    time.Time
+	StartedAt         time.Time `pg:",use_zero"`
+	CompletedAt       time.Time
 	Message           string
 	Local             bool `pg:",use_zero"`
 	ClientMachineID   int64
@@ -126,12 +126,12 @@ func (f *GetZoneTransferStatesFilter) EnableStatus(status bind9xfr.Status) {
 
 // Adds a zone transfer state into the database. It updates the existing record
 // if the zone transfer state with the same daemon_id, view_name, zone_name, client,
-// and start_time already exists. The common use case is when the started zone transfer
+// and started_at already exists. The common use case is when the started zone transfer
 // was recorded in the database, and it subsequently ended. In this case, we must
 // mark it completed, and update the related statistics.
 func addOrUpdateZoneTransferState(dbi pg.DBI, zoneTransferState *ZoneTransferState) error {
 	_, err := dbi.Model(zoneTransferState).
-		OnConflict("(daemon_id, view_name, zone_name, client, start_time) DO UPDATE").
+		OnConflict("(daemon_id, view_name, zone_name, client, started_at) DO UPDATE").
 		Set("serial = EXCLUDED.serial").
 		Set("server = EXCLUDED.server").
 		Set("messages_count = EXCLUDED.messages_count").
@@ -139,7 +139,7 @@ func addOrUpdateZoneTransferState(dbi pg.DBI, zoneTransferState *ZoneTransferSta
 		Set("bytes_count = EXCLUDED.bytes_count").
 		Set("duration = EXCLUDED.duration").
 		Set("status = EXCLUDED.status").
-		Set("completion_time = EXCLUDED.completion_time").
+		Set("completed_at = EXCLUDED.completed_at").
 		Set("message = EXCLUDED.message").
 		Set("local = EXCLUDED.local").
 		Set("client_machine_id = EXCLUDED.client_machine_id").
@@ -153,7 +153,7 @@ func addOrUpdateZoneTransferState(dbi pg.DBI, zoneTransferState *ZoneTransferSta
 
 // Adds a zone transfer state into the database. It updates the existing record
 // if the zone transfer state with the same daemon_id, view_name, zone_name, client,
-// and start_time already exists. The common use case is when the started zone transfer
+// and started_at already exists. The common use case is when the started zone transfer
 // was recorded in the database, and it subsequently ended. In this case, we must
 // mark it completed, and update the related statistics. The function creates a new
 // transaction if the database is not already in a transaction. Otherwise, it uses
@@ -175,16 +175,16 @@ func AddOrUpdateZoneTransferState(dbi pg.DBI, zoneTransferState *ZoneTransferSta
 func GetZoneTransferStatesByPage(dbi pg.DBI, filter *GetZoneTransferStatesFilter, sortField string, sortDir SortDirEnum, getZoneTransferStatesRelations ...ZoneTransferStateRelation) ([]*ZoneTransferState, int64, error) {
 	var zoneTransfers []*ZoneTransferState
 	// The duration is NULL when the zone transfer has not yet completed.
-	// In this case, we can calculate the duration by subtracting the start_time
-	// from the current time, if the start_time is set. This expression is used
+	// In this case, we can calculate the duration by subtracting the started_at
+	// from the current time, if the started_at is set. This expression is used
 	// to conditionally calculate the duration.
 	const effectiveDurationExpr = `
 	CASE
 		WHEN COALESCE(zone_transfer_state.duration, 0) = 0
-			AND zone_transfer_state.start_time > '1970-01-01'
+			AND zone_transfer_state.started_at > '1970-01-01'
 		THEN (
 			EXTRACT(
-				EPOCH FROM (now() at time zone 'utc' - zone_transfer_state.start_time)
+				EPOCH FROM (now() at time zone 'utc' - zone_transfer_state.started_at)
 			) * 1000000000)::bigint
 		ELSE zone_transfer_state.duration
 	END`
@@ -196,7 +196,7 @@ func GetZoneTransferStatesByPage(dbi pg.DBI, filter *GetZoneTransferStatesFilter
 		Column("zone_transfer_state.view_name").
 		Column("zone_transfer_state.zone_name").
 		Column("zone_transfer_state.client").
-		Column("zone_transfer_state.start_time").
+		Column("zone_transfer_state.started_at").
 		Column("zone_transfer_state.serial").
 		Column("zone_transfer_state.server").
 		Column("zone_transfer_state.messages_count").
@@ -205,7 +205,7 @@ func GetZoneTransferStatesByPage(dbi pg.DBI, filter *GetZoneTransferStatesFilter
 		Column("zone_transfer_state.duration").
 		ColumnExpr(effectiveDurationExpr + " AS effective_duration").
 		Column("zone_transfer_state.status").
-		Column("zone_transfer_state.completion_time").
+		Column("zone_transfer_state.completed_at").
 		Column("zone_transfer_state.message").
 		Column("zone_transfer_state.local").
 		Column("zone_transfer_state.client_machine_id").
