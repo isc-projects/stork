@@ -70,7 +70,7 @@ func TestGetZoneTransferStatesByPage(t *testing.T) {
 	}
 
 	filter := &GetZoneTransferStatesFilter{}
-	zoneTransfers, total, err := GetZoneTransferStatesByPage(db, filter, "", SortDirAny, ZoneTransferStateRelationClientMachine, ZoneTransferStateRelationServerMachine)
+	zoneTransfers, total, err := GetZoneTransferStatesByPage(db, filter, "status", SortDirDesc, ZoneTransferStateRelationClientMachine, ZoneTransferStateRelationServerMachine)
 	require.NoError(t, err)
 	require.Len(t, zoneTransfers, len(testZoneTransfers))
 	require.EqualValues(t, total, len(testZoneTransfers))
@@ -117,7 +117,7 @@ func TestGetZoneTransferStatesByPage(t *testing.T) {
 
 		if i > 0 {
 			// Ensure correct sorting order.
-			require.LessOrEqual(t, zoneTransfers[i-1].CreatedAt, zoneTransfer.CreatedAt)
+			require.GreaterOrEqual(t, zoneTransfers[i-1].Status, zoneTransfer.Status)
 		}
 	}
 }
@@ -178,7 +178,7 @@ func TestGetZoneTransferStatesByPageNoRelations(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	zoneTransfers, total, err := GetZoneTransferStatesByPage(db, nil, "", SortDirAny)
+	zoneTransfers, total, err := GetZoneTransferStatesByPage(db, nil, "status", SortDirAsc)
 	require.NoError(t, err)
 	require.Len(t, zoneTransfers, len(testZoneTransfers))
 	require.EqualValues(t, total, len(testZoneTransfers))
@@ -221,7 +221,7 @@ func TestGetZoneTransferStatesByPageNoRelations(t *testing.T) {
 
 		if i > 0 {
 			// Ensure correct sorting order.
-			require.LessOrEqual(t, zoneTransfers[i-1].CreatedAt, zoneTransfer.CreatedAt)
+			require.LessOrEqual(t, zoneTransfers[i-1].Status, zoneTransfer.Status)
 		}
 	}
 }
