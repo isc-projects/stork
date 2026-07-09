@@ -134,10 +134,12 @@ agent-kea-ha1 and agent-kea-ha2
 agent-kea-large
    This container runs an agent with a Kea DHCPv4 server that has many (nearly
    7000) subnets defined in its configuration.
-agent-kea-subscriber-1 and agent-kea-subscriber-2
-   These two containers should be run together. Each runs a Kea
-   DHCPv4 server instance configured with the subscriber hooks. They have a common
-   Config Backend database.
+agent-kea-subscriber-1, agent-kea-subscriber-2, and agent-kea-subscriber-3
+   These containers should be run together. Each runs a Kea
+   DHCPv4 server instance configured with the subscriber hooks. They have a
+   common Config Backend database. The agent-kea-subscriber-1 and
+   agent-kea-subscriber-3 containers share the same server tag (they aren't
+   configured as a HA pair).
 
 These are containers with third-party services that are required by Stork:
 
