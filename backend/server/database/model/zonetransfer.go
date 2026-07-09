@@ -99,9 +99,6 @@ func (f *GetZoneTransferStatesStatuses) GetEnabled() iter.Seq[bind9xfr.Status] {
 type GetZoneTransferStatesFilter struct {
 	// Limit the number of zone transfer states returned.
 	Limit *int
-	// Filter by ID of the machine where the primary or secondary
-	// server for that zone transfer is running.
-	MachineID *int64
 	// Paging offset.
 	Offset *int
 	// Filter by partial zone serial number.
@@ -111,6 +108,12 @@ type GetZoneTransferStatesFilter struct {
 	// Filter by partial zone name, view name, client name,
 	// server name, or message text.
 	Text *string
+	// Filter by ID of the machine where the server for that zone
+	// transfer is running.
+	ServerMachineID *int64
+	// Filter by ID of the machine where the client for that zone
+	// transfer is running.
+	ClientMachineID *int64
 	// Exclude local zone transfers (i.e., transfers initiated by the client
 	// running on the same machine as the server) in the results. It would
 	// exclude the transfers initiated by Stork.
@@ -266,14 +269,14 @@ func GetZoneTransferStatesByPage(dbi pg.DBI, filter *GetZoneTransferStatesFilter
 		}
 	}
 
-	// Filter by the ID of the machines where the primary or secondary
-	// DNS server is running.
-	if filter.MachineID != nil {
-		q = q.WhereGroup(func(q *pg.Query) (*pg.Query, error) {
-			q = q.WhereOr("zone_transfer_state.client_machine_id = ?", *filter.MachineID).
-				WhereOr("zone_transfer_state.server_machine_id = ?", *filter.MachineID)
-			return q, nil
-		})
+	// Filter by the ID of the machine where the XFR server is running.
+	if filter.ServerMachineID != nil {
+		q = q.Where("zone_transfer_state.server_machine_id = ?", *filter.ServerMachineID)
+	}
+
+	// Filter by the ID of the machine where the XFR client is running.
+	if filter.ClientMachineID != nil {
+		q = q.Where("zone_transfer_state.client_machine_id = ?", *filter.ClientMachineID)
 	}
 
 	// Filter by zone name, daemon name or local zone view using partial matching.

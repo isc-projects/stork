@@ -603,26 +603,25 @@ func TestGetZoneTransferStatesByPageWithFiltering(t *testing.T) {
 
 	t.Run("filter by machine ID", func(t *testing.T) {
 		filter := &GetZoneTransferStatesFilter{
-			MachineID: storkutil.Ptr(machine.ID),
+			ClientMachineID: storkutil.Ptr(machine.ID),
 		}
 		zoneTransfers, total, err := GetZoneTransferStatesByPage(db, filter, "", SortDirAny)
 		require.NoError(t, err)
 		require.EqualValues(t, 6, total)
 		require.Len(t, zoneTransfers, 6)
 
-		filter.MachineID = storkutil.Ptr(machine2.ID)
+		filter.ServerMachineID = storkutil.Ptr(machine2.ID)
+		filter.ClientMachineID = nil
 		zoneTransfers2, total, err := GetZoneTransferStatesByPage(db, filter, "", SortDirAny)
 		require.NoError(t, err)
 		require.EqualValues(t, 6, total)
 		require.Len(t, zoneTransfers2, 6)
-		for _, zoneTransfer := range zoneTransfers2 {
-			require.Equal(t, machine2.ID, zoneTransfer.ServerMachineID)
-		}
 
-		*filter.MachineID += 1000
+		filter.ClientMachineID = storkutil.Ptr(machine2.ID)
+		filter.ServerMachineID = storkutil.Ptr(machine.ID)
 		zoneTransfers3, total, err := GetZoneTransferStatesByPage(db, filter, "", SortDirAny)
 		require.NoError(t, err)
-		require.Zero(t, 0, total)
+		require.Zero(t, total)
 		require.Empty(t, zoneTransfers3)
 	})
 
