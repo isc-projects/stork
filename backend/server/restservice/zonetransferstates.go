@@ -66,6 +66,7 @@ func (r *RestAPI) GetZoneTransferStates(ctx context.Context, params dns.GetZoneT
 			ViewName:        state.ViewName,
 			ZoneName:        state.ZoneName,
 			Serial:          state.Serial,
+			Local:           state.Local,
 			Client:          state.Client,
 			Server:          state.Server,
 			MessagesCount:   state.MessagesCount,

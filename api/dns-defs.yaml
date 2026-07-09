@@ -142,6 +142,8 @@
         type: string
       serial:
         type: integer
+      local:
+        type: boolean
       client:
         type: string
       server:

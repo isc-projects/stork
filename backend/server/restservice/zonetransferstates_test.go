@@ -488,6 +488,13 @@ func TestGetZoneTransferStatesWithFiltering(t *testing.T) {
 		okResp := rsp.(*dns.GetZoneTransferStatesOK)
 		require.Len(t, okResp.Payload.Items, 7)
 		require.EqualValues(t, okResp.Payload.Total, 7)
+		for _, zoneTransfer := range okResp.Payload.Items {
+			if zoneTransfer.Client == "127.0.0.1" && zoneTransfer.Server == "127.0.0.1" {
+				require.True(t, zoneTransfer.Local)
+			} else {
+				require.False(t, zoneTransfer.Local)
+			}
+		}
 	})
 
 	t.Run("sort by effective duration", func(t *testing.T) {
