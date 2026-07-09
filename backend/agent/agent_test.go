@@ -12,7 +12,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"path"
 	"slices"
 	"strings"
 	"testing"
@@ -71,7 +70,7 @@ func setupAgentTestWithHooks(calloutCarriers []hooks.CalloutCarrier) (*StorkAgen
 
 	httpClientConfig := HTTPClientConfig{SkipTLSVerification: true, Interceptor: gock.InterceptClient}
 
-	cleanupCerts, _ := GenerateSelfSignedCerts()
+	certPaths, cleanupCerts, _ := GenerateSelfSignedCerts()
 
 	keaAccessPoint := AccessPoint{
 		Type:     AccessPointControl,
@@ -113,6 +112,7 @@ func setupAgentTestWithHooks(calloutCarriers []hooks.CalloutCarrier) (*StorkAgen
 		logTailer:           newLogTailer(),
 		keaInterceptor:      newKeaInterceptor(),
 		hookManager:         NewHookManager(),
+		certStore:           newCertStore(certPaths),
 	}
 
 	sa.hookManager.RegisterCalloutCarriers(calloutCarriers)
@@ -182,7 +182,7 @@ func TestNewStorkAgent(t *testing.T) {
 	bind9StatsClient := NewBind9StatsClient()
 	keaHTTPClientConfig := HTTPClientConfig{}
 	sa := NewStorkAgent(
-		"foo", 42, fdm, bind9StatsClient, NewHookManager(), false, 0,
+		"foo", 42, nil, fdm, bind9StatsClient, NewHookManager(), false, 0,
 	)
 	require.NotNil(t, sa.Monitor)
 	require.Equal(t, bind9StatsClient, sa.bind9StatsClient)
@@ -913,23 +913,19 @@ func TestGetRootCertificatesForMissingOrInvalidFiles(t *testing.T) {
 	params := &advancedtls.ConnectionInfo{}
 
 	// Prepare temp dir for cert files.
-	tmpDir, err := os.MkdirTemp("", "reg")
-	require.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
-	os.Mkdir(path.Join(tmpDir, "certs"), 0o755)
-	restoreCerts := RememberPaths()
-	defer restoreCerts()
-	RootCAFile = path.Join(tmpDir, "certs/ca.pem")
+	sb := testutil.NewSandbox()
+	defer sb.Close()
 
 	// Missing cert file error.
-	certStore := NewCertStoreDefault()
+	certPaths := newCertPaths(sb.BasePath)
+	certStore := newCertStore(certPaths)
 	getRootCertificates := createGetRootCertificatesHandler(certStore)
-	_, err = getRootCertificates(params)
+	_, err := getRootCertificates(params)
 	require.ErrorContains(t, err, "could not read the root CA")
-	require.ErrorContains(t, err, fmt.Sprintf("open %s/certs/ca.pem: no such file or directory", tmpDir))
+	require.ErrorContains(t, err, fmt.Sprintf("open %s: no such file or directory", certPaths.caPath))
 
 	// store bad cert
-	err = os.WriteFile(RootCAFile, []byte("CACertPEM"), 0o600)
+	err = os.WriteFile(certPaths.caPath, []byte("CACertPEM"), 0o600)
 	require.NoError(t, err)
 	_, err = getRootCertificates(params)
 	require.EqualError(t, err, "failed to append root CA")
@@ -937,12 +933,12 @@ func TestGetRootCertificatesForMissingOrInvalidFiles(t *testing.T) {
 
 // Checks if getRootCertificates reads and returns correct certificate successfully.
 func TestGetRootCertificates(t *testing.T) {
-	cleanup, err := GenerateSelfSignedCerts()
+	paths, cleanup, err := GenerateSelfSignedCerts()
 	require.NoError(t, err)
 	defer cleanup()
 
 	// All should be ok.
-	certStore := NewCertStoreDefault()
+	certStore := newCertStore(paths)
 	getRootCertificates := createGetRootCertificatesHandler(certStore)
 	params := &advancedtls.ConnectionInfo{}
 	result, err := getRootCertificates(params)
@@ -958,27 +954,21 @@ func TestGetIdentityCertificatesForServerForMissingOrInvalid(t *testing.T) {
 	info := &tls.ClientHelloInfo{}
 
 	// Prepare temp dir for cert files.
-	tmpDir, err := os.MkdirTemp("", "reg")
-	require.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
-	os.Mkdir(path.Join(tmpDir, "certs"), 0o755)
-	os.Mkdir(path.Join(tmpDir, "tokens"), 0o755)
-	restoreCerts := RememberPaths()
-	defer restoreCerts()
-	KeyPEMFile = path.Join(tmpDir, "certs/key.pem")
-	CertPEMFile = path.Join(tmpDir, "certs/cert.pem")
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+	paths := newCertPaths(sb.BasePath)
 
 	// Missing key files.
-	certStore := NewCertStoreDefault()
+	certStore := newCertStore(paths)
 	getIdentityCertificatesForServer := createGetIdentityCertificatesForServerHandler(certStore)
-	_, err = getIdentityCertificatesForServer(info)
+	_, err := getIdentityCertificatesForServer(info)
 	require.ErrorContains(t, err, "could not read the private key")
-	require.ErrorContains(t, err, fmt.Sprintf("open %s/certs/key.pem: no such file or directory", tmpDir))
+	require.ErrorContains(t, err, fmt.Sprintf("open %s: no such file or directory", paths.keyPath))
 
 	// Store bad content to files.
-	err = os.WriteFile(KeyPEMFile, []byte("KeyPEMFile"), 0o600)
+	err = os.WriteFile(paths.keyPath, []byte("KeyPEMFile"), 0o600)
 	require.NoError(t, err)
-	err = os.WriteFile(CertPEMFile, []byte("CertPEMFile"), 0o600)
+	err = os.WriteFile(paths.certPath, []byte("CertPEMFile"), 0o600)
 	require.NoError(t, err)
 	_, err = getIdentityCertificatesForServer(info)
 	require.EqualError(t, err, "could not setup TLS key pair: tls: failed to find any PEM data in certificate input")
@@ -987,12 +977,12 @@ func TestGetIdentityCertificatesForServerForMissingOrInvalid(t *testing.T) {
 // Checks if getIdentityCertificatesForServer reads and returns
 // correct key and certificate pair successfully.
 func TestGetIdentityCertificatesForServer(t *testing.T) {
-	cleanup, err := GenerateSelfSignedCerts()
+	paths, cleanup, err := GenerateSelfSignedCerts()
 	require.NoError(t, err)
 	defer cleanup()
 
 	// Now it should work.
-	certStore := NewCertStoreDefault()
+	certStore := newCertStore(paths)
 	getIdentityCertificatesForServer := createGetIdentityCertificatesForServerHandler(certStore)
 	info := &tls.ClientHelloInfo{}
 	certs, err := getIdentityCertificatesForServer(info)
@@ -1002,11 +992,12 @@ func TestGetIdentityCertificatesForServer(t *testing.T) {
 
 // Check if newGRPCServerWithTLS can create gRPC server.
 func TestNewGRPCServerWithTLS(t *testing.T) {
-	cleanup, err := GenerateSelfSignedCerts()
+	paths, cleanup, err := GenerateSelfSignedCerts()
 	require.NoError(t, err)
 	defer cleanup()
+	certStore := newCertStore(paths)
 
-	srv, err := newGRPCServerWithTLS()
+	srv, err := newGRPCServerWithTLS(certStore)
 	require.NoError(t, err)
 	require.NotNil(t, srv)
 }
@@ -1015,19 +1006,13 @@ func TestNewGRPCServerWithTLS(t *testing.T) {
 // missing.
 func TestNewGRPCServerWithTLSMissingCerts(t *testing.T) {
 	// Arrange
-	cleanup := RememberPaths()
-	defer cleanup()
 	sb := testutil.NewSandbox()
 	defer sb.Close()
 
-	KeyPEMFile = path.Join(sb.BasePath, "key-not-exists.pem")
-	CertPEMFile = path.Join(sb.BasePath, "cert-not-exists.pem")
-	RootCAFile = path.Join(sb.BasePath, "rootCA-not-exists.pem")
-	AgentTokenFile = path.Join(sb.BasePath, "agentToken-not-exists")
-	ServerCertFingerprintFile = path.Join(sb.BasePath, "server-cert-not-exists.sha256")
+	certStore := newCertStore(newCertPaths(sb.BasePath))
 
 	// Act
-	server, err := newGRPCServerWithTLS()
+	server, err := newGRPCServerWithTLS(certStore)
 
 	// Assert
 	require.ErrorContains(t, err, "the agent cannot start due to missing certificates")
@@ -1042,15 +1027,15 @@ func TestNewGRPCServerWithTLSMissingCerts(t *testing.T) {
 // invalid.
 func TestNewGRPCServerWithTLSInvalidCerts(t *testing.T) {
 	// Arrange
-	cleanup, _ := GenerateSelfSignedCerts()
+	certPaths, cleanup, _ := GenerateSelfSignedCerts()
 	defer cleanup()
-	certStore := NewCertStoreDefault()
+	certStore := newCertStore(certPaths)
 
 	// Make the cert store invalid.
 	certStore.RemoveServerCertFingerprint()
 
 	// Act
-	server, err := newGRPCServerWithTLS()
+	server, err := newGRPCServerWithTLS(certStore)
 
 	// Assert
 	require.ErrorContains(t, err, "cannot start due to invalid certificates")
@@ -1090,8 +1075,7 @@ func TestAgentSetupInvalidCerts(t *testing.T) {
 	// Arrange
 	sa, _, teardown := setupAgentTest()
 	defer teardown()
-	certStore := NewCertStoreDefault()
-	certStore.RemoveServerCertFingerprint()
+	sa.certStore.RemoveServerCertFingerprint()
 
 	// Act
 	err := sa.SetupGRPCServer()

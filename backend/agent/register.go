@@ -37,8 +37,8 @@ func (grpcPingHandler) Ping(ctx context.Context, in *agentapi.PingReq) (*agentap
 // Starts the GRPC server to handle the ping request from the Stork server.
 // It doesn't support other operations.
 // Returns the function that must be called to stop the server or an error.
-func runPingGRPCServer(host string, port int) (func(), error) {
-	server, err := newGRPCServerWithTLS()
+func runPingGRPCServer(host string, port int, certStore *CertStore) (func(), error) {
+	server, err := newGRPCServerWithTLS(certStore)
 	if err != nil {
 		err = errors.WithMessage(err, "cannot setup the GRPC server")
 		return nil, err
@@ -418,7 +418,9 @@ func pingAgentViaServer(ctx context.Context, client *httpClient, baseSrvURL *url
 // in the server. If server token is empty (in automatic registration or
 // when it is not provided in manual registration) then agent is added to
 // server but requires manual authorization in web UI.
-func Register(ctx context.Context, serverURL, serverToken, agentHost string, agentPort int, regenCerts bool, retry bool, httpClient *httpClient) error {
+// The obtained certificates and related files are stored in the provided
+// cert store.
+func Register(ctx context.Context, serverURL, serverToken, agentHost string, agentPort int, regenCerts bool, retry bool, httpClient *httpClient, certStore *CertStore) error {
 	// parse URL to server
 	baseSrvURL, err := url.Parse(serverURL)
 	if err != nil {
@@ -426,8 +428,6 @@ func Register(ctx context.Context, serverURL, serverToken, agentHost string, age
 	} else if baseSrvURL.String() == "" {
 		return errors.Errorf("server URL is empty")
 	}
-
-	certStore := NewCertStoreDefault()
 
 	// Generate agent private key and cert. If they already exist then regenerate them if forced.
 	csrPEM, err := generateCSR(certStore, agentHost, regenCerts)
@@ -497,7 +497,7 @@ func Register(ctx context.Context, serverURL, serverToken, agentHost string, age
 
 	if serverToken != "" {
 		// Start the listener to handle the ping request.
-		teardown, err := runPingGRPCServer(agentHost, agentPort)
+		teardown, err := runPingGRPCServer(agentHost, agentPort, certStore)
 		if err != nil {
 			return errors.WithMessage(err, "cannot run the GRPC server to handle Ping")
 		}

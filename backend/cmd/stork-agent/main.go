@@ -86,10 +86,11 @@ func runAgent(ctx context.Context, settings *generalSettings, reload bool) error
 	httpClient := agent.NewHTTPClient(agent.HTTPClientConfig{
 		SkipTLSVerification: settings.SkipTLSCertVerification,
 	})
+	certStore := agent.NewCertStoreDefault()
 
 	// Try registering the agent in the server using the agent token.
 	if settings.ServerURL != "" {
-		if err := agent.Register(ctx, settings.ServerURL, "", settings.Host, settings.Port, false, true, httpClient); err != nil {
+		if err := agent.Register(ctx, settings.ServerURL, "", settings.Host, settings.Port, false, true, httpClient, certStore); err != nil {
 			log.WithError(err).Fatalf("Problem with agent registration in Stork Server, exiting")
 		}
 	}
@@ -103,7 +104,7 @@ func runAgent(ctx context.Context, settings *generalSettings, reload bool) error
 		SkipTLSVerification: settings.SkipTLSCertVerification,
 	}
 
-	ok, err := keaHTTPClientConfig.LoadGRPCCertificates()
+	ok, err := keaHTTPClientConfig.LoadGRPCCertificates(certStore)
 	switch {
 	case err != nil:
 		log.WithError(err).Error("Could not load the GRPC credentials")
@@ -128,6 +129,7 @@ func runAgent(ctx context.Context, settings *generalSettings, reload bool) error
 	storkAgent := agent.NewStorkAgent(
 		settings.Host,
 		settings.Port,
+		certStore,
 		daemonMonitor,
 		bind9StatsClient,
 		hookManager,
@@ -321,8 +323,9 @@ func runRegister(ctx context.Context, settings *registerSettings) {
 	httpClient := agent.NewHTTPClient(agent.HTTPClientConfig{
 		SkipTLSVerification: settings.SkipTLSCertVerification,
 	})
+	certStore := agent.NewCertStoreDefault()
 
-	if err := agent.Register(ctx, settings.ServerURL, settings.ServerToken, host, port, true, false, httpClient); err != nil {
+	if err := agent.Register(ctx, settings.ServerURL, settings.ServerToken, host, port, true, false, httpClient, certStore); err != nil {
 		log.WithError(err).Fatalf("Registration failed")
 	} else {
 		log.Println("Registration completed successfully")

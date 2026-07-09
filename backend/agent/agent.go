@@ -59,6 +59,7 @@ type StorkAgent struct {
 	keaInterceptor      *keaInterceptor
 	shutdownOnce        sync.Once
 	hookManager         *HookManager
+	certStore           *CertStore
 
 	// Permit the agent run the Lease Tracking code.
 	isLeaseTrackingAllowed bool
@@ -69,7 +70,7 @@ type StorkAgent struct {
 }
 
 // API exposed to Stork Server.
-func NewStorkAgent(host string, port int, monitor Monitor, bind9StatsClient *bind9StatsClient, hookManager *HookManager, allowLeaseTracking bool, maxLeaseUpdateCount int) *StorkAgent {
+func NewStorkAgent(host string, port int, certStore *CertStore, monitor Monitor, bind9StatsClient *bind9StatsClient, hookManager *HookManager, allowLeaseTracking bool, maxLeaseUpdateCount int) *StorkAgent {
 	logTailer := newLogTailer()
 
 	sa := &StorkAgent{
@@ -83,6 +84,7 @@ func NewStorkAgent(host string, port int, monitor Monitor, bind9StatsClient *bin
 		hookManager:            hookManager,
 		isLeaseTrackingAllowed: allowLeaseTracking,
 		maxLeaseUpdateCount:    maxLeaseUpdateCount,
+		certStore:              certStore,
 	}
 
 	registerKeaInterceptFns(sa)
@@ -164,15 +166,7 @@ func createVerifyPeer(allowedCertFingerprint [32]byte) advancedtls.PostHandshake
 }
 
 // Prepare gRPC server with configured TLS.
-func newGRPCServerWithTLS() (*grpc.Server, error) {
-	// Prepare structure for advanced TLS. It defines hook functions
-	// that dynamically load key and cert from files just before establishing
-	// connection. Thanks to this if these files changed in meantime then
-	// always latest version for new connections is used.
-	// Beside that there is enabled client authentication and forced
-	// cert and host verification.
-	certStore := NewCertStoreDefault()
-
+func newGRPCServerWithTLS(certStore *CertStore) (*grpc.Server, error) {
 	if ok, _ := certStore.IsEmpty(); ok {
 		return nil, errors.New("the agent cannot start due to missing " +
 			"certificates; consider running 'stork-agent register' to obtain " +
@@ -228,7 +222,7 @@ func newGRPCServerWithTLS() (*grpc.Server, error) {
 
 // Setup the agent as gRPC server endpoint.
 func (sa *StorkAgent) SetupGRPCServer() error {
-	server, err := newGRPCServerWithTLS()
+	server, err := newGRPCServerWithTLS(sa.certStore)
 	if err != nil {
 		return err
 	}

@@ -62,7 +62,7 @@ func TestGetDaemons(t *testing.T) {
 	monitor := NewMonitor(MonitorSettings{})
 	hm := NewHookManager()
 	bind9StatsClient := NewBind9StatsClient()
-	sa := NewStorkAgent("foo", 42, monitor, bind9StatsClient, hm, false, 0)
+	sa := NewStorkAgent("foo", 42, nil, monitor, bind9StatsClient, hm, false, 0)
 	monitor.Start(t.Context(), sa)
 	daemons := monitor.GetDaemons()
 	require.Len(t, daemons, 0)
@@ -647,7 +647,7 @@ func TestDetectAllowedLogsKeaUnreachable(t *testing.T) {
 	})
 
 	hm := NewHookManager()
-	sa := NewStorkAgent("foo", 42, monitor, bind9StatsClient, hm, false, 0)
+	sa := NewStorkAgent("foo", 42, nil, monitor, bind9StatsClient, hm, false, 0)
 
 	require.NotPanics(t, func() { monitor.refreshDaemons(t.Context(), sa) })
 }

@@ -18,19 +18,19 @@ func TestNewCertStoreDefault(t *testing.T) {
 
 	// Assert
 	require.NotNil(t, store)
-	require.Equal(t, KeyPEMFile, store.keyPEMPath)
-	require.Equal(t, CertPEMFile, store.certPEMPath)
-	require.Equal(t, RootCAFile, store.rootCAPEMPath)
-	require.Equal(t, AgentTokenFile, store.agentTokenPath)
-	require.Equal(t, ServerCertFingerprintFile, store.serverCertFingerprintPath)
+	require.Equal(t, "/var/lib/stork-agent/server-key.pem", store.keyPEMPath)
+	require.Equal(t, "/var/lib/stork-agent/server-cert.pem", store.certPEMPath)
+	require.Equal(t, "/var/lib/stork-agent/root-cert.pem", store.rootCAPEMPath)
+	require.Equal(t, "/var/lib/stork-agent/token.txt", store.agentTokenPath)
+	require.Equal(t, "/var/lib/stork-agent/server-cert.sha256", store.serverCertFingerprintPath)
 }
 
 // Test that the store reads and parses a proper root CA certificate.
 func TestReadRootCA(t *testing.T) {
 	// Arrange
-	teardown, _ := GenerateSelfSignedCerts()
+	certPaths, teardown, _ := GenerateSelfSignedCerts()
 	defer teardown()
-	store := NewCertStoreDefault()
+	store := newCertStore(certPaths)
 
 	// Act
 	pool, err := store.ReadRootCA()
@@ -43,9 +43,9 @@ func TestReadRootCA(t *testing.T) {
 // Test that the store reads and parses a proper TLS certificate pair.
 func TestReadTLSCert(t *testing.T) {
 	// Arrange
-	teardown, _ := GenerateSelfSignedCerts()
+	certPaths, teardown, _ := GenerateSelfSignedCerts()
 	defer teardown()
-	store := NewCertStoreDefault()
+	store := newCertStore(certPaths)
 
 	// Act
 	cert, err := store.ReadTLSCert()
@@ -58,9 +58,9 @@ func TestReadTLSCert(t *testing.T) {
 // Test that the store reads and parses a proper agent token.
 func TestReadAgentToken(t *testing.T) {
 	// Arrange
-	teardown, _ := GenerateSelfSignedCerts()
+	certPaths, teardown, _ := GenerateSelfSignedCerts()
 	defer teardown()
-	store := NewCertStoreDefault()
+	store := newCertStore(certPaths)
 
 	// Act
 	token, err := store.ReadToken()
@@ -77,9 +77,9 @@ func TestReadAgentToken(t *testing.T) {
 // Test that the store reads and parses a proper server certificate fingerprint.
 func TestReadServerCertFingerprint(t *testing.T) {
 	// Arrange
-	teardown, _ := GenerateSelfSignedCerts()
+	certPaths, teardown, _ := GenerateSelfSignedCerts()
 	defer teardown()
-	store := NewCertStoreDefault()
+	store := newCertStore(certPaths)
 
 	// Act
 	fingerprint, err := store.ReadServerCertFingerprint()
@@ -94,30 +94,30 @@ func TestReadServerCertFingerprint(t *testing.T) {
 // key file and removes other store files.
 func TestCreateKey(t *testing.T) {
 	// Arrange
-	teardown, _ := GenerateSelfSignedCerts()
+	certPaths, teardown, _ := GenerateSelfSignedCerts()
 	defer teardown()
-	store := NewCertStoreDefault()
+	store := newCertStore(certPaths)
 
-	initialKey, _ := os.ReadFile(KeyPEMFile)
+	initialKey, _ := os.ReadFile(certPaths.keyPath)
 
 	// Act
 	err := store.CreateKey()
 
 	// Assert
 	require.NoError(t, err)
-	actualHash, _ := os.ReadFile(KeyPEMFile)
+	actualHash, _ := os.ReadFile(certPaths.keyPath)
 	require.NotEqual(t, initialKey, actualHash)
-	require.NoFileExists(t, CertPEMFile)
-	require.NoFileExists(t, RootCAFile)
-	require.NoFileExists(t, AgentTokenFile)
+	require.NoFileExists(t, certPaths.certPath)
+	require.NoFileExists(t, certPaths.caPath)
+	require.NoFileExists(t, certPaths.tokenPath)
 }
 
 // Test that the generating CSR works properly.
 func TestGenerateCSR(t *testing.T) {
 	// Arrange
-	teardown, _ := GenerateSelfSignedCerts()
+	certPaths, teardown, _ := GenerateSelfSignedCerts()
 	defer teardown()
-	store := NewCertStoreDefault()
+	store := newCertStore(certPaths)
 
 	testCases := []string{"hostname", "10.0.0.1"}
 	for _, testCase := range testCases {
@@ -136,10 +136,10 @@ func TestGenerateCSR(t *testing.T) {
 // Test that the generating CSR fails if the private key is missing.
 func TestGenerateCSRForMissingPrivateKey(t *testing.T) {
 	// Arrange
-	teardown, _ := GenerateSelfSignedCerts()
+	certPaths, teardown, _ := GenerateSelfSignedCerts()
 	defer teardown()
-	_ = os.Remove(KeyPEMFile)
-	store := NewCertStoreDefault()
+	_ = os.Remove(certPaths.keyPath)
+	store := newCertStore(certPaths)
 
 	// Act
 	csr, _, err := store.GenerateCSR("foobar")
@@ -153,9 +153,9 @@ func TestGenerateCSRForMissingPrivateKey(t *testing.T) {
 // Test that the fingerprint is saved properly into the agent token file.
 func TestWriteFingerprintAsToken(t *testing.T) {
 	// Arrange
-	teardown, _ := GenerateSelfSignedCerts()
+	certPaths, teardown, _ := GenerateSelfSignedCerts()
 	defer teardown()
-	store := NewCertStoreDefault()
+	store := newCertStore(certPaths)
 
 	var fingerprint [32]byte
 	for i := 0; i < len(fingerprint); i++ {
@@ -168,7 +168,7 @@ func TestWriteFingerprintAsToken(t *testing.T) {
 
 	// Assert
 	require.NoError(t, err)
-	actualTokenRaw, err := os.ReadFile(AgentTokenFile)
+	actualTokenRaw, err := os.ReadFile(certPaths.tokenPath)
 	require.NoError(t, err)
 	require.Equal(t, expectedToken, string(actualTokenRaw))
 }
@@ -176,10 +176,10 @@ func TestWriteFingerprintAsToken(t *testing.T) {
 // Test that the root CA file in the PEM format is saved properly.
 func TestWriteRootCAPEM(t *testing.T) {
 	// Arrange
-	teardown, _ := GenerateSelfSignedCerts()
+	certPaths, teardown, _ := GenerateSelfSignedCerts()
 	defer teardown()
-	store := NewCertStoreDefault()
-	pem, _ := os.ReadFile(RootCAFile)
+	store := newCertStore(certPaths)
+	pem, _ := os.ReadFile(certPaths.caPath)
 
 	// Act
 	err := store.WriteRootCAPEM(pem)
@@ -191,9 +191,9 @@ func TestWriteRootCAPEM(t *testing.T) {
 // Test that the invalid root CA file cannot be saved.
 func TestWriteRootCAPEMInvalid(t *testing.T) {
 	// Arrange
-	teardown, _ := GenerateSelfSignedCerts()
+	certPaths, teardown, _ := GenerateSelfSignedCerts()
 	defer teardown()
-	store := NewCertStoreDefault()
+	store := newCertStore(certPaths)
 
 	// Act
 	err := store.WriteRootCAPEM([]byte("invalid"))
@@ -205,13 +205,13 @@ func TestWriteRootCAPEMInvalid(t *testing.T) {
 // Test that the certificate file in the PEM format is saved properly.
 func TestWriteCertPEM(t *testing.T) {
 	// Arrange
-	teardown, _ := GenerateSelfSignedCerts()
+	certPaths, teardown, _ := GenerateSelfSignedCerts()
 	defer teardown()
-	store := NewCertStoreDefault()
-	pem, _ := os.ReadFile(CertPEMFile)
+	store := newCertStore(certPaths)
+	pem, _ := os.ReadFile(certPaths.certPath)
 
 	// Act
-	err := store.WriteRootCAPEM(pem)
+	err := store.WriteCertPEM(pem)
 
 	// Assert
 	require.NoError(t, err)
@@ -220,9 +220,9 @@ func TestWriteCertPEM(t *testing.T) {
 // Test that the invalid certificate file cannot be saved.
 func TestWriteCertPEMInvalid(t *testing.T) {
 	// Arrange
-	teardown, _ := GenerateSelfSignedCerts()
+	certPaths, teardown, _ := GenerateSelfSignedCerts()
 	defer teardown()
-	store := NewCertStoreDefault()
+	store := newCertStore(certPaths)
 
 	// Act
 	err := store.WriteCertPEM([]byte("invalid"))
@@ -234,9 +234,9 @@ func TestWriteCertPEMInvalid(t *testing.T) {
 // Test that the server certificate fingerprint is saved properly.
 func TestWriteServerCertFingerprint(t *testing.T) {
 	// Arrange
-	teardown, _ := GenerateSelfSignedCerts()
+	certPaths, teardown, _ := GenerateSelfSignedCerts()
 	defer teardown()
-	store := NewCertStoreDefault()
+	store := newCertStore(certPaths)
 	fingerprint := [32]byte{42, 42, 42}
 
 	// Act
@@ -252,9 +252,9 @@ func TestWriteServerCertFingerprint(t *testing.T) {
 // are valid.
 func TestCertStoreIsValid(t *testing.T) {
 	// Arrange
-	teardown, _ := GenerateSelfSignedCerts()
+	certPaths, teardown, _ := GenerateSelfSignedCerts()
 	defer teardown()
-	store := NewCertStoreDefault()
+	store := newCertStore(certPaths)
 
 	// Act
 	err := store.IsValid()
@@ -275,9 +275,9 @@ func TestCertStoreIsNotValidForMissingFiles(t *testing.T) {
 	}
 	for label, pathGetter := range pathGetters {
 		t.Run(label, func(t *testing.T) {
-			teardown, _ := GenerateSelfSignedCerts()
+			certPaths, teardown, _ := GenerateSelfSignedCerts()
 			defer teardown()
-			store := NewCertStoreDefault()
+			store := newCertStore(certPaths)
 			_ = os.Remove(pathGetter(store))
 
 			// Act
@@ -293,18 +293,11 @@ func TestCertStoreIsNotValidForMissingFiles(t *testing.T) {
 // exist.
 func TestCertStoreIsEmpty(t *testing.T) {
 	// Arrange
-	restore := RememberPaths()
-	defer restore()
 	sb := testutil.NewSandbox()
 	defer sb.Close()
 
-	KeyPEMFile = path.Join(sb.BasePath, "key-not-exists.pem")
-	RootCAFile = path.Join(sb.BasePath, "root-ca-not-exists.pem")
-	CertPEMFile = path.Join(sb.BasePath, "cert-not-exists.pem")
-	AgentTokenFile = path.Join(sb.BasePath, "agent-token-not-exists.json")
-	ServerCertFingerprintFile = path.Join(sb.BasePath, "server-cert-not-exists.sha256")
-
-	store := NewCertStoreDefault()
+	certPaths := newCertPaths(sb.BasePath)
+	store := newCertStore(certPaths)
 
 	// Act
 	isEmpty, err := store.IsEmpty()
@@ -320,32 +313,24 @@ func TestCertStoreIsNotEmpty(t *testing.T) {
 	_, thisFilePath, _, ok := runtime.Caller(0)
 	require.True(t, ok)
 
-	restore := RememberPaths()
-	defer restore()
 	sb := testutil.NewSandbox()
 	defer sb.Close()
 
-	KeyPEMFile = path.Join(sb.BasePath, "key-not-exists.pem")
-	RootCAFile = path.Join(sb.BasePath, "root-ca-not-exists.pem")
-	CertPEMFile = path.Join(sb.BasePath, "cert-not-exists.pem")
-	AgentTokenFile = path.Join(sb.BasePath, "agent-token-not-exists.json")
-	ServerCertFingerprintFile = path.Join(sb.BasePath, "server-cert-not-exists.sha256")
+	certPaths := newCertPaths(sb.BasePath)
 
 	pathPointers := map[string]*string{
-		"key":                &KeyPEMFile,
-		"root CA":            &RootCAFile,
-		"cert":               &CertPEMFile,
-		"token":              &AgentTokenFile,
-		"server fingerprint": &ServerCertFingerprintFile,
+		"key":                &certPaths.keyPath,
+		"root CA":            &certPaths.caPath,
+		"cert":               &certPaths.certPath,
+		"token":              &certPaths.tokenPath,
+		"server fingerprint": &certPaths.fingerprintPath,
 	}
 
 	for label, pathPointer := range pathPointers {
 		t.Run(label, func(t *testing.T) {
-			restore := RememberPaths()
-			defer restore()
 			*pathPointer = thisFilePath
 
-			store := NewCertStoreDefault()
+			store := newCertStore(certPaths)
 
 			// Act
 			isEmpty, err := store.IsEmpty()
@@ -360,9 +345,9 @@ func TestCertStoreIsNotEmpty(t *testing.T) {
 // Test that the server cert fingerprint is removed properly.
 func TestRemoveServerCertFingerprint(t *testing.T) {
 	// Arrange
-	teardown, _ := GenerateSelfSignedCerts()
+	certPaths, teardown, _ := GenerateSelfSignedCerts()
 	defer teardown()
-	store := NewCertStoreDefault()
+	store := newCertStore(certPaths)
 
 	// Act
 	// The fingerprint file exists.
@@ -379,9 +364,9 @@ func TestRemoveServerCertFingerprint(t *testing.T) {
 // Test that the fingerprint of the CA certificate is read properly.
 func TestReadCACertFingerprint(t *testing.T) {
 	// Arrange
-	teardown, _ := GenerateSelfSignedCerts()
+	certPaths, teardown, _ := GenerateSelfSignedCerts()
 	defer teardown()
-	store := NewCertStoreDefault()
+	store := newCertStore(certPaths)
 
 	// Act
 	actualFingerprint, err := store.ReadRootCAFingerprint()
@@ -394,13 +379,13 @@ func TestReadCACertFingerprint(t *testing.T) {
 // Test that the fingerprint is zero if the CA certificate is missing.
 func TestReadCACertFingerprintForMissingCA(t *testing.T) {
 	// Arrange
-	teardown, _ := GenerateSelfSignedCerts()
+	certPaths, teardown, _ := GenerateSelfSignedCerts()
 	defer teardown()
 	sb := testutil.NewSandbox()
 	defer sb.Close()
 
-	RootCAFile = path.Join(sb.BasePath, "root-ca-not-exists.pem")
-	store := NewCertStoreDefault()
+	certPaths.caPath = path.Join(sb.BasePath, "root-ca-not-exists.pem")
+	store := newCertStore(certPaths)
 
 	// Act
 	fingerprint, err := store.ReadRootCAFingerprint()
@@ -413,10 +398,10 @@ func TestReadCACertFingerprintForMissingCA(t *testing.T) {
 // Test that the fingerprint cannot be read from the invalid CA cert.
 func TestReadCACertFingerprintForInvalidCA(t *testing.T) {
 	// Arrange
-	teardown, _ := GenerateSelfSignedCerts()
+	certPaths, teardown, _ := GenerateSelfSignedCerts()
 	defer teardown()
-	store := NewCertStoreDefault()
-	_ = os.WriteFile(RootCAFile, []byte("invalid"), 0o644)
+	store := newCertStore(certPaths)
+	_ = os.WriteFile(certPaths.caPath, []byte("invalid"), 0o644)
 
 	// Act
 	fingerprint, err := store.ReadRootCAFingerprint()
@@ -430,9 +415,9 @@ func TestReadCACertFingerprintForInvalidCA(t *testing.T) {
 // recognized properly.
 func TestIsServerCertFingerprintFileExist(t *testing.T) {
 	// Arrange
-	teardown, _ := GenerateSelfSignedCerts()
+	certPaths, teardown, _ := GenerateSelfSignedCerts()
 	defer teardown()
-	store := NewCertStoreDefault()
+	store := newCertStore(certPaths)
 
 	t.Run("exists", func(t *testing.T) {
 		// Act
@@ -445,7 +430,7 @@ func TestIsServerCertFingerprintFileExist(t *testing.T) {
 
 	t.Run("not exists", func(t *testing.T) {
 		// Arrange
-		_ = os.Remove(ServerCertFingerprintFile)
+		_ = os.Remove(certPaths.fingerprintPath)
 
 		// Act
 		exists, err := store.IsServerCertFingerprintFileExist()

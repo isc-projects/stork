@@ -52,8 +52,7 @@ type HTTPClientConfig struct {
 // will be rejected if the server verifies the client credentials.
 // Returns true if the certificates have been loaded successfully. Returns
 // false if the certificates file does not exist.
-func (c *HTTPClientConfig) LoadGRPCCertificates() (bool, error) {
-	tlsCertStore := NewCertStoreDefault()
+func (c *HTTPClientConfig) LoadGRPCCertificates(tlsCertStore *CertStore) (bool, error) {
 	isEmpty, err := tlsCertStore.IsEmpty()
 	if err != nil {
 		return false, errors.WithMessage(err, "cannot stat the TLS files")

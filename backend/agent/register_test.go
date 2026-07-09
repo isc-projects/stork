@@ -26,20 +26,6 @@ import (
 
 // Check if registration works in basic situation.
 func TestRegisterBasic(t *testing.T) {
-	// prepare temp dir for cert files
-	tmpDir, err := os.MkdirTemp("", "reg")
-	require.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
-
-	// redefined consts with paths to cert files
-	restoreCerts := RememberPaths()
-	defer restoreCerts()
-	KeyPEMFile = path.Join(tmpDir, "certs/key.pem")
-	CertPEMFile = path.Join(tmpDir, "certs/cert.pem")
-	RootCAFile = path.Join(tmpDir, "certs/ca.pem")
-	AgentTokenFile = path.Join(tmpDir, "tokens/agent-token.txt")
-	ServerCertFingerprintFile = path.Join(tmpDir, "tokens/server-cert.sha256")
-
 	// generate the CA and server certs
 	rootKey, rootKeyPEM, rootCert, rootCertPEM, err := pki.GenCAKeyCert(1)
 	require.NoError(t, err)
@@ -142,37 +128,39 @@ func TestRegisterBasic(t *testing.T) {
 
 	serverURL := ts.URL
 
+	// The store which will be used to store the generated certificates and
+	// related files.
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+	certPaths := newCertPaths(sb.BasePath)
+	certStore := newCertStore(certPaths)
+
 	// register with server token
-	err = Register(t.Context(), serverURL, serverToken, agentAddr, agentPort, regenKey, retry, newTestHTTPClientWithDefaults())
+	err = Register(
+		t.Context(),
+		serverURL, serverToken, agentAddr, agentPort, regenKey, retry,
+		newTestHTTPClientWithDefaults(), certStore,
+	)
 	require.NoError(t, err)
 
 	// verify the server cert fingerprint is written to the file
-	fingerprintFromFile, err := os.ReadFile(ServerCertFingerprintFile)
+	fingerprintFromFile, err := os.ReadFile(certPaths.fingerprintPath)
 	require.NoError(t, err)
 	require.Equal(t, storkutil.BytesToHex(serverCertFingerprint[:]), string(fingerprintFromFile))
 
 	// register with agent token
 	serverToken = ""
-	err = Register(t.Context(), serverURL, serverToken, agentAddr, agentPort, regenKey, retry, newTestHTTPClientWithDefaults())
+	err = Register(t.Context(), serverURL, serverToken, agentAddr, agentPort, regenKey, retry, newTestHTTPClientWithDefaults(), certStore)
 	require.NoError(t, err)
 }
 
 // Check if registration fails with an expected error when the agent port is
 // already in use.
 func TestRegisterBusyPort(t *testing.T) {
-	// prepare temp dir for cert files
-	tmpDir, err := os.MkdirTemp("", "reg")
-	require.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
-
-	// redefined consts with paths to cert files
-	restoreCerts := RememberPaths()
-	defer restoreCerts()
-	KeyPEMFile = path.Join(tmpDir, "certs/key.pem")
-	CertPEMFile = path.Join(tmpDir, "certs/cert.pem")
-	RootCAFile = path.Join(tmpDir, "certs/ca.pem")
-	AgentTokenFile = path.Join(tmpDir, "tokens/agent-token.txt")
-	ServerCertFingerprintFile = path.Join(tmpDir, "tokens/server-cert.sha256")
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+	certPaths := newCertPaths(sb.BasePath)
+	certStore := newCertStore(certPaths)
 
 	// generate the CA and server certs
 	rootKey, rootKeyPEM, rootCert, rootCertPEM, err := pki.GenCAKeyCert(1)
@@ -283,7 +271,7 @@ func TestRegisterBusyPort(t *testing.T) {
 	serverURL := ts.URL
 
 	// register with server token
-	err = Register(t.Context(), serverURL, serverToken, agentAddr, agentPort, regenKey, retry, newTestHTTPClientWithDefaults())
+	err = Register(t.Context(), serverURL, serverToken, agentAddr, agentPort, regenKey, retry, newTestHTTPClientWithDefaults(), certStore)
 	require.ErrorContains(t,
 		err,
 		fmt.Sprintf("Stork agent detected a program bound to port %d", agentPort),
@@ -292,22 +280,10 @@ func TestRegisterBusyPort(t *testing.T) {
 
 // Check if registration works when server returns bad response.
 func TestRegisterBadServer(t *testing.T) {
-	// prepare temp dir for cert files
-	tmpDir, err := os.MkdirTemp("", "reg")
-	require.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
-	os.Mkdir(path.Join(tmpDir, "certs"), 0o755)
-	os.Mkdir(path.Join(tmpDir, "tokens"), 0o755)
-
-	// redefined consts with paths to cert files
-	restoreCerts := RememberPaths()
-	defer restoreCerts()
-
-	KeyPEMFile = path.Join(tmpDir, "certs/key.pem")
-	CertPEMFile = path.Join(tmpDir, "certs/cert.pem")
-	RootCAFile = path.Join(tmpDir, "certs/ca.pem")
-	AgentTokenFile = path.Join(tmpDir, "tokens/agent-token.txt")
-	ServerCertFingerprintFile = path.Join(tmpDir, "tokens/server-cer.sha256")
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+	certPaths := newCertPaths(sb.BasePath)
+	certStore := newCertStore(certPaths)
 
 	// register arguments
 	serverToken := "serverToken"
@@ -414,59 +390,59 @@ func TestRegisterBadServer(t *testing.T) {
 	serverURL := ts.URL
 
 	// initially all is OK
-	err = Register(t.Context(), serverURL, serverToken, agentAddr, agentPort, regenKey, retry, newTestHTTPClientWithDefaults())
+	err = Register(t.Context(), serverURL, serverToken, agentAddr, agentPort, regenKey, retry, newTestHTTPClientWithDefaults(), certStore)
 	require.NoError(t, err)
 
 	// missing ID in response
 	withID = false
-	err = Register(t.Context(), serverURL, serverToken, agentAddr, agentPort, regenKey, retry, newTestHTTPClientWithDefaults())
+	err = Register(t.Context(), serverURL, serverToken, agentAddr, agentPort, regenKey, retry, newTestHTTPClientWithDefaults(), certStore)
 	require.Error(t, err)
 	withID = true
 
 	// bad ID in response
 	idValue = "bad-value"
-	err = Register(t.Context(), serverURL, serverToken, agentAddr, agentPort, regenKey, retry, newTestHTTPClientWithDefaults())
+	err = Register(t.Context(), serverURL, serverToken, agentAddr, agentPort, regenKey, retry, newTestHTTPClientWithDefaults(), certStore)
 	require.Error(t, err)
 	idValue = 10 // restore proper value
 
 	// missing serverCACert in response
 	withServerCert = false
-	err = Register(t.Context(), serverURL, serverToken, agentAddr, agentPort, regenKey, retry, newTestHTTPClientWithDefaults())
+	err = Register(t.Context(), serverURL, serverToken, agentAddr, agentPort, regenKey, retry, newTestHTTPClientWithDefaults(), certStore)
 	require.Error(t, err)
 	withServerCert = true // restore proper value
 
 	// bad serverCACert in response
 	serverCertValue = 5
-	err = Register(t.Context(), serverURL, serverToken, agentAddr, agentPort, regenKey, retry, newTestHTTPClientWithDefaults())
+	err = Register(t.Context(), serverURL, serverToken, agentAddr, agentPort, regenKey, retry, newTestHTTPClientWithDefaults(), certStore)
 	require.Error(t, err)
 	serverCertValue = nil // restore proper value
 
 	// missing agentCert in response
 	withAgentCert = false
-	err = Register(t.Context(), serverURL, serverToken, agentAddr, agentPort, regenKey, retry, newTestHTTPClientWithDefaults())
+	err = Register(t.Context(), serverURL, serverToken, agentAddr, agentPort, regenKey, retry, newTestHTTPClientWithDefaults(), certStore)
 	require.Error(t, err)
 	withAgentCert = true // restore proper value
 
 	// bad serverCACert in response
 	agentCertValue = 5
-	err = Register(t.Context(), serverURL, serverToken, agentAddr, agentPort, regenKey, retry, newTestHTTPClientWithDefaults())
+	err = Register(t.Context(), serverURL, serverToken, agentAddr, agentPort, regenKey, retry, newTestHTTPClientWithDefaults(), certStore)
 	require.Error(t, err)
 	agentCertValue = nil // restore proper value
 
 	// missing serverCertFingerprint in response
 	withServerCertFingerprint = false
-	err = Register(t.Context(), serverURL, serverToken, agentAddr, agentPort, regenKey, retry, newTestHTTPClientWithDefaults())
+	err = Register(t.Context(), serverURL, serverToken, agentAddr, agentPort, regenKey, retry, newTestHTTPClientWithDefaults(), certStore)
 	require.Error(t, err)
 	withServerCertFingerprint = true
 
 	// bad serverCertFingerprint in response
 	serverCertFingerprint = "bad-fingerprint"
-	err = Register(t.Context(), serverURL, serverToken, agentAddr, agentPort, regenKey, retry, newTestHTTPClientWithDefaults())
+	err = Register(t.Context(), serverURL, serverToken, agentAddr, agentPort, regenKey, retry, newTestHTTPClientWithDefaults(), certStore)
 	require.Error(t, err)
 	serverCertFingerprint = nil // restore proper value
 
 	// finally all is OK
-	err = Register(t.Context(), serverURL, serverToken, agentAddr, agentPort, regenKey, retry, newTestHTTPClientWithDefaults())
+	err = Register(t.Context(), serverURL, serverToken, agentAddr, agentPort, regenKey, retry, newTestHTTPClientWithDefaults(), certStore)
 	require.NoError(t, err)
 }
 
@@ -475,53 +451,49 @@ func TestRegisterNegative(t *testing.T) {
 	// prepare temp dir for cert files
 	sb := testutil.NewSandbox()
 	defer sb.Close()
-
-	// redefined consts with paths to cert files
-	restoreCerts := RememberPaths()
-	defer restoreCerts()
-
-	KeyPEMFile = path.Join(sb.BasePath, "certs/key.pem")
-	CertPEMFile = path.Join(sb.BasePath, "certs/cert.pem")
-	RootCAFile = path.Join(sb.BasePath, "certs/ca.pem")
-	AgentTokenFile = path.Join(sb.BasePath, "tokens/agent-token.txt")
-	ServerCertFingerprintFile = path.Join(sb.BasePath, "tokens/server-cert.sha256")
+	certPaths := newCertPaths(sb.BasePath)
+	certStore := newCertStore(certPaths)
 
 	// bad server URL
-	err := Register(t.Context(), "12:3", "serverToken", "1.2.3.4", 8080, false, false, newTestHTTPClientWithDefaults())
+	err := Register(t.Context(), "12:3", "serverToken", "1.2.3.4", 8080, false, false, newTestHTTPClientWithDefaults(), certStore)
 	require.Error(t, err)
 
 	// empty server URL
-	err = Register(t.Context(), "", "serverToken", "1.2.3.4", 8080, false, false, newTestHTTPClientWithDefaults())
+	err = Register(t.Context(), "", "serverToken", "1.2.3.4", 8080, false, false, newTestHTTPClientWithDefaults(), certStore)
 	require.Error(t, err)
 
 	// cannot prompt for server token (regenKey is true)
-	err = Register(t.Context(), "http:://localhost:54333", "", "1.2.3.4", 8080, true, false, newTestHTTPClientWithDefaults())
+	err = Register(t.Context(), "http:://localhost:54333", "", "1.2.3.4", 8080, true, false, newTestHTTPClientWithDefaults(), certStore)
 	require.Error(t, err)
 
 	// bad agent port
-	err = Register(t.Context(), "http:://localhost:54333", "", "1.2.3.4", 20240704, false, false, newTestHTTPClientWithDefaults())
+	err = Register(t.Context(), "http:://localhost:54333", "", "1.2.3.4", 20240704, false, false, newTestHTTPClientWithDefaults(), certStore)
 	require.Error(t, err)
 
 	// bad folder for certs
-	KeyPEMFile = path.Join(sb.BasePath, "non-existing-dir/key.pem")
-	err = Register(t.Context(), "http:://localhost:54333", "", "1.2.3.4", 8080, false, false, newTestHTTPClientWithDefaults())
+	certPaths.keyPath = path.Join(sb.BasePath, "non-existing-dir/key.pem")
+	certStore = newCertStore(certPaths)
+	err = Register(t.Context(), "http:://localhost:54333", "", "1.2.3.4", 8080, false, false, newTestHTTPClientWithDefaults(), certStore)
 	require.Error(t, err)
-	KeyPEMFile = path.Join(sb.BasePath, "certs/key.pem") // Restore proper value.
+	certPaths.keyPath = path.Join(sb.BasePath, "certs/key.pem") // Restore proper value.
 
 	// bad folder for agent token
-	AgentTokenFile = path.Join(sb.BasePath, "non-existing-dir/agent-token.txt")
-	err = Register(t.Context(), "http:://localhost:54333", "", "1.2.3.4", 8080, false, false, newTestHTTPClientWithDefaults())
+	certPaths.tokenPath = path.Join(sb.BasePath, "non-existing-dir/agent-token.txt")
+	certStore = newCertStore(certPaths)
+	err = Register(t.Context(), "http:://localhost:54333", "", "1.2.3.4", 8080, false, false, newTestHTTPClientWithDefaults(), certStore)
 	require.Error(t, err)
-	AgentTokenFile = path.Join(sb.BasePath, "tokens/agent-token.txt") // restore proper value
+	certPaths.tokenPath = path.Join(sb.BasePath, "tokens/agent-token.txt") // restore proper value
 
 	// bad folder for server cert fingerprint
-	ServerCertFingerprintFile = path.Join(sb.BasePath, "non-existing-dir/server-cert.sha256")
-	err = Register(t.Context(), "http:://localhost:54333", "", "1.2.3.4", 8080, false, false, newTestHTTPClientWithDefaults())
+	certPaths.fingerprintPath = path.Join(sb.BasePath, "non-existing-dir/server-cert.sha256")
+	certStore = newCertStore(certPaths)
+	err = Register(t.Context(), "http:://localhost:54333", "", "1.2.3.4", 8080, false, false, newTestHTTPClientWithDefaults(), certStore)
 	require.Error(t, err)
-	ServerCertFingerprintFile = path.Join(sb.BasePath, "server-cert.sha256")
+	certPaths.fingerprintPath = path.Join(sb.BasePath, "server-cert.sha256")
+	certStore = newCertStore(certPaths)
 
 	// not running agent on 54444 port
-	err = Register(t.Context(), "http://localhost:54333", "serverToken", "localhost", 54444, false, false, newTestHTTPClientWithDefaults())
+	err = Register(t.Context(), "http://localhost:54333", "serverToken", "localhost", 54444, false, false, newTestHTTPClientWithDefaults(), certStore)
 	require.Error(t, err)
 }
 
@@ -529,24 +501,11 @@ func TestRegisterNegative(t *testing.T) {
 // generateCerts works depending on existence/non-existence of files
 // and value of regenKey flag.
 func TestGenerateCSRHelper(t *testing.T) {
-	// prepare temp dir for cert files
-	tmpDir, err := os.MkdirTemp("", "reg")
-	require.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
-	os.Mkdir(path.Join(tmpDir, "certs"), 0o755)
-	os.Mkdir(path.Join(tmpDir, "tokens"), 0o755)
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+	certPaths := newCertPaths(sb.BasePath)
+	certStore := newCertStore(certPaths)
 
-	// redefined consts with paths to cert files
-	restoreCerts := RememberPaths()
-	defer restoreCerts()
-
-	KeyPEMFile = path.Join(tmpDir, "certs/key.pem")
-	CertPEMFile = path.Join(tmpDir, "certs/cert.pem")
-	RootCAFile = path.Join(tmpDir, "certs/ca.pem")
-	AgentTokenFile = path.Join(tmpDir, "tokens/agent-token.txt")
-	ServerCertFingerprintFile = path.Join(tmpDir, "tokens/server-cert.sha256")
-
-	certStore := NewCertStoreDefault()
 	// By-pass evaluating CSR.
 	evaluateCSR := func(csr []byte) {
 		_, parentPrivateKeyPEM, _, rootCAPEM, err := pki.GenCAKeyCert(42)
@@ -569,7 +528,7 @@ func TestGenerateCSRHelper(t *testing.T) {
 	agentToken1, err := certStore.ReadToken()
 	require.NoError(t, err)
 	require.NotEmpty(t, agentToken1)
-	privKeyPEM1, err := os.ReadFile(KeyPEMFile)
+	privKeyPEM1, err := os.ReadFile(certPaths.keyPath)
 	require.NoError(t, err)
 	require.NotEmpty(t, privKeyPEM1)
 	evaluateCSR(csrPEM1)
@@ -585,7 +544,7 @@ func TestGenerateCSRHelper(t *testing.T) {
 	require.NotEqualValues(t, csrPEM1, csrPEM2)
 	require.EqualValues(t, agentToken1, agentToken2)
 	// but key in the file is the same
-	privKeyPEM2, err := os.ReadFile(KeyPEMFile)
+	privKeyPEM2, err := os.ReadFile(certPaths.keyPath)
 	require.NoError(t, err)
 	require.NotEmpty(t, privKeyPEM2)
 	require.EqualValues(t, privKeyPEM1, privKeyPEM2)
@@ -603,7 +562,7 @@ func TestGenerateCSRHelper(t *testing.T) {
 	require.NotEqualValues(t, csrPEM2, csrPEM3)
 	require.NotEqualValues(t, agentToken1, agentToken3)
 	// but this time key in the file is different (regenerated)
-	privKeyPEM3, err := os.ReadFile(KeyPEMFile)
+	privKeyPEM3, err := os.ReadFile(certPaths.keyPath)
 	require.NoError(t, err)
 	require.NotEmpty(t, privKeyPEM3)
 	require.NotEqualValues(t, privKeyPEM2, privKeyPEM3)
@@ -611,7 +570,7 @@ func TestGenerateCSRHelper(t *testing.T) {
 
 	// 4) generate again but the server cert fingerprint is missing
 	regenKey = false
-	_ = os.Remove(ServerCertFingerprintFile)
+	_ = os.Remove(certPaths.fingerprintPath)
 	csrPEM4, err := generateCSR(certStore, agentAddr, regenKey)
 	require.NoError(t, err)
 	require.NotEmpty(t, csrPEM2)
@@ -622,7 +581,7 @@ func TestGenerateCSRHelper(t *testing.T) {
 	require.NotEqualValues(t, csrPEM3, csrPEM4)
 	require.EqualValues(t, agentToken3, agentToken4)
 	// but key in the file is the same
-	privKeyPEM4, err := os.ReadFile(KeyPEMFile)
+	privKeyPEM4, err := os.ReadFile(certPaths.keyPath)
 	require.NoError(t, err)
 	require.NotEmpty(t, privKeyPEM4)
 	require.EqualValues(t, privKeyPEM3, privKeyPEM4)
@@ -632,20 +591,10 @@ func TestGenerateCSRHelper(t *testing.T) {
 // Check if generating agent token file works and a value in the file
 // matches a value received by server.
 func TestWriteAgentTokenFileDuringRegistration(t *testing.T) {
-	// prepare temp dir for cert files
-	tmpDir, err := os.MkdirTemp("", "reg")
-	require.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
-
-	// redefined consts with paths to cert files
-	restoreCerts := RememberPaths()
-	defer restoreCerts()
-
-	KeyPEMFile = path.Join(tmpDir, "certs/key.pem")
-	CertPEMFile = path.Join(tmpDir, "certs/cert.pem")
-	RootCAFile = path.Join(tmpDir, "certs/ca.pem")
-	AgentTokenFile = path.Join(tmpDir, "tokens/agent-token.txt")
-	ServerCertFingerprintFile = path.Join(tmpDir, "tokens/server-cert.sha256")
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+	certPaths := newCertPaths(sb.BasePath)
+	certStore := newCertStore(certPaths)
 
 	// register arguments
 	serverToken := "serverToken"
@@ -716,13 +665,13 @@ func TestWriteAgentTokenFileDuringRegistration(t *testing.T) {
 
 	serverURL := ts.URL
 
-	err = Register(t.Context(), serverURL, serverToken, agentAddr, agentPort, regenKey, retry, newTestHTTPClientWithDefaults())
+	err = Register(t.Context(), serverURL, serverToken, agentAddr, agentPort, regenKey, retry, newTestHTTPClientWithDefaults(), certStore)
 	require.NoError(t, err)
 	require.NotEmpty(t, lastRegisterAgentToken)
 	require.NotEmpty(t, lastPingAgentToken)
 	require.Equal(t, lastPingAgentToken, lastRegisterAgentToken)
 
-	agentTokenFromFileRaw, err := os.ReadFile(AgentTokenFile)
+	agentTokenFromFileRaw, err := os.ReadFile(certPaths.tokenPath)
 	require.NoError(t, err)
 	agentTokenFromFile := string(agentTokenFromFileRaw)
 	require.NotEmpty(t, agentTokenFromFile)
@@ -732,22 +681,10 @@ func TestWriteAgentTokenFileDuringRegistration(t *testing.T) {
 // Check if registration doesn't change the agent token and certs
 // for an already registered agent until the agent doesn't force regenerating certs.
 func TestRepeatRegister(t *testing.T) {
-	// prepare temp dir for cert files
-	tmpDir, err := os.MkdirTemp("", "reg")
-	require.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
-	os.Mkdir(path.Join(tmpDir, "certs"), 0o755)
-	os.Mkdir(path.Join(tmpDir, "tokens"), 0o755)
-
-	// redefined consts with paths to cert files
-	restoreCerts := RememberPaths()
-	defer restoreCerts()
-
-	KeyPEMFile = path.Join(tmpDir, "certs/key.pem")
-	CertPEMFile = path.Join(tmpDir, "certs/cert.pem")
-	RootCAFile = path.Join(tmpDir, "certs/ca.pem")
-	AgentTokenFile = path.Join(tmpDir, "tokens/agent-token.txt")
-	ServerCertFingerprintFile = path.Join(tmpDir, "tokens/server-cert.sha256")
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+	certPaths := newCertPaths(sb.BasePath)
+	certStore := newCertStore(certPaths)
 
 	// register arguments
 	serverToken := "serverToken"
@@ -844,34 +781,34 @@ func TestRepeatRegister(t *testing.T) {
 	serverURL := ts.URL
 
 	// register with server token
-	err = Register(t.Context(), serverURL, serverToken, agentAddr, agentPort, regenKey, retry, newTestHTTPClientWithDefaults())
+	err = Register(t.Context(), serverURL, serverToken, agentAddr, agentPort, regenKey, retry, newTestHTTPClientWithDefaults(), certStore)
 	require.NoError(t, err)
 
-	privKeyPEM1, err := os.ReadFile(KeyPEMFile)
+	privKeyPEM1, err := os.ReadFile(certPaths.keyPath)
 	require.NoError(t, err)
-	agentToken1, err := os.ReadFile(AgentTokenFile)
+	agentToken1, err := os.ReadFile(certPaths.tokenPath)
 	require.NoError(t, err)
-	certPEM1, err := os.ReadFile(CertPEMFile)
+	certPEM1, err := os.ReadFile(certPaths.certPath)
 	require.NoError(t, err)
-	rootCA1, err := os.ReadFile(RootCAFile)
+	rootCA1, err := os.ReadFile(certPaths.caPath)
 	require.NoError(t, err)
-	serverCertFingerprint1, err := os.ReadFile(ServerCertFingerprintFile)
+	serverCertFingerprint1, err := os.ReadFile(certPaths.fingerprintPath)
 	require.NoError(t, err)
 
 	// re-register with the same agent token
 	serverToken = ""
-	err = Register(t.Context(), serverURL, serverToken, agentAddr, agentPort, regenKey, retry, newTestHTTPClientWithDefaults())
+	err = Register(t.Context(), serverURL, serverToken, agentAddr, agentPort, regenKey, retry, newTestHTTPClientWithDefaults(), certStore)
 	require.NoError(t, err)
 
-	privKeyPEM2, err := os.ReadFile(KeyPEMFile)
+	privKeyPEM2, err := os.ReadFile(certPaths.keyPath)
 	require.NoError(t, err)
-	agentToken2, err := os.ReadFile(AgentTokenFile)
+	agentToken2, err := os.ReadFile(certPaths.tokenPath)
 	require.NoError(t, err)
-	certPEM2, err := os.ReadFile(CertPEMFile)
+	certPEM2, err := os.ReadFile(certPaths.certPath)
 	require.NoError(t, err)
-	rootCA2, err := os.ReadFile(RootCAFile)
+	rootCA2, err := os.ReadFile(certPaths.caPath)
 	require.NoError(t, err)
-	serverCertFingerprint2, err := os.ReadFile(ServerCertFingerprintFile)
+	serverCertFingerprint2, err := os.ReadFile(certPaths.fingerprintPath)
 	require.NoError(t, err)
 
 	require.Equal(t, privKeyPEM1, privKeyPEM2)
@@ -882,18 +819,18 @@ func TestRepeatRegister(t *testing.T) {
 
 	// Re-register again but simulate that the server cert has been changed.
 	serverCertFingerprintHeaderValue = "00:11:22:33:44:55:66:77:88:99:aa:bb:cc:dd:ee:ff:00:11:22:33:44:55:66:77:88:99:aa:bb:cc:dd:ee:ff"
-	err = Register(t.Context(), serverURL, serverToken, agentAddr, agentPort, regenKey, retry, newTestHTTPClientWithDefaults())
+	err = Register(t.Context(), serverURL, serverToken, agentAddr, agentPort, regenKey, retry, newTestHTTPClientWithDefaults(), certStore)
 	require.NoError(t, err)
 
-	privKeyPEM3, err := os.ReadFile(KeyPEMFile)
+	privKeyPEM3, err := os.ReadFile(certPaths.keyPath)
 	require.NoError(t, err)
-	agentToken3, err := os.ReadFile(AgentTokenFile)
+	agentToken3, err := os.ReadFile(certPaths.tokenPath)
 	require.NoError(t, err)
-	certPEM3, err := os.ReadFile(CertPEMFile)
+	certPEM3, err := os.ReadFile(certPaths.certPath)
 	require.NoError(t, err)
-	rootCA3, err := os.ReadFile(RootCAFile)
+	rootCA3, err := os.ReadFile(certPaths.caPath)
 	require.NoError(t, err)
-	serverCertFingerprint3, err := os.ReadFile(ServerCertFingerprintFile)
+	serverCertFingerprint3, err := os.ReadFile(certPaths.fingerprintPath)
 	require.NoError(t, err)
 
 	require.Equal(t, privKeyPEM1, privKeyPEM3)
@@ -906,18 +843,18 @@ func TestRepeatRegister(t *testing.T) {
 	// Regenerate certs
 	regenKey = true
 	serverToken = "serverToken"
-	err = Register(t.Context(), serverURL, serverToken, agentAddr, agentPort, regenKey, retry, newTestHTTPClientWithDefaults())
+	err = Register(t.Context(), serverURL, serverToken, agentAddr, agentPort, regenKey, retry, newTestHTTPClientWithDefaults(), certStore)
 	require.NoError(t, err)
 
-	privKeyPEM4, err := os.ReadFile(KeyPEMFile)
+	privKeyPEM4, err := os.ReadFile(certPaths.keyPath)
 	require.NoError(t, err)
-	agentToken4, err := os.ReadFile(AgentTokenFile)
+	agentToken4, err := os.ReadFile(certPaths.tokenPath)
 	require.NoError(t, err)
-	certPEM4, err := os.ReadFile(CertPEMFile)
+	certPEM4, err := os.ReadFile(certPaths.certPath)
 	require.NoError(t, err)
-	rootCA4, err := os.ReadFile(RootCAFile)
+	rootCA4, err := os.ReadFile(certPaths.caPath)
 	require.NoError(t, err)
-	serverCertFingerprint4, err := os.ReadFile(ServerCertFingerprintFile)
+	serverCertFingerprint4, err := os.ReadFile(certPaths.fingerprintPath)
 	require.NoError(t, err)
 
 	require.NotEqual(t, privKeyPEM1, privKeyPEM4)
@@ -932,7 +869,7 @@ func TestRepeatRegister(t *testing.T) {
 	invalidMachineIDs := []string{"", "abc", "1a", "2a2"}
 	for _, value := range invalidMachineIDs {
 		machineID = value
-		err = Register(t.Context(), serverURL, serverToken, agentAddr, agentPort, regenKey, retry, newTestHTTPClientWithDefaults())
+		err = Register(t.Context(), serverURL, serverToken, agentAddr, agentPort, regenKey, retry, newTestHTTPClientWithDefaults(), certStore)
 		require.Error(t, err)
 	}
 }

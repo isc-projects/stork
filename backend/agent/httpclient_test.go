@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"path"
 	"strings"
 	"sync"
 	"testing"
@@ -44,12 +43,13 @@ func TestNewHTTPClient(t *testing.T) {
 // Check that HTTP client can load the GRPC TLS credentials if available.
 func TestLoadGRPCCertificates(t *testing.T) {
 	// Arrange
-	cleanup, _ := GenerateSelfSignedCerts()
+	certPaths, cleanup, _ := GenerateSelfSignedCerts()
 	defer cleanup()
+	certStore := newCertStore(certPaths)
 
 	// Act
 	config := HTTPClientConfig{}
-	ok, err := config.LoadGRPCCertificates()
+	ok, err := config.LoadGRPCCertificates(certStore)
 	client := NewHTTPClient(config)
 
 	// Assert
@@ -74,21 +74,16 @@ func TestLoadGRPCCertificates(t *testing.T) {
 // loaded because the certificate files are missing.
 func TestLoadGRPCCertificatesMissingCerts(t *testing.T) {
 	// Arrange
-	cleanup := RememberPaths()
-	defer cleanup()
 	sb := testutil.NewSandbox()
 	defer sb.Close()
 
-	KeyPEMFile = path.Join(sb.BasePath, "key-not-exists.pem")
-	CertPEMFile = path.Join(sb.BasePath, "cert-not-exists.pem")
-	RootCAFile = path.Join(sb.BasePath, "rootCA-not-exists.pem")
-	AgentTokenFile = path.Join(sb.BasePath, "agentToken-not-exists")
-	ServerCertFingerprintFile = path.Join(sb.BasePath, "server-cert-not-exists.sha256")
+	certPaths := newCertPaths(sb.BasePath)
+	certStore := newCertStore(certPaths)
 
 	config := HTTPClientConfig{}
 
 	// Act
-	ok, err := config.LoadGRPCCertificates()
+	ok, err := config.LoadGRPCCertificates(certStore)
 	client := NewHTTPClient(config)
 
 	// Assert
@@ -187,9 +182,6 @@ func TestCallWithMissingBody(t *testing.T) {
 // Test that the authentication credentials are detected properly.
 func TestHasAuthenticationCredentials(t *testing.T) {
 	// Arrange
-	restorePaths := RememberPaths()
-	defer restorePaths()
-
 	tmpDir, _ := os.MkdirTemp("", "reg")
 	defer os.RemoveAll(tmpDir)
 
