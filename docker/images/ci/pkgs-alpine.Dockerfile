@@ -1,4 +1,4 @@
-FROM golang:1.25.11-alpine3.22
+FROM golang:1.26.5-alpine3.23
 
 RUN apk add --no-cache \
     ruby-rake~13 \
@@ -6,11 +6,11 @@ RUN apk add --no-cache \
     ruby-dev~3.4 \
     openjdk17-jre-headless~17 \
     python3~3.12 \
-    nodejs~22.23 \
-    npm~11.6 \
-    protoc~29.4 \
+    nodejs~24.17 \
+    npm~11.11 \
+    protoc~31.1 \
     make~4.4 \
     musl-dev~1.2 \
     mandoc~1.14 \
-    gcc~14.2 \
-    binutils-gold~2.44
+    gcc~15.2 \
+    binutils-gold~2.45
