@@ -675,6 +675,34 @@ func TestForwardToKeaOverHTTP(t *testing.T) {
 	require.EqualValues(t, 1, agent.stats.GetKeaStats().GetErrorCount(daemonname.DHCPv4))
 	require.Zero(t, agent.stats.GetKeaStats().GetErrorCount(daemonname.DHCPv6))
 	require.Zero(t, agent.stats.GetKeaStats().GetErrorCount(daemonname.D2))
+
+	// Too many responses from Kea.
+	mockAgentClient.EXPECT().
+		ForwardToKeaOverHTTP(gomock.Any(), gomock.Any(), newGZIPMatcher()).
+		Return(&rspV6, nil)
+
+	_, err = agents.ForwardToKeaOverHTTP(ctx, dbDaemon, []keactrl.SerializableCommand{commandV6}, &responseV6, &responseV6)
+	require.ErrorContains(t, err, "number of Kea responses (1) does not match number of expected responses (2)")
+
+	// Too few responses from Kea.
+	mockAgentClient.EXPECT().
+		ForwardToKeaOverHTTP(gomock.Any(), gomock.Any(), newGZIPMatcher()).
+		Return(&agentapi.ForwardToKeaOverHTTPRsp{
+			Status: &agentapi.Status{Code: 0},
+			KeaResponses: []*agentapi.KeaResponse{
+				{
+					Status:   &agentapi.Status{Code: 0},
+					Response: rawResponseV6,
+				},
+				{
+					Status:   &agentapi.Status{Code: 0},
+					Response: rawResponseV6,
+				},
+			},
+		}, nil)
+
+	_, err = agents.ForwardToKeaOverHTTP(ctx, dbDaemon, []keactrl.SerializableCommand{commandV6}, &responseV6)
+	require.ErrorContains(t, err, "number of Kea responses (2) does not match number of expected responses (1)")
 }
 
 // Test that a command can be successfully forwarded to Kea and the response

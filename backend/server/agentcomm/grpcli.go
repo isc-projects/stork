@@ -3,7 +3,6 @@ package agentcomm
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"iter"
 	"net"
@@ -865,6 +864,13 @@ func (agents *connectedAgentsImpl) ForwardToKeaOverHTTP(ctx context.Context, dae
 		return nil, errors.Errorf("wrong response to a Kea command from agent %s", agentURL)
 	}
 
+	if len(response.KeaResponses) != len(cmdResponses) {
+		// Kea returned more responses than expected. It should never
+		// happen. It may be caused by a malfunctioning Kea (unlikely) or
+		// a programming error in Stork during commands creation.
+		return nil, errors.Errorf("number of Kea responses (%d) does not match number of expected responses (%d)", len(response.KeaResponses), len(cmdResponses))
+	}
+
 	// The response may be wrapped in an array if we communicate with a
 	// Stork agent prior 2.3.2 that doesn't unwrap the response for us.
 	for _, keaResponse := range response.KeaResponses {
@@ -911,21 +917,8 @@ func (agents *connectedAgentsImpl) ForwardToKeaOverHTTP(ctx context.Context, dae
 		// No event is generated in this case.
 	}
 
-	keaResponses := response.GetKeaResponses()
-	if len(keaResponses) != len(cmdResponses) {
-		// Kea returned more responses than expected. It should never
-		// happen. It may be caused by a malfunctioning Kea (unlikely) or
-		// a programming error in Stork during commands creation.
-		msg := fmt.Sprintf("number of Kea responses (%d) does not match number of expected responses (%d)", len(keaResponses), len(cmdResponses))
-		if result.Error != nil {
-			result.Error = errors.WithMessage(result.Error, msg)
-		} else {
-			result.Error = errors.New(msg)
-		}
-	}
-
 	// Get all responses from the Kea server.
-	for idx, response := range keaResponses {
+	for idx, response := range response.KeaResponses {
 		if response.Response == nil {
 			// The response is nil when the communication error occurred between
 			// the Kea CA and Kea daemon.
