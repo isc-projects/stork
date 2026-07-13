@@ -13,8 +13,7 @@
                     configuration to detect a particular issue. The table contains the checker states
                     @if (minimal) {
                         <span> and names.</span>
-                    }
-                    @if (!minimal) {
+                    } @else {
                         <span>, names, descriptions, selectors, and triggers.</span>
                     }
                 </p>
@@ -30,8 +29,6 @@
                 </p>
                 @if (!minimal) {
                     <p>The selectors define the daemon groups where the specific configuration checker runs.</p>
-                }
-                @if (!minimal) {
                     <p>
                         The triggers designate the condition that fires the checker (e.g. when a configuration or host
                         reservation change has been detected, manually, etc.).
@@ -143,8 +140,7 @@
                         />
                     }
                 </span>
-            }
-            @if (state === 'inherit') {
+            } @else {
                 <span class="picker__state-inherit-status">
                     globally {{ checker.globallyEnabled ? 'enabled' : 'disabled' }}
                 </span>

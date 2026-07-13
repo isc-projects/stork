@@ -49,8 +49,7 @@
     <!-- JSON viewer -->
     @if (!failedFetch) {
         <app-json-tree-root [value]="configuration" [autoExpand]="autoExpand"></app-json-tree-root>
-    }
-    @if (failedFetch) {
+    } @else {
         <p-message severity="warn" text="Fetching daemon configuration failed"></p-message>
     }
 </p-panel>

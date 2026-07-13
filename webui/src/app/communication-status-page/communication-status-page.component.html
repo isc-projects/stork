@@ -11,8 +11,6 @@
     <div>
         @if (!loading) {
             <app-communication-status-tree [daemons]="daemons"></app-communication-status-tree>
-        }
-        @if (!loading) {
             <p-button label="Reload" styleClass="mt-3" (onClick)="onReload()"></p-button>
         }
     </div>

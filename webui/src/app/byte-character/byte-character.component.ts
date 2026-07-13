@@ -15,7 +15,6 @@ import { Component, Input } from '@angular/core'
     selector: 'app-byte-character',
     templateUrl: './byte-character.component.html',
     styleUrl: './byte-character.component.sass',
-    imports: [],
 })
 export class ByteCharacterComponent {
     /**

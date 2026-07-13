@@ -1,6 +1,5 @@
 import { Component, Input } from '@angular/core'
 import { AnyDaemon } from '../backend'
-
 import { Tooltip } from 'primeng/tooltip'
 import { ManagedAccessDirective } from '../managed-access.directive'
 import { AccessPointKeyComponent } from '../access-point-key/access-point-key.component'
