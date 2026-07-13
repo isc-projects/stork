@@ -26,39 +26,7 @@
 } @else {
     <!-- Omit expandable elements -->
     @if (isRootLevel()) {
-        <div class="tree-level__value" [ngClass]="{ 'tree-level__value--hidden': areChildrenLoading() }">
-            @for (
-                item of value | keyvalue: keyValueComparator | slice: childStart : childEnd;
-                track item;
-                let last = $last
-            ) {
-                <app-json-tree
-                    [key]="item.key"
-                    [value]="item.value"
-                    [autoExpandMaxNodeCount]="autoExpandMaxNodeCount"
-                    [forceOpenThisLevel]="hasSingleChild()"
-                    [recursionLevel]="recursionLevel + 1"
-                    [customValueTemplates]="customValueTemplates"
-                    [secretKeys]="secretKeys"
-                    [canShowSecrets]="canShowSecrets"
-                >
-                    @if (last && areChildrenLoading()) {
-                        {{ onFinishRenderChildren() }}
-                    }
-                </app-json-tree>
-            }
-            @if (hasPaginateChildren()) {
-                <p-paginator
-                    showCurrentPageReport="true"
-                    currentPageReportTemplate="({currentPage}/{totalPages})"
-                    [templateRight]="jumpToPage"
-                    [first]="childStart"
-                    [rows]="childStep"
-                    [totalRecords]="totalChildrenCount"
-                    (onPageChange)="onPageChildrenChanged($event)"
-                ></p-paginator>
-            }
-        </div>
+        <ng-container *ngTemplateOutlet="children"></ng-container>
     }
     <!-- Expandable node -->
     @if (!isRootLevel()) {
