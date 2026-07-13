@@ -48,3 +48,5 @@ We have received the following contributions:
    - 2025-11: Fix for editing host reservation with an IPv6 prefix.
  - Lucas Petrino
    - 2025-11: Fix for monitor Kea listening on IPv6 address.
+ - Sebastien De Groof
+   - 2026-07: Add support for allocation statistics.
