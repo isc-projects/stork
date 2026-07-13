@@ -9,6 +9,7 @@ RUN apt-get update \
         curl=8.* \
         git=1:2.47.* \
         gnupg-agent=2.* \
+        golang-go=2:1.* \
         openjdk-21-jre-headless=21.* \
         python3=3.13.* \
         python3-pip=25.* \
@@ -17,6 +18,7 @@ RUN apt-get update \
         python3-wheel=0.46.* \
         make=4.* \
         man-db=2.* \
+        nodejs=20.* \
         ruby=1:3.3* \
         ruby-dev=1:3.3* \
         postgresql-client=17+* \
