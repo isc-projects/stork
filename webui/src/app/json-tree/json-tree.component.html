@@ -27,9 +27,8 @@
     <!-- Omit expandable elements -->
     @if (isRootLevel()) {
         <ng-container *ngTemplateOutlet="children"></ng-container>
-    }
+    } @else {
     <!-- Expandable node -->
-    @if (!isRootLevel()) {
         <details
             class="tree-level tree-level__expandable-container tree-level--node"
             [ngClass]="{ 'tree-level--corrupted': isCorrupted(), 'tree-level--non-collapsible': forceOpenThisLevel }"
