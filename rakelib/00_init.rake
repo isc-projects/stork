@@ -685,7 +685,6 @@ directory tools_dir
 
 node_dir = File.join(tools_dir, "nodejs")
 directory node_dir
-NODE_CACHE = File.join(node_dir, "cache")
 
 go_tools_dir = File.join(tools_dir, "golang")
 gopath = File.join(go_tools_dir, "gopath")
@@ -878,7 +877,7 @@ YAMLINC = File.join(node_dir, "node_modules", "lib", "node_modules", "yamlinc", 
 file YAMLINC => [NPM] do
     ci_opts = []
     if ENV["CI"] == "true"
-        ci_opts += ["--no-audit", "--no-progress", "--cache", File.expand_path(NODE_CACHE)]
+        ci_opts += ["--no-audit", "--no-progress"]
     end
 
     sh NPM, "install",
