@@ -720,7 +720,6 @@ directory gobin
 python_tools_dir = File.join(tools_dir, "python")
 pythonpath = File.join(python_tools_dir, "lib")
 pip_cache_dir = File.join(python_tools_dir, "pip_cache")
-node_bin_dir = File.join(node_dir, "bin")
 protoc_dir = go_tools_dir
 
 # Environment variables
@@ -729,7 +728,7 @@ ENV["BUNDLE_PATH"] = ruby_tools_dir
 ENV["BUNDLE_BIN"] = ruby_tools_bin_bundle_dir
 ENV["GOPATH"] = gopath
 ENV["GOBIN"] = gobin
-ENV["PATH"] = "#{node_bin_dir}:#{tools_dir}:#{gobin}:#{ENV["PATH"]}"
+ENV["PATH"] = "#{tools_dir}:#{gobin}:#{ENV["PATH"]}"
 ENV["PYTHONPATH"] = pythonpath
 ENV["VIRTUAL_ENV"] = python_tools_dir
 ENV["PIP_CACHE_DIR"] = pip_cache_dir
