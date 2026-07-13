@@ -683,7 +683,9 @@ end
 tools_dir = File.expand_path('tools')
 directory tools_dir
 
-node_dir = File.join(tools_dir, "nodejs")
+# get the value of npm root. That's where the npm installs the
+# dependencies. This is the user-specific directory.
+node_dir = `npm root`.strip
 directory node_dir
 
 go_tools_dir = File.join(tools_dir, "golang")
