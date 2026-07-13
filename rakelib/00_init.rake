@@ -612,6 +612,9 @@ protoc_ver = '31.1'
 protoc_gen_go_ver = 'v1.36.11'
 protoc_gen_go_grpc_ver = 'v1.6.2'
 nfpm_ver = 'v2.47.0'
+# TODO: In case of a new release, check if the false-positive detection in
+# the "isInternalRun" function in "backend/server/configreview/dispatcher.go"
+# is observed. If it isn't, remove the gosec suppression.
 golangcilint_ver = '2.12.2'
 
 # UI-related
