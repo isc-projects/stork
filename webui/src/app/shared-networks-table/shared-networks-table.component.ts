@@ -16,7 +16,7 @@ import { MessageService, TableState, PrimeTemplate, MenuItem, FilterMetadata } f
 import { getErrorMessage } from '../utils'
 import { Button } from 'primeng/button'
 import { ManagedAccessDirective } from '../managed-access.directive'
-import { NgIf, NgFor, DecimalPipe } from '@angular/common'
+import { DecimalPipe } from '@angular/common'
 import { FloatLabel } from 'primeng/floatlabel'
 import { FormsModule } from '@angular/forms'
 import { Select } from 'primeng/select'
@@ -43,7 +43,6 @@ import { DaemonFilterComponent } from '../daemon-filter/daemon-filter.component'
         RouterLink,
         ManagedAccessDirective,
         TableModule,
-        NgIf,
         PrimeTemplate,
         FloatLabel,
         FormsModule,
@@ -53,7 +52,6 @@ import { DaemonFilterComponent } from '../daemon-filter/daemon-filter.component'
         InputText,
         EntityLinkComponent,
         HumanCountComponent,
-        NgFor,
         SubnetBarComponent,
         DecimalPipe,
         PluralizePipe,

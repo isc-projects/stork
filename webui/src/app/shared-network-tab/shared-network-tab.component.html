@@ -1,151 +1,159 @@
 <p-confirmDialog [key]="sharedNetwork?.id.toString()" />
-<div *ngIf="sharedNetwork" class="mt-4 ml-2 max-w-50rem">
-    <div class="flex flex-column sm:flex-row w-full justify-content-between align-items-start">
-        <div class="flex text-xl font-normal text-primary align-items-center">
-            <div class="fa fa-project-diagram mr-2"></div>
-            <div id="tab-title-span">Shared Network {{ sharedNetwork.name }}</div>
-            <div>
-                <app-help-tip subject="Shared Network View" width="40vw">
-                    <p>
-                        Multiple DHCP servers can share a shared network when they run in High Availability (HA) mode or
-                        when they are connected to a shared lease database. Servers in HA mode or with a shared lease
-                        database typically have the same shared network configuration (i.e. the same subnets, DHCP
-                        options, and other DHCP-specific parameters); however, there are valid cases when the shared
-                        network configurations differ on individual servers. For example, interfaces used for subnet
-                        selection may have different names.
-                    </p>
-                    <p>The detailed address utilization statistics use the following naming conventions:</p>
-                    <ul>
-                        <li><span class="monospace">total</span> - the number of addresses in a shared network.</li>
-                        <li>
-                            <span class="monospace">assigned</span> - the number of allocated leases, including declined
-                            leases.
-                        </li>
-                        <li>
-                            <span class="monospace">used</span> - the number of allocated leases, excluding declined
-                            leases.
-                        </li>
-                        <li><span class="monospace">declined</span> - the number of declined leases.</li>
-                        <li>
-                            <span class="monospace">uncertain</span> - optional statistics, only presented when the
-                            number of declined leases is greater than the number assigned (see below).
-                        </li>
-                    </ul>
-                    <p>
-                        There are rare cases when a Kea server can return inconsistent statistics, with the number of
-                        declined leases greater than the number of assigned leases. This may happen when some DHCP
-                        clients decline leases that are already released or expired; these leases are not counted as
-                        assigned, but the declined statistics are affected. Stork deals with such cases via the
-                        "uncertain leases" count, which holds the estimated number of leases for which it is unclear
-                        whether they are allocated, declined, or free. This statistic is only computed and presented
-                        when the number of declined leases is greater than the number assigned.
-                    </p>
-                    <p>
-                        The DHCP parameters can be specified at both the global and shared-network levels. The list
-                        below contains all parameters configured for all servers owning the shared network, and at both
-                        configuration levels, with an effective value displayed next to the parameter name. Click the
-                        button to the left of the parameter name to view the values specified at the different levels
-                        for each server. The shared network-level value takes precedence over the global value.
-                    </p>
-                </app-help-tip>
+@if (sharedNetwork) {
+    <div class="mt-4 ml-2 max-w-50rem">
+        <div class="flex flex-column sm:flex-row w-full justify-content-between align-items-start">
+            <div class="flex text-xl font-normal text-primary align-items-center">
+                <div class="fa fa-project-diagram mr-2"></div>
+                <div id="tab-title-span">Shared Network {{ sharedNetwork.name }}</div>
+                <div>
+                    <app-help-tip subject="Shared Network View" width="40vw">
+                        <p>
+                            Multiple DHCP servers can share a shared network when they run in High Availability (HA)
+                            mode or when they are connected to a shared lease database. Servers in HA mode or with a
+                            shared lease database typically have the same shared network configuration (i.e. the same
+                            subnets, DHCP options, and other DHCP-specific parameters); however, there are valid cases
+                            when the shared network configurations differ on individual servers. For example, interfaces
+                            used for subnet selection may have different names.
+                        </p>
+                        <p>The detailed address utilization statistics use the following naming conventions:</p>
+                        <ul>
+                            <li><span class="monospace">total</span> - the number of addresses in a shared network.</li>
+                            <li>
+                                <span class="monospace">assigned</span> - the number of allocated leases, including
+                                declined leases.
+                            </li>
+                            <li>
+                                <span class="monospace">used</span> - the number of allocated leases, excluding declined
+                                leases.
+                            </li>
+                            <li><span class="monospace">declined</span> - the number of declined leases.</li>
+                            <li>
+                                <span class="monospace">uncertain</span> - optional statistics, only presented when the
+                                number of declined leases is greater than the number assigned (see below).
+                            </li>
+                        </ul>
+                        <p>
+                            There are rare cases when a Kea server can return inconsistent statistics, with the number
+                            of declined leases greater than the number of assigned leases. This may happen when some
+                            DHCP clients decline leases that are already released or expired; these leases are not
+                            counted as assigned, but the declined statistics are affected. Stork deals with such cases
+                            via the "uncertain leases" count, which holds the estimated number of leases for which it is
+                            unclear whether they are allocated, declined, or free. This statistic is only computed and
+                            presented when the number of declined leases is greater than the number assigned.
+                        </p>
+                        <p>
+                            The DHCP parameters can be specified at both the global and shared-network levels. The list
+                            below contains all parameters configured for all servers owning the shared network, and at
+                            both configuration levels, with an effective value displayed next to the parameter name.
+                            Click the button to the left of the parameter name to view the values specified at the
+                            different levels for each server. The shared network-level value takes precedence over the
+                            global value.
+                        </p>
+                    </app-help-tip>
+                </div>
+            </div>
+            <div class="flex flex-column sm:flex-row gap-2 my-2 sm:my-0">
+                @if (sharedNetwork.localSharedNetworks?.length > 0) {
+                    <p-button
+                        label="Edit"
+                        icon="pi pi-pencil"
+                        severity="info"
+                        (click)="onSharedNetworkEditBegin()"
+                        appAccessEntity="shared-network"
+                        appAccessType="update"
+                    ></p-button>
+                }
+                <p-button
+                    [disabled]="sharedNetworkDeleting"
+                    label="Delete"
+                    icon="pi pi-times"
+                    severity="danger"
+                    (click)="confirmDeleteSharedNetwork(sharedNetwork.id.toString())"
+                    appAccessEntity="shared-network"
+                    appAccessType="delete"
+                ></p-button>
             </div>
         </div>
-        <div class="flex flex-column sm:flex-row gap-2 my-2 sm:my-0">
-            <p-button
-                *ngIf="sharedNetwork.localSharedNetworks?.length > 0"
-                label="Edit"
-                icon="pi pi-pencil"
-                severity="info"
-                (click)="onSharedNetworkEditBegin()"
-                appAccessEntity="shared-network"
-                appAccessType="update"
-            ></p-button>
-            <p-button
-                [disabled]="sharedNetworkDeleting"
-                label="Delete"
-                icon="pi pi-times"
-                severity="danger"
-                (click)="confirmDeleteSharedNetwork(sharedNetwork.id.toString())"
-                appAccessEntity="shared-network"
-                appAccessType="delete"
-            ></p-button>
+        <div class="my-4">
+            <p-fieldset id="daemons-fieldset" legend="DHCP Servers Using the Shared Network">
+                <p-table [value]="sharedNetwork.localSharedNetworks" styleClass="shared-network-servers-table">
+                    <ng-template #body let-l>
+                        <tr>
+                            <td class="border-none w-15rem">
+                                <app-entity-link entity="daemon" [showEntityName]="false" [attrs]="l"></app-entity-link>
+                            </td>
+                        </tr>
+                    </ng-template>
+                </p-table>
+            </p-fieldset>
         </div>
-    </div>
-    <div class="my-4">
-        <p-fieldset id="daemons-fieldset" legend="DHCP Servers Using the Shared Network">
-            <p-table [value]="sharedNetwork.localSharedNetworks" styleClass="shared-network-servers-table">
-                <ng-template #body let-l>
-                    <tr>
-                        <td class="border-none w-15rem">
-                            <app-entity-link entity="daemon" [showEntityName]="false" [attrs]="l"></app-entity-link>
-                        </td>
-                    </tr>
-                </ng-template>
-            </p-table>
-        </p-fieldset>
-    </div>
-    <div class="mb-4">
-        <p-fieldset legend="Subnets">
-            <div *ngIf="sharedNetwork.subnets?.length > 0; else subnetsNotExistBlock">
-                <app-subnet-bar
-                    class="utilization-bar"
-                    *ngFor="let subnet of sharedNetwork.subnets"
-                    [subnet]="subnet"
-                ></app-subnet-bar>
-            </div>
-            <ng-template #subnetsNotExistBlock>
-                <div>No subnets configured.</div>
-            </ng-template>
-        </p-fieldset>
-    </div>
-    <div class="mb-4">
-        <p-fieldset legend="Pools">
-            <app-pool-bars [source]="sharedNetwork" *ngIf="sharedNetwork.pools?.length > 0; else poolsNotExistBlock">
-            </app-pool-bars>
-            <ng-template #poolsNotExistBlock>
-                <div>No pools configured.</div>
-            </ng-template>
-        </p-fieldset>
-    </div>
-    <div
-        class="flex flex-wrap"
-        *ngIf="sharedNetwork.addrUtilization || sharedNetwork.pdUtilization || sharedNetwork.stats"
-        class="mb-4"
-    >
-        <p-fieldset id="stats-fieldset" legend="Statistics">
-            <app-utilization-stats-charts [network]="sharedNetwork"></app-utilization-stats-charts>
-        </p-fieldset>
-    </div>
-    <ng-container *ngIf="sharedNetwork.localSharedNetworks?.length > 0">
         <div class="mb-4">
-            <p-fieldset legend="DHCP Parameters" [toggleable]="true" collapsed="true">
-                <app-cascaded-parameters-board
-                    [levels]="['Shared Network', 'Global']"
-                    [data]="dhcpParameters"
-                    [excludedParameters]="['options', 'optionsHash', 'unknown']"
-                    [formatComplexTypes]="true"
-                ></app-cascaded-parameters-board>
+            <p-fieldset legend="Subnets">
+                @if (sharedNetwork.subnets?.length > 0) {
+                    <div>
+                        @for (subnet of sharedNetwork.subnets; track subnet) {
+                            <app-subnet-bar class="utilization-bar" [subnet]="subnet"></app-subnet-bar>
+                        }
+                    </div>
+                } @else {
+                    <div>No subnets configured.</div>
+                }
             </p-fieldset>
         </div>
-        <div *ngFor="let localSharedNetwork of sharedNetwork.localSharedNetworks; let i = index" class="mb-4">
-            <p-fieldset *ngIf="i === 0 || !allDaemonsHaveEqualDhcpOptions()" [toggleable]="true" collapsed="true">
-                <ng-template #header>
-                    <span class="stork-fieldset-legend-text"
-                        >DHCP Options&nbsp;/&nbsp;
-                        <app-entity-link
-                            *ngIf="!allDaemonsHaveEqualDhcpOptions(); else equalDhcpOptionsBlock"
-                            entity="daemon"
-                            [showEntityName]="false"
-                            [attrs]="localSharedNetwork"
-                        ></app-entity-link>
-                        <ng-template #equalDhcpOptionsBlock>
-                            <span class="font-normal"> All Servers </span>
-                        </ng-template>
-                    </span>
-                </ng-template>
-                <app-dhcp-option-set-view [options]="dhcpOptions[i]" [levels]="['shared-network', 'global']">
-                </app-dhcp-option-set-view>
+        <div class="mb-4">
+            <p-fieldset legend="Pools">
+                @if (sharedNetwork.pools?.length > 0) {
+                    <app-pool-bars [source]="sharedNetwork"> </app-pool-bars>
+                } @else {
+                    <div>No pools configured.</div>
+                }
             </p-fieldset>
         </div>
-    </ng-container>
-</div>
+        @if (sharedNetwork.addrUtilization || sharedNetwork.pdUtilization || sharedNetwork.stats) {
+            <div class="flex flex-wrap" class="mb-4">
+                <p-fieldset id="stats-fieldset" legend="Statistics">
+                    <app-utilization-stats-charts [network]="sharedNetwork"></app-utilization-stats-charts>
+                </p-fieldset>
+            </div>
+        }
+        @if (sharedNetwork.localSharedNetworks?.length > 0) {
+            <div class="mb-4">
+                <p-fieldset legend="DHCP Parameters" [toggleable]="true" collapsed="true">
+                    <app-cascaded-parameters-board
+                        [levels]="['Shared Network', 'Global']"
+                        [data]="dhcpParameters"
+                        [excludedParameters]="['options', 'optionsHash', 'unknown']"
+                        [formatComplexTypes]="true"
+                    ></app-cascaded-parameters-board>
+                </p-fieldset>
+            </div>
+            @for (localSharedNetwork of sharedNetwork.localSharedNetworks; track localSharedNetwork; let i = $index) {
+                <div class="mb-4">
+                    @if (i === 0 || !allDaemonsHaveEqualDhcpOptions()) {
+                        <p-fieldset [toggleable]="true" collapsed="true">
+                            <ng-template #header>
+                                <span class="stork-fieldset-legend-text"
+                                    >DHCP Options&nbsp;/&nbsp;
+                                    @if (!allDaemonsHaveEqualDhcpOptions()) {
+                                        <app-entity-link
+                                            entity="daemon"
+                                            [showEntityName]="false"
+                                            [attrs]="localSharedNetwork"
+                                        ></app-entity-link>
+                                    } @else {
+                                        <span class="font-normal"> All Servers </span>
+                                    }
+                                </span>
+                            </ng-template>
+                            <app-dhcp-option-set-view
+                                [options]="dhcpOptions[i]"
+                                [levels]="['shared-network', 'global']"
+                            >
+                            </app-dhcp-option-set-view>
+                        </p-fieldset>
+                    }
+                </div>
+            }
+        }
+    </div>
+}

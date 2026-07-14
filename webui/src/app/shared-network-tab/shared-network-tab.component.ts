@@ -8,7 +8,7 @@ import { DHCPOption, DHCPService, KeaConfigSubnetDerivedParameters, SharedNetwor
 import { ConfirmationService, MessageService } from 'primeng/api'
 import { lastValueFrom } from 'rxjs'
 import { ConfirmDialog } from 'primeng/confirmdialog'
-import { NgFor, NgIf } from '@angular/common'
+
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { Button } from 'primeng/button'
 import { ManagedAccessDirective } from '../managed-access.directive'
@@ -27,14 +27,12 @@ import { getErrorMessage } from '../utils'
     styleUrls: ['./shared-network-tab.component.sass'],
     imports: [
         ConfirmDialog,
-        NgIf,
         HelpTipComponent,
         Button,
         ManagedAccessDirective,
         Fieldset,
         TableModule,
         EntityLinkComponent,
-        NgFor,
         SubnetBarComponent,
         PoolBarsComponent,
         UtilizationStatsChartsComponent,

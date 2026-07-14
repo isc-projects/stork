@@ -154,7 +154,9 @@
                 <p-sortIcon [field]="NetworkSortField.Name" />
             </th>
             <th colspan="3" style="width: 16rem">Addresses</th>
-            <th colspan="3" style="width: 16rem" *ngIf="ipV6SubnetsFilterIncluded()">Prefixes</th>
+            @if (ipV6SubnetsFilterIncluded()) {
+                <th colspan="3" style="width: 16rem">Prefixes</th>
+            }
             <th rowspan="2">Subnets</th>
             <th rowspan="2" style="width: 14rem">Daemon</th>
         </tr>
@@ -171,7 +173,7 @@
                 Used %
                 <p-sortIcon [field]="NetworkSortField.AddrUtilization" />
             </th>
-            <ng-container *ngIf="ipV6SubnetsFilterIncluded()">
+            @if (ipV6SubnetsFilterIncluded()) {
                 <th [pSortableColumn]="NetworkSortField.TotalPds">
                     Total
                     <p-sortIcon [field]="NetworkSortField.TotalPds" />
@@ -184,7 +186,7 @@
                     Used %
                     <p-sortIcon [field]="NetworkSortField.PdUtilization" />
                 </th>
-            </ng-container>
+            }
         </tr>
     </ng-template>
     <ng-template #body let-net>
@@ -200,16 +202,14 @@
             </td>
             <td>
                 {{ net.addrUtilization ?? 0 | number: '1.0-1' }}%
-                <i
-                    *ngIf="net.addrUtilization > 80 && net.addrUtilization <= 90"
-                    class="pi pi-exclamation-triangle text-2xl vertical-align-text-top text-orange-400"
-                ></i>
-                <i
-                    *ngIf="net.addrUtilization > 90"
-                    class="pi pi-exclamation-circle text-2xl vertical-align-text-top text-red-500"
-                ></i>
+                @if (net.addrUtilization > 80 && net.addrUtilization <= 90) {
+                    <i class="pi pi-exclamation-triangle text-2xl vertical-align-text-top text-orange-400"></i>
+                }
+                @if (net.addrUtilization > 90) {
+                    <i class="pi pi-exclamation-circle text-2xl vertical-align-text-top text-red-500"></i>
+                }
             </td>
-            <ng-container *ngIf="ipV6SubnetsFilterIncluded()">
+            @if (ipV6SubnetsFilterIncluded()) {
                 <td>
                     <app-human-count [value]="getTotalDelegatedPrefixes(net)"></app-human-count>
                 </td>
@@ -219,26 +219,28 @@
                 <td>
                     @if (net.universe === 6) {
                         {{ net.pdUtilization ?? 0 | number: '1.0-1' }} %
-                        <i
-                            *ngIf="net.pdUtilization > 80 && net.pdUtilization <= 90"
-                            class="pi pi-exclamation-triangle text-2xl vertical-align-text-top text-orange-400"
-                        ></i>
-                        <i
-                            *ngIf="net.pdUtilization > 90"
-                            class="pi pi-exclamation-circle text-2xl vertical-align-text-top text-red-500"
-                        ></i>
+                        @if (net.pdUtilization > 80 && net.pdUtilization <= 90) {
+                            <i class="pi pi-exclamation-triangle text-2xl vertical-align-text-top text-orange-400"></i>
+                        }
+                        @if (net.pdUtilization > 90) {
+                            <i class="pi pi-exclamation-circle text-2xl vertical-align-text-top text-red-500"></i>
+                        }
                     } @else {
                         -
                     }
                 </td>
-            </ng-container>
+            }
             <td>
-                <app-subnet-bar class="utilization-bar" *ngFor="let sn of net.subnets" [subnet]="sn"></app-subnet-bar>
+                @for (sn of net.subnets; track sn) {
+                    <app-subnet-bar class="utilization-bar" [subnet]="sn"></app-subnet-bar>
+                }
             </td>
             <td>
-                <div *ngFor="let daemon of getDaemons(net)">
-                    <app-entity-link entity="daemon" [showEntityName]="false" [attrs]="daemon"></app-entity-link>
-                </div>
+                @for (daemon of getDaemons(net); track daemon) {
+                    <div>
+                        <app-entity-link entity="daemon" [showEntityName]="false" [attrs]="daemon"></app-entity-link>
+                    </div>
+                }
             </td>
         </tr>
     </ng-template>
@@ -246,15 +248,17 @@
         <tr>
             <td [attr.colspan]="emptyMessageColspan()">
                 No shared networks found.
-                <span *ngIf="tableHasFilter(networksTable)">
-                    Clear filtering and try again.
-                    <p-button
-                        label="Clear"
-                        [outlined]="true"
-                        icon="pi pi-filter-slash"
-                        (click)="clearTableFiltering()"
-                    ></p-button>
-                </span>
+                @if (tableHasFilter(networksTable)) {
+                    <span>
+                        Clear filtering and try again.
+                        <p-button
+                            label="Clear"
+                            [outlined]="true"
+                            icon="pi pi-filter-slash"
+                            (click)="clearTableFiltering()"
+                        ></p-button>
+                    </span>
+                }
             </td>
         </tr>
     </ng-template>
