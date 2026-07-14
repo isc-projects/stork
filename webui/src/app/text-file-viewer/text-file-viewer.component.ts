@@ -1,5 +1,4 @@
 import { Component, Input } from '@angular/core'
-import { CommonModule } from '@angular/common'
 
 /**
  * A component that displays the contents of a text file.
@@ -10,7 +9,7 @@ import { CommonModule } from '@angular/common'
  */
 @Component({
     selector: 'app-text-file-viewer',
-    imports: [CommonModule],
+    imports: [],
     templateUrl: './text-file-viewer.component.html',
     styleUrl: './text-file-viewer.component.sass',
 })

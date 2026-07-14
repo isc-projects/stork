@@ -10,7 +10,7 @@ import {
 } from '@angular/forms'
 import { getSeverityByIndex, uncamelCase } from '../utils'
 import { SelectableClientClass } from '../forms/selectable-client-class'
-import { NgIf, NgFor, NgTemplateOutlet, NgSwitch, NgSwitchCase, NgSwitchDefault } from '@angular/common'
+import { NgTemplateOutlet } from '@angular/common'
 import { Checkbox } from 'primeng/checkbox'
 import { Tag } from 'primeng/tag'
 import { MultiSelect } from 'primeng/multiselect'
@@ -43,15 +43,11 @@ import { Button } from 'primeng/button'
     templateUrl: './shared-parameters-form.component.html',
     styleUrls: ['./shared-parameters-form.component.sass'],
     imports: [
-        NgIf,
-        NgFor,
         NgTemplateOutlet,
         FormsModule,
         ReactiveFormsModule,
         Checkbox,
         Tag,
-        NgSwitch,
-        NgSwitchCase,
         MultiSelect,
         Select,
         ArrayValueSetFormComponent,
@@ -59,7 +55,6 @@ import { Button } from 'primeng/button'
         TriStateCheckboxComponent,
         InputNumber,
         DhcpClientClassSetFormComponent,
-        NgSwitchDefault,
         Button,
     ],
 })

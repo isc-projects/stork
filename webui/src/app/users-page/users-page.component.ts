@@ -18,7 +18,7 @@ import { ConfirmDialog } from 'primeng/confirmdialog'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { Button } from 'primeng/button'
 import { ManagedAccessDirective } from '../managed-access.directive'
-import { NgIf } from '@angular/common'
+
 import { Tag } from 'primeng/tag'
 import { IconField } from 'primeng/iconfield'
 import { InputIcon } from 'primeng/inputicon'
@@ -44,7 +44,6 @@ import { SplitButton } from 'primeng/splitbutton'
         RouterLink,
         ManagedAccessDirective,
         TableModule,
-        NgIf,
         Tag,
         PrimeTemplate,
         IconField,

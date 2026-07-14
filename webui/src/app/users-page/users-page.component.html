@@ -165,9 +165,9 @@
                 <tr>
                     <td align="center">
                         <a routerLink="/users/{{ u.id }}">{{ u.login | placeholder }}</a>
-                        <sup *ngIf="auth.currentUserValue.id === u.id"
-                            ><p-tag styleClass="ml-1" severity="success" value="It's you"
-                        /></sup>
+                        @if (auth.currentUserValue.id === u.id) {
+                            <sup><p-tag styleClass="ml-1" severity="success" value="It's you" /></sup>
+                        }
                     </td>
                     <td align="center">
                         <a routerLink="/users/{{ u.id }}">{{ u.email | placeholder }}</a>
@@ -254,7 +254,7 @@
                 <div class="col-12 sm:col-9 word-break-all">
                     {{ user.externalId | placeholder }}
                 </div>
-                <ng-container *ngIf="isInternalUser(user)">
+                @if (isInternalUser(user)) {
                     <div class="col-12 sm:col-3">
                         <b>Needs to change password:</b>
                     </div>
@@ -266,7 +266,7 @@
                             [readonly]="true"
                         />
                     </div>
-                </ng-container>
+                }
                 <div class="col-12 flex gap-3">
                     <p-button
                         label="Edit"

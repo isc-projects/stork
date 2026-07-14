@@ -20,12 +20,14 @@
             ></div>
         </div>
         <!-- Secondary utilization bar -->
-        <div class="utilization__bar-wrapper utilization__bar-wrapper--secondary" *ngIf="isDouble">
-            <span class="utilization__kind">{{ kindSecondary }}</span>
-            <div
-                class="utilization__bar {{ getUtilizationBarModificatorClass(utilizationSecondary) }}"
-                [ngStyle]="utilizationStyleSecondary"
-            ></div>
-        </div>
+        @if (isDouble) {
+            <div class="utilization__bar-wrapper utilization__bar-wrapper--secondary">
+                <span class="utilization__kind">{{ kindSecondary }}</span>
+                <div
+                    class="utilization__bar {{ getUtilizationBarModificatorClass(utilizationSecondary) }}"
+                    [ngStyle]="utilizationStyleSecondary"
+                ></div>
+            </div>
+        }
     </div>
 </div>
