@@ -686,12 +686,11 @@ directory tools_dir
 # get the value of npm root. That's where the npm installs the
 # dependencies. This is the user-specific directory.
 node_dir = `npm root`.strip
-directory node_dir
 
 go_tools_dir = File.join(tools_dir, "golang")
-gopath = File.join(go_tools_dir, "gopath")
+gopath = `go env GOPATH`.strip
+gobin = gopath + "/bin"
 directory go_tools_dir
-directory gopath
 file go_tools_dir => [gopath]
 
 ruby_tools_dir = File.join(tools_dir, "ruby")
@@ -717,8 +716,7 @@ directory ruby_tools_bin_bundle_dir
 
 # Automatically created directories by tools
 ruby_tools_gems_dir = File.join(ruby_tools_dir, "gems")
-gobin = File.join(go_tools_dir, "go", "bin")
-directory gobin
+
 python_tools_dir = File.join(tools_dir, "python")
 pythonpath = File.join(python_tools_dir, "lib")
 pip_cache_dir = File.join(python_tools_dir, "pip_cache")
@@ -728,9 +726,7 @@ protoc_dir = go_tools_dir
 ENV["GEM_HOME"] = ruby_tools_dir
 ENV["BUNDLE_PATH"] = ruby_tools_dir
 ENV["BUNDLE_BIN"] = ruby_tools_bin_bundle_dir
-ENV["GOPATH"] = gopath
-ENV["GOBIN"] = gobin
-ENV["PATH"] = "#{tools_dir}:#{gobin}:#{ENV["PATH"]}"
+ENV["PATH"] = "#{tools_dir}:#{ENV["PATH"]}"
 ENV["PYTHONPATH"] = pythonpath
 ENV["VIRTUAL_ENV"] = python_tools_dir
 ENV["PIP_CACHE_DIR"] = pip_cache_dir

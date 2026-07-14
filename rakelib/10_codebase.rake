@@ -182,10 +182,6 @@ file std_option_defs4_go_file => [GO, CODE_GEN_BINARY_FILE, std_dhcpv4_option_de
     end
 end
 
-# Go dependencies are installed automatically during build
-# or can be triggered manually.
-CLOBBER.append File.join(ENV["GOPATH"], "pkg")
-
 go_server_codebase = FileList[
     "backend/server",
     "backend/server/**/*",
