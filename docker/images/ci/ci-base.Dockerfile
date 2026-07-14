@@ -25,20 +25,17 @@ RUN apt-get update \
         make=4.* \
         man-db=2.* \
         nodejs=20.* \
+        npm=9.* \
         ruby=1:3.3* \
         ruby-dev=1:3.3* \
         postgresql-client=17+* \
         ssh=1:10.* \
         unzip=6.* \
         wget=1.25.* \
-        # Chromium for AMD64 architecture is available in 139 version.
-        # For ARM64 architecture, it is available in 138 version.
+        # Chromium is available in 150 version in Debian 13.5.
         chromium=15* \
         # Clean up cache.
         && rm -rf /var/lib/apt/lists/* \
-        # Replace default Python.
-        && rm -f /usr/bin/python3 \
-        && ln -s /usr/bin/python3.11 /usr/bin/python3 \
         # Debian has dpkg configured to ignore man files by default.
         && rm /etc/dpkg/dpkg.cfg.d/docker
 
