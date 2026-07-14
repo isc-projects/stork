@@ -7,14 +7,11 @@
         [statsCollectedAt]="source.statsCollectedAt"
     ></app-out-of-pool-bar>
     <!-- In-pool utilization -->
-    <ng-container *ngFor="let group of addressPoolsGrouped">
+    @for (group of addressPoolsGrouped; track group) {
         <!-- Single pool group. Display just as a bar. -->
-        <app-address-pool-bar
-            [pool]="group[1][0]"
-            *ngIf="group[1].length === 1; else multipleAddressPools"
-        ></app-address-pool-bar>
-        <!-- Multiple pools in a group. Wrap with a border. -->
-        <ng-template #multipleAddressPools>
+        @if (group[1].length === 1) {
+            <app-address-pool-bar [pool]="group[1][0]"></app-address-pool-bar>
+        } @else {
             <div
                 class="border border-round border-dashed border-1 flex flex-row align-items-center min-w-0"
                 pTooltip="These pools share the same pool ID {{ group[0] }}{{ group[0] === 0 ? ' (default ID)' : '' }}.
@@ -31,15 +28,14 @@
                 ></ng-container>
                 <!-- Display all pools in the group. -->
                 <div class="flex-1 flex flex-row flex-wrap gap-2 p-0 min-w-0">
-                    <app-address-pool-bar
-                        class="min-w-0"
-                        [pool]="pool"
-                        *ngFor="let pool of group[1]"
-                    ></app-address-pool-bar>
+                    @for (pool of group[1]; track pool) {
+                        <app-address-pool-bar class="min-w-0" [pool]="pool"></app-address-pool-bar>
+                    }
                 </div>
             </div>
-        </ng-template>
-    </ng-container>
+        }
+        <!-- Multiple pools in a group. Wrap with a border. -->
+    }
 
     <!-- Delegated prefix pools -->
     <!-- Out-of-pool utilization -->
@@ -50,14 +46,11 @@
         [statsCollectedAt]="source.statsCollectedAt"
     ></app-out-of-pool-bar>
     <!-- In-pool utilization -->
-    <ng-container *ngFor="let group of pdPoolsGrouped">
+    @for (group of pdPoolsGrouped; track group) {
         <!-- Single pool group. Display just as a bar. -->
-        <app-delegated-prefix-bar
-            [pool]="group[1][0]"
-            *ngIf="group[1].length === 1; else multiplePDPools"
-        ></app-delegated-prefix-bar>
-        <!-- Multiple pools in a group. Wrap with a border. -->
-        <ng-template #multiplePDPools>
+        @if (group[1].length === 1) {
+            <app-delegated-prefix-bar [pool]="group[1][0]"></app-delegated-prefix-bar>
+        } @else {
             <div
                 class="border border-round border-dashed border-1 flex flex-row align-items-center min-w-0"
                 pTooltip="These pools share the same pool ID {{ group[0] }}{{ group[0] === 0 ? ' (default ID)' : '' }}.
@@ -74,15 +67,14 @@
                 ></ng-container>
                 <!-- Display all pools in the group. -->
                 <div class="flex-1 flex flex-row flex-wrap gap-2 p-0 min-w-0">
-                    <app-delegated-prefix-bar
-                        class="min-w-0"
-                        [pool]="pool"
-                        *ngFor="let pool of group[1]"
-                    ></app-delegated-prefix-bar>
+                    @for (pool of group[1]; track pool) {
+                        <app-delegated-prefix-bar class="min-w-0" [pool]="pool"></app-delegated-prefix-bar>
+                    }
                 </div>
             </div>
-        </ng-template>
-    </ng-container>
+        }
+        <!-- Multiple pools in a group. Wrap with a border. -->
+    }
 </div>
 
 <!-- Defines how to display the pool ID label. -->

@@ -4,26 +4,30 @@
     </div>
 </app-breadcrumbs>
 <div class="mt-2 mb-4">
-    <a *ngIf="daemonId" routerLink="/daemons/{{ daemonId }}">
-        <span class="fa fa-arrow-left"></span>
-        <span class="ml-2">Back to {{ daemonLabel ?? 'Daemon' }}</span>
-    </a>
+    @if (daemonId) {
+        <a routerLink="/daemons/{{ daemonId }}">
+            <span class="fa fa-arrow-left"></span>
+            <span class="ml-2">Back to {{ daemonLabel ?? 'Daemon' }}</span>
+        </a>
+    }
 </div>
-<div *ngIf="loaded; else showSpinner">
-    <app-kea-global-configuration-form
-        *ngIf="edit"
-        [daemonId]="daemonId"
-        (formCancel)="onFormCancel()"
-        (formSubmit)="onFormSubmit()"
-    ></app-kea-global-configuration-form>
-    <app-kea-global-configuration-view
-        *ngIf="!edit"
-        [dhcpParameters]="dhcpParameters"
-        [dhcpOptions]="dhcpOptions"
-        [disableEdit]="disableEdit"
-        (editBegin)="onEditBegin()"
-    ></app-kea-global-configuration-view>
-</div>
-<ng-template #showSpinner>
+@if (loaded) {
+    <div>
+        @if (edit) {
+            <app-kea-global-configuration-form
+                [daemonId]="daemonId"
+                (formCancel)="onFormCancel()"
+                (formSubmit)="onFormSubmit()"
+            ></app-kea-global-configuration-form>
+        } @else {
+            <app-kea-global-configuration-view
+                [dhcpParameters]="dhcpParameters"
+                [dhcpOptions]="dhcpOptions"
+                [disableEdit]="disableEdit"
+                (editBegin)="onEditBegin()"
+            ></app-kea-global-configuration-view>
+        }
+    </div>
+} @else {
     <p-progressSpinner></p-progressSpinner>
-</ng-template>
+}

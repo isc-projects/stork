@@ -7,7 +7,7 @@ import { AuthenticationMethod } from '../backend'
 import { AuthService } from '../auth.service'
 import { HttpClient } from '@angular/common/http'
 import { lastValueFrom } from 'rxjs'
-import { NgIf, NgTemplateOutlet } from '@angular/common'
+import { NgTemplateOutlet } from '@angular/common'
 import { ProgressSpinner } from 'primeng/progressspinner'
 import { FloatLabel } from 'primeng/floatlabel'
 import { Select, SelectChangeEvent } from 'primeng/select'
@@ -37,7 +37,6 @@ import { MessageService } from 'primeng/api'
     templateUrl: './login-screen.component.html',
     styleUrls: ['./login-screen.component.sass'],
     imports: [
-        NgIf,
         ProgressSpinner,
         FormsModule,
         ReactiveFormsModule,

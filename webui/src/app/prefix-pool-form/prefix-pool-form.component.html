@@ -22,33 +22,28 @@
                 <label [for]="uuids.excludedPrefix">Excluded Prefix</label>
             </p-floatlabel>
         </div>
-        <ng-container *ngFor="let control of ['prefix', 'excludedPrefix']">
-            <small
-                *ngIf="
-                    formGroup.get('prefixes')?.get(control)?.invalid &&
-                    (formGroup.get('prefixes').get(control).dirty || formGroup.get('prefixes').get(control).touched) &&
-                    formGroup.get('prefixes').get(control).hasError('ipv6Prefix')
-                "
-                class="app-error block"
-                >{{ formGroup.get('prefixes').get(control).errors.ipv6Prefix }}
-            </small>
-        </ng-container>
-        <ng-container
-            *ngFor="
-                let err of [
-                    'ipv6PrefixDelegatedLength',
-                    'ipv6ExcludedPrefix',
-                    'ipv6ExcludedPrefixDelegatedLength',
-                    'ipv6PrefixOverlaps',
-                ]
-            "
-        >
-            <small
-                *ngIf="formGroup.get('prefixes').invalid && formGroup.get('prefixes').hasError(err)"
-                class="app-error block"
-                >{{ formGroup.get('prefixes').errors[err] }}
-            </small>
-        </ng-container>
+        @for (control of ['prefix', 'excludedPrefix']; track control) {
+            @if (
+                formGroup.get('prefixes')?.get(control)?.invalid &&
+                (formGroup.get('prefixes').get(control).dirty || formGroup.get('prefixes').get(control).touched) &&
+                formGroup.get('prefixes').get(control).hasError('ipv6Prefix')
+            ) {
+                <small class="app-error block">{{ formGroup.get('prefixes').get(control).errors.ipv6Prefix }} </small>
+            }
+        }
+        @for (
+            err of [
+                'ipv6PrefixDelegatedLength',
+                'ipv6ExcludedPrefix',
+                'ipv6ExcludedPrefixDelegatedLength',
+                'ipv6PrefixOverlaps',
+            ];
+            track err
+        ) {
+            @if (formGroup.get('prefixes').invalid && formGroup.get('prefixes').hasError(err)) {
+                <small class="app-error block">{{ formGroup.get('prefixes').errors[err] }} </small>
+            }
+        }
     </p-fieldset>
     <p-fieldset legend="Assignments" styleClass="mt-4">
         <div class="mt-4">
@@ -68,14 +63,12 @@
                 </p-multiSelect>
                 <label [for]="uuids.selectedDaemons">DHCP Servers</label>
             </p-floatlabel>
-            <small
-                *ngIf="
-                    formGroup.get('selectedDaemons').invalid &&
-                    (formGroup.get('selectedDaemons').dirty || formGroup.get('selectedDaemons').touched)
-                "
-                class="app-error block"
-                >At least one server must be selected.
-            </small>
+            @if (
+                formGroup.get('selectedDaemons').invalid &&
+                (formGroup.get('selectedDaemons').dirty || formGroup.get('selectedDaemons').touched)
+            ) {
+                <small class="app-error block">At least one server must be selected. </small>
+            }
         </div>
     </p-fieldset>
     <p-fieldset legend="Pool DHCP Parameters" styleClass="mt-4">
@@ -87,21 +80,27 @@
             <p-checkbox formControlName="unlocked" [binary]="true"> </p-checkbox>
             <div class="flex ml-2 font-semibold">Unlock setting DHCP options for individual servers.</div>
         </div>
-        <ng-container *ngFor="let optionSet of formGroup.get('options.data')?.controls; let i = index">
-            <div *ngIf="i === 0 || formGroup.get('options.unlocked')?.value" class="mb-3 mt-3">
-                <div *ngIf="formGroup.get('options.unlocked')?.value" class="pb-5">
-                    <p-divider *ngIf="formGroup.get('options.data')?.length > 1" align="center">
-                        <p-tag [severity]="getServerTagSeverity(i)">
-                            {{ servers[i] }}
-                        </p-tag>
-                    </p-divider>
+        @for (optionSet of formGroup.get('options.data')?.controls; track optionSet; let i = $index) {
+            @if (i === 0 || formGroup.get('options.unlocked')?.value) {
+                <div class="mb-3 mt-3">
+                    @if (formGroup.get('options.unlocked')?.value) {
+                        <div class="pb-5">
+                            @if (formGroup.get('options.data')?.length > 1) {
+                                <p-divider align="center">
+                                    <p-tag [severity]="getServerTagSeverity(i)">
+                                        {{ servers[i] }}
+                                    </p-tag>
+                                </p-divider>
+                            }
+                        </div>
+                    }
+                    <app-dhcp-option-set-form
+                        [v6]="true"
+                        [formArray]="optionSet"
+                        (optionAdd)="onOptionAdd(i)"
+                    ></app-dhcp-option-set-form>
                 </div>
-                <app-dhcp-option-set-form
-                    [v6]="true"
-                    [formArray]="optionSet"
-                    (optionAdd)="onOptionAdd(i)"
-                ></app-dhcp-option-set-form>
-            </div>
-        </ng-container>
+            }
+        }
     </p-fieldset>
 </div>

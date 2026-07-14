@@ -1,5 +1,5 @@
 import { Component, Input } from '@angular/core'
-import { NgIf } from '@angular/common'
+
 import { UtilizationBarComponent } from '../utilization-bar/utilization-bar.component'
 
 /**
@@ -10,7 +10,7 @@ import { UtilizationBarComponent } from '../utilization-bar/utilization-bar.comp
     selector: 'app-out-of-pool-bar',
     templateUrl: './out-of-pool-bar.component.html',
     styleUrl: './out-of-pool-bar.component.sass',
-    imports: [NgIf, UtilizationBarComponent],
+    imports: [UtilizationBarComponent],
 })
 export class OutOfPoolBarComponent {
     /**

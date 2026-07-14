@@ -13,7 +13,7 @@ import { SharedNetworkFormState } from '../forms/shared-network-form'
 import { SubnetSetFormService } from '../forms/subnet-set-form.service'
 import { lastValueFrom } from 'rxjs'
 import { StorkValidators } from '../validators'
-import { NgFor, NgIf } from '@angular/common'
+
 import { Fieldset } from 'primeng/fieldset'
 import { FloatLabel } from 'primeng/floatlabel'
 import { MultiSelect } from 'primeng/multiselect'
@@ -32,7 +32,6 @@ import { Message } from 'primeng/message'
     templateUrl: './shared-network-form.component.html',
     styleUrl: './shared-network-form.component.sass',
     imports: [
-        NgIf,
         FormsModule,
         ReactiveFormsModule,
         Fieldset,
@@ -41,7 +40,6 @@ import { Message } from 'primeng/message'
         InputText,
         SharedParametersFormComponent,
         Checkbox,
-        NgFor,
         Divider,
         Tag,
         DhcpOptionSetFormComponent,

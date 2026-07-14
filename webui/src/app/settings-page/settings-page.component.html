@@ -29,8 +29,8 @@
     </div>
 </app-breadcrumbs>
 
-<ng-container [ngSwitch]="formState">
-    <ng-container *ngSwitchCase="'success'">
+@switch (formState) {
+    @case ('success') {
         <form [formGroup]="settingsForm">
             <div class="w-full max-w-50rem">
                 <p-fieldset legend="Security">
@@ -72,56 +72,61 @@
                     </div>
                 </p-fieldset>
                 <p-fieldset legend="Intervals">
-                    <div *ngFor="let setting of intervalSettings" class="my-3 flex flex-column">
-                        <label [for]="setting.formControlName"> {{ setting.title }} (in seconds): </label>
-                        <div class="flex align-items-center">
-                            <p-inputNumber
-                                [inputId]="setting.formControlName"
-                                mode="decimal"
-                                [min]="0"
-                                [useGrouping]="false"
-                                [formControlName]="setting.formControlName"
-                                class="max-w-form"
-                            ></p-inputNumber
-                            ><app-help-tip [subject]="setting.title">{{ setting.help }}</app-help-tip>
+                    @for (setting of intervalSettings; track setting) {
+                        <div class="my-3 flex flex-column">
+                            <label [for]="setting.formControlName"> {{ setting.title }} (in seconds): </label>
+                            <div class="flex align-items-center">
+                                <p-inputNumber
+                                    [inputId]="setting.formControlName"
+                                    mode="decimal"
+                                    [min]="0"
+                                    [useGrouping]="false"
+                                    [formControlName]="setting.formControlName"
+                                    class="max-w-form"
+                                ></p-inputNumber
+                                ><app-help-tip [subject]="setting.title">{{ setting.help }}</app-help-tip>
+                            </div>
+                            @if (hasError(setting.formControlName, 'required')) {
+                                <div class="app-error">It is required.</div>
+                            }
+                            @if (hasError(setting.formControlName, 'min')) {
+                                <div class="app-error">It must not be negative.</div>
+                            }
                         </div>
-                        <div *ngIf="hasError(setting.formControlName, 'required')" class="app-error">
-                            It is required.
-                        </div>
-                        <div *ngIf="hasError(setting.formControlName, 'min')" class="app-error">
-                            It must not be negative.
-                        </div>
-                    </div>
+                    }
                 </p-fieldset>
                 <p-fieldset legend="Grafana">
-                    <div *ngFor="let setting of grafanaUrlSettings" class="my-3 flex flex-column">
-                        <label [for]="setting.formControlName">{{ setting.title }}:</label>
-                        <div class="flex align-items-center">
-                            <input
-                                type="url"
-                                pInputText
-                                [formControlName]="setting.formControlName"
-                                [id]="setting.formControlName"
-                                class="max-w-form"
-                            /><app-help-tip [subject]="setting.title">{{ setting.help }}</app-help-tip>
+                    @for (setting of grafanaUrlSettings; track setting) {
+                        <div class="my-3 flex flex-column">
+                            <label [for]="setting.formControlName">{{ setting.title }}:</label>
+                            <div class="flex align-items-center">
+                                <input
+                                    type="url"
+                                    pInputText
+                                    [formControlName]="setting.formControlName"
+                                    [id]="setting.formControlName"
+                                    class="max-w-form"
+                                /><app-help-tip [subject]="setting.title">{{ setting.help }}</app-help-tip>
+                            </div>
                         </div>
-                    </div>
-                    <div *ngFor="let setting of grafanaTextSettings" class="my-3 flex flex-column">
-                        <label [for]="setting.formControlName">{{ setting.title }}:</label>
-                        <div class="flex align-items-center">
-                            <input
-                                type="text"
-                                pInputText
-                                [formControlName]="setting.formControlName"
-                                [id]="setting.formControlName"
-                                class="max-w-form"
-                            /><app-help-tip [subject]="setting.title">{{ setting.help }}</app-help-tip>
+                    }
+                    @for (setting of grafanaTextSettings; track setting) {
+                        <div class="my-3 flex flex-column">
+                            <label [for]="setting.formControlName">{{ setting.title }}:</label>
+                            <div class="flex align-items-center">
+                                <input
+                                    type="text"
+                                    pInputText
+                                    [formControlName]="setting.formControlName"
+                                    [id]="setting.formControlName"
+                                    class="max-w-form"
+                                /><app-help-tip [subject]="setting.title">{{ setting.help }}</app-help-tip>
+                            </div>
                         </div>
-                    </div>
+                    }
                 </p-fieldset>
             </div>
         </form>
-
         <p-button
             [disabled]="settingsForm.invalid"
             label="Save Settings"
@@ -132,14 +137,15 @@
             appAccessType="update"
             (appHasAccess)="$event === true ? settingsForm.enable() : settingsForm.disable()"
         ></p-button>
-
-        <span *ngIf="settingsForm.invalid" class="app-error ml-3"> There are issues with the form values. </span>
-    </ng-container>
-    <ng-container *ngSwitchCase="'fail'">
+        @if (settingsForm.invalid) {
+            <span class="app-error ml-3"> There are issues with the form values. </span>
+        }
+    }
+    @case ('fail') {
         <div class="text-lg">Fetching current settings from the server failed. Click the button to retry.</div>
         <p-button label="Retry" id="retry-button" (click)="retry()" styleClass="mt-4"></p-button>
-    </ng-container>
-    <ng-container *ngSwitchDefault>
+    }
+    @default {
         <p-progressSpinner></p-progressSpinner>
-    </ng-container>
-</ng-container>
+    }
+}

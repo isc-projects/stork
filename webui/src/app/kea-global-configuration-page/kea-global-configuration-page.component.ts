@@ -8,7 +8,6 @@ import { NamedCascadedParameters } from '../cascaded-parameters-board/cascaded-p
 import { KeaGlobalConfigurationFormComponent } from '../kea-global-configuration-form/kea-global-configuration-form.component'
 import { DHCPOption } from '../backend'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
-import { NgIf } from '@angular/common'
 import { KeaGlobalConfigurationViewComponent } from '../kea-global-configuration-view/kea-global-configuration-view.component'
 import { ProgressSpinner } from 'primeng/progressspinner'
 
@@ -21,7 +20,6 @@ import { ProgressSpinner } from 'primeng/progressspinner'
     styleUrl: './kea-global-configuration-page.component.sass',
     imports: [
         BreadcrumbsComponent,
-        NgIf,
         RouterLink,
         KeaGlobalConfigurationFormComponent,
         KeaGlobalConfigurationViewComponent,

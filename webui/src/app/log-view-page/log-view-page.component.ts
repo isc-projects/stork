@@ -2,7 +2,7 @@ import { Component, OnInit, inject } from '@angular/core'
 import { ActivatedRoute, RouterLink } from '@angular/router'
 import { ServicesService } from '../backend/api/api'
 import { getErrorMessage } from '../utils'
-import { NgIf, NgFor } from '@angular/common'
+
 import { Message } from 'primeng/message'
 import { Panel } from 'primeng/panel'
 import { Button } from 'primeng/button'
@@ -27,18 +27,7 @@ import { LogTail } from '../backend'
     selector: 'app-log-view-page',
     templateUrl: './log-view-page.component.html',
     styleUrls: ['./log-view-page.component.sass'],
-    imports: [
-        NgIf,
-        RouterLink,
-        Message,
-        Panel,
-        Button,
-        Tooltip,
-        EntityLinkComponent,
-        NgFor,
-        ProgressSpinner,
-        SharedModule,
-    ],
+    imports: [RouterLink, Message, Panel, Button, Tooltip, EntityLinkComponent, ProgressSpinner, SharedModule],
 })
 export class LogViewPageComponent implements OnInit {
     /**

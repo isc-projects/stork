@@ -8,7 +8,7 @@ import { getErrorMessage } from '../utils'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { RouterLink } from '@angular/router'
 import { Divider } from 'primeng/divider'
-import { NgSwitch, NgSwitchCase, NgFor, NgIf, NgSwitchDefault } from '@angular/common'
+
 import { Fieldset } from 'primeng/fieldset'
 import { Checkbox } from 'primeng/checkbox'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
@@ -56,20 +56,15 @@ interface SettingsItem {
         BreadcrumbsComponent,
         RouterLink,
         Divider,
-        NgSwitch,
-        NgSwitchCase,
         FormsModule,
         ReactiveFormsModule,
         Fieldset,
         Checkbox,
         HelpTipComponent,
-        NgFor,
         InputNumber,
-        NgIf,
         InputText,
         Button,
         ManagedAccessDirective,
-        NgSwitchDefault,
         ProgressSpinner,
     ],
 })

@@ -1,29 +1,41 @@
 <!-- Object type containing named values. -->
-<div *ngIf="isParameterObject">
-    <ul *ngIf="parameterObjectHasValues; else emptyRecordCase" class="list-none pl-0 mt-0 mb-0">
-        <li *ngFor="let subp of parameterAsRecord | keyvalue">
-            {{ subp.key | unhyphen | uncamel }}:
-            <span class="text-color-secondary monospace">{{ subp.value | placeholder }}</span>
-        </li>
-    </ul>
-</div>
+@if (isParameterObject) {
+    <div>
+        @if (parameterObjectHasValues) {
+            <ul class="list-none pl-0 mt-0 mb-0">
+                @for (subp of parameterAsRecord | keyvalue; track subp) {
+                    <li>
+                        {{ subp.key | unhyphen | uncamel }}:
+                        <span class="text-color-secondary monospace">{{ subp.value | placeholder }}</span>
+                    </li>
+                }
+            </ul>
+        } @else {
+            <span class="text-color-secondary monospace">{{ null | placeholder }}</span>
+        }
+    </div>
+}
 <!-- Show placeholder when object includes no explicit values. -->
-<ng-template #emptyRecordCase>
-    <span class="text-color-secondary monospace">{{ null | placeholder }}</span>
-</ng-template>
 
 <!-- Array containing a collection of values. -->
-<span *ngIf="isParameterArray">
-    <ul *ngIf="parameterAsArray?.length > 0; else emptyArrayCase" class="list-none pl-0 mt-0 mb-0">
-        <li *ngFor="let subp of parameterAsArray">
-            <span class="text-color-secondary monospace">{{ subp | placeholder }}</span>
-        </li>
-    </ul>
-</span>
+@if (isParameterArray) {
+    <span>
+        @if (parameterAsArray?.length > 0) {
+            <ul class="list-none pl-0 mt-0 mb-0">
+                @for (subp of parameterAsArray; track subp) {
+                    <li>
+                        <span class="text-color-secondary monospace">{{ subp | placeholder }}</span>
+                    </li>
+                }
+            </ul>
+        } @else {
+            <span class="text-color-secondary monospace">{{ [] | placeholder }}</span>
+        }
+    </span>
+}
 <!-- Show placeholder when an array includes no values. -->
-<ng-template #emptyArrayCase>
-    <span class="text-color-secondary monospace">{{ [] | placeholder }}</span>
-</ng-template>
 
 <!-- Basic type, such as string, number etc. -->
-<span *ngIf="isParameterBasicType" class="text-color-secondary monospace">{{ parameterAsAny | placeholder }}</span>
+@if (isParameterBasicType) {
+    <span class="text-color-secondary monospace">{{ parameterAsAny | placeholder }}</span>
+}

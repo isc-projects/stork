@@ -9,7 +9,7 @@ import { ServicesService } from '../backend'
 import { durationToString, daemonStatusIconTooltip } from '../utils'
 import { KeaDaemon, KeaDaemonDatabase, ModelFile } from '../backend'
 import { ManagedAccessDirective } from '../managed-access.directive'
-import { NgIf, NgClass, NgFor } from '@angular/common'
+import { NgClass } from '@angular/common'
 import { Button } from 'primeng/button'
 import { ToggleSwitch } from 'primeng/toggleswitch'
 import { FormsModule } from '@angular/forms'
@@ -32,7 +32,6 @@ import { AccessPointsComponent } from '../access-points/access-points.component'
     styleUrls: ['./kea-daemon.component.sass'],
     imports: [
         ManagedAccessDirective,
-        NgIf,
         Button,
         ToggleSwitch,
         FormsModule,
@@ -41,7 +40,6 @@ import { AccessPointsComponent } from '../access-points/access-points.component'
         NgClass,
         Fieldset,
         VersionStatusComponent,
-        NgFor,
         Tooltip,
         TableModule,
         HelpTipComponent,

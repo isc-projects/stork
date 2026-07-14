@@ -19,7 +19,7 @@ import { debounceTime, lastValueFrom, Subject, Subscription } from 'rxjs'
 import { getErrorMessage } from '../utils'
 import { distinctUntilChanged, map } from 'rxjs/operators'
 import { Message } from 'primeng/message'
-import { NgFor, NgIf } from '@angular/common'
+
 import { Button } from 'primeng/button'
 import { ManagedAccessDirective } from '../managed-access.directive'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
@@ -46,7 +46,6 @@ import { SplitButton } from 'primeng/splitbutton'
     templateUrl: './machines-table.component.html',
     styleUrl: './machines-table.component.sass',
     imports: [
-        NgIf,
         Button,
         ManagedAccessDirective,
         TableModule,
@@ -59,7 +58,6 @@ import { SplitButton } from 'primeng/splitbutton'
         InputText,
         RouterLink,
         VersionStatusComponent,
-        NgFor,
         ProgressBar,
         Message,
         LocaltimePipe,

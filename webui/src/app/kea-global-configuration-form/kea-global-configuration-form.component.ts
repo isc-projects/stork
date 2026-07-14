@@ -11,7 +11,7 @@ import { KeaGlobalConfigurationForm, SubnetSetFormService } from '../forms/subne
 import { FormGroup, FormsModule, ReactiveFormsModule, UntypedFormArray } from '@angular/forms'
 import { createDefaultDhcpOptionFormGroup } from '../forms/dhcp-option-form'
 import { IPType } from '../iptype'
-import { NgFor, NgIf } from '@angular/common'
+
 import { Fieldset } from 'primeng/fieldset'
 import { SharedParametersFormComponent } from '../shared-parameters-form/shared-parameters-form.component'
 import { Checkbox } from 'primeng/checkbox'
@@ -30,13 +30,11 @@ import { Message } from 'primeng/message'
     templateUrl: './kea-global-configuration-form.component.html',
     styleUrl: './kea-global-configuration-form.component.sass',
     imports: [
-        NgIf,
         Fieldset,
         SharedParametersFormComponent,
         FormsModule,
         ReactiveFormsModule,
         Checkbox,
-        NgFor,
         Divider,
         Tag,
         DhcpOptionSetFormComponent,

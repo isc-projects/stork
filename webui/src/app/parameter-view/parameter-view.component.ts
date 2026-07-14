@@ -1,5 +1,5 @@
 import { Component, Input } from '@angular/core'
-import { NgIf, NgFor, KeyValuePipe } from '@angular/common'
+import { KeyValuePipe } from '@angular/common'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { UncamelPipe } from '../pipes/uncamel.pipe'
 import { UnhyphenPipe } from '../pipes/unhyphen.pipe'
@@ -14,7 +14,7 @@ import { UnhyphenPipe } from '../pipes/unhyphen.pipe'
     selector: 'app-parameter-view',
     templateUrl: './parameter-view.component.html',
     styleUrl: './parameter-view.component.sass',
-    imports: [NgIf, NgFor, KeyValuePipe, PlaceholderPipe, UncamelPipe, UnhyphenPipe],
+    imports: [KeyValuePipe, PlaceholderPipe, UncamelPipe, UnhyphenPipe],
 })
 export class ParameterViewComponent {
     /**

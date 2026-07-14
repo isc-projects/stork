@@ -9,7 +9,7 @@ import { getErrorMessage } from '../utils'
 import { ActivatedRoute, Router } from '@angular/router'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { SettingsMenuComponent } from '../settings-menu/settings-menu.component'
-import { NgIf, NgTemplateOutlet } from '@angular/common'
+import { NgTemplateOutlet } from '@angular/common'
 import { Dialog } from 'primeng/dialog'
 import { Message } from 'primeng/message'
 import { Panel } from 'primeng/panel'
@@ -31,7 +31,6 @@ import { PasswordPolicy } from '../password-policy'
     imports: [
         BreadcrumbsComponent,
         SettingsMenuComponent,
-        NgIf,
         NgTemplateOutlet,
         Dialog,
         Message,

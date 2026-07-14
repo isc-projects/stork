@@ -1,8 +1,5 @@
-<app-utilization-bar
-    *ngIf="hasOutOfPoolData"
-    [utilizationPrimary]="utilization"
-    [stats]="stats"
-    [statsCollectedAt]="statsCollectedAt"
->
-    <span class="white-space-nowrap">Out of pool {{ isPD ? 'delegated prefixes' : 'addresses' }}</span>
-</app-utilization-bar>
+@if (hasOutOfPoolData) {
+    <app-utilization-bar [utilizationPrimary]="utilization" [stats]="stats" [statsCollectedAt]="statsCollectedAt">
+        <span class="white-space-nowrap">Out of pool {{ isPD ? 'delegated prefixes' : 'addresses' }}</span>
+    </app-utilization-bar>
+}

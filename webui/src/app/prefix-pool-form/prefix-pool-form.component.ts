@@ -9,7 +9,7 @@ import { Fieldset } from 'primeng/fieldset'
 import { FloatLabel } from 'primeng/floatlabel'
 import { InputText } from 'primeng/inputtext'
 import { InputNumber } from 'primeng/inputnumber'
-import { NgFor, NgIf } from '@angular/common'
+
 import { MultiSelect } from 'primeng/multiselect'
 import { SharedParametersFormComponent } from '../shared-parameters-form/shared-parameters-form.component'
 import { Checkbox } from 'primeng/checkbox'
@@ -31,8 +31,6 @@ import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-
         FloatLabel,
         InputText,
         InputNumber,
-        NgFor,
-        NgIf,
         MultiSelect,
         SharedParametersFormComponent,
         Checkbox,

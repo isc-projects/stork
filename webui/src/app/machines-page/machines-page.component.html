@@ -1,6 +1,6 @@
 <app-breadcrumbs [items]="breadcrumbs">
     <div page-help>
-        <ng-container *ngIf="activeTabEntityID() === 0">
+        @if (activeTabEntityID() === 0) {
             <p>
                 This page displays a list of all machines that have been configured in Stork. It allows machines to be
                 added and removed.
@@ -11,30 +11,31 @@
                 Stork. To authorize a machine on the <em>Unauthorized</em> list, either select the checkbox to the left
                 of the machine name and press the <em>Authorize selected</em> button, or click the blue button in the
                 Action column and select <em>Authorize</em>.
-
-                <ng-container *ngIf="!showAuthorized() && unauthorizedMachinesCount > 0"
-                    >Unauthorized machines were registered using the agent token-based registration method. This view
+                @if (!showAuthorized() && unauthorizedMachinesCount > 0) {
+                    Unauthorized machines were registered using the agent token-based registration method. This view
                     allows to authorize one or more machines at once. Before authorizing a machine, ensure that the
                     agent token displayed on this list is the same as the agent token in the agent’s logs or the
                     <code>/var/lib/stork-agent/tokens/agent-token.txt</code> file. If they match, click on the
                     <em>Action</em> menu button on the right and then <em>Authorize</em>, or select the machine with the
-                    checkbox on the left and click the <em>Authorize selected</em> button.</ng-container
-                >
+                    checkbox on the left and click the <em>Authorize selected</em> button.
+                }
             </p>
-        </ng-container>
-        <ng-container *ngIf="activeTabEntityID() > 0">
+        }
+        @if (activeTabEntityID() > 0) {
             <p>
                 This page displays details about {{ !!activeTabMachine()?.authorized === false ? 'un' : '' }}authorized
                 machine
                 <span class="font-semibold">{{ activeTabMachine()?.hostname || activeTabMachine()?.address }}</span
                 >.
             </p>
-            <p *ngIf="activeTabMachine()?.authorized">
-                You can retrieve the latest machine's data from the Stork server by clicking
-                <em>Get Latest State</em> button. It is possible to download data archive for machine's troubleshooting
-                purposes by clicking <em>Dump Troubleshooting Data</em> button.
-            </p>
-        </ng-container>
+            @if (activeTabMachine()?.authorized) {
+                <p>
+                    You can retrieve the latest machine's data from the Stork server by clicking
+                    <em>Get Latest State</em> button. It is possible to download data archive for machine's
+                    troubleshooting purposes by clicking <em>Dump Troubleshooting Data</em> button.
+                </p>
+            }
+        }
     </div>
 </app-breadcrumbs>
 
@@ -50,9 +51,9 @@
         </p>
         <div class="flex align-items-start mb-2">
             <textarea class="monospace agent-install-cmds" readonly="" rows="3" #agentInstallationText>
-wget {{ getBaseUrl() }}/stork-install-agent.sh
-chmod a+x stork-install-agent.sh
-sudo ./stork-install-agent.sh</textarea>
+            wget {{ getBaseUrl() }}/stork-install-agent.sh
+            chmod a+x stork-install-agent.sh
+          sudo ./stork-install-agent.sh</textarea>
             <p-button
                 (click)="copyToClipboard(agentInstallationText)"
                 icon="pi pi-copy"
@@ -136,30 +137,29 @@ sudo ./stork-install-agent.sh</textarea>
                     id="unauthorized-select-button"
                 >
                     <ng-template #item let-item>
-                        <span class="p-togglebutton-label">{{ item.label }}</span
-                        ><p-badge
-                            *ngIf="item.hasBadge"
-                            severity="info"
-                            [value]="unauthorizedMachinesCount$ | async"
-                            styleClass="relative"
-                            class="inline-flex"
-                        />
+                        <span class="p-togglebutton-label">{{ item.label }}</span>
+                        @if (item.hasBadge) {
+                            <p-badge
+                                severity="info"
+                                [value]="unauthorizedMachinesCount$ | async"
+                                styleClass="relative"
+                                class="inline-flex"
+                            />
+                        }
                     </ng-template>
                 </p-selectButton>
             </div>
         </div>
 
-        <p-message
-            icon="pi pi-exclamation-triangle"
-            *ngIf="showAuthorized() === false && registrationDisabled"
-            severity="warn"
-        >
-            <div>
-                Registration of new machines is disabled. Navigate to the
-                <a routerLink="/settings" class="font-semibold">Settings</a>
-                page to enable registration, if you expect new machines on the list below.
-            </div>
-        </p-message>
+        @if (showAuthorized() === false && registrationDisabled) {
+            <p-message icon="pi pi-exclamation-triangle" severity="warn">
+                <div>
+                    Registration of new machines is disabled. Navigate to the
+                    <a routerLink="/settings" class="font-semibold">Settings</a>
+                    page to enable registration, if you expect new machines on the list below.
+                </div>
+            </p-message>
+        }
         <app-machines-table
             #machinesTable
             [(unauthorizedMachinesCount)]="unauthorizedMachinesCount"
@@ -239,7 +239,9 @@ sudo ./stork-install-agent.sh</textarea>
                 </div>
 
                 <div>
-                    <p-message *ngIf="machineTab?.error" severity="error" text="{{ machineTab?.error }}"></p-message>
+                    @if (machineTab?.error) {
+                        <p-message severity="error" text="{{ machineTab?.error }}"></p-message>
+                    }
                 </div>
             </div>
 
@@ -258,10 +260,11 @@ sudo ./stork-install-agent.sh</textarea>
                         <tr>
                             <td>Agent Version</td>
                             <td>
-                                <app-version-status
-                                    *ngIf="machineTab?.authorized"
-                                    [daemon]="{ name: 'stork', version: machineTab?.agentVersion }"
-                                ></app-version-status>
+                                @if (machineTab?.authorized) {
+                                    <app-version-status
+                                        [daemon]="{ name: 'stork', version: machineTab?.agentVersion }"
+                                    ></app-version-status>
+                                }
                             </td>
                         </tr>
                         <tr>
@@ -327,10 +330,12 @@ sudo ./stork-install-agent.sh</textarea>
                             <td>Virtualization Role</td>
                             <td>{{ machineTab?.virtualizationRole }}</td>
                         </tr>
-                        <tr *ngIf="machineTab?.virtualizationRole === 'guest'">
-                            <td>Virtualization System</td>
-                            <td>{{ machineTab?.virtualizationSystem }}</td>
-                        </tr>
+                        @if (machineTab?.virtualizationRole === 'guest') {
+                            <tr>
+                                <td>Virtualization System</td>
+                                <td>{{ machineTab?.virtualizationSystem }}</td>
+                            </tr>
+                        }
                         <tr>
                             <td>Host ID</td>
                             <td>{{ machineTab?.hostID }}</td>
@@ -341,32 +346,34 @@ sudo ./stork-install-agent.sh</textarea>
                         </tr>
                     </table>
 
-                    <p-button
-                        *ngIf="machineTab?.authorized"
-                        label="Get Latest State"
-                        id="get-latest-state-button"
-                        icon="pi pi-refresh"
-                        styleClass="mt-3 mr-2 mb-2"
-                        (click)="refreshMachineState(machineTab)"
-                    ></p-button>
-                    <p-button
-                        *ngIf="machineTab?.authorized"
-                        label="Dump Troubleshooting Data"
-                        id="dump-single-machine"
-                        icon="pi pi-download"
-                        title="Download data archive for troubleshooting purposes"
-                        styleClass="mt-3 mr-2 mb-2"
-                        severity="secondary"
-                        (click)="downloadDump(machineTab)"
-                    ></p-button>
+                    @if (machineTab?.authorized) {
+                        <p-button
+                            label="Get Latest State"
+                            id="get-latest-state-button"
+                            icon="pi pi-refresh"
+                            styleClass="mt-3 mr-2 mb-2"
+                            (click)="refreshMachineState(machineTab)"
+                        ></p-button>
+                        <p-button
+                            label="Dump Troubleshooting Data"
+                            id="dump-single-machine"
+                            icon="pi pi-download"
+                            title="Download data archive for troubleshooting purposes"
+                            styleClass="mt-3 mr-2 mb-2"
+                            severity="secondary"
+                            (click)="downloadDump(machineTab)"
+                        ></p-button>
+                    }
                 </div>
                 <div class="col-12 md:col-6">
                     <h3 class="underlined">Daemons</h3>
                     <div class="inline-flex flex-column gap-1">
-                        <div *ngFor="let daemon of machineTab?.daemons" class="flex flex-row justify-content-between">
-                            <app-daemon-status [daemon]="daemon"></app-daemon-status>
-                            <app-version-status [daemon]="daemon"></app-version-status>
-                        </div>
+                        @for (daemon of machineTab?.daemons; track daemon) {
+                            <div class="flex flex-row justify-content-between">
+                                <app-daemon-status [daemon]="daemon"></app-daemon-status>
+                                <app-version-status [daemon]="daemon"></app-version-status>
+                            </div>
+                        }
                     </div>
                 </div>
             </div>

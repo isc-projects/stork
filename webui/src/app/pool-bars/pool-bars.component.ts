@@ -3,7 +3,7 @@ import { DelegatedPrefixPool, Pool } from '../backend'
 import { RangedSet, IPv6CidrRange, IPv4, IPv6 } from 'ip-num'
 import { SharedNetworkWithUniquePools, SubnetWithUniquePools } from '../subnets'
 import { OutOfPoolBarComponent } from '../out-of-pool-bar/out-of-pool-bar.component'
-import { NgFor, NgIf, NgTemplateOutlet } from '@angular/common'
+import { NgTemplateOutlet } from '@angular/common'
 import { AddressPoolBarComponent } from '../address-pool-bar/address-pool-bar.component'
 import { Tooltip } from 'primeng/tooltip'
 import { DelegatedPrefixBarComponent } from '../delegated-prefix-bar/delegated-prefix-bar.component'
@@ -16,15 +16,7 @@ import { DelegatedPrefixBarComponent } from '../delegated-prefix-bar/delegated-p
     selector: 'app-pool-bars',
     templateUrl: './pool-bars.component.html',
     styleUrl: './pool-bars.component.sass',
-    imports: [
-        OutOfPoolBarComponent,
-        NgFor,
-        NgIf,
-        AddressPoolBarComponent,
-        Tooltip,
-        NgTemplateOutlet,
-        DelegatedPrefixBarComponent,
-    ],
+    imports: [OutOfPoolBarComponent, AddressPoolBarComponent, Tooltip, NgTemplateOutlet, DelegatedPrefixBarComponent],
 })
 export class PoolBarsComponent implements OnInit {
     /**

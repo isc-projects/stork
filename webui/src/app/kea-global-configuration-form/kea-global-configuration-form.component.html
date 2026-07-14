@@ -1,64 +1,68 @@
 <div class="max-w-50rem">
-    <ng-container *ngIf="!initError; else showInitError">
-        <ng-container *ngIf="loaded; else showSpinner">
-            <p-fieldset *ngIf="formGroup" legend="Global Parameters" styleClass="mt-4">
-                <app-shared-parameters-form [formGroup]="formGroup.get('parameters')"> </app-shared-parameters-form>
-            </p-fieldset>
-
+    @if (!initError) {
+        @if (loaded) {
+            @if (formGroup) {
+                <p-fieldset legend="Global Parameters" styleClass="mt-4">
+                    <app-shared-parameters-form [formGroup]="formGroup.get('parameters')"> </app-shared-parameters-form>
+                </p-fieldset>
+            }
             <p-fieldset [formGroup]="formGroup.get('options')" legend="DHCP Options" styleClass="mt-4">
                 <!-- The "Unlock setting DHCP options for individual servers" makes sense only when the form controls
-                    the data for more than one server. Our form currently supports only one server configuration and
-                    therefore the checkbox is hidden. -->
+        the data for more than one server. Our form currently supports only one server configuration and
+        therefore the checkbox is hidden. -->
                 <div class="hidden mt-2 pb-4">
                     <p-checkbox formControlName="unlocked" [binary]="true"> </p-checkbox>
                     <div class="flex ml-2 font-semibold">Unlock setting DHCP options for individual servers.</div>
                 </div>
-                <ng-container *ngFor="let optionSet of formGroup.get('options.data')?.controls; let i = index">
-                    <div *ngIf="i === 0 || formGroup.get('options.unlocked')?.value" class="mb-3 mt-3">
-                        <div *ngIf="formGroup.get('options.unlocked')?.value" class="pb-5">
-                            <p-divider *ngIf="formGroup.get('options.data')?.length > 1" align="center">
-                                <p-tag [severity]="getServerTagSeverity(i)">
-                                    {{ servers[i] }}
-                                </p-tag>
-                            </p-divider>
+                @for (optionSet of formGroup.get('options.data')?.controls; track optionSet; let i = $index) {
+                    @if (i === 0 || formGroup.get('options.unlocked')?.value) {
+                        <div class="mb-3 mt-3">
+                            @if (formGroup.get('options.unlocked')?.value) {
+                                <div class="pb-5">
+                                    @if (formGroup.get('options.data')?.length > 1) {
+                                        <p-divider align="center">
+                                            <p-tag [severity]="getServerTagSeverity(i)">
+                                                {{ servers[i] }}
+                                            </p-tag>
+                                        </p-divider>
+                                    }
+                                </div>
+                            }
+                            <app-dhcp-option-set-form
+                                [v6]="isIPv6"
+                                [formArray]="optionSet"
+                                (optionAdd)="onOptionAdd(i)"
+                            ></app-dhcp-option-set-form>
                         </div>
-                        <app-dhcp-option-set-form
-                            [v6]="isIPv6"
-                            [formArray]="optionSet"
-                            (optionAdd)="onOptionAdd(i)"
-                        ></app-dhcp-option-set-form>
-                    </div>
-                </ng-container>
+                    }
+                }
             </p-fieldset>
-
             <div class="flex align-items-center m-5 flex-wrap gap-2">
                 <p-button label="Cancel" severity="secondary" (onClick)="onCancel()"></p-button>
                 <p-button label="Submit" [disabled]="formGroup?.invalid" (onClick)="onSubmit()"></p-button>
             </div>
-        </ng-container>
-    </ng-container>
-</div>
-<ng-template #showSpinner>
-    <p-progressSpinner></p-progressSpinner>
-</ng-template>
-<ng-template #showInitError>
-    <p-fieldset legend="Errors" styleClass="mt-4">
-        <p-message severity="error">
-            <div class="flex flex-column">
-                <div class="flex align-items-center m-4">
-                    In order to apply configuration changes, the server should begin a transaction between the user and
-                    the server. The server should also return the current data required, in the form where the subnet
-                    information is specified. Unfortunately, starting the new transaction failed with the following
-                    error:
+        } @else {
+            <p-progressSpinner></p-progressSpinner>
+        }
+    } @else {
+        <p-fieldset legend="Errors" styleClass="mt-4">
+            <p-message severity="error">
+                <div class="flex flex-column">
+                    <div class="flex align-items-center m-4">
+                        In order to apply configuration changes, the server should begin a transaction between the user
+                        and the server. The server should also return the current data required, in the form where the
+                        subnet information is specified. Unfortunately, starting the new transaction failed with the
+                        following error:
+                    </div>
+                    <div class="flex align-items-center m-4 font-italic">
+                        {{ initError }}
+                    </div>
+                    <div class="flex align-items-center m-4">Retrying can help in some cases.</div>
                 </div>
-                <div class="flex align-items-center m-4 font-italic">
-                    {{ initError }}
-                </div>
-                <div class="flex align-items-center m-4">Retrying can help in some cases.</div>
+            </p-message>
+            <div class="mt-3">
+                <p-button label="Retry" (onClick)="onRetry()"></p-button>
             </div>
-        </p-message>
-        <div class="mt-3">
-            <p-button label="Retry" (onClick)="onRetry()"></p-button>
-        </div>
-    </p-fieldset>
-</ng-template>
+        </p-fieldset>
+    }
+</div>

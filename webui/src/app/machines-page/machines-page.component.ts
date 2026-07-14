@@ -15,7 +15,7 @@ import { AuthService } from '../auth.service'
 import { TabViewComponent } from '../tab-view/tab-view.component'
 import { Message } from 'primeng/message'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
-import { AsyncPipe, NgFor, NgIf } from '@angular/common'
+import { AsyncPipe } from '@angular/common'
 import { ManagedAccessDirective } from '../managed-access.directive'
 import { Dialog } from 'primeng/dialog'
 import { Button } from 'primeng/button'
@@ -46,7 +46,6 @@ import { DaemonStatusComponent } from '../daemon-status/daemon-status.component'
     styleUrls: ['./machines-page.component.sass'],
     imports: [
         BreadcrumbsComponent,
-        NgIf,
         ManagedAccessDirective,
         Dialog,
         RouterLink,
@@ -63,7 +62,6 @@ import { DaemonStatusComponent } from '../daemon-status/daemon-status.component'
         InputText,
         VersionStatusComponent,
         HelpTipComponent,
-        NgFor,
         EventsPanelComponent,
         AsyncPipe,
         LocaltimePipe,

@@ -1,20 +1,24 @@
 <div style="margin-top: 20px">
-    <a *ngIf="data?.daemonId" routerLink="/daemons/{{ data.daemonId }}">
-        <span class="fa fa-arrow-left"></span>
-        <span style="margin-left: 5px">Back to {{ data.daemonLabel }}</span>
-    </a>
+    @if (data?.daemonId) {
+        <a routerLink="/daemons/{{ data.daemonId }}">
+            <span class="fa fa-arrow-left"></span>
+            <span style="margin-left: 5px">Back to {{ data.daemonLabel }}</span>
+        </a>
+    }
 </div>
 
-<div *ngIf="loaded && loadingError" class="w-full max-w-50rem mt-1">
-    <p-message
-        severity="error"
-        text="Failed to fetch log file contents."
-        icon="pi pi-times-circle"
-        class="custom-message wrap-message"
-    >
-        {{ loadingError }}
-    </p-message>
-</div>
+@if (loaded && loadingError) {
+    <div class="w-full max-w-50rem mt-1">
+        <p-message
+            severity="error"
+            text="Failed to fetch log file contents."
+            icon="pi pi-times-circle"
+            class="custom-message wrap-message"
+        >
+            {{ loadingError }}
+        </p-message>
+    </div>
+}
 
 <p-panel styleClass="log-tail-panel" [style]="{ 'margin-top': '10px' }">
     <ng-template #header>
@@ -45,31 +49,40 @@
                 ></p-button>
             </span>
             <span class="font-semibold">
-                <ng-container *ngIf="!loaded"> Loading... </ng-container>
-
-                <ng-container *ngIf="loaded">
+                @if (!loaded) {
+                    Loading...
+                } @else {
                     Log {{ data.logTargetOutput }}
                     from the
                     <app-entity-link id="daemon-link" entity="daemon" [attrs]="data"></app-entity-link>
-                </ng-container>
+                }
             </span>
         </div>
     </ng-template>
-    <div *ngIf="loaded && (!contents || contents.length === 0)">(empty)</div>
-    <div *ngIf="contents && contents.length > 1">...</div>
-    <div *ngFor="let line of contents; let i = index">
-        <span *ngFor="let block of parseLogLine(line)" [style]="{ color: logSeverityColor(block) }">
-            {{ i > 0 || contents.length === 1 ? block : '' }}
-        </span>
-    </div>
+    @if (loaded && (!contents || contents.length === 0)) {
+        <div>(empty)</div>
+    }
+    @if (contents && contents.length > 1) {
+        <div>...</div>
+    }
+    @for (line of contents; track line; let i = $index) {
+        <div>
+            @for (block of parseLogLine(line); track block) {
+                <span [style]="{ color: logSeverityColor(block) }">
+                    {{ i > 0 || contents.length === 1 ? block : '' }}
+                </span>
+            }
+        </div>
+    }
 
-    <p-progressSpinner
-        *ngIf="!loaded"
-        [style]="{ width: '30px', height: '30px', 'vertical-align': 'top', 'margin-right': '20px' }"
-        strokeWidth="6"
-        styleClass="white-spinner"
-        animationDuration=".5s"
-    ></p-progressSpinner>
+    @if (!loaded) {
+        <p-progressSpinner
+            [style]="{ width: '30px', height: '30px', 'vertical-align': 'top', 'margin-right': '20px' }"
+            strokeWidth="6"
+            styleClass="white-spinner"
+            animationDuration=".5s"
+        ></p-progressSpinner>
+    }
 
     <p-footer>
         <div style="display: flex; justify-content: flex-end">
