@@ -1,8 +1,12 @@
 package keadata
 
 import (
+	"encoding/json"
+
 	agentapi "isc.org/stork/api"
 	storkutil "isc.org/stork/util"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // Constants representing various lease states in Kea.  Other states can be
@@ -27,6 +31,8 @@ type Lease struct {
 	ClientID          *ColonSepHexStr  `json:"client-id,omitempty"`
 	Hostname          string           `json:"hostname,omitempty"`
 	HWAddress         string           `json:"hw-address,omitempty"`
+	HWAddressSource   string           `json:"hw-address-source,omitempty"`
+	HWType            string           `json:"hw-type,omitempty"`
 	DUID              *ColonSepHexStr  `json:"duid,omitempty"`
 	IPAddress         string           `json:"ip-address,omitempty"`
 	Type              string           `json:"type,omitempty"`
@@ -44,7 +50,19 @@ type Lease struct {
 
 // Create a new Lease, filling in all the fields which are appropriate for a
 // DHCPv4 lease.
-func NewLease4(ip, hwAddress, clientID string, cltt uint64, validLifetime, subnetID uint32, state uint32) Lease {
+func NewLease4(
+	ip,
+	hwAddress,
+	clientID string,
+	cltt uint64,
+	validLifetime,
+	subnetID uint32,
+	fqdnFwd,
+	fqdnRev bool,
+	hostname string,
+	state uint32,
+	userCtx map[string]any,
+) Lease {
 	return Lease{
 		Family:        storkutil.IPv4,
 		IPAddress:     ip,
@@ -54,37 +72,84 @@ func NewLease4(ip, hwAddress, clientID string, cltt uint64, validLifetime, subne
 		LocalSubnetID: subnetID,
 		State:         state,
 		ClientID:      NewColonSepHexStr(&clientID),
+		FqdnFwd:       fqdnFwd,
+		FqdnRev:       fqdnRev,
+		Hostname:      hostname,
+		UserContext:   userCtx,
 	}
 }
 
 // Create a new Lease, filling in all the fields which are appropriate for a
 // DHCPv6 lease.
-func NewLease6(ip, duid string, cltt uint64, validLifetime, subnetID uint32, state uint32, prefixLen uint8) Lease {
+func NewLease6(
+	ip,
+	duid,
+	leaseType string,
+	cltt uint64,
+	validLifetime,
+	subnetID,
+	prefLifetime,
+	iaid uint32,
+	prefixLen uint8,
+	fqdnFwd,
+	fqdnRev bool,
+	hostname,
+	hwaddr string,
+	state uint32,
+	userCtx map[string]any,
+	hwtype,
+	hwaddrSource string,
+) Lease {
 	return Lease{
-		Family:        storkutil.IPv6,
-		IPAddress:     ip,
-		DUID:          NewColonSepHexStr(&duid),
-		CLTT:          cltt,
-		ValidLifetime: validLifetime,
-		LocalSubnetID: subnetID,
-		State:         state,
-		PrefixLength:  prefixLen,
+		Type:              leaseType,
+		Family:            storkutil.IPv6,
+		IPAddress:         ip,
+		DUID:              NewColonSepHexStr(&duid),
+		CLTT:              cltt,
+		ValidLifetime:     validLifetime,
+		LocalSubnetID:     subnetID,
+		State:             state,
+		PrefixLength:      prefixLen,
+		PreferredLifetime: prefLifetime,
+		IAID:              iaid,
+		FqdnFwd:           fqdnFwd,
+		FqdnRev:           fqdnRev,
+		Hostname:          hostname,
+		HWAddress:         hwaddr,
+		HWAddressSource:   hwaddrSource,
+		UserContext:       userCtx,
+		HWType:            hwtype,
 	}
 }
 
 // Convert the Lease into the Lease Protobuf structure returned by the agent's
 // gRPC API.
 func (lease *Lease) ToGRPC() agentapi.Lease {
+	userCtxByte, err := json.Marshal(lease.UserContext)
+	var userCtxStr string
+	if err != nil {
+		log.WithError(err).Debug("failed to serialize JSON user context")
+	} else {
+		userCtxStr = string(userCtxByte)
+	}
 	return agentapi.Lease{
-		Family:        agentapi.Lease_IPAddrFamily(lease.Family), // #nosec: G115
-		IpAddress:     lease.IPAddress,
-		HwAddress:     lease.HWAddress,
-		Duid:          lease.DUID.String(),
-		Cltt:          lease.CLTT,
-		ValidLifetime: uint64(lease.ValidLifetime),
-		SubnetID:      lease.LocalSubnetID,
-		State:         lease.State,
-		PrefixLen:     uint32(lease.PrefixLength),
-		ClientID:      lease.ClientID.String(),
+		Type:            lease.Type,
+		Family:          agentapi.Lease_IPAddrFamily(lease.Family), // #nosec: G115
+		IpAddress:       lease.IPAddress,
+		HwAddress:       lease.HWAddress,
+		Duid:            lease.DUID.String(),
+		Cltt:            lease.CLTT,
+		ValidLifetime:   uint64(lease.ValidLifetime),
+		SubnetID:        lease.LocalSubnetID,
+		State:           lease.State,
+		PrefixLen:       uint32(lease.PrefixLength),
+		ClientID:        lease.ClientID.String(),
+		FqdnFwd:         lease.FqdnFwd,
+		FqdnRev:         lease.FqdnRev,
+		Iaid:            lease.IAID,
+		Hostname:        lease.Hostname,
+		HwAddressSource: lease.HWAddressSource,
+		UserContext:     userCtxStr,
+		HwType:          lease.HWType,
 	}
 }

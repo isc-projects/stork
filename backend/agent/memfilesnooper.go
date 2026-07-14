@@ -2,6 +2,7 @@ package agent
 
 import (
 	"encoding/csv"
+	"encoding/json"
 	"io"
 	"math"
 	"os"
@@ -26,15 +27,31 @@ const (
 	v4ValidLifetime = 3
 	v4Expire        = 4
 	v4Subnet        = 5
+	v4FQDNFwdUpdate = 6
+	v4FQDNRevUpdate = 7
+	v4Hostname      = 8
 	v4State         = 9
+	v4UserCtx       = 10
+	v4PoolID        = 11
 	// IPv6 Lease Memfile Column Indices below.
 	v6IPAddr        = 0
 	v6DUID          = 1
 	v6ValidLifetime = 2
 	v6Expire        = 3
 	v6Subnet        = 4
+	v6PrefLifetime  = 5
+	v6LeaseType     = 6
+	v6IAID          = 7
 	v6Prefix        = 8
+	v6FQDNFwdUpdate = 9
+	v6FQDNRevUpdate = 10
+	v6Hostname      = 11
+	v6HWAddr        = 12
 	v6State         = 13
+	v6UserCtx       = 14
+	v6HWType        = 15
+	v6HWAddrSource  = 16
+	v6PoolID        = 17
 )
 
 // The maximum number of lease updates that a MemfileSnooper will store. As
@@ -56,13 +73,22 @@ var ErrHeaders = errors.New("cannot parse column headers as a lease structure")
 // | FsNotify +-->| RowSource +-->| (caller) |
 // +----------+   +-----------+   +----------+
 
+// checkUint32 parses an input string as a uint32, or returns a nicely formatted error
+// which explains the problem.
+func checkUint32(input string, fieldName string) (uint32, error) {
+	input64, err := strconv.ParseUint(input, 10, 32)
+	if err != nil {
+		return 0, errors.Wrapf(err, "%s is not a valid uint32: %s", fieldName, input)
+	}
+	return uint32(input64), nil
+}
+
 // Create a new Lease4 from a CSV row, and the already-parsed values.
 func newLease4(record []string, cltt uint64, lifetime uint32) (*keadata.Lease, error) {
-	subnet64, err := strconv.ParseUint(record[v4Subnet], 10, 32)
+	subnet, err := checkUint32(record[v4Subnet], "subnet ID")
 	if err != nil {
-		return nil, errors.Wrap(err, "the subnet ID is not valid")
+		return nil, err
 	}
-	subnet := uint32(subnet64)
 	state64, err := strconv.ParseUint(record[v4State], 10, 32)
 	if err != nil {
 		return nil, errors.Wrap(err, "the lease state is not valid")
@@ -71,6 +97,23 @@ func newLease4(record []string, cltt uint64, lifetime uint32) (*keadata.Lease, e
 		return nil, errors.Errorf("the lease state is not valid: %d", state64)
 	}
 	state := uint32(state64)
+	fqdnRev := record[v4FQDNRevUpdate] == "1"
+	fqdnFwd := record[v4FQDNFwdUpdate] == "1"
+	// It feels wasteful and potentially lossy (due to Go parsing all
+	// JSON numbers as float64) to deserialize this into a map and then
+	// immediately re-serialize it back to JSON when sending to the
+	// Stork server, but then I'd need to do another major refactor to
+	// separate the model Lease type from the API lease type, which I
+	// already did in the opposite direction per code review request
+	// when developing this the first time.
+	userCtxStr := record[v4UserCtx]
+	var userCtx map[string]any
+	if userCtxStr != "" {
+		err = json.Unmarshal([]byte(userCtxStr), &userCtx)
+		if err != nil {
+			return nil, errors.Wrap(err, "the user context is not valid JSON")
+		}
+	}
 	lease := keadata.NewLease4(
 		record[v4IPAddr],
 		record[v4HWAddr],
@@ -78,21 +121,21 @@ func newLease4(record []string, cltt uint64, lifetime uint32) (*keadata.Lease, e
 		cltt,
 		lifetime,
 		subnet,
+		fqdnFwd,
+		fqdnRev,
+		record[v4Hostname],
 		state,
+		userCtx,
 	)
 	return &lease, nil
 }
 
 // Create a new Lease6 from a CSV row, and the already-parsed values.
 func newLease6(record []string, cltt uint64, lifetime uint32) (*keadata.Lease, error) {
-	subnet64, err := strconv.Atoi(record[v6Subnet])
+	subnet, err := checkUint32(record[v6Subnet], "subnet ID")
 	if err != nil {
-		return nil, errors.Wrap(err, "the subnet ID is not valid")
+		return nil, err
 	}
-	if subnet64 < 0 || subnet64 > math.MaxUint32 {
-		return nil, errors.Errorf("the subnet ID is not valid: %d", subnet64)
-	}
-	subnet := uint32(subnet64)
 	state64, err := strconv.ParseUint(record[v6State], 10, 32)
 	if err != nil {
 		return nil, errors.Wrap(err, "the lease state is not valid")
@@ -110,14 +153,44 @@ func newLease6(record []string, cltt uint64, lifetime uint32) (*keadata.Lease, e
 		return nil, errors.Errorf("the prefix length is too long: %d", prefixLen64)
 	}
 	prefixLen = uint8(prefixLen64)
+	fqdnRev := record[v6FQDNRevUpdate] == "1"
+	fqdnFwd := record[v6FQDNFwdUpdate] == "1"
+
+	prefLifetime, err := checkUint32(record[v6PrefLifetime], "preferred lifetime")
+	if err != nil {
+		return nil, err
+	}
+	iaid, err := checkUint32(record[v6IAID], "IAID")
+	if err != nil {
+		return nil, err
+	}
+	userCtxStr := record[v6UserCtx]
+	var userCtx map[string]any
+	if userCtxStr != "" {
+		err = json.Unmarshal([]byte(userCtxStr), &userCtx)
+		if err != nil {
+			return nil, errors.Wrap(err, "the user context is not valid JSON")
+		}
+	}
+
 	lease := keadata.NewLease6(
 		record[v6IPAddr],
 		record[v6DUID],
+		record[v6LeaseType],
 		cltt,
 		lifetime,
 		subnet,
-		state,
+		prefLifetime,
+		iaid,
 		prefixLen,
+		fqdnFwd,
+		fqdnRev,
+		record[v6Hostname],
+		record[v6HWAddr],
+		state,
+		userCtx,
+		record[v6HWType],
+		record[v6HWAddrSource],
 	)
 	return &lease, nil
 }
