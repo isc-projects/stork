@@ -1,11 +1,13 @@
 FROM debian:13.5-slim
 
-# Go release metadata: https://go.dev/dl/?mode=json
+# To update the Go version, go to https://go.dev/dl/, find suitable
+# version, also get the linux-amd64 and linux-arm64 SHA256 sums.
+# In the future, we could semi automate it using https://go.dev/dl/?mode=json
 ARG GO_VERSION=1.25.12
 ARG GO_SHA256_AMD64=234828b7a89e0e303d2556310ee549fbcf253d28de937bac3da13d6294262ac1
 ARG GO_SHA256_ARM64=8b5884aef89600aef5b0b051fb971f11f49bb996521e911f30f02a66884f7bd2
 
-ENV PATH="/usr/local/go/bin:${PATH}"
+ENV PATH="/root/go/bin:/usr/local/go/bin:${PATH}"
 
 WORKDIR /repo
 RUN apt-get update \
