@@ -381,6 +381,7 @@
                         <div [formGroupName]="i">
                             <app-dhcp-option-set-form
                                 [v6]="form.dhcpv6"
+                                [clientClasses]="form.clientClasses"
                                 [formArray]="optionsSet"
                                 (optionAdd)="onOptionAdd(i)"
                             ></app-dhcp-option-set-form>

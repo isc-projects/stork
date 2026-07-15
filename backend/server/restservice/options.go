@@ -192,11 +192,12 @@ func (r *RestAPI) unflattenDHCPOptions(options []dbmodel.DHCPOption, space strin
 		if (space == "" && (option.Space == dhcpmodel.DHCPv4OptionSpace || option.Space == dhcpmodel.DHCPv6OptionSpace)) ||
 			space == option.Space {
 			restOption := &models.DHCPOption{
-				AlwaysSend:  option.AlwaysSend,
-				Code:        option.Code,
-				Encapsulate: option.Encapsulate,
-				Universe:    int64(option.Universe),
-				Unknown:     option.UnknownParameters,
+				AlwaysSend:    option.AlwaysSend,
+				Code:          option.Code,
+				Encapsulate:   option.Encapsulate,
+				Universe:      int64(option.Universe),
+				ClientClasses: option.ClientClasses,
+				Unknown:       option.UnknownParameters,
 			}
 			for _, field := range option.Fields {
 				restField := &models.DHCPOptionField{

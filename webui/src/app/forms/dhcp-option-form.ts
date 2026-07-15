@@ -26,6 +26,7 @@ export function createDefaultDhcpOptionFormGroup(universe: IPType): UntypedFormG
             ],
         ],
         alwaysSend: [{ value: false, disabled: false }],
+        clientClasses: [{ value: [], disabled: false }],
         optionFields: fb.array([]),
         suboptions: fb.array([]),
         unknown: fb.record<any>({}),

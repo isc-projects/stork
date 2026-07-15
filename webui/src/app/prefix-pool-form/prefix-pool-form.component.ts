@@ -2,6 +2,7 @@ import { Component, Input, OnInit, inject } from '@angular/core'
 import { FormGroup, UntypedFormArray, UntypedFormControl, FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { KeaPoolParametersForm, PrefixPoolForm, SubnetSetFormService } from '../forms/subnet-set-form.service'
 
+import { SelectableClientClass } from '../forms/selectable-client-class'
 import { generateUUID, getSeverityByIndex, getVersionRange } from '../utils'
 import { createDefaultDhcpOptionFormGroup } from '../forms/dhcp-option-form'
 import { IPType } from '../iptype'
@@ -63,6 +64,12 @@ export class PrefixPoolFormComponent implements OnInit {
      * An array of daemon groups that can be associated with a pool.
      */
     @Input() selectableGroups: DaemonGroup[]
+
+    /**
+     * A list of known client classes offered as suggestions in the option
+     * client-class chips editor.
+     */
+    @Input() clientClasses: SelectableClientClass[] = []
 
     /**
      * An array of daemon group labels associated with the address pool.

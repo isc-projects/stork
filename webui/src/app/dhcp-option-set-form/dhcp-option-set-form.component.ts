@@ -3,6 +3,7 @@ import { UntypedFormArray, FormsModule, ReactiveFormsModule } from '@angular/for
 
 import { Button } from '@openng/optimus-ui/button'
 import { DhcpOptionFormComponent } from '../dhcp-option-form/dhcp-option-form.component'
+import { SelectableClientClass } from '../forms/selectable-client-class'
 
 /**
  * A component aggregating multiple forms for editing DHCP option information.
@@ -22,6 +23,11 @@ export class DhcpOptionSetFormComponent {
      * Sets the options universe: DHCPv4 or DHCPv6.
      */
     @Input() v6 = false
+
+    /**
+     * A list of known client classes offered as suggestions.
+     */
+    @Input() clientClasses: SelectableClientClass[] = []
 
     /**
      * An array holding form groups for each embedded DHCP option form.

@@ -124,6 +124,15 @@
             (click)="deleteOption()"
         ></p-button>
     </div>
+    @if (topLevel) {
+        <div class="ml-1 mt-2">
+            <app-dhcp-client-class-set-form
+                [clientClasses]="clientClasses"
+                [classFormControl]="optionClientClassesControl"
+                [floatingPlaceholder]="false"
+            ></app-dhcp-client-class-set-form>
+        </div>
+    }
     @if (optionFields.length !== 0) {
         <div formArrayName="optionFields" class="flex flex-column gap-5 mt-4">
             @for (fieldControl of $any(optionFields.controls); track fieldControl; let i = $index) {
@@ -418,6 +427,7 @@
         @if (suboptions.length > 0) {
             <app-dhcp-option-set-form
                 [v6]="v6"
+                [clientClasses]="clientClasses"
                 [formArray]="suboptions"
                 [nestLevel]="nestLevel + 1"
                 [optionSpace]="optionDef?.encapsulate"

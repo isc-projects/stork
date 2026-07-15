@@ -117,6 +117,10 @@ export class DhcpOptionSetFormService extends FormProcessor {
                 universe: universe,
                 options: new Array<DHCPOption>(),
             }
+            const clientClasses = (option.get('clientClasses')?.value as string[])?.filter((c) => c?.trim())
+            if (clientClasses?.length > 0) {
+                item.clientClasses = clientClasses
+            }
             if (option.get('unknown')) {
                 item.unknown = {}
                 for (const key in (option.get('unknown') as FormRecord<any>)?.controls) {
@@ -225,6 +229,9 @@ export class DhcpOptionSetFormService extends FormProcessor {
             }
             if (option.alwaysSend) {
                 optionFormGroup.get('alwaysSend').setValue(option.alwaysSend)
+            }
+            if (option.clientClasses?.length > 0) {
+                optionFormGroup.get('clientClasses').setValue(option.clientClasses)
             }
             for (let field of option.fields ?? []) {
                 // Sanity check option field values.

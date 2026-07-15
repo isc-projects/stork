@@ -1,5 +1,12 @@
 import { Component, EventEmitter, forwardRef, Input, OnInit, Output, inject } from '@angular/core'
-import { UntypedFormArray, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms'
+import {
+    UntypedFormArray,
+    UntypedFormControl,
+    UntypedFormGroup,
+    Validators,
+    FormsModule,
+    ReactiveFormsModule,
+} from '@angular/forms'
 import { MenuItem } from '@openng/optimus-ui/api'
 import { DhcpOptionFieldFormGroup, DhcpOptionFieldType } from '../forms/dhcp-option-field'
 import { DhcpOptionsService } from '../dhcp-options.service'
@@ -23,6 +30,8 @@ import { ToggleButton } from '@openng/optimus-ui/togglebutton'
 import { Tag } from '@openng/optimus-ui/tag'
 import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
 import { generateUUID } from '../utils'
+import { DhcpClientClassSetFormComponent } from '../dhcp-client-class-set-form/dhcp-client-class-set-form.component'
+import { SelectableClientClass } from '../forms/selectable-client-class'
 
 /**
  * A signature to a function adding a field to the form.
@@ -65,6 +74,7 @@ type AddFieldFn = () => void
         InputText,
         ToggleButton,
         Tag,
+        DhcpClientClassSetFormComponent,
         forwardRef(() => DhcpOptionSetFormComponent),
     ],
 })
@@ -86,6 +96,11 @@ export class DhcpOptionFormComponent implements OnInit {
      * Sets the options universe: DHCPv4 or DHCPv6.
      */
     @Input() v6 = false
+
+    /**
+     * A list of known client classes offered as suggestions in the chips editor.
+     */
+    @Input() clientClasses: SelectableClientClass[] = []
 
     /**
      * An empty form group instance created by the parent component.
@@ -370,6 +385,13 @@ export class DhcpOptionFormComponent implements OnInit {
      */
     get optionFields(): UntypedFormArray {
         return this.formGroup.get('optionFields') as UntypedFormArray
+    }
+
+    /**
+     * Convenience function returning the client-classes form control.
+     */
+    get optionClientClassesControl(): UntypedFormControl {
+        return this.formGroup.get('clientClasses') as UntypedFormControl
     }
 
     /**

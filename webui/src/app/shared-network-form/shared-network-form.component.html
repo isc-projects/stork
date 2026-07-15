@@ -73,6 +73,7 @@
                             }
                             <app-dhcp-option-set-form
                                 [v6]="state.dhcpv6"
+                                [clientClasses]="state.clientClasses"
                                 [formArray]="optionSet"
                                 (optionAdd)="onOptionAdd(i)"
                             ></app-dhcp-option-set-form>

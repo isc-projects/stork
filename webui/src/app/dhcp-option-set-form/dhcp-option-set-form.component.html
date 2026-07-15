@@ -2,6 +2,7 @@
     <div class="{{ last ? 'mb-0' : 'mb-4' }}">
         <app-dhcp-option-form
             [v6]="v6"
+            [clientClasses]="clientClasses"
             [formGroup]="formArray.at(i)"
             [formIndex]="i"
             [nestLevel]="nestLevel"

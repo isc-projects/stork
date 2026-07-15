@@ -120,6 +120,7 @@
                     }
                     <app-dhcp-option-set-form
                         [v6]="true"
+                        [clientClasses]="clientClasses"
                         [formArray]="optionSet"
                         (optionAdd)="onOptionAdd(i)"
                     ></app-dhcp-option-set-form>

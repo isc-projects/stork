@@ -497,6 +497,40 @@ func TestUnflattenDHCPOptions(t *testing.T) {
 	require.Nil(t, restOptions[0].Options[0].Options[0].Unknown)
 }
 
+// Test that client classes stored in the db model's ClientClasses field are
+// included in the REST API response.
+func TestUnflattenDHCPOptionsWithClientClasses(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	rapi, err := NewRestAPI(dbSettings, db, dbmodel.NewDHCPOptionDefinitionLookup())
+	require.NoError(t, err)
+
+	// Arrange
+	options := []dbmodel.DHCPOption{
+		{
+			AlwaysSend:    false,
+			Code:          6,
+			ClientClasses: []string{"KNOWN", "UNKNOWN"},
+			Fields: []dbmodel.DHCPOptionField{
+				{
+					FieldType: dhcpmodel.IPv4AddressField,
+					Values:    []any{"192.0.2.1"},
+				},
+			},
+			Space: dhcpmodel.DHCPv4OptionSpace,
+		},
+	}
+
+	// Act
+	restOptions := rapi.unflattenDHCPOptions(options, "", 0)
+
+	// Assert
+	require.Len(t, restOptions, 1)
+	require.Equal(t, []string{"KNOWN", "UNKNOWN"}, restOptions[0].ClientClasses)
+	require.EqualValues(t, 6, restOptions[0].Code)
+}
+
 // Test that option field values of different types are correctly converted
 // into REST API format.
 func TestUnflattenDHCPOptionsVariousFieldTypes(t *testing.T) {
