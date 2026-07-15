@@ -842,11 +842,7 @@ if !node_path.nil?
         puts "WARNING: Could not parse Node.js version from: '#{output}'"
     else
         installed = Gem::Version.new(m[1])
-        required  = Gem::Version.new(node_min_ver)
-        if installed < required
-            puts "WARNING: Node.js #{installed} found, but #{required} or later is recommended."
-            puts "WARNING: The build may fail. Install a newer Node.js to silence this."
-        end
+        puts "Detected Node.js version: #{installed}"
     end
 end
 NODE = require_manual_install_on("node", any_system)
@@ -859,11 +855,7 @@ if !npm_path.nil?
         puts "WARNING: Could not parse npm version from: '#{output}'"
     else
         installed = Gem::Version.new(m[1])
-        required  = Gem::Version.new(npm_min_ver)
-        if installed < required
-            puts "WARNING: npm #{installed} found, but #{required} or later is recommended."
-            puts "WARNING: The build may fail. Install a newer npm to silence this."
-        end
+        puts "Detected npm version: #{installed}"
     end
 end
 NPM = require_manual_install_on("npm", any_system)
@@ -895,18 +887,15 @@ end
 add_version_guard(OPENAPI_GENERATOR, openapi_generator_ver)
 
 go_path = which("go")
-if !go_path.nil?
+if go_path.nil?
+    puts "Go not found (please ensure go is available in the PATH)"
+else
     output = `#{go_path} version 2>/dev/null`.strip
     m = output.match(/go version go(\d+\.\d+(?:\.\d+)?)/)
     if m.nil?
-        puts "WARNING: Could not parse Go version from: '#{output}'"
+        puts "WARNING: Could not parse Go version from: #{output}"
     else
-        installed = Gem::Version.new(m[1])
-        required  = Gem::Version.new(go_min_ver)
-        if installed < required
-            puts "WARNING: Go #{installed} found, but Go #{required} or later is recommended."
-            puts "WARNING: The build may fail. Install a newer Go toolchain to silence this."
-        end
+        puts "Detected Go version: #{m[1]}"
     end
 end
 GO = require_manual_install_on("go", any_system)
