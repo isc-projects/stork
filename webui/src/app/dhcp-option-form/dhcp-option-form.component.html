@@ -417,7 +417,7 @@
     <div class="sm:pl-3 mt-6">
         @if (suboptions.length > 0) {
             <app-dhcp-option-set-form
-                v6="false"
+                [v6]="v6"
                 [formArray]="suboptions"
                 [nestLevel]="nestLevel + 1"
                 [optionSpace]="optionDef?.encapsulate"
