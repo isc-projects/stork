@@ -28,6 +28,37 @@ def which(cmd)
     nil
 end
 
+# Runs a command from PATH without raising if the executable is missing.
+def tool_command_output(cmd, *args)
+    path = which(cmd)
+    return nil if path.nil?
+
+    output, status = Open3.capture2(path, *args.map(&:to_s))
+    status.success? ? output.strip : nil
+end
+
+# Prints the version of an executable found in PATH, or a not-found message.
+def report_tool_version(cmd, label: nil, version_flag: '--version', version_pattern:)
+    label ||= cmd
+    if which(cmd).nil?
+        puts "#{label} not found (please ensure #{cmd} is available in the PATH)"
+        return
+    end
+
+    output = tool_command_output(cmd, *version_flag.split)
+    if output.nil? || output.empty?
+        puts "WARNING: Could not determine #{label} version"
+        return
+    end
+
+    m = output.match(version_pattern)
+    if m.nil?
+        puts "WARNING: Could not parse #{label} version from: '#{output}'"
+    else
+        puts "Detected #{label} version: #{m[1]}"
+    end
+end
+
 # Returns true if the libc-musl variant of the libc library is used. Otherwise,
 # returns false (the standard variant is used).
 def detect_libc_musl()
@@ -683,13 +714,17 @@ end
 tools_dir = File.expand_path('tools')
 directory tools_dir
 
+report_tool_version("node", label: "Node.js", version_pattern: /^v(\d+\.\d+(?:\.\d+)?)/)
+report_tool_version("npm", label: "npm", version_pattern: /^(\d+\.\d+(?:\.\d+)?)/)
+report_tool_version("go", label: "Go", version_flag: "version", version_pattern: /go version go(\d+\.\d+(?:\.\d+)?)/)
+
 # get the value of npm root. That's where the npm installs the
 # dependencies. This is the user-specific directory.
-node_dir = `npm root`.strip
+node_dir = tool_command_output("npm", "root")
 
 go_tools_dir = File.join(tools_dir, "golang")
-gopath = `go env GOPATH`.strip
-gobin = gopath + "/bin"
+gopath = tool_command_output("go", "env", "GOPATH")
+gobin = File.join(gopath, "bin")
 directory go_tools_dir
 file go_tools_dir => [gopath]
 
@@ -834,30 +869,8 @@ file DANGER => [ruby_tools_bin_bundle_dir, ruby_tools_dir, BUNDLE] do
 end
 add_hash_guard(DANGER, danger_gemfile)
 
-node_path = which("node")
-if !node_path.nil?
-    output = `#{node_path} --version 2>/dev/null`.strip
-    m = output.match(/^v(\d+\.\d+(?:\.\d+)?)/)
-    if m.nil?
-        puts "WARNING: Could not parse Node.js version from: '#{output}'"
-    else
-        installed = Gem::Version.new(m[1])
-        puts "Detected Node.js version: #{installed}"
-    end
-end
 NODE = require_manual_install_on("node", any_system)
 
-npm_path = which("npm")
-if !npm_path.nil?
-    output = `#{npm_path} --version 2>/dev/null`.strip
-    m = output.match(/^(\d+\.\d+(?:\.\d+)?)/)
-    if m.nil?
-        puts "WARNING: Could not parse npm version from: '#{output}'"
-    else
-        installed = Gem::Version.new(m[1])
-        puts "Detected npm version: #{installed}"
-    end
-end
 NPM = require_manual_install_on("npm", any_system)
 
 NPX = require_manual_install_on("npx", any_system)
@@ -886,18 +899,6 @@ file OPENAPI_GENERATOR => [WGET, tools_dir] do
 end
 add_version_guard(OPENAPI_GENERATOR, openapi_generator_ver)
 
-go_path = which("go")
-if go_path.nil?
-    puts "Go not found (please ensure go is available in the PATH)"
-else
-    output = `#{go_path} version 2>/dev/null`.strip
-    m = output.match(/go version go(\d+\.\d+(?:\.\d+)?)/)
-    if m.nil?
-        puts "WARNING: Could not parse Go version from: #{output}"
-    else
-        puts "Detected Go version: #{m[1]}"
-    end
-end
 GO = require_manual_install_on("go", any_system)
 
 GOSWAGGER = File.join(go_tools_dir, "goswagger")
