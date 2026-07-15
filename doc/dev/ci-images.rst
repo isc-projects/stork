@@ -65,7 +65,25 @@ Update the Docker CI Images
 To update the Docker CI images, follow these steps:
 
 1. Edit the specific Dockerfile.
-2. Check the next free tag number in the GitLab registry. Specify it in the
+2. You can build the image locally using the following command:
+
+    .. code-block:: console
+
+        $ docker build --no-cache -f docker/images/ci/ci-base.Dockerfile -t <your-local-tag> docker/
+
+    You may skip the `--no-cache` flag if you want to use the cached
+    image. That's faster, but with the flag you ensure the image builds
+    properly from scratch.
+
+    Once built, you probably want to run the container and check if it works as expected:
+
+    .. code-block:: console
+
+        $ docker run -it -v "<path-to-your-repo-on-host>:/app" <your-local-tag>
+        cd /app
+        rake build
+
+3. Check the next free tag number in the GitLab registry. Specify it in the
    ``TAG`` variable. Do not override existing tags (always keep the previous
    version around), and do not use the ``latest``  keyword unless absolutely
    confident. Use incremented tags.
@@ -79,7 +97,7 @@ To update the Docker CI images, follow these steps:
    in the last update). When updating the A and B images, assign
    the tag ``3`` to both of them.
 
-3. Run the specific Rake task with the ``DRY_RUN`` set to ``true``:
+4. Run the specific Rake task with the ``DRY_RUN`` set to ``true``:
 
     See below for the full list of available commands.
 
@@ -88,8 +106,8 @@ To update the Docker CI images, follow these steps:
         $ rake push:debian TAG=42 DRY_RUN=true
         $ rake push:rhel TAG=42 DRY_RUN=true
 
-4. Check whether the build was successful.
-5. If the ``DRY_RUN`` was set to ``true``, the image is available locally. Call
+5. Check whether the build was successful.
+6. If the ``DRY_RUN`` was set to ``true``, the image is available locally. Call
    the below command to run the container and attach to it:
 
     .. code-block:: console
@@ -98,8 +116,8 @@ To update the Docker CI images, follow these steps:
         # Example:
         $ docker run -it registry.gitlab.isc.org/isc-projects/stork/ci-base:42
 
-6. Check if the container is working as expected.
-7. If everything is OK, log into the registry.
+7. Check if the container is working as expected.
+8. If everything is OK, log into the registry.
 
     1. Create a new access token for the registry.
 
@@ -115,7 +133,7 @@ To update the Docker CI images, follow these steps:
             # 1. Provide your GitLab login.
             # 2. Provide the access token from the previous step.
 
-7. If everything is OK, set the ``DRY_RUN`` to ``false`` and run the task again.
+9. If everything is OK, set the ``DRY_RUN`` to ``false`` and run the task again.
 
     .. code-block:: console
 
