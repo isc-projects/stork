@@ -630,10 +630,6 @@ any_system = true
 
 ### Define package versions
 # Golang-related
-# Minimum version of Golang that has a realistic chance of compiling the code.
-# It is recommended to use the latest version, as older go versions might have
-# vulnerabilities or other issues.
-go_min_ver = '1.26.5'
 gocover_cobertura_ver = 'v1.5.0'
 tparse_ver = 'v0.18.0'
 go_junit_report_ver = 'v2.1.0'
