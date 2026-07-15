@@ -61,6 +61,9 @@ namespace :push do
             post_build_platforms = build_platforms
         else
             post_build_opts.append "--load"
+            # We want to build multi-platform images, even for
+            # the local machine (dry run mode).
+            post_build_platforms = build_platforms
         end
 
         # Execture commands.
