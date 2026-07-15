@@ -61,32 +61,27 @@ type ZoneTransferState struct {
 // If there are no statuses specified, all zone transfers are returned.
 // Otherwise, the zone transfers matching the enabled filters are returned.
 type GetZoneTransferStatesStatuses struct {
-	types map[bind9xfr.Status]bool
+	statuses map[bind9xfr.Status]bool
 }
 
-// Instantiates the zone types filter.
+// Instantiates the statuses filter.
 func NewGetZoneTransferStatesStatuses() *GetZoneTransferStatesStatuses {
 	return &GetZoneTransferStatesStatuses{
-		types: make(map[bind9xfr.Status]bool),
+		statuses: make(map[bind9xfr.Status]bool),
 	}
 }
 
-// Enables a filter for a specific zone type. The zones of the matching
-// type are returned.
+// Enables a filter for a specific status.
 func (f *GetZoneTransferStatesStatuses) Enable(status bind9xfr.Status) {
-	f.types[status] = true
+	f.statuses[status] = true
 }
 
-// Returns an iterator over the enabled zone types.
-// Since primary is an alias of master, and the secondary is an alias of slave,
-// the iterator includes both primary and master, and/or secondary and slave,
-// if one in any pair is enabled. The GetZonesFilter.EnableZoneType() function
-// includes a special logic to enable both aliases if one of them is enabled.
+// Returns an iterator over the enabled statuses.
 func (f *GetZoneTransferStatesStatuses) GetEnabled() iter.Seq[bind9xfr.Status] {
 	return func(yield func(bind9xfr.Status) bool) {
-		for zoneType, enabled := range f.types {
+		for status, enabled := range f.statuses {
 			if enabled {
-				if !yield(zoneType) {
+				if !yield(status) {
 					return
 				}
 			}
