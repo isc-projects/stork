@@ -58,7 +58,7 @@ func (cache *machineIPAddressCache) populate() error {
 // Returns the machines having an interface with the given IP address.
 // The specified ipAddress must exclude the prefix length. The local
 // loopback addresses are not included in the cache. If the IP address is
-// recognized as a loopback address, the function returns false in the
+// recognized as a loopback address, the function returns true in the
 // second return value.
 func (cache *machineIPAddressCache) getMachines(ipAddress string) ([]dbmodel.Machine, bool) {
 	parsedIP := storkutil.ParseIP(ipAddress)
