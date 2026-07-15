@@ -726,7 +726,6 @@ go_tools_dir = File.join(tools_dir, "golang")
 gopath = tool_command_output("go", "env", "GOPATH")
 gobin = File.join(gopath, "bin")
 directory go_tools_dir
-file go_tools_dir => [gopath]
 
 ruby_tools_dir = File.join(tools_dir, "ruby")
 directory ruby_tools_dir
