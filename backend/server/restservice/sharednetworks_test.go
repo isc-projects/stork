@@ -926,9 +926,10 @@ func TestCreateSharedNetwork4BeginSubmit(t *testing.T) {
 								Values:    []string{"192.0.2.1"},
 							},
 						},
-						Universe: 4,
+						Universe:      4,
+						ClientClasses: []string{"KNOWN"},
 						Unknown: map[string]any{
-							"client-classes": []any{"KNOWN"},
+							"unknown": "UNKNOWN",
 						},
 					},
 				},
@@ -1014,7 +1015,8 @@ func TestCreateSharedNetwork4BeginSubmit(t *testing.T) {
 										"csv-format": true,
 										"data": "192.0.2.1",
 										"space": "dhcp4",
-										"client-classes": ["KNOWN"]
+										"client-classes": ["KNOWN"],
+										"unknown": "UNKNOWN"
 									}
 								],
 								"relay": {
@@ -1144,6 +1146,10 @@ func TestCreateSharedNetwork4BeginSubmit(t *testing.T) {
 		require.Len(t, lsn.Options[0].Fields[0].Values, 1)
 		require.Equal(t, "192.0.2.1", lsn.Options[0].Fields[0].Values[0])
 		require.Equal(t, dhcpmodel.DHCPv4OptionSpace, lsn.Options[0].Space)
+		require.Len(t, lsn.Options[0].ClientClasses, 1)
+		require.Equal(t, "KNOWN", lsn.Options[0].ClientClasses[0])
+		require.Len(t, lsn.Options[0].UnknownParameters, 1)
+		require.Equal(t, "UNKNOWN", lsn.Options[0].UnknownParameters["unknown"])
 		require.NotEmpty(t, lsn.Hash)
 	}
 }

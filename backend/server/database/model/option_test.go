@@ -45,6 +45,31 @@ func TestDHCPOptionInterface(t *testing.T) {
 	}, option.GetUnknownParameters())
 }
 
+// Test that GetClientClasses returns the client classes associated with the option.
+func TestDHCPOptionGetClientClasses(t *testing.T) {
+	t.Run("option with client classes set", func(t *testing.T) {
+		// Arrange
+		option := DHCPOption{
+			Code:          3,
+			Space:         "dhcp4",
+			ClientClasses: []string{"FOO", "BAR"},
+		}
+
+		// Act & Assert
+		require.Equal(t, []string{"FOO", "BAR"}, option.GetClientClasses())
+	})
+
+	t.Run("option without client classes", func(t *testing.T) {
+		// Arrange
+		emptyOption := DHCPOption{
+			Code:  3,
+			Space: "dhcp4",
+		}
+		// Act & Assert
+		require.Nil(t, emptyOption.GetClientClasses())
+	})
+}
+
 // Test creating a DHCP option in Stork from a DHCP option in Kea.
 func TestNewDHCPOptionFromKea(t *testing.T) {
 	optionData := keaconfig.SingleOptionData{
