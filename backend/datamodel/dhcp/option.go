@@ -29,6 +29,9 @@ type DHCPOptionAccessor interface {
 	GetSpace() string
 	// Returns the universe (i.e., IPv4 or IPv6).
 	GetUniverse() storkutil.IPType
+	// Returns a list of client classes associated with this option.
+	// See: https://kea.readthedocs.io/en/kea-3.0.0/arm/classify.html#option-class-tagging
+	GetClientClasses() []string
 	// Returns unknown (unsupported by Stork) parameters.
 	GetUnknownParameters() map[string]any
 }

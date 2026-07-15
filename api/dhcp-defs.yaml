@@ -133,6 +133,10 @@
       universe:
         type: integer
         enum: *IPTYPE
+      clientClasses:
+        type: array
+        items:
+          type: string
       unknown:
         type: object
         additionalProperties: true

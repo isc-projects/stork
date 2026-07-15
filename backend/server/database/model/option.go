@@ -68,6 +68,7 @@ type DHCPOption struct {
 	Name              string
 	Space             string
 	Universe          storkutil.IPType
+	ClientClasses     []string
 	UnknownParameters map[string]any
 }
 
@@ -120,6 +121,11 @@ func (option DHCPOption) GetSpace() string {
 	return option.Space
 }
 
+// Return a list of client classes associated with this option.
+func (option DHCPOption) GetClientClasses() []string {
+	return option.ClientClasses
+}
+
 // Returns unknown (unsupported by Stork) parameters.
 func (option DHCPOption) GetUnknownParameters() map[string]any {
 	return option.UnknownParameters
@@ -138,6 +144,7 @@ func NewDHCPOptionFromKea(optionData keaconfig.SingleOptionData, universe storku
 		Name:              optionAccessor.GetName(),
 		Space:             optionAccessor.GetSpace(),
 		Universe:          optionAccessor.GetUniverse(),
+		ClientClasses:     optionAccessor.GetClientClasses(),
 		UnknownParameters: optionAccessor.GetUnknownParameters(),
 	}
 	for _, f := range optionAccessor.GetFields() {

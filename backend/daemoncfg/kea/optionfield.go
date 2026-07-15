@@ -66,6 +66,11 @@ func (option DHCPOption) GetSpace() string {
 	return option.Space
 }
 
+// Returns a list of client classes associated with this option.
+func (option DHCPOption) GetClientClasses() []string {
+	return option.ClientClasses
+}
+
 // Returns unknown (unsupported by Stork) parameters.
 func (option DHCPOption) GetUnknownParameters() map[string]any {
 	return option.UnknownParameters

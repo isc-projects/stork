@@ -12,12 +12,13 @@ import (
 
 // Represents the known (supported by Stork) parameters of a DHCP option.
 type SingleOptionDataKnownParameters struct {
-	AlwaysSend bool   `json:"always-send,omitempty"`
-	Code       uint16 `json:"code,omitempty"`
-	CSVFormat  bool   `json:"csv-format"`
-	Data       string `json:"data,omitempty"`
-	Name       string `json:"name,omitempty"`
-	Space      string `json:"space,omitempty"`
+	AlwaysSend    bool     `json:"always-send,omitempty"`
+	Code          uint16   `json:"code,omitempty"`
+	CSVFormat     bool     `json:"csv-format"`
+	Data          string   `json:"data,omitempty"`
+	Name          string   `json:"name,omitempty"`
+	Space         string   `json:"space,omitempty"`
+	ClientClasses []string `json:"client-classes,omitempty"`
 }
 
 // Represents a DHCP option in the format used by Kea (i.e., an item of the
@@ -62,11 +63,12 @@ func CreateSingleOptionData(daemonID int64, lookup DHCPOptionDefinitionLookup, o
 	// true for all options for which the definitions are known.
 	data := &SingleOptionData{
 		SingleOptionDataKnownParameters: SingleOptionDataKnownParameters{
-			AlwaysSend: option.IsAlwaysSend(),
-			Code:       option.GetCode(),
-			CSVFormat:  lookup.DefinitionExists(daemonID, option),
-			Name:       option.GetName(),
-			Space:      option.GetSpace(),
+			AlwaysSend:    option.IsAlwaysSend(),
+			Code:          option.GetCode(),
+			CSVFormat:     lookup.DefinitionExists(daemonID, option),
+			Name:          option.GetName(),
+			Space:         option.GetSpace(),
+			ClientClasses: option.GetClientClasses(),
 		},
 		UnknownParameters: option.GetUnknownParameters(),
 	}
@@ -127,6 +129,7 @@ type DHCPOption struct {
 	Name              string
 	Space             string
 	Universe          storkutil.IPType
+	ClientClasses     []string
 	UnknownParameters map[string]any
 }
 
@@ -139,6 +142,7 @@ func CreateDHCPOption(optionData SingleOptionData, universe storkutil.IPType, lo
 		Name:              optionData.Name,
 		Space:             optionData.Space,
 		Universe:          universe,
+		ClientClasses:     optionData.ClientClasses,
 		UnknownParameters: optionData.UnknownParameters,
 	}
 	data := strings.TrimSpace(optionData.Data)

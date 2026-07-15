@@ -89,6 +89,11 @@ func (option testDHCPOption) GetUniverse() storkutil.IPType {
 	return storkutil.IPv4
 }
 
+// Returns a list of client classes associated with this option.
+func (option testDHCPOption) GetClientClasses() []string {
+	return []string{"foo", "bar"}
+}
+
 // Returns unknown (unsupported by Stork) parameters.
 func (option testDHCPOption) GetUnknownParameters() map[string]any {
 	return option.unknownParameters

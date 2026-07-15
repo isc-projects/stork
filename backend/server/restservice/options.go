@@ -108,10 +108,11 @@ func (r *RestAPI) flattenDHCPOptions(optionSpace string, restOptions []*models.D
 	// Convert each option.
 	for _, restOption := range restOptions {
 		option := dbmodel.DHCPOption{
-			AlwaysSend:  restOption.AlwaysSend,
-			Code:        restOption.Code,
-			Encapsulate: restOption.Encapsulate,
-			Universe:    storkutil.IPType(restOption.Universe),
+			AlwaysSend:    restOption.AlwaysSend,
+			Code:          restOption.Code,
+			Encapsulate:   restOption.Encapsulate,
+			Universe:      storkutil.IPType(restOption.Universe),
+			ClientClasses: restOption.ClientClasses,
 		}
 		// The option space should be set for suboptions.
 		if len(optionSpace) > 0 {
