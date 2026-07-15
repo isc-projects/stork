@@ -429,9 +429,9 @@ describe('DhcpOptionSetFormService', () => {
                     },
                 ],
                 options: [],
+                clientClasses: ['KNOWN'],
                 unknown: {
                     'never-send': true,
-                    'client-classes': ['KNOWN'],
                 },
             },
             {
@@ -545,8 +545,9 @@ describe('DhcpOptionSetFormService', () => {
         expect(formArray.at(0).get('unknown')).toBeTruthy()
         expect(formArray.at(0).get('unknown').value).toEqual({
             'never-send': true,
-            'client-classes': ['KNOWN'],
         })
+        expect(formArray.at(0).get('clientClasses')).toBeTruthy()
+        expect(formArray.at(0).get('clientClasses').value).toEqual(['KNOWN'])
 
         // Option 1024 suboptions.
         expect(formArray.at(0).get('suboptions')).toBeInstanceOf(UntypedFormArray)

@@ -754,6 +754,7 @@ describe('HostFormComponent', () => {
             formBuilder.group({
                 optionCode: [5],
                 alwaysSend: true,
+                clientClasses: [[]],
                 optionFields: formBuilder.array([
                     new DhcpOptionFieldFormGroup(DhcpOptionFieldType.IPv4Address, {
                         control: formBuilder.control('192.0.2.1'),
@@ -1015,6 +1016,7 @@ describe('HostFormComponent', () => {
             formBuilder.group({
                 optionCode: [23],
                 alwaysSend: true,
+                clientClasses: [[]],
                 optionFields: formBuilder.array([
                     new DhcpOptionFieldFormGroup(DhcpOptionFieldType.IPv6Address, {
                         control: formBuilder.control('2001:db8:1::1'),
@@ -1028,6 +1030,7 @@ describe('HostFormComponent', () => {
             formBuilder.group({
                 optionCode: [23],
                 alwaysSend: true,
+                clientClasses: [[]],
                 optionFields: formBuilder.array([
                     new DhcpOptionFieldFormGroup(DhcpOptionFieldType.IPv6Address, {
                         control: formBuilder.control('2001:db8:1::2'),
@@ -1127,6 +1130,7 @@ describe('HostFormComponent', () => {
             formBuilder.group({
                 optionCode: ['abc'],
                 alwaysSend: false,
+                clientClasses: [[]],
                 optionFields: formBuilder.array([
                     new DhcpOptionFieldFormGroup(DhcpOptionFieldType.IPv4Address, {
                         control: formBuilder.control('192.0.2.1'),
@@ -1374,6 +1378,7 @@ describe('HostFormComponent', () => {
             formBuilder.group({
                 optionCode: [5],
                 alwaysSend: true,
+                clientClasses: [[]],
                 optionFields: formBuilder.array([
                     new DhcpOptionFieldFormGroup(DhcpOptionFieldType.IPv4Address, {
                         control: formBuilder.control('192.0.2.1'),
