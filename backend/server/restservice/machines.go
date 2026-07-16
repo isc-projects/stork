@@ -361,8 +361,15 @@ func (r *RestAPI) GetMachines(ctx context.Context, params services.GetMachinesPa
 // function to create a drop down list with available machines or to validate user's input
 // against machines' names available in the system.
 func (r *RestAPI) GetMachinesDirectory(ctx context.Context, params services.GetMachinesDirectoryParams) middleware.Responder {
-	authorized := true
-	dbMachines, err := dbmodel.GetAllMachinesNoRelations(r.DB, &authorized)
+	var daemonNames []daemonname.Name
+	if params.DaemonName != nil {
+		for _, dn := range params.DaemonName {
+			if name, ok := daemonname.Parse(dn); ok {
+				daemonNames = append(daemonNames, name)
+			}
+		}
+	}
+	dbMachines, err := dbmodel.GetAuthorizedMachinesDirectory(r.DB, daemonNames...)
 	if err != nil {
 		msg := "Cannot get machines directory from the database"
 		log.WithError(err).Error(msg)

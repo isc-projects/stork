@@ -76,6 +76,24 @@
       operationId: getMachinesDirectory
       tags:
         - Services
+      parameters:
+      - name: daemonName
+        in: query
+        description: >-
+          Limit returned list of entities (e.g. machines) to the ones with running
+          daemons with a given name.
+        type: array
+        items:
+          type: string
+          enum: &DAEMONNAME
+            - dhcp4
+            - dhcp6
+            - ca
+            - netconf
+            - d2
+            - pdns
+            - named
+        collectionFormat: multi
       responses:
         200:
           description: List of machine ids and names/addresses.

@@ -965,7 +965,7 @@ func TestGetMachinesEmptyList(t *testing.T) {
 }
 
 // Test that a list of machines' ids and addresses/names is returned
-// via the API.
+// via the API, and that the list can be filtered by daemon name.
 func TestGetMachinesDirectory(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -979,12 +979,20 @@ func TestGetMachinesDirectory(t *testing.T) {
 	err := dbmodel.AddMachine(db, machine1)
 	require.NoError(t, err)
 
+	daemon1 := dbmodel.NewDaemon(machine1, daemonname.DHCPv4, true, nil)
+	err = dbmodel.AddDaemon(db, daemon1)
+	require.NoError(t, err)
+
 	machine2 := &dbmodel.Machine{
 		Address:    "machine2.example.org",
 		AgentPort:  8080,
 		Authorized: true,
 	}
 	err = dbmodel.AddMachine(db, machine2)
+	require.NoError(t, err)
+
+	daemon2 := dbmodel.NewDaemon(machine2, daemonname.Bind9, true, nil)
+	err = dbmodel.AddDaemon(db, daemon2)
 	require.NoError(t, err)
 
 	settings := RestAPISettings{}
@@ -995,24 +1003,60 @@ func TestGetMachinesDirectory(t *testing.T) {
 	require.NoError(t, err)
 	ctx := context.Background()
 
-	params := services.GetMachinesDirectoryParams{}
-
-	rsp := rapi.GetMachinesDirectory(ctx, params)
-	machines := rsp.(*services.GetMachinesDirectoryOK).Payload
-	require.EqualValues(t, machines.Total, 2)
-
-	// Ensure that the returned machines are in a coherent order.
-	sort.Slice(machines.Items, func(i, j int) bool {
-		return machines.Items[i].ID < machines.Items[j].ID
+	t.Run("Kea daemon", func(t *testing.T) {
+		params := services.GetMachinesDirectoryParams{
+			DaemonName: []string{string(daemonname.DHCPv4)},
+		}
+		rsp := rapi.GetMachinesDirectory(ctx, params)
+		machines := rsp.(*services.GetMachinesDirectoryOK).Payload
+		require.EqualValues(t, machines.Total, 1)
+		require.Equal(t, machine1.ID, machines.Items[0].ID)
+		require.Equal(t, machine1.Address, *machines.Items[0].Address)
 	})
 
-	// Validate the returned data.
-	require.Equal(t, machine1.ID, machines.Items[0].ID)
-	require.NotNil(t, machines.Items[0].Address)
-	require.Equal(t, machine1.Address, *machines.Items[0].Address)
-	require.Equal(t, machine2.ID, machines.Items[1].ID)
-	require.NotNil(t, machines.Items[1].Address)
-	require.Equal(t, machine2.Address, *machines.Items[1].Address)
+	t.Run("Bind9 daemon", func(t *testing.T) {
+		params := services.GetMachinesDirectoryParams{
+			DaemonName: []string{string(daemonname.Bind9)},
+		}
+		rsp := rapi.GetMachinesDirectory(ctx, params)
+		machines := rsp.(*services.GetMachinesDirectoryOK).Payload
+		require.EqualValues(t, machines.Total, 1)
+		require.Equal(t, machine2.ID, machines.Items[0].ID)
+		require.Equal(t, machine2.Address, *machines.Items[0].Address)
+	})
+
+	t.Run("All daemons", func(t *testing.T) {
+		params := services.GetMachinesDirectoryParams{
+			DaemonName: []string{string(daemonname.DHCPv4), string(daemonname.Bind9)},
+		}
+		rsp := rapi.GetMachinesDirectory(ctx, params)
+		machines := rsp.(*services.GetMachinesDirectoryOK).Payload
+		require.EqualValues(t, machines.Total, 2)
+
+		// Validate the returned data. Machines should be sorted by name.
+		require.Equal(t, machine1.ID, machines.Items[0].ID)
+		require.NotNil(t, machines.Items[0].Address)
+		require.Equal(t, machine1.Address, *machines.Items[0].Address)
+		require.Equal(t, machine2.ID, machines.Items[1].ID)
+		require.NotNil(t, machines.Items[1].Address)
+		require.Equal(t, machine2.Address, *machines.Items[1].Address)
+	})
+
+	t.Run("No daemons", func(t *testing.T) {
+		params := services.GetMachinesDirectoryParams{}
+
+		rsp := rapi.GetMachinesDirectory(ctx, params)
+		machines := rsp.(*services.GetMachinesDirectoryOK).Payload
+		require.EqualValues(t, machines.Total, 2)
+
+		// Validate the returned data. Machines should be sorted by name.
+		require.Equal(t, machine1.ID, machines.Items[0].ID)
+		require.NotNil(t, machines.Items[0].Address)
+		require.Equal(t, machine1.Address, *machines.Items[0].Address)
+		require.Equal(t, machine2.ID, machines.Items[1].ID)
+		require.NotNil(t, machines.Items[1].Address)
+		require.Equal(t, machine2.Address, *machines.Items[1].Address)
+	})
 }
 
 // Test getting the number of the unauthorized machines.
