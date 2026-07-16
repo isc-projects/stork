@@ -8,6 +8,7 @@ import (
 	"github.com/go-pg/pg/v10"
 	"github.com/go-pg/pg/v10/orm"
 	pkgerrors "github.com/pkg/errors"
+	"isc.org/stork/datamodel/daemonname"
 	dbops "isc.org/stork/server/database"
 )
 
@@ -341,9 +342,30 @@ func GetAllMachinesWithRelations(db *pg.DB, authorized *bool, relations ...Machi
 	return machines, nil
 }
 
-// Get all machines from database without involving any DB relations. This is to have as lightweight DB query as possible. It can be filtered by authorized field.
-func GetAllMachinesNoRelations(db *pg.DB, authorized *bool) ([]Machine, error) {
-	return GetAllMachinesWithRelations(db, authorized)
+// Get machines directory from the database. It is intended to be a lightweight
+// query to get machine IDs and addresses. Typical use case is to populate the
+// dropdown lists for selecting machines. Only authorized machines are returned.
+// If daemon names are provided, only the machines with specified daemons will be
+// returned.
+func GetAuthorizedMachinesDirectory(db *pg.DB, daemonNames ...daemonname.Name) ([]Machine, error) {
+	var machines []Machine
+
+	q := db.Model(&machines).
+		Column("machine.id", "machine.address").
+		Where("authorized = ?", true).
+		Order("machine.address ASC")
+
+	if len(daemonNames) > 0 {
+		// Filter by daemon names.
+		q = q.Where("EXISTS (SELECT 1 FROM daemon WHERE machine.id = daemon.machine_id AND daemon.name IN (?))", pg.In(daemonNames))
+	}
+
+	err := q.Select()
+	if err != nil {
+		return nil, pkgerrors.Wrapf(err, "problem getting authorized machines directory")
+	}
+
+	return machines, nil
 }
 
 // Returns the number of unauthorized machines.

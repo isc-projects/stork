@@ -1479,27 +1479,32 @@ func TestMachineTag(t *testing.T) {
 	require.Equal(t, "cool.example.org", machine.GetHostname())
 }
 
-// Check if getting all machines without any relations works.
-func TestGetAllMachinesNoRelations(t *testing.T) {
+// Check if getting authorized machines directory works.
+func TestGetAuthorizedMachinesDirectory(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	// add 20 machines
-	for i := 1; i <= 20; i++ {
+	// Add 30 machines.
+	for i := 1; i <= 30; i++ {
 		m := &Machine{
-			Address:   "localhost",
-			AgentPort: 8080 + int64(i),
-			Error:     "some error",
-			State: MachineState{
-				Hostname: "aaaa",
-				Cpus:     4,
-			},
+			Address:    "localhost",
+			AgentPort:  8080 + int64(i),
 			Authorized: i%2 == 0,
 		}
 		err := AddMachine(db, m)
 		require.NoError(t, err)
 
-		d := NewDaemon(m, daemonname.DHCPv4, true, []*AccessPoint{
+		// Add different types of daemons to the machines.
+		var daemonName daemonname.Name
+		switch {
+		case i <= 10:
+			daemonName = daemonname.DHCPv4
+		case i <= 20:
+			daemonName = daemonname.Bind9
+		default:
+			daemonName = daemonname.PDNS
+		}
+		d := NewDaemon(m, daemonName, true, []*AccessPoint{
 			{
 				Type:    AccessPointControl,
 				Address: "localhost",
@@ -1509,49 +1514,63 @@ func TestGetAllMachinesNoRelations(t *testing.T) {
 		})
 		err = AddDaemon(db, d)
 		require.NoError(t, err)
+	}
 
-		cr := &ConfigReview{
-			ConfigHash: "1234",
-			Signature:  "2345",
-			DaemonID:   d.ID,
-		}
-		err = AddConfigReview(db, cr)
+	// Collect the machine IDs by daemon name.
+	allMachines, err := GetAllMachinesWithRelations(db, storkutil.Ptr(true), MachineRelationDaemons)
+	require.NoError(t, err)
+	require.Len(t, allMachines, 15)
+
+	ids := make(map[daemonname.Name][]int64)
+	for _, machine := range allMachines {
+		require.Len(t, machine.Daemons, 1)
+		ids[machine.Daemons[0].Name] = append(ids[machine.Daemons[0].Name], machine.ID)
+	}
+
+	t.Run("Kea daemons", func(t *testing.T) {
+		machines, err := GetAuthorizedMachinesDirectory(db, daemonname.DHCPv4)
 		require.NoError(t, err)
-	}
+		require.Len(t, machines, 5)
 
-	// get all machines should return 20 machines
-	machines, err := GetAllMachinesNoRelations(db, nil)
-	require.NoError(t, err)
-	require.Len(t, machines, 20)
-
-	for i, machine := range machines {
-		require.EqualValues(t, "localhost", machine.Address)
-		require.EqualValues(t, "some error", machine.Error)
-		require.EqualValues(t, 4, machine.State.Cpus)
-		if i > 0 {
-			require.NotEqual(t, machines[i-1].AgentPort, machine.AgentPort)
+		for _, machine := range machines {
+			require.Equal(t, "localhost", machine.Address)
+			require.Contains(t, ids[daemonname.DHCPv4], machine.ID)
 		}
-		// Ensure that no relations were involved.
-		require.Nil(t, machine.Daemons)
-	}
+	})
 
-	// get only unauthorized machines
-	authorized := false
-	machines, err = GetAllMachinesNoRelations(db, &authorized)
-	require.NoError(t, err)
-	require.Len(t, machines, 10)
-	for _, machine := range machines {
-		require.False(t, machine.Authorized)
-	}
+	t.Run("Bind9 daemons", func(t *testing.T) {
+		machines, err := GetAuthorizedMachinesDirectory(db, daemonname.Bind9)
+		require.NoError(t, err)
+		require.Len(t, machines, 5)
 
-	// and now only authorized machines
-	authorized = true
-	machines, err = GetAllMachinesNoRelations(db, &authorized)
-	require.NoError(t, err)
-	require.Len(t, machines, 10)
-	for _, machine := range machines {
-		require.True(t, machine.Authorized)
-	}
+		for _, machine := range machines {
+			require.Equal(t, "localhost", machine.Address)
+			require.Contains(t, ids[daemonname.Bind9], machine.ID)
+		}
+	})
+
+	t.Run("PDNS daemons", func(t *testing.T) {
+		machines, err := GetAuthorizedMachinesDirectory(db, daemonname.PDNS)
+		require.NoError(t, err)
+		require.Len(t, machines, 5)
+
+		for _, machine := range machines {
+			require.Equal(t, "localhost", machine.Address)
+			require.Contains(t, ids[daemonname.PDNS], machine.ID)
+		}
+	})
+
+	t.Run("All daemons", func(t *testing.T) {
+		machines, err := GetAuthorizedMachinesDirectory(db, daemonname.DHCPv4, daemonname.Bind9, daemonname.PDNS)
+		require.NoError(t, err)
+		require.Len(t, machines, 15)
+	})
+
+	t.Run("No daemons", func(t *testing.T) {
+		machines, err := GetAuthorizedMachinesDirectory(db)
+		require.NoError(t, err)
+		require.Len(t, machines, 15)
+	})
 }
 
 // Test GetLabel method returns hostname when available.
