@@ -151,7 +151,7 @@
             </div>
         </div>
 
-        @if (showAuthorized() === false && registrationDisabled) {
+        @if (!showAuthorized() && registrationDisabled) {
             <p-message icon="pi pi-exclamation-triangle" severity="warn">
                 <div>
                     Registration of new machines is disabled. Navigate to the

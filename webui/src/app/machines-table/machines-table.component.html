@@ -307,10 +307,8 @@
                     }
                 </td>
                 <td>
-                    @if (m.authorized) {
-                        @if (m.error) {
-                            <p-message severity="error" text="{{ m.error }}"></p-message>
-                        }
+                    @if (m.authorized && m.error) {
+                        <p-message severity="error" text="{{ m.error }}"></p-message>
                     }
                 </td>
             }
