@@ -2,11 +2,10 @@ FROM redhat/ubi10:10.0
 
 WORKDIR /repo
 RUN dnf install -y \
-    git-2.47.* \
+    git-2.52.* \
     java-21-openjdk-headless-21.0.* \
-    tzdata-java-2025b \
+    tzdata-java-2026b \
     man-db-2.12.* \
-    gcc-c++-14.2.* \
     make-4.* \
     procps-ng-4.0.* \
     python3-3.12.* \
