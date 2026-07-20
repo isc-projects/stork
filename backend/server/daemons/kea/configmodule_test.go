@@ -4613,12 +4613,8 @@ func TestApplySubnetUpdate(t *testing.T) {
 // Tests that applying subnet update for cb_cmds daemons keeps the subnet in
 // the config backend even if it clears a server-tag association.
 func TestApplySubnetUpdateToConfigBackendUnassignSubnet(t *testing.T) {
-	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
-		DefLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
-	})
-	module := NewConfigModule(manager)
-	require.NotNil(t, module)
-
+	// A function helper to create a new Kea daemon with the Config Backend
+	// configured. It accepts a server tag and daemon ID.
 	newCBDaemon := func(id int64, serverTag string) *dbmodel.Daemon {
 		serverConfig := fmt.Sprintf(`{
 			"Dhcp4": {
@@ -4642,9 +4638,29 @@ func TestApplySubnetUpdateToConfigBackendUnassignSubnet(t *testing.T) {
 		}
 	}
 
+	// Create two daemons with different server tags, both using the same
+	// config backend.
 	daemon1 := newCBDaemon(1, "tag-a")
 	daemon2 := newCBDaemon(2, "tag-b")
 
+	// Create a third daemon without the config backend.
+	// The config module doesn't allow to leave a subnet without any
+	// associations. We create this daemon to ensure that at least one
+	// non-config backend association remains after the update.
+	// This daemon has no subnet_cmds hook in its configuration to avoid
+	// producing subnet_cmds-specific commands that are not relevant to this
+	// test.
+	daemonConfig, err := keaconfig.NewConfig([]byte(`{ "Dhcp4": {} }`))
+	require.NoError(t, err)
+	daemon3 := &dbmodel.Daemon{
+		ID:   3,
+		Name: daemonname.DHCPv4,
+		KeaDaemon: &dbmodel.KeaDaemon{
+			Config: &dbmodel.KeaConfig{Config: daemonConfig},
+		},
+	}
+
+	// Create a subnet that is associated with both daemons.
 	existingSubnet := &dbmodel.Subnet{
 		ID:     1,
 		Prefix: "192.0.2.0/24",
@@ -4659,19 +4675,32 @@ func TestApplySubnetUpdateToConfigBackendUnassignSubnet(t *testing.T) {
 				Daemon:        daemon2,
 				LocalSubnetID: 42,
 			},
+			{
+				DaemonID:      daemon3.ID,
+				Daemon:        daemon3,
+				LocalSubnetID: 42,
+			},
 		},
 	}
 
-	state := config.NewTransactionStateWithUpdate[ConfigRecipe](dbmodel.ConfigOperationKeaSubnetUpdate, daemon1.ID, daemon2.ID)
+	manager := newTestManager(&appstest.ManagerAccessorsWrapper{
+		DefLookup: dbmodel.NewDHCPOptionDefinitionLookup(),
+	})
+	module := NewConfigModule(manager)
+	require.NotNil(t, module)
+
+	// Prepare the update subnet transaction.
+	state := config.NewTransactionStateWithUpdate[ConfigRecipe](dbmodel.ConfigOperationKeaSubnetUpdate, daemon1.ID, daemon2.ID, daemon3.ID)
 	recipe := ConfigRecipe{
 		SubnetConfigRecipeParams: SubnetConfigRecipeParams{
 			SubnetBeforeUpdate: existingSubnet,
 		},
 	}
-	err := state.SetRecipeForUpdate(0, &recipe)
+	err = state.SetRecipeForUpdate(0, &recipe)
 	require.NoError(t, err)
-	ctx := context.WithValue(context.Background(), config.StateContextKey, *state)
+	ctx := context.WithValue(t.Context(), config.StateContextKey, *state)
 
+	// Update the subnet to remove the association with one of the daemons.
 	updatedSubnet := &dbmodel.Subnet{
 		ID:     1,
 		Prefix: "192.0.2.0/24",
@@ -4681,18 +4710,27 @@ func TestApplySubnetUpdateToConfigBackendUnassignSubnet(t *testing.T) {
 				Daemon:        daemon1,
 				LocalSubnetID: 42,
 			},
+			{
+				DaemonID:      daemon3.ID,
+				Daemon:        daemon3,
+				LocalSubnetID: 42,
+			},
 		},
 	}
 
+	// Apply the update.
 	ctx, err = module.ApplySubnetUpdate(ctx, updatedSubnet)
 	require.NoError(t, err)
 
+	// Check if the transaction was performed as expected.
 	stateReturned, ok := config.GetTransactionState[ConfigRecipe](ctx)
 	require.True(t, ok)
 	require.Len(t, stateReturned.Updates, 1)
 	commands := stateReturned.Updates[0].Recipe.Commands
 	require.Len(t, commands, 1)
 
+	// The command should modify the server tag list to associate only with the
+	// remaining daemon.
 	marshalled, err := commands[0].Command.Marshal()
 	require.NoError(t, err)
 	require.JSONEq(t, `{
@@ -4701,6 +4739,55 @@ func TestApplySubnetUpdateToConfigBackendUnassignSubnet(t *testing.T) {
 		"arguments": {
 			"subnets": [{"id": 42, "subnet": "192.0.2.0/24", "shared-network-name": ""}],
 			"server-tags": ["tag-a"]
+		}
+	}`, string(marshalled))
+	require.EqualValues(t, daemon1.ID, commands[0].Daemon.ID)
+
+	// Prepare the second update subnet transaction.
+	state = config.NewTransactionStateWithUpdate[ConfigRecipe](dbmodel.ConfigOperationKeaSubnetUpdate, daemon1.ID, daemon3.ID)
+	recipe = ConfigRecipe{
+		SubnetConfigRecipeParams: SubnetConfigRecipeParams{
+			SubnetBeforeUpdate: updatedSubnet,
+		},
+	}
+	err = state.SetRecipeForUpdate(0, &recipe)
+	require.NoError(t, err)
+	ctx = context.WithValue(t.Context(), config.StateContextKey, *state)
+
+	// Update the subnet to remove all associations.
+	updatedSubnet = &dbmodel.Subnet{
+		ID:     1,
+		Prefix: "192.0.2.0/24",
+		LocalSubnets: []*dbmodel.LocalSubnet{
+			{
+				DaemonID:      daemon3.ID,
+				Daemon:        daemon3,
+				LocalSubnetID: 42,
+			},
+		},
+	}
+
+	// Apply the second update.
+	ctx, err = module.ApplySubnetUpdate(ctx, updatedSubnet)
+	require.NoError(t, err)
+
+	// Check if the transaction was performed as expected.
+	stateReturned, ok = config.GetTransactionState[ConfigRecipe](ctx)
+	require.True(t, ok)
+	require.Len(t, stateReturned.Updates, 1)
+	commands = stateReturned.Updates[0].Recipe.Commands
+	require.Len(t, commands, 1)
+
+	// The command should modify the server tag list to associate only with the
+	// remaining daemon.
+	marshalled, err = commands[0].Command.Marshal()
+	require.NoError(t, err)
+	require.JSONEq(t, `{
+		"command": "remote-subnet4-set",
+		"service": ["dhcp4"],
+		"arguments": {
+			"subnets": [{"id": 42, "subnet": "192.0.2.0/24", "shared-network-name": ""}],
+			"server-tags": []
 		}
 	}`, string(marshalled))
 	require.EqualValues(t, daemon1.ID, commands[0].Daemon.ID)
