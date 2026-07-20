@@ -79,8 +79,8 @@ export class SubnetFormState implements FormState {
 
     /**
      * A list of all daemons that can be selected from the drop down list.
-     * They are grouped, daemons in the same group must be configured at the
-     * same time.
+     * They are grouped, daemons in the same group must be configured together
+     * using the same data.
      */
     allDaemons: DaemonGroup[] = []
 
@@ -88,8 +88,8 @@ export class SubnetFormState implements FormState {
      * A filtered list of daemons comprising only those that match the
      * type of the first selected daemon.
      *
-     * They are grouped, daemons in the same group must be configured at the
-     * same time.
+     * They are grouped. Daemons in the same group must be configured together
+     * using the same data.
      *
      * Maintaining a filtered list prevents the user from selecting the
      * servers of different kinds, e.g. one DHCPv4 and one DHCPv6 server.

@@ -51,7 +51,7 @@ function createDaemonGroups(...daemonIDs: number[]): DaemonGroup[] {
 }
 
 /**
- * Creates a daemon groups from the local subnets of a subnet.
+ * Creates daemon groups from the local subnets of a subnet.
  */
 function createDaemonGroupsFromSubnet(subnet: Subnet): DaemonGroup[] {
     const daemonIDs =

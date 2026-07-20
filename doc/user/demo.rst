@@ -138,8 +138,8 @@ agent-kea-subscriber-1, agent-kea-subscriber-2, and agent-kea-subscriber-3
    These containers should be run together. Each runs a Kea
    DHCPv4 server instance configured with the subscriber hooks. They have a
    common Config Backend database. The agent-kea-subscriber-1 and
-   agent-kea-subscriber-3 containers share the same server tag (they aren't
-   configured as a HA pair).
+   agent-kea-subscriber-3 containers share the same server tag. They aren't
+   configured as a HA pair.
 
 These are containers with third-party services that are required by Stork:
 
