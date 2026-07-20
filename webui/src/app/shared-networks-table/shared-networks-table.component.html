@@ -204,8 +204,7 @@
                 {{ net.addrUtilization ?? 0 | number: '1.0-1' }}%
                 @if (net.addrUtilization > 80 && net.addrUtilization <= 90) {
                     <i class="pi pi-exclamation-triangle text-2xl vertical-align-text-top text-orange-400"></i>
-                }
-                @if (net.addrUtilization > 90) {
+                } @else if (net.addrUtilization > 90) {
                     <i class="pi pi-exclamation-circle text-2xl vertical-align-text-top text-red-500"></i>
                 }
             </td>
@@ -221,8 +220,7 @@
                         {{ net.pdUtilization ?? 0 | number: '1.0-1' }} %
                         @if (net.pdUtilization > 80 && net.pdUtilization <= 90) {
                             <i class="pi pi-exclamation-triangle text-2xl vertical-align-text-top text-orange-400"></i>
-                        }
-                        @if (net.pdUtilization > 90) {
+                        } @else if (net.pdUtilization > 90) {
                             <i class="pi pi-exclamation-circle text-2xl vertical-align-text-top text-red-500"></i>
                         }
                     } @else {

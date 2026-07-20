@@ -2,9 +2,9 @@
     <div class="text-base text-file-viewer">
         @for (line of contents; track line; let i = $index) {
             <pre class="line">
-        <span class="line-number">{{ i + 1 }}</span>
-        <span>{{ line }}</span>
-      </pre>
+                <span class="line-number">{{ i + 1 }}</span>
+                <span>{{ line }}</span>
+            </pre>
         }
     </div>
 } @else {

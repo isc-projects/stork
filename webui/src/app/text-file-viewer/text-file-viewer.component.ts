@@ -9,7 +9,6 @@ import { Component, Input } from '@angular/core'
  */
 @Component({
     selector: 'app-text-file-viewer',
-    imports: [],
     templateUrl: './text-file-viewer.component.html',
     styleUrl: './text-file-viewer.component.sass',
 })
