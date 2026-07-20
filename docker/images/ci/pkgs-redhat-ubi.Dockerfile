@@ -28,4 +28,4 @@ RUN dnf install -y \
     && chmod +t /tmp \
     # Git sometimes gets grumpy if the host repo was cloned by a user,
     # with a different UID than the one running the container.
-    git config --global --add safe.directory /app
+    && git config --global --add safe.directory /app
