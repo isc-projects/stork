@@ -19,6 +19,7 @@ import { PluralizePipe } from '../pipes/pluralize.pipe'
 import { TableCaptionComponent } from '../table-caption/table-caption.component'
 import { SplitButton } from 'primeng/splitbutton'
 import { DaemonFilterComponent } from '../daemon-filter/daemon-filter.component'
+import { LeaseDetailBoxComponent } from '../lease-detail-box/lease-detail-box.component'
 import { stateToString } from '../lease-utils'
 
 /**
@@ -46,6 +47,7 @@ import { stateToString } from '../lease-utils'
         TableCaptionComponent,
         SplitButton,
         DaemonFilterComponent,
+        LeaseDetailBoxComponent,
     ],
 })
 export class LeasesListTableComponent implements OnInit, OnDestroy {

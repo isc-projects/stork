@@ -1,0 +1,132 @@
+<div class="flex flex-wrap gap-3">
+    @if (lease().hwAddress || lease().clientId || lease().duid) {
+        <div class="flex-auto">
+            <p-fieldset legend="Client" styleClass="max-width-100vw">
+                <table>
+                    @if (lease().hwAddress) {
+                        <tr>
+                            <td style="width: 10rem">MAC address:</td>
+                            <td>
+                                <app-identifier
+                                    [hexValue]="lease().hwAddress"
+                                    [defaultHexFormat]="true"
+                                    styleClass="font-italic"
+                                ></app-identifier>
+                            </td>
+                        </tr>
+                    }
+                    @if (lease().clientId) {
+                        <tr>
+                            <td style="width: 10rem">Client Identifier:</td>
+                            <td>
+                                <app-identifier
+                                    [hexValue]="lease().clientId"
+                                    [defaultHexFormat]="false"
+                                    styleClass="font-italic"
+                                ></app-identifier>
+                            </td>
+                        </tr>
+                    }
+                    @if (lease().duid) {
+                        <tr>
+                            <td style="width: 10rem">DUID:</td>
+                            <td>
+                                <app-identifier
+                                    [hexValue]="lease().duid"
+                                    [defaultHexFormat]="false"
+                                    styleClass="font-italic"
+                                ></app-identifier>
+                            </td>
+                        </tr>
+                    }
+                </table>
+            </p-fieldset>
+        </div>
+    }
+    <div class="flex-auto">
+        <p-fieldset legend="Details" styleClass="max-width-100vw">
+            <table>
+                <tr>
+                    <td style="width: 10rem">Kea Subnet ID:</td>
+                    <td>
+                        <i>{{ lease().subnetId }}</i>
+                    </td>
+                </tr>
+                @if (lease().iaid) {
+                    <tr>
+                        <td style="width: 10rem">IAID:</td>
+                        <td>
+                            <i>{{ lease().iaid }}</i>
+                        </td>
+                    </tr>
+                }
+                @if (lease().preferredLifetime) {
+                    <tr>
+                        <td style="width: 10rem">Preferred Lifetime:</td>
+                        <td>
+                            <i>{{ lease().preferredLifetime }} seconds</i>
+                        </td>
+                    </tr>
+                }
+                <tr>
+                    <td style="width: 10rem">Valid Lifetime:</td>
+                    <td>
+                        <i>{{ lease().validLifetime }} seconds</i>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="width: 10rem">Allocated at:</td>
+                    <td>
+                        <i>{{ lease().cltt | localtime }}</i>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="width: 10rem">Expires at:</td>
+                    <td>
+                        <i>{{ lease().cltt + lease().validLifetime | localtime }}</i>
+                    </td>
+                </tr>
+            </table>
+        </p-fieldset>
+    </div>
+    @if (lease().userContext) {
+        <div class="flex-auto">
+            <p-fieldset legend="User Context" styleClass="max-width-100vw">
+                <!-- JSON viewer -->
+                <app-json-tree-root [value]="lease().userContext"></app-json-tree-root>
+            </p-fieldset>
+        </div>
+    }
+    @if (lease().hostname) {
+        <div class="flex-auto">
+            <p-fieldset legend="DDNS" styleClass="max-width-100vw">
+                <table>
+                    @if (lease().hostname) {
+                        <tr>
+                            <td style="width: 10rem">Hostname:</td>
+                            <td>
+                                <i>{{ lease().hostname }}</i>
+                            </td>
+                        </tr>
+                    }
+                    @if (lease().hasOwnProperty('fqdnFwd')) {
+                        <tr>
+                            <td style="width: 10rem">Forward DDNS:</td>
+                            <td>
+                                <i>{{ lease().fqdnFwd ? 'yes' : 'no' }}</i>
+                            </td>
+                        </tr>
+                    }
+                    @if (lease().hasOwnProperty('fqdnRev')) {
+                        <tr>
+                            <td style="width: 10rem">Reverse DDNS:</td>
+                            <td>
+                                <i>{{ lease().fqdnRev ? 'yes' : 'no' }}</i>
+                            </td>
+                        </tr>
+                    }
+                </table>
+            </p-fieldset>
+        </div>
+    }
+</div>

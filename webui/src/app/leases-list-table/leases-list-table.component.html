@@ -16,6 +16,7 @@
     stateStorage="local"
     (rowsChange)="storeTableRowsPerPage($event)"
     class="full-w-table"
+    dataKey="id"
 >
     <ng-template #caption>
         <app-table-caption [tableElement]="leasesListTable" tableKey="leases-list-table" [wideHelpTip]="true">
@@ -208,6 +209,7 @@
     </ng-template>
     <ng-template #header>
         <tr>
+            <th style="width: 3rem"><!-- empty header column for row expand/collapse button --></th>
             <th style="width: 20%" [pSortableColumn]="LeaseListSortField.IpAddress">
                 <div class="flex gap-1 white-space-nowrap">
                     IP Address<p-sortIcon [field]="LeaseListSortField.IpAddress" />
@@ -250,8 +252,19 @@
             </td>
         </tr>
     </ng-template>
-    <ng-template #body let-l>
+    <ng-template #body let-l let-expanded="expanded">
         <tr id="lease-row-{{ l.id }}">
+            <td>
+                @if (expanded) {
+                    <button [pRowToggler]="l" aria-label="Hide Details">
+                        <i class="pi pi-chevron-down"></i>
+                    </button>
+                } @else {
+                    <button [pRowToggler]="l" aria-label="Show Details">
+                        <i class="pi pi-chevron-right"></i>
+                    </button>
+                }
+            </td>
             <td>{{ l.ipAddress }}</td>
             <td>{{ l.hwAddress || '—' }}</td>
             <td>{{ l.duid || '—' }}</td>
@@ -272,6 +285,14 @@
                     [attrs]="{ id: l.subnetId, subnet: l.subnetPrefix }"
                     [showIdentifier]="true"
                 ></app-entity-link>
+            </td>
+        </tr>
+    </ng-template>
+    <ng-template #expandedrow let-l>
+        <tr>
+            <td><!-- empty cell to align rest of row to trailing edge of disclosure button --></td>
+            <td colspan="8">
+                <app-lease-detail-box [lease]="l" colspan="5"></app-lease-detail-box>
             </td>
         </tr>
     </ng-template>

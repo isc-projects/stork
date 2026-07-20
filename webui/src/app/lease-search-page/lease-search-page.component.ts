@@ -15,14 +15,11 @@ import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { TableModule } from 'primeng/table'
 import { NgClass } from '@angular/common'
 import { Message } from 'primeng/message'
-import { Fieldset } from 'primeng/fieldset'
-import { IdentifierComponent } from '../identifier/identifier.component'
-import { JsonTreeRootComponent } from '../json-tree-root/json-tree-root.component'
 import { ProgressSpinner } from 'primeng/progressspinner'
-import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { Lease, LeasesSearchErredDaemon } from '../backend'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { stateToString } from '../lease-utils'
+import { LeaseDetailBoxComponent } from '../lease-detail-box/lease-detail-box.component'
 
 /**
  * Enumeration specifying the status of the leases search.
@@ -68,12 +65,9 @@ enum LeasesSearchStatus {
         TableModule,
         Message,
         NgClass,
-        Fieldset,
-        IdentifierComponent,
-        JsonTreeRootComponent,
         ProgressSpinner,
-        LocaltimePipe,
         EntityLinkComponent,
+        LeaseDetailBoxComponent,
     ],
 })
 export class LeaseSearchPageComponent implements OnInit {
