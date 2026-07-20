@@ -20,8 +20,7 @@
                     checkbox on the left and click the <em>Authorize selected</em> button.
                 }
             </p>
-        }
-        @if (activeTabEntityID() > 0) {
+        } @else {
             <p>
                 This page displays details about {{ !!activeTabMachine()?.authorized === false ? 'un' : '' }}authorized
                 machine
@@ -51,9 +50,9 @@
         </p>
         <div class="flex align-items-start mb-2">
             <textarea class="monospace agent-install-cmds" readonly="" rows="3" #agentInstallationText>
-            wget {{ getBaseUrl() }}/stork-install-agent.sh
-            chmod a+x stork-install-agent.sh
-          sudo ./stork-install-agent.sh</textarea>
+wget {{ getBaseUrl() }}/stork-install-agent.sh
+chmod a+x stork-install-agent.sh
+sudo ./stork-install-agent.sh</textarea>
             <p-button
                 (click)="copyToClipboard(agentInstallationText)"
                 icon="pi pi-copy"
