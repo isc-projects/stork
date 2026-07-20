@@ -112,7 +112,7 @@ describe('KeaDaemonComponent', () => {
         expect(component.databaseNameFromType('mysql')).toBe('MySQL')
         expect(component.databaseNameFromType('postgresql')).toBe('PostgreSQL')
         expect(component.databaseNameFromType('cql')).toBe('Cassandra')
-        expect(component.databaseNameFromType('other')).toBe('Unknown')
+        expect(component.databaseNameFromType('other' as any)).toBe('Unknown')
     })
 
     it('should return canonical database connection details string', () => {

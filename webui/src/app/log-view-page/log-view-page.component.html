@@ -59,23 +59,20 @@
             </span>
         </div>
     </ng-template>
-    @if (loaded && (!contents || contents.length === 0)) {
-        <div>(empty)</div>
-    }
-    @if (contents && contents.length > 1) {
-        <div>...</div>
-    }
-    @for (line of contents; track line; let i = $index) {
-        <div>
-            @for (block of parseLogLine(line); track block) {
-                <span [style]="{ color: logSeverityColor(block) }">
-                    {{ i > 0 || contents.length === 1 ? block : '' }}
-                </span>
-            }
-        </div>
-    }
 
-    @if (!loaded) {
+    @if (!!contents?.length) {
+        @for (line of contents; track line; let i = $index) {
+            <div>
+                @for (block of parseLogLine(line); track block) {
+                    <span [style]="{ color: logSeverityColor(block) }">
+                        {{ i > 0 || contents.length === 1 ? block : '' }}
+                    </span>
+                }
+            </div>
+        }
+    } @else if (loaded) {
+        <div>(empty)</div>
+    } @else {
         <p-progressSpinner
             [style]="{ width: '30px', height: '30px', 'vertical-align': 'top', 'margin-right': '20px' }"
             strokeWidth="6"

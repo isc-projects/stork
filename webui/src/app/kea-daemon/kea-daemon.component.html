@@ -69,7 +69,9 @@
         <!-- warning about not-active and not-monitored -->
         @if (!daemon().active) {
             <div>
-                @if (!daemon().monitored && isNeverFetchedDaemon) {
+                @if (daemon().monitored) {
+                    <p-message severity="error" text="There is a communication issue with the daemon."> </p-message>
+                } @else if (isNeverFetchedDaemon) {
                     <p-message icon="pi pi-exclamation-triangle" severity="warn">
                         <div>
                             <p>
@@ -87,15 +89,13 @@
                                         target="_blank"
                                         >See the Kea ARM</a
                                     >
-                                }
-                                @if (daemon().name === 'dhcp6') {
+                                } @else if (daemon().name === 'dhcp6') {
                                     <a
                                         href="https://kea.readthedocs.io/en/latest/arm/dhcp6-srv.html#management-api-for-the-dhcpv6-server"
                                         target="_blank"
                                         >See the Kea ARM</a
                                     >
-                                }
-                                @if (daemon().name === 'd2') {
+                                } @else if (daemon().name === 'd2') {
                                     <a
                                         href="https://kea.readthedocs.io/en/latest/arm/ddns.html#management-api-for-the-d2-server"
                                         target="_blank"
@@ -106,17 +106,13 @@
                             </p>
                         </div>
                     </p-message>
-                }
-                @if (!daemon().monitored && !isNeverFetchedDaemon) {
+                } @else {
                     <p-message
                         severity="warn"
                         text="This daemon is currently not monitored by Stork.
                             The daemon was manually disabled."
                     >
                     </p-message>
-                }
-                @if (daemon().monitored) {
-                    <p-message severity="error" text="There is a communication issue with the daemon."> </p-message>
                 }
             </div>
         }
@@ -284,8 +280,7 @@
                                 <td>
                                     @if (!logTargetViewable(logTarget.output)) {
                                         <i>{{ logTarget.output }}</i>
-                                    }
-                                    @if (logTargetViewable(logTarget.output)) {
+                                    } @else {
                                         <p-button
                                             routerLink="/logs/{{ logTarget.id }}"
                                             appAccessEntity="logs"
