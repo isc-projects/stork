@@ -1011,7 +1011,7 @@ func TestGetMachinesDirectory(t *testing.T) {
 		machines := rsp.(*services.GetMachinesDirectoryOK).Payload
 		require.EqualValues(t, machines.Total, 1)
 		require.Equal(t, machine1.ID, machines.Items[0].ID)
-		require.Equal(t, machine1.Address, *machines.Items[0].Address)
+		require.Equal(t, machine1.Address, machines.Items[0].Address)
 	})
 
 	t.Run("Bind9 daemon", func(t *testing.T) {
@@ -1022,7 +1022,7 @@ func TestGetMachinesDirectory(t *testing.T) {
 		machines := rsp.(*services.GetMachinesDirectoryOK).Payload
 		require.EqualValues(t, machines.Total, 1)
 		require.Equal(t, machine2.ID, machines.Items[0].ID)
-		require.Equal(t, machine2.Address, *machines.Items[0].Address)
+		require.Equal(t, machine2.Address, machines.Items[0].Address)
 	})
 
 	t.Run("All daemons", func(t *testing.T) {
@@ -1036,10 +1036,10 @@ func TestGetMachinesDirectory(t *testing.T) {
 		// Validate the returned data. Machines should be sorted by name.
 		require.Equal(t, machine1.ID, machines.Items[0].ID)
 		require.NotNil(t, machines.Items[0].Address)
-		require.Equal(t, machine1.Address, *machines.Items[0].Address)
+		require.Equal(t, machine1.Address, machines.Items[0].Address)
 		require.Equal(t, machine2.ID, machines.Items[1].ID)
 		require.NotNil(t, machines.Items[1].Address)
-		require.Equal(t, machine2.Address, *machines.Items[1].Address)
+		require.Equal(t, machine2.Address, machines.Items[1].Address)
 	})
 
 	t.Run("No daemons", func(t *testing.T) {
@@ -1052,10 +1052,10 @@ func TestGetMachinesDirectory(t *testing.T) {
 		// Validate the returned data. Machines should be sorted by name.
 		require.Equal(t, machine1.ID, machines.Items[0].ID)
 		require.NotNil(t, machines.Items[0].Address)
-		require.Equal(t, machine1.Address, *machines.Items[0].Address)
+		require.Equal(t, machine1.Address, machines.Items[0].Address)
 		require.Equal(t, machine2.ID, machines.Items[1].ID)
 		require.NotNil(t, machines.Items[1].Address)
-		require.Equal(t, machine2.Address, *machines.Items[1].Address)
+		require.Equal(t, machine2.Address, machines.Items[1].Address)
 	})
 }
 

@@ -96,9 +96,11 @@
         collectionFormat: multi
       responses:
         200:
-          description: List of machine ids and names/addresses.
+          description: >-
+            Returns a list of machine ids and names/addresses with optional filtering
+            by daemon names.
           schema:
-            $ref: '#/definitions/Machines'
+            $ref: '#/definitions/MachinesDirectory'
         default:
           description: 'generic error response'
           schema:

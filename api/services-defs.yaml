@@ -219,6 +219,24 @@
       total:
         type: integer
 
+  MachinesDirectoryEntry:
+    type: object
+    properties:
+      id:
+        type: integer
+      address:
+        type: string
+
+  MachinesDirectory:
+    type: object
+    properties:
+      items:
+        type: array
+        items:
+          $ref: '#/definitions/MachinesDirectoryEntry'
+      total:
+        type: integer
+
   AccessPoint:
      type: object
      properties:

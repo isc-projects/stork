@@ -6,7 +6,7 @@ import { EventsService, UsersService, ServicesService } from '../backend/api/api
 import { AuthService } from '../auth.service'
 import { Subscription, filter, lastValueFrom } from 'rxjs'
 import { daemonNameToFriendlyName, getErrorMessage } from '../utils'
-import { Daemon, Event, Events, EventSortField, Machine, User } from '../backend'
+import { Daemon, Event, Events, EventSortField, MachinesDirectoryEntry, User } from '../backend'
 import { ServerSentEventsService, SSEFilter } from '../server-sent-events.service'
 import { convertSortingFields } from '../table'
 import { NgClass } from '@angular/common'
@@ -109,7 +109,7 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
     ]
 
     users: User[]
-    machines: Machine[] = []
+    machines: MachinesDirectoryEntry[] = []
     daemonNames: DaemonNameOption[] = (() => {
         const names: DaemonNameOption[] = []
         for (const dt of Object.values(Daemon.NameEnum)) {
@@ -122,7 +122,7 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
         return names
     })()
 
-    selectedMachine: Machine
+    selectedMachine: MachinesDirectoryEntry
     selectedDaemonName: DaemonNameOption
     selectedUser: User
 

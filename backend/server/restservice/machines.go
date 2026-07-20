@@ -379,13 +379,13 @@ func (r *RestAPI) GetMachinesDirectory(ctx context.Context, params services.GetM
 		return rsp
 	}
 
-	machines := &models.Machines{
+	machines := &models.MachinesDirectory{
 		Total: int64(len(dbMachines)),
 	}
 	for i := range dbMachines {
-		machine := models.Machine{
+		machine := models.MachinesDirectoryEntry{
 			ID:      dbMachines[i].ID,
-			Address: &dbMachines[i].Address,
+			Address: dbMachines[i].Address,
 		}
 		machines.Items = append(machines.Items, &machine)
 	}
