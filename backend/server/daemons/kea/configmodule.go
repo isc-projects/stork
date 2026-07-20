@@ -1308,32 +1308,43 @@ func (module *ConfigModule) ApplySubnetUpdate(ctx context.Context, subnet *dbmod
 	}
 
 	// Create commands to remove the subnet from the daemons which are no
-	// longer associated with the subnet. It is done only for the daemons
-	// backed by the subnet_cmds hook library because for the daemons backed by
-	// the cb_cmds hook the associations are fully managed by the
-	// remote-subnetX-set command.
+	// longer associated with the subnet.
 	var removeCommands []ConfigCommand
-	for _, localSubnet := range existingSubnet.LocalSubnets {
-		hook := localSubnet.Daemon.KeaDaemon.Config.GetHookLibraries().GetSubnetAndSharedNetworkAlteringHookLibrary()
-		if hook == keaconfig.SubnetAndSharedNetworkAlteringHookLibraryCBCmds {
-			continue
+	if err = forEachUniqueConfigSource(existingSubnet.LocalSubnets, func(localSubnets []*dbmodel.LocalSubnet) error {
+		// Check if any of the daemons in the existing association are still
+		// associated with the subnet. For subnet_cmds daemons, the passed
+		// slice has always one element.
+		areSomeDaemonsStillAssociated := false
+		for _, localSubnet := range localSubnets {
+			if _, found := currentAssociationByDaemonID[localSubnet.DaemonID]; found {
+				areSomeDaemonsStillAssociated = true
+				break
+			}
+		}
+		if areSomeDaemonsStillAssociated {
+			// The subnet is still in use by some daemons. Do not remove it.
+			// For cb_cmds daemons, the server tags are altered by update
+			// commands.
+			return nil
 		}
 
-		if _, found := currentAssociationByDaemonID[localSubnet.DaemonID]; found {
-			continue
-		}
-
+		// The subnet is no longer associated with any of the daemons.
+		// Remove it.
+		targetLocalSubnet := localSubnets[0]
 		var cmds []ConfigCommand
 		cmds, err = createSubnetDeleteCommands(
-			localSubnet,
+			targetLocalSubnet,
 			existingSubnet.GetFamily(),
 			sharedNetworkNameBeforeUpdate,
 		)
 		if err != nil {
-			return ctx, err
+			return err
 		}
 		removeCommands = append(removeCommands, cmds...)
-		alteredDaemons[localSubnet.DaemonID] = localSubnet.Daemon
+		alteredDaemons[targetLocalSubnet.DaemonID] = targetLocalSubnet.Daemon
+		return nil
+	}); err != nil {
+		return ctx, err
 	}
 
 	// Generate commands to save the subnet configuration if applicable.

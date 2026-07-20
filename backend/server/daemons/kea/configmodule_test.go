@@ -4783,12 +4783,9 @@ func TestApplySubnetUpdateToConfigBackendUnassignSubnet(t *testing.T) {
 	marshalled, err = commands[0].Command.Marshal()
 	require.NoError(t, err)
 	require.JSONEq(t, `{
-		"command": "remote-subnet4-set",
+		"command": "remote-subnet4-del-by-id",
 		"service": ["dhcp4"],
-		"arguments": {
-			"subnets": [{"id": 42, "subnet": "192.0.2.0/24", "shared-network-name": ""}],
-			"server-tags": []
-		}
+		"arguments": { "subnets": [{"id": 42}] }
 	}`, string(marshalled))
 	require.EqualValues(t, daemon1.ID, commands[0].Daemon.ID)
 }
