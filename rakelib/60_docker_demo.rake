@@ -222,7 +222,7 @@ namespace :demo do
         The CS_REPO_ACCESS_TOKEN environment variable must be set to run the
         containers.'
         task :kea_subscriber => [DOCKER_COMPOSE] do
-            docker_up_services("agent-kea-subscriber-1", "agent-kea-subscriber-2")
+            docker_up_services("agent-kea-subscriber-1", "agent-kea-subscriber-2", "agent-kea-subscriber-3")
         end
 
         desc 'Build and run container with Stork Agent and BIND 9
