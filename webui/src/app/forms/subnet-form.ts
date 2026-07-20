@@ -29,11 +29,20 @@ export class DaemonGroup {
     constructor(index: number, daemons: KeaDaemon[]) {
         this.index = index
         this.daemons = daemons
-        this.label = daemons
-            .filter((d) => !!d.label)
-            .map((d) => d.label)
-            .sort((a, b) => a.localeCompare(b))
-            .join(', ')
+
+        if (daemons.length === 0) {
+            // It should never happen.
+            this.label = "empty"
+        } else if (daemons.length === 1) {
+            const daemon = daemons[0]
+            if (!!daemon.serverTag) {
+                this.label = `${daemon.serverTag} (${daemon.label})`
+            } else {
+                this.label = daemon.label as string
+            }
+        } else {
+            this.label = `${daemons[0].serverTag} (${daemons[0].label}) + ${daemons.length - 1} more`
+        }
     }
 }
 
