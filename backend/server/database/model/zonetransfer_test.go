@@ -518,8 +518,8 @@ func TestGetZoneTransferStatesByPageWithFiltering(t *testing.T) {
 		// Without filtering we should get all zone transfer states.
 		zoneTransfers, total, err := GetZoneTransferStatesByPage(db, nil, "", SortDirAny)
 		require.NoError(t, err)
-		require.EqualValues(t, 6, total)
-		require.Len(t, zoneTransfers, 6)
+		require.EqualValues(t, len(testZoneTransfers), total)
+		require.Len(t, zoneTransfers, len(testZoneTransfers))
 	})
 
 	t.Run("filter by serial", func(t *testing.T) {
@@ -551,10 +551,11 @@ func TestGetZoneTransferStatesByPageWithFiltering(t *testing.T) {
 		filter.EnableStatus(bind9xfr.StatusCompleted)
 		zoneTransfers, total, err := GetZoneTransferStatesByPage(db, filter, "status", SortDirAsc)
 		require.NoError(t, err)
-		require.EqualValues(t, 2, total)
-		require.Len(t, zoneTransfers, 2)
+		require.EqualValues(t, 3, total)
+		require.Len(t, zoneTransfers, 3)
 		require.Equal(t, bind9xfr.StatusCompleted, zoneTransfers[0].Status)
-		require.Equal(t, bind9xfr.StatusStarted, zoneTransfers[1].Status)
+		require.Equal(t, bind9xfr.StatusCompleted, zoneTransfers[1].Status)
+		require.Equal(t, bind9xfr.StatusStarted, zoneTransfers[2].Status)
 	})
 
 	t.Run("filter by zone transfer statuses unspecified", func(t *testing.T) {
@@ -563,8 +564,8 @@ func TestGetZoneTransferStatesByPageWithFiltering(t *testing.T) {
 		}
 		zoneTransfers, total, err := GetZoneTransferStatesByPage(db, filter, "", SortDirAny)
 		require.NoError(t, err)
-		require.EqualValues(t, 6, total)
-		require.Len(t, zoneTransfers, 6)
+		require.EqualValues(t, len(testZoneTransfers), total)
+		require.Len(t, zoneTransfers, len(testZoneTransfers))
 
 		// Collect unique zone transfer statuses from the zone transfers.
 		collectedStatuses := make(map[bind9xfr.Status]struct{})
@@ -585,7 +586,7 @@ func TestGetZoneTransferStatesByPageWithFiltering(t *testing.T) {
 		}
 		zoneTransfers1, total, err := GetZoneTransferStatesByPage(db, filter, "", SortDirAny)
 		require.NoError(t, err)
-		require.EqualValues(t, 6, total)
+		require.EqualValues(t, len(testZoneTransfers), total)
 		require.Len(t, zoneTransfers1, 2)
 
 		// Use the 2nd zone transfer as a start for another fetch.
@@ -593,8 +594,8 @@ func TestGetZoneTransferStatesByPageWithFiltering(t *testing.T) {
 		filter.Limit = nil
 		zoneTransfers2, total, err := GetZoneTransferStatesByPage(db, filter, "", SortDirAny)
 		require.NoError(t, err)
-		require.EqualValues(t, 6, total)
-		require.Len(t, zoneTransfers2, 5)
+		require.EqualValues(t, len(testZoneTransfers), total)
+		require.Len(t, zoneTransfers2, len(testZoneTransfers)-1)
 
 		// The first returned zone transfer should overlap with the last zone transfer
 		// returned during the first fetch.
@@ -607,15 +608,15 @@ func TestGetZoneTransferStatesByPageWithFiltering(t *testing.T) {
 		}
 		zoneTransfers, total, err := GetZoneTransferStatesByPage(db, filter, "", SortDirAny)
 		require.NoError(t, err)
-		require.EqualValues(t, 6, total)
-		require.Len(t, zoneTransfers, 6)
+		require.EqualValues(t, len(testZoneTransfers), total)
+		require.Len(t, zoneTransfers, len(testZoneTransfers))
 
 		filter.ServerMachineID = storkutil.Ptr(machine2.ID)
 		filter.ClientMachineID = nil
 		zoneTransfers2, total, err := GetZoneTransferStatesByPage(db, filter, "", SortDirAny)
 		require.NoError(t, err)
-		require.EqualValues(t, 6, total)
-		require.Len(t, zoneTransfers2, 6)
+		require.EqualValues(t, len(testZoneTransfers), total)
+		require.Len(t, zoneTransfers2, len(testZoneTransfers))
 
 		filter.ClientMachineID = storkutil.Ptr(machine2.ID)
 		filter.ServerMachineID = storkutil.Ptr(machine.ID)
@@ -631,8 +632,8 @@ func TestGetZoneTransferStatesByPageWithFiltering(t *testing.T) {
 		}
 		zoneTransfers, total, err := GetZoneTransferStatesByPage(db, filter, "", SortDirAny)
 		require.NoError(t, err)
-		require.EqualValues(t, 3, total)
-		require.Len(t, zoneTransfers, 3)
+		require.EqualValues(t, len(testZoneTransfers)/2, total)
+		require.Len(t, zoneTransfers, len(testZoneTransfers)/2)
 
 		for _, zoneTransfer := range zoneTransfers {
 			require.False(t, zoneTransfer.Local)
@@ -701,6 +702,19 @@ func TestGetZoneTransferStatesByPageWithTextFilter(t *testing.T) {
 		require.Len(t, zoneTransfers, 3)
 		for _, zoneTransfer := range zoneTransfers {
 			require.Equal(t, "_default", zoneTransfer.ViewName)
+		}
+	})
+
+	t.Run("filter by root zone name", func(t *testing.T) {
+		searchKeys := []string{"roo", "root", "(root", "(root)", "Root", "(rooT"}
+		for _, searchKey := range searchKeys {
+			filter := &GetZoneTransferStatesFilter{
+				Text: storkutil.Ptr(searchKey),
+			}
+			zoneTransfers, total, err := GetZoneTransferStatesByPage(db, filter, "", SortDirAny)
+			require.NoError(t, err)
+			require.EqualValuesf(t, 1, total, "failed for search key: %s", searchKey)
+			require.Lenf(t, zoneTransfers, 1, "failed for search key: %s", searchKey)
 		}
 	})
 
@@ -848,8 +862,8 @@ func TestGetZoneTransferStatesByPageWithSorting(t *testing.T) {
 			filter := &GetZoneTransferStatesFilter{}
 			zoneTransfers, total, err := GetZoneTransferStatesByPage(db, filter, testCase.sortField, testCase.sortDir)
 			require.NoError(t, err)
-			require.EqualValues(t, 6, total)
-			require.Len(t, zoneTransfers, 6)
+			require.EqualValues(t, len(testZoneTransfers), total)
+			require.Len(t, zoneTransfers, len(testZoneTransfers))
 			for i := range zoneTransfers {
 				if i > 0 {
 					testCase.compareFn(t, zoneTransfers[i], zoneTransfers[i-1])

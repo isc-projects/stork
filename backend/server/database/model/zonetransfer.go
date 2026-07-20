@@ -279,6 +279,14 @@ func GetZoneTransferStatesByPage(dbi pg.DBI, filter *GetZoneTransferStatesFilter
 		// Ensure case-insensitive comparison against root and (root).
 		filterText := strings.ToLower(*filter.Text)
 		q = q.WhereGroup(func(q *pg.Query) (*pg.Query, error) {
+			// UI can use the keyword "root" or "(root)" to search for transfers pertaining
+			// to the root zone. That's because the root zone is displayed using the keywords
+			// in the UI. Users will expect that the root zone transfers are returned not only
+			// when they type the dot but also the keyword.
+			//nolint:gocritic
+			if strings.HasPrefix("root", filterText) || strings.HasPrefix("(root)", filterText) {
+				q = q.Where("zone_transfer_state.zone_name = ?", ".")
+			}
 			q = q.WhereOr("zone_transfer_state.zone_name ILIKE ?", "%"+filterText+"%").
 				WhereOr("zone_transfer_state.view_name ILIKE ?", "%"+*filter.Text+"%").
 				WhereOr("zone_transfer_state.client ILIKE ?", "%"+*filter.Text+"%").

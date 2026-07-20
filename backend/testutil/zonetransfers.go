@@ -76,6 +76,15 @@ func GetTestZoneTransfers() []*bind9xfr.State {
 			Status:   bind9xfr.StatusMessage,
 			Message:  "Transfer failed: AXFR timed out after 0 seconds (serial 0)",
 		},
+		{
+			ZoneName:       ".",
+			Status:         bind9xfr.StatusCompleted,
+			Serial:         0,
+			Client:         "2001:db8::1",
+			Server:         "2001:db8::2",
+			StartTime:      time.Date(2026, 4, 26, 1, 2, 0, 13000000, time.UTC),
+			CompletionTime: time.Date(2026, 4, 26, 1, 2, 0, 13000000, time.UTC),
+		},
 	}
 }
 

@@ -318,7 +318,8 @@ func TestGetZoneTransferStatesWithFiltering(t *testing.T) {
 	err = dbmodel.AddDaemon(db, daemon2)
 	require.NoError(t, err)
 
-	testZoneTransfers := testutil.GetTestZoneTransfers()
+	testNonLocalZoneTransfers := testutil.GetTestZoneTransfers()
+	testZoneTransfers := append([]*bind9xfr.State{}, testNonLocalZoneTransfers...)
 	testZoneTransfers = append(testZoneTransfers, testutil.GetTestLocalZoneTransfers()...)
 	for i, xfr := range testZoneTransfers {
 		xfr := &dbmodel.ZoneTransferState{
@@ -376,8 +377,8 @@ func TestGetZoneTransferStatesWithFiltering(t *testing.T) {
 		rsp := rapi.GetZoneTransferStates(t.Context(), params)
 		require.IsType(t, &dns.GetZoneTransferStatesOK{}, rsp)
 		okResp := rsp.(*dns.GetZoneTransferStatesOK)
-		require.Len(t, okResp.Payload.Items, 2)
-		require.EqualValues(t, okResp.Payload.Total, 2)
+		require.Len(t, okResp.Payload.Items, 3)
+		require.EqualValues(t, okResp.Payload.Total, 3)
 	})
 
 	t.Run("filter by zone transfer statuses unspecified", func(t *testing.T) {
@@ -388,8 +389,8 @@ func TestGetZoneTransferStatesWithFiltering(t *testing.T) {
 		rsp := rapi.GetZoneTransferStates(t.Context(), params)
 		require.IsType(t, &dns.GetZoneTransferStatesOK{}, rsp)
 		okResp := rsp.(*dns.GetZoneTransferStatesOK)
-		require.Len(t, okResp.Payload.Items, 6)
-		require.EqualValues(t, okResp.Payload.Total, 6)
+		require.Len(t, okResp.Payload.Items, len(testNonLocalZoneTransfers))
+		require.EqualValues(t, len(testNonLocalZoneTransfers), okResp.Payload.Total)
 	})
 
 	t.Run("offset", func(t *testing.T) {
@@ -403,7 +404,7 @@ func TestGetZoneTransferStatesWithFiltering(t *testing.T) {
 		require.IsType(t, &dns.GetZoneTransferStatesOK{}, rsp)
 		okResp := rsp.(*dns.GetZoneTransferStatesOK)
 		require.Len(t, okResp.Payload.Items, 2)
-		require.EqualValues(t, okResp.Payload.Total, 6)
+		require.EqualValues(t, len(testNonLocalZoneTransfers), okResp.Payload.Total)
 
 		// Use the 2nd zone transfer as a start for another fetch.
 		params.Start = storkutil.Ptr[int64](1)
@@ -411,8 +412,8 @@ func TestGetZoneTransferStatesWithFiltering(t *testing.T) {
 		rsp = rapi.GetZoneTransferStates(t.Context(), params)
 		require.IsType(t, &dns.GetZoneTransferStatesOK{}, rsp)
 		okResp2 := rsp.(*dns.GetZoneTransferStatesOK)
-		require.Len(t, okResp2.Payload.Items, 5)
-		require.EqualValues(t, okResp2.Payload.Total, 6)
+		require.Len(t, okResp2.Payload.Items, len(testNonLocalZoneTransfers)-1)
+		require.EqualValues(t, len(testNonLocalZoneTransfers), okResp2.Payload.Total)
 
 		// The first returned zone transfer should overlap with the last zone transfer
 		// returned during the first fetch.
@@ -486,8 +487,8 @@ func TestGetZoneTransferStatesWithFiltering(t *testing.T) {
 		rsp := rapi.GetZoneTransferStates(t.Context(), params)
 		require.IsType(t, &dns.GetZoneTransferStatesOK{}, rsp)
 		okResp := rsp.(*dns.GetZoneTransferStatesOK)
-		require.Len(t, okResp.Payload.Items, 7)
-		require.EqualValues(t, okResp.Payload.Total, 7)
+		require.Len(t, okResp.Payload.Items, len(testZoneTransfers))
+		require.EqualValues(t, len(testZoneTransfers), okResp.Payload.Total)
 		for _, zoneTransfer := range okResp.Payload.Items {
 			if zoneTransfer.Client == "127.0.0.1" && zoneTransfer.Server == "127.0.0.1" {
 				require.True(t, zoneTransfer.Local)
@@ -506,8 +507,8 @@ func TestGetZoneTransferStatesWithFiltering(t *testing.T) {
 		rsp := rapi.GetZoneTransferStates(t.Context(), params)
 		require.IsType(t, &dns.GetZoneTransferStatesOK{}, rsp)
 		okResp := rsp.(*dns.GetZoneTransferStatesOK)
-		require.Len(t, okResp.Payload.Items, 6)
-		require.EqualValues(t, okResp.Payload.Total, 6)
+		require.Len(t, okResp.Payload.Items, len(testNonLocalZoneTransfers))
+		require.EqualValues(t, len(testNonLocalZoneTransfers), okResp.Payload.Total)
 		for i := range okResp.Payload.Items {
 			if i > 0 {
 				require.Less(t, okResp.Payload.Items[i].Duration, okResp.Payload.Items[i-1].Duration)
@@ -521,8 +522,8 @@ func TestGetZoneTransferStatesWithFiltering(t *testing.T) {
 		rsp := rapi.GetZoneTransferStates(t.Context(), params)
 		require.IsType(t, &dns.GetZoneTransferStatesOK{}, rsp)
 		okResp := rsp.(*dns.GetZoneTransferStatesOK)
-		require.Len(t, okResp.Payload.Items, 6)
-		require.EqualValues(t, okResp.Payload.Total, 6)
+		require.Len(t, okResp.Payload.Items, len(testNonLocalZoneTransfers))
+		require.EqualValues(t, len(testNonLocalZoneTransfers), okResp.Payload.Total)
 		for i := range okResp.Payload.Items {
 			if i > 0 {
 				require.Greater(t, okResp.Payload.Items[i-1].StartedAt, okResp.Payload.Items[i].StartedAt)
