@@ -244,7 +244,7 @@
                                         @for (backend of daemon().backends; track backend) {
                                             <div>
                                                 <i class="fa fa-database text-gray-400"></i>
-                                                {{ databaseNameFromType(backend.backendType) }}
+                                                {{ databaseNameFromType($any(backend.backendType)) }}
                                                 ({{ databaseConnectionString(backend) }}) with:
                                                 <ul class="word-break-all" style="list-style-type: disc">
                                                     @for (dataType of backend.dataTypes; track dataType) {
