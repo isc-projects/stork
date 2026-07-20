@@ -1,12 +1,16 @@
 FROM redhat/ubi10:10.0
 
+ENV PATH="/root/go/bin:${PATH}"
+
 WORKDIR /repo
 RUN dnf install -y \
     git-2.52.* \
     java-21-openjdk-headless-21.0.* \
     tzdata-java-2026b \
     man-db-2.12.* \
+    golang-1.26.* \
     make-4.* \
+    nodejs-22.23.* \
     procps-ng-4.0.* \
     python3-3.12.* \
     rubygem-rake-13.1.* \
@@ -21,4 +25,7 @@ RUN dnf install -y \
     && ln -s /usr/bin/python3.12 /usr/bin/python3 \
     # Ruby bundler rejects installing packages if the temporary directory is
     # world-writeable.
-    && chmod +t /tmp
+    && chmod +t /tmp \
+    # Git sometimes gets grumpy if the host repo was cloned by a user,
+    # with a different UID than the one running the container.
+    git config --global --add safe.directory /app
