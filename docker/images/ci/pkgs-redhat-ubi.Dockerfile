@@ -7,7 +7,7 @@ ARG GO_VERSION=1.26.5
 ARG GO_SHA256_AMD64=5c2c3b16caefa1d968a94c1daca04a7ca301a496d9b086e17ad77bb81393f053
 ARG GO_SHA256_ARM64=fe4789e92b1f33358680864bbe8704289e7bb5fc207d80623c308935bd696d49
 
-ENV PATH="/root/go/bin:${PATH}"
+ENV PATH="/root/go/bin:/usr/local/go/bin:${PATH}"
 
 WORKDIR /repo
 RUN dnf install -y \
