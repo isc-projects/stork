@@ -651,7 +651,6 @@ golangcilint_ver = '2.12.2'
 # UI-related
 node_ver = '20.20.2'
 npm_ver = '11.18.0'
-yamlinc_ver = '0.1.10'
 openapi_generator_ver = '7.23.0'
 
 # Other
@@ -869,23 +868,6 @@ NODE = require_manual_install_on("node", any_system)
 NPM = require_manual_install_on("npm", any_system)
 
 NPX = require_manual_install_on("npx", any_system)
-
-YAMLINC = File.join(node_dir, "node_modules", "lib", "node_modules", "yamlinc", "bin", "yamlinc")
-file YAMLINC => [NPM] do
-    ci_opts = []
-    if ENV["CI"] == "true"
-        ci_opts += ["--no-audit", "--no-progress"]
-    end
-
-    sh NPM, "install",
-            "-g",
-            *ci_opts,
-            "--prefix", "#{node_dir}/node_modules",
-            "yamlinc@#{yamlinc_ver}"
-    sh "touch", "-c", YAMLINC
-    sh YAMLINC, "--version"
-end
-add_version_guard(YAMLINC, yamlinc_ver)
 
 OPENAPI_GENERATOR = File.join(tools_dir, "openapi-generator-cli.jar")
 file OPENAPI_GENERATOR => [WGET, tools_dir] do

@@ -71,10 +71,53 @@ CLEAN.append CODE_GEN_BINARY_FILE
 ### Swagger ###
 ###############
 
+# Resolves the includes in the YAML file recursively and generates the final,
+# compiled YAML file.
+#
+# The include has the following format:
+#
+#     $include: <path_to_file>
+#
+# The path to the file is relative to the including file.
+# The include directive can be specified as a hash key.
+#
+# It doesn't parse the YAML file because it is possible to have multiple
+# includes one-by-one in the same hash what is incompatible with YAML syntax.
+# The function just looks for the include directive and replaces it with the
+# content of the included file. It supports in-line comments.
+def resolve_yaml_includes(input_file, output_file)
+    input_dir = File.dirname(input_file)
+    output_dir = File.dirname(output_file)
+
+    def resolve_includes(input, base_dir)
+        result = []
+        input.each_line do |line|
+            if line.match(/^\s*\$include:\s*(\S+)\s*$/)
+                include_path = $1
+                include_file = File.expand_path(include_path, base_dir)
+                resolve_includes(File.read(include_file), File.dirname(include_file)).each do |included_line|
+                    result.append included_line
+                end
+            else
+                result.append line
+            end
+        end
+        result
+    end
+
+    resolved_lines = resolve_includes(File.read(input_file), input_dir)
+
+    File.open(output_file, "w") do |file|
+        resolved_lines.each do |line|
+            file.puts line
+        end
+    end
+end
+
 SWAGGER_FILE = 'api/swagger.yaml'
 swagger_api_files = FileList['api/*.yaml'].exclude(SWAGGER_FILE)
-file SWAGGER_FILE => swagger_api_files + [YAMLINC] do
-    sh YAMLINC, "-o", SWAGGER_FILE, "api/swagger.in.yaml"
+file SWAGGER_FILE => swagger_api_files do
+    resolve_yaml_includes("api/swagger.in.yaml", SWAGGER_FILE)
 
     # Check if the readOnly attribute is not used.
     File.readlines(SWAGGER_FILE).each do |line|

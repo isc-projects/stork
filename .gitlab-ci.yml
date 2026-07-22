@@ -417,7 +417,6 @@ build_backend_amd64:
   <<: *build_template
   cache:
     - *golang_cache
-    - *nodejs_cache ## because npm yamlinc is used
   script:
     - rake build:backend
   artifacts:
@@ -429,7 +428,6 @@ build_backend_arm64:
   <<: *job_template_arm
   cache:
     - *golang_arm_cache
-    - *nodejs_arm_cache ## because npm yamlinc is used
   variables:
     ARCH: arm64
 

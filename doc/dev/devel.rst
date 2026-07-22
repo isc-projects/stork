@@ -243,7 +243,7 @@ comprise a tag group:
 * \*-paths.yaml - defines URLs
 * \*-defs.yaml - contains entity definitions
 
-All these files are combined by the ``yamlinc`` tool into a single
+All these files are combined by the Ruby-written function into a single
 Swagger file, ``swagger.yaml``, which then generates the code
 for:
 
