@@ -66,11 +66,6 @@ export class AddressPoolFormComponent implements OnInit {
     servers: string[] = []
 
     /**
-     * Previously selected daemon group indexes.
-     */
-    private previousSelectedDaemonGroups: number[] = []
-
-    /**
      * UUIDS used as unique element identifiers.
      */
     uuids = {
@@ -86,7 +81,6 @@ export class AddressPoolFormComponent implements OnInit {
      */
     ngOnInit(): void {
         const selectedDaemonGroups = this.formGroup.get('selectedDaemonGroups').value ?? []
-        this.previousSelectedDaemonGroups = selectedDaemonGroups.slice()
         if (selectedDaemonGroups.length > 0) {
             this.servers = selectedDaemonGroups.map(
                 (sg) => this.selectableGroups.find((group) => group.index === sg)?.label ?? 'unknown'
@@ -127,14 +121,15 @@ export class AddressPoolFormComponent implements OnInit {
      * @param toggledDaemonGroupIndex optional index of the toggled daemon group.
      */
     handleDaemonGroupsChange(toggledDaemonGroupIndex?: number): void {
-        const selectedDaemonGroups = this.formGroup.get('selectedDaemonGroups').value ?? []
         const toggleDaemonGroupIndex =
             toggledDaemonGroupIndex != null
-                ? this.previousSelectedDaemonGroups.findIndex((groupIndex) => groupIndex === toggledDaemonGroupIndex)
+                ? this.selectableGroups.findIndex((g) => g.index === toggledDaemonGroupIndex)
                 : -1
+
         // Selecting new daemon groups may have a large impact on the data already
         // inserted to the form. Update the form state accordingly and see
         // if it is breaking change.
+        const selectedDaemonGroups = this.formGroup.get('selectedDaemonGroups').value ?? []
         if (selectedDaemonGroups.length === 0) {
             // The breaking change puts us at risk of having irrelevant form contents.
             this.resetOptionsArray()
@@ -143,14 +138,13 @@ export class AddressPoolFormComponent implements OnInit {
             this.subnetSetFormService.adjustFormForSelectedDaemons(
                 this.formGroup,
                 toggleDaemonGroupIndex,
-                this.previousSelectedDaemonGroups.length
+                this.servers.length
             )
         }
         // If the number of selected daemon groups has changed, update selected servers list.
         this.servers = selectedDaemonGroups.map(
             (sg) => this.selectableGroups.find((group) => group.index === sg)?.label ?? 'unknown'
         )
-        this.previousSelectedDaemonGroups = selectedDaemonGroups.slice()
     }
 
     /**

@@ -144,14 +144,6 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
     @Output() formCancel = new EventEmitter<number>()
 
     /**
-     * Previously selected daemon group indexes.
-     *
-     * They are used to determine which value slot was toggled when
-     * a selection changes.
-     */
-    private previousSelectedDaemonGroups: number[] = []
-
-    /**
      * A component lifecycle hook invoked when the component is initialized.
      *
      * It creates a form state if the state is not provided by the parent.
@@ -173,9 +165,6 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
         // edits.
         if (this.state.preserved) {
             this.state.loaded = true
-            this.previousSelectedDaemonGroups = (
-                (this.state.group?.get('selectedDaemonGroups') as UntypedFormControl | null)?.value ?? []
-            ).slice()
             if (!this.state.transactionID) {
                 this._beginTransaction()
             }
@@ -268,9 +257,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
             // Initialize the subnet form controls.
             this.initializeSubnet(response)
         }
-        this.previousSelectedDaemonGroups = (
-            (this.state.group?.get('selectedDaemonGroups') as UntypedFormControl | null)?.value ?? []
-        ).slice()
+
         // After the form has been initialized we need to filter out the daemons
         // that can be selected by a user for our subnet.
         this.handleDaemonGroupsChange()
@@ -440,15 +427,14 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
      * @param toggledDaemonGroupIndex optional index of the removed daemon group in the controls.
      */
     handleDaemonGroupsChange(toggledDaemonGroupIndex?: number): void {
-        const selectedDaemonGroups: number[] = this.state.group.get('selectedDaemonGroups').value ?? []
         const toggleDaemonGroupIndex =
             toggledDaemonGroupIndex != null
-                ? this.previousSelectedDaemonGroups.findIndex((selectedGroup) => selectedGroup === toggledDaemonGroupIndex)
+                ? this.state.filteredDaemons.findIndex((g) => g.index === toggledDaemonGroupIndex)
                 : -1
         this.subnetSetFormService.adjustFormForSelectedDaemons(
             this.state.group,
             toggleDaemonGroupIndex,
-            this.previousSelectedDaemonGroups.length
+            this.state.servers.length
         )
         this.addressPoolComponents.forEach((apc) => {
             apc.handleDaemonGroupsChange(toggledDaemonGroupIndex)
@@ -462,6 +448,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
         // Selecting new daemons may have a large impact on the data already
         // inserted to the form. Update the form state accordingly and see
         // if it is breaking change.
+        const selectedDaemonGroups: number[] = this.state.group.get('selectedDaemonGroups').value ?? []
         const subnetPrefix = this.state.group.get('subnet').value ?? ''
         if (this.state.updateFormForSelectedDaemonGroups(selectedDaemonGroups, subnetPrefix)) {
             // The breaking change puts us at risk of having irrelevant form contents.
@@ -472,12 +459,10 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
                 this.subnetSetFormService.adjustFormForSelectedDaemons(this.state.group, -1, 1)
             }
             this.state.servers = this.getSelectedDaemonGroups().map((dg) => dg.label)
-            this.previousSelectedDaemonGroups = selectedDaemonGroups.slice()
             return
         }
         // If the number of selected daemons has changed we must update selected servers list.
         this.state.servers = this.getSelectedDaemonGroups().map((dg) => dg.label)
-        this.previousSelectedDaemonGroups = selectedDaemonGroups.slice()
     }
 
     /**
