@@ -43,6 +43,31 @@
                 >
                 </p-multiSelect>
                 <label [for]="uuids.selectedDaemonGroups">DHCP Server Groups</label>
+                <span class="ml-2">
+                    <app-help-tip subject="DHCP servers selection">
+                        <p>
+                            The location where the edited subnet information is saved depends on the loaded Kea hooks.
+                            If <span class="monospace">libdhcp_cb_cmds</span> is loaded, Stork updates the Config
+                            Backend database. If <span class="monospace">libdhcp_subnet_cmds</span> is loaded, Stork
+                            updates subnet data in the Kea JSON configuration file.
+                        </p>
+                        <p>
+                            If both <span class="monospace">libdhcp_subnet_cmds</span> and
+                            <span class="monospace">libdhcp_cb_cmds</span> hooks are loaded, Stork updates the subnet
+                            configuration in the Config Backend database, and leaves the JSON configuration unchanged.
+                            It conforms to the Kea behavior that prioritizes configuration specified in the Config
+                            Backend over the configuration sourced from the JSON file.
+                        </p>
+                        <p>
+                            If some daemons have the <span class="monospace">libdhcp_cb_cmds</span> hook loaded, they
+                            are connected to the same Config Backend database, and share the same server tag, then they
+                            cannot be configured individually. In this case, they are grouped into a single position in
+                            the server selection list. Such a group is labeled with the server tag, the group's first
+                            server label, and the number of daemons in the group. The configuration changes are applied
+                            to all daemons in the group.
+                        </p>
+                    </app-help-tip>
+                </span>
             </p-floatlabel>
             @if (
                 formGroup.get('selectedDaemonGroups').invalid &&

@@ -16,6 +16,7 @@ import { Divider } from 'primeng/divider'
 import { Tag } from 'primeng/tag'
 import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
 import type { DaemonGroup } from '../forms/subnet-form'
+import { HelpTipComponent } from '../help-tip/help-tip.component'
 
 /**
  * A component providing a form for editing and adding an address pool.
@@ -36,6 +37,7 @@ import type { DaemonGroup } from '../forms/subnet-form'
         Divider,
         Tag,
         DhcpOptionSetFormComponent,
+        HelpTipComponent,
     ],
 })
 export class AddressPoolFormComponent implements OnInit {
