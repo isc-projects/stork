@@ -46,7 +46,7 @@ RUN apt-get update \
         # Install latest Go. We chose to install version from the upstream to
         # ensure that we always can use the lastest version and not rely on
         # the version that is available in Debian.
-        &&ARCH="${TARGETARCH:-$(dpkg --print-architecture)}" \
+        && ARCH="${TARGETARCH:-$(dpkg --print-architecture)}" \
         && case "${ARCH}" in \
             amd64) GO_ARCH=amd64; GO_SHA256="${GO_SHA256_AMD64}" ;; \
             arm64) GO_ARCH=arm64; GO_SHA256="${GO_SHA256_ARM64}" ;; \
