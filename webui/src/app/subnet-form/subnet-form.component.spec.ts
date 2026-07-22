@@ -566,8 +566,8 @@ describe('SubnetFormComponent', () => {
         expect(component.state.preserved).toBeFalse()
         expect(component.state.transactionID).toBe(123)
         expect(component.state.group).toBeTruthy()
-        expect(component.state.allDaemons.length).toBe(5)
-        expect(component.state.filteredDaemons.length).toBe(5)
+        expect(component.state.allDaemonGroups.length).toBe(5)
+        expect(component.state.filteredDaemonGroups.length).toBe(5)
         expect(component.state.dhcpv4).toBeFalse()
         expect(component.state.dhcpv6).toBeFalse()
         expect(component.state.wizard).toBeTrue()
@@ -660,11 +660,11 @@ describe('SubnetFormComponent', () => {
         tick()
         fixture.detectChanges()
 
-        expect(component.state.allDaemons.length).toBe(2)
-        expect(component.state.allDaemons[0].label).toBe('tag-a (zeta) + 1 more')
-        expect(component.state.allDaemons[0].daemons.map((daemon) => daemon.id)).toEqual([10, 11])
-        expect(component.state.allDaemons[1].label).toBe('tag-b (beta)')
-        expect(component.state.allDaemons[1].daemons.map((daemon) => daemon.id)).toEqual([12])
+        expect(component.state.allDaemonGroups.length).toBe(2)
+        expect(component.state.allDaemonGroups[0].label).toBe('tag-a (zeta) + 1 more')
+        expect(component.state.allDaemonGroups[0].daemons.map((daemon) => daemon.id)).toEqual([10, 11])
+        expect(component.state.allDaemonGroups[1].label).toBe('tag-b (beta)')
+        expect(component.state.allDaemonGroups[1].daemons.map((daemon) => daemon.id)).toEqual([12])
     }))
 
     it('should open a form for creating an IPv6 subnet', fakeAsync(() => {
@@ -677,8 +677,8 @@ describe('SubnetFormComponent', () => {
         expect(component.state.preserved).toBeFalse()
         expect(component.state.transactionID).toBe(123)
         expect(component.state.group).toBeTruthy()
-        expect(component.state.allDaemons.length).toBe(5)
-        expect(component.state.filteredDaemons.length).toBe(5)
+        expect(component.state.allDaemonGroups.length).toBe(5)
+        expect(component.state.filteredDaemonGroups.length).toBe(5)
         expect(component.state.dhcpv4).toBeFalse()
         expect(component.state.dhcpv6).toBeFalse()
         expect(component.state.wizard).toBeTrue()
@@ -765,10 +765,10 @@ describe('SubnetFormComponent', () => {
         tick()
         fixture.detectChanges()
 
-        const daemon1GroupIndex = component.state.allDaemons.find((group) =>
+        const daemon1GroupIndex = component.state.allDaemonGroups.find((group) =>
             group.daemons.some((daemon) => daemon.id === 1)
         )?.index
-        const daemon4GroupIndex = component.state.allDaemons.find((group) =>
+        const daemon4GroupIndex = component.state.allDaemonGroups.find((group) =>
             group.daemons.some((daemon) => daemon.id === 4)
         )?.index
         expect(daemon1GroupIndex).not.toBeUndefined()
@@ -806,13 +806,13 @@ describe('SubnetFormComponent', () => {
         tick()
         fixture.detectChanges()
 
-        const daemon1GroupIndex = component.state.allDaemons.find((group) =>
+        const daemon1GroupIndex = component.state.allDaemonGroups.find((group) =>
             group.daemons.some((daemon) => daemon.id === 1)
         )?.index
-        const daemon2GroupIndex = component.state.allDaemons.find((group) =>
+        const daemon2GroupIndex = component.state.allDaemonGroups.find((group) =>
             group.daemons.some((daemon) => daemon.id === 2)
         )?.index
-        const daemon3GroupIndex = component.state.allDaemons.find((group) =>
+        const daemon3GroupIndex = component.state.allDaemonGroups.find((group) =>
             group.daemons.some((daemon) => daemon.id === 3)
         )?.index
         expect(daemon1GroupIndex).not.toBeUndefined()
@@ -853,8 +853,8 @@ describe('SubnetFormComponent', () => {
         expect(component.state.preserved).toBeFalse()
         expect(component.state.transactionID).toBe(123)
         expect(component.state.group).toBeTruthy()
-        expect(component.state.allDaemons.length).toBe(5)
-        expect(component.state.filteredDaemons.length).toBe(2)
+        expect(component.state.allDaemonGroups.length).toBe(5)
+        expect(component.state.filteredDaemonGroups.length).toBe(2)
         expect(component.state.dhcpv4).toBeTrue()
         expect(component.state.dhcpv6).toBeFalse()
 
@@ -983,8 +983,8 @@ describe('SubnetFormComponent', () => {
         expect(component.state.preserved).toBeFalse()
         expect(component.state.transactionID).toBe(345)
         expect(component.state.group).toBeTruthy()
-        expect(component.state.allDaemons.length).toBe(5)
-        expect(component.state.filteredDaemons.length).toBe(3)
+        expect(component.state.allDaemonGroups.length).toBe(5)
+        expect(component.state.filteredDaemonGroups.length).toBe(3)
         expect(component.state.dhcpv4).toBeFalse()
         expect(component.state.dhcpv6).toBeTrue()
 

@@ -217,7 +217,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
         // The server should return new transaction id and a current list of
         // daemons to select.
         this.state.transactionID = response.id
-        this.state.allDaemons = Object.values(
+        this.state.allDaemonGroups = Object.values(
             response.daemons?.reduce(
                 (acc, d) => {
                     const configBackends = d.backends?.filter((b) => b.dataTypes?.includes('Config Backend'))
@@ -238,7 +238,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
             ) as Record<string | number, KeaDaemon[]>
         ).map((g, idx) => new DaemonGroup(idx, g))
         // Initially, list all daemons.
-        this.state.filteredDaemons = this.state.allDaemons
+        this.state.filteredDaemonGroups = this.state.allDaemonGroups
         this.state.allSharedNetworks4 = response.sharedNetworks4 || []
         this.state.allSharedNetworks6 = response.sharedNetworks6 || []
         this.state.clientClasses =
@@ -275,7 +275,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
             this.state.dhcpv6 ? IPType.IPv6 : IPType.IPv4,
             getVersionRange(response.daemons.map((d) => d.version)),
             response.subnet,
-            this.state.allDaemons
+            this.state.allDaemonGroups
         )
     }
 
@@ -412,7 +412,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
      */
     getSelectedDaemonGroups(): DaemonGroup[] {
         const selectedDaemonGroups: number[] = this.state.group.get('selectedDaemonGroups').value ?? []
-        return selectedDaemonGroups.map((sg) => this.state.allDaemons[sg])
+        return selectedDaemonGroups.map((sg) => this.state.allDaemonGroups[sg])
     }
 
     /**
@@ -429,7 +429,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
     handleDaemonGroupsChange(toggledDaemonGroupIndex?: number): void {
         const toggleDaemonGroupIndex =
             toggledDaemonGroupIndex != null
-                ? this.state.filteredDaemons.findIndex((g) => g.index === toggledDaemonGroupIndex)
+                ? this.state.filteredDaemonGroups.findIndex((g) => g.index === toggledDaemonGroupIndex)
                 : -1
         this.subnetSetFormService.adjustFormForSelectedDaemons(
             this.state.group,
@@ -600,7 +600,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
             subnet = this.subnetSetFormService.convertFormToSubnet(
                 filteredDaemons,
                 this.state.group,
-                this.state.allDaemons
+                this.state.allDaemonGroups
             )
             if (subnet.sharedNetworkId) {
                 subnet.sharedNetwork = this.state.selectableSharedNetworks?.find(
