@@ -134,6 +134,8 @@ namespace :utils do
         # The dictionary of the arguments (ARG) and environment variables (ENV)
         # specified in the Dockerfile. It is used to substitute the variables.
         arguments_and_envs = { }
+        # The list of the environment variables that are not substituted.
+        excluded_envs = ["PATH", "HOME", "USER", "SHELL", "TERM", "PWD"]
         # The list of the detected packages. Each element is an array of the
         # following elements:
         #   - base image
@@ -151,17 +153,6 @@ namespace :utils do
 
                 # Strip the line.
                 line_content = line_content.strip
-
-                # Substitute the environment variables.
-                line_content = line_content.gsub(/\$\{([a-zA-Z0-9_]+)\}/) do |match|
-                    # TODO: It may be useful to support overriding the values
-                    # with the environment variables.
-                    if !arguments_and_envs[$1].nil?
-                        next arguments_and_envs[$1]
-                    else
-                        fail "The argument or environment variable #{$1} is not defined"
-                    end
-                end
 
                 # Skip empty lines.
                 if line_content.empty?
@@ -204,6 +195,19 @@ namespace :utils do
                     # Skip the flags.
                     if line_content.start_with? "-"
                         next
+                    end
+
+                    # Substitute the environment variables.
+                    line_content = line_content.gsub(/\$\{([a-zA-Z0-9_]+)\}/) do |match|
+                        # TODO: It may be useful to support overriding the values
+                        # with the environment variables.
+                        if !arguments_and_envs[$1].nil?
+                            next arguments_and_envs[$1]
+                        elsif excluded_envs.include? $1
+                            next ENV[$1]
+                        else
+                            fail "The argument or environment variable #{$1} is not defined"
+                        end
                     end
 
                     # Check if line is last. The line is last if it doesn't end
