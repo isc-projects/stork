@@ -247,7 +247,6 @@ describe('SubnetFormComponent', () => {
         sharedNetworks6: [],
     }
 
-    // TODO: This structure doesn't implement CreateSubnetBeginResponse.
     let cannedResponseSharedBackendUpdate: UpdateSubnetBeginResponse = {
         id: 501,
         subnet: {
@@ -304,7 +303,6 @@ describe('SubnetFormComponent', () => {
         sharedNetworks6: [],
     }
 
-    // TODO: This structure doesn't implement CreateSubnetBeginResponse.
     let cannedResponseNoBackendUpdate: UpdateSubnetBeginResponse = {
         id: 502,
         subnet: {
@@ -358,7 +356,6 @@ describe('SubnetFormComponent', () => {
         sharedNetworks6: [],
     }
 
-    // TODO: This structure doesn't implement CreateSubnetBeginResponse.
     let cannedResponseBeginSubnet6: UpdateSubnetBeginResponse = {
         id: 345,
         subnet: {
