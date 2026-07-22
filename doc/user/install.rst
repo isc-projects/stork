@@ -1220,9 +1220,20 @@ details regarding supported systems. However, the sources can also be built sepa
 The dependencies that need to be installed to build the Stork sources are:
 
  - Rake
- - Java Runtime Environment 11 or newer (only if building natively, not using Docker)
+ - Java Runtime Environment 11 or newer
+ - NodeJS 20 or newer, including npm
+ - Golang 1.25 or newer
  - Docker (only if running in containers; this is needed to build the demo)
- - Python 3.10 or newer (only if building natively, not using Docker)
+ - Python 3.10 or newer
+
+Note the Golang should be installed (see https://go.dev/doc/install for
+details). Simply having `go` in the PATH is not enough. You need to add
+your local Go installation (typically `~/go/bin`) to the PATH, as rake
+build system will install additional Go tools to your local Go
+installation.
+
+Starting with 2.5.1, Stork uses more OS-provided dependencies, in
+particular the Go compiler and NodeJS.
 
 Other dependencies are installed automatically in a local directory by Rake tasks, which does not
 require root privileges. If the demo environment will be run, Docker is needed but not
