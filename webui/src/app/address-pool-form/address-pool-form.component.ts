@@ -124,13 +124,13 @@ export class AddressPoolFormComponent implements OnInit {
      * form update because the parts of the form related to that server must be
      * removed.
      *
-     * @param toggledDaemonId optional index of the toggled daemon group.
+     * @param toggledDaemonGroupIndex optional index of the toggled daemon group.
      */
-    handleDaemonsChange(toggledDaemonId?: number): void {
+    handleDaemonGroupsChange(toggledDaemonGroupIndex?: number): void {
         const selectedDaemonGroups = this.formGroup.get('selectedDaemonGroups').value ?? []
         const toggleDaemonGroupIndex =
-            toggledDaemonId != null
-                ? this.previousSelectedDaemonGroups.findIndex((groupIndex) => groupIndex === toggledDaemonId)
+            toggledDaemonGroupIndex != null
+                ? this.previousSelectedDaemonGroups.findIndex((groupIndex) => groupIndex === toggledDaemonGroupIndex)
                 : -1
         // Selecting new daemon groups may have a large impact on the data already
         // inserted to the form. Update the form state accordingly and see
@@ -158,8 +158,8 @@ export class AddressPoolFormComponent implements OnInit {
      *
      * Adjusts the form state based on the selected daemon groups.
      */
-    onDaemonsChange(event): void {
-        this.handleDaemonsChange(event.itemValue)
+    onDaemonGroupsChange(event): void {
+        this.handleDaemonGroupsChange(event.itemValue)
     }
 
     /**

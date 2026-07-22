@@ -105,7 +105,7 @@ describe('PrefixPoolFormComponent', () => {
 
     it('should reduce the form for unselected server', () => {
         component.formGroup.get('selectedDaemonGroups').setValue([2])
-        component.onDaemonsChange({
+        component.onDaemonGroupsChange({
             itemValue: 1,
         })
         fixture.detectChanges()
@@ -136,7 +136,7 @@ describe('PrefixPoolFormComponent', () => {
 
     it('should extend the form for newly selected server', () => {
         component.formGroup.get('selectedDaemonGroups').setValue([1, 2, 3])
-        component.onDaemonsChange({
+        component.onDaemonGroupsChange({
             itemValue: 3,
         })
         fixture.detectChanges()
@@ -175,7 +175,7 @@ describe('PrefixPoolFormComponent', () => {
 
     it('should reset a form when all servers are unselected', () => {
         component.formGroup.get('selectedDaemonGroups').setValue([])
-        component.onDaemonsChange({
+        component.onDaemonGroupsChange({
             itemValue: 2,
         })
         fixture.detectChanges()

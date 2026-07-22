@@ -589,7 +589,7 @@ describe('SubnetFormComponent', () => {
         const selectedDaemonGroups = [0, 1]
         component.state.group.get('selectedDaemonGroups').setValue(selectedDaemonGroups)
         selectedDaemonGroups.forEach((index) => {
-            component.onDaemonsChange({
+            component.onDaemonGroupsChange({
                 itemValue: index,
             })
         })
@@ -700,7 +700,7 @@ describe('SubnetFormComponent', () => {
         const selectedDaemonGroups = [2, 3]
         component.state.group.get('selectedDaemonGroups').setValue(selectedDaemonGroups)
         selectedDaemonGroups.forEach((index) => {
-            component.onDaemonsChange({
+            component.onDaemonGroupsChange({
                 itemValue: index,
             })
         })
@@ -778,7 +778,7 @@ describe('SubnetFormComponent', () => {
         )
 
         component.state.group.get('selectedDaemonGroups')?.setValue(selectedDaemonGroups)
-        component.onDaemonsChange({
+        component.onDaemonGroupsChange({
             itemValue: daemon4GroupIndex,
         })
         tick()
@@ -823,7 +823,7 @@ describe('SubnetFormComponent', () => {
         )
 
         component.state.group.get('selectedDaemonGroups')?.setValue(selectedDaemonGroups)
-        component.onDaemonsChange({
+        component.onDaemonGroupsChange({
             itemValue: daemon3GroupIndex,
         })
         tick()
@@ -1306,16 +1306,16 @@ describe('SubnetFormComponent', () => {
         fixture.detectChanges()
 
         expect(component.addressPoolComponents.length).toBe(1)
-        spyOn(component.addressPoolComponents.get(0), 'handleDaemonsChange').and.callThrough()
+        spyOn(component.addressPoolComponents.get(0), 'handleDaemonGroupsChange').and.callThrough()
 
         component.state.group.get('selectedDaemonGroups').setValue([1])
-        component.onDaemonsChange({
+        component.onDaemonGroupsChange({
             itemValue: 0,
         })
         tick()
         fixture.detectChanges()
 
-        expect(component.addressPoolComponents.get(0).handleDaemonsChange).toHaveBeenCalledOnceWith(0)
+        expect(component.addressPoolComponents.get(0).handleDaemonGroupsChange).toHaveBeenCalledOnceWith(0)
         expect(component.addressPoolComponents.get(0).selectableGroups.length).toBe(1)
         expect(component.addressPoolComponents.get(0).selectableGroups[0].index).toBe(1)
 
@@ -1363,16 +1363,16 @@ describe('SubnetFormComponent', () => {
         fixture.detectChanges()
 
         expect(component.addressPoolComponents.length).toBe(1)
-        spyOn(component.addressPoolComponents.get(0), 'handleDaemonsChange').and.callThrough()
+        spyOn(component.addressPoolComponents.get(0), 'handleDaemonGroupsChange').and.callThrough()
 
         component.state.group.get('selectedDaemonGroups').setValue([2, 3, 4])
-        component.onDaemonsChange({
+        component.onDaemonGroupsChange({
             itemValue: 4,
         })
         tick()
         fixture.detectChanges()
 
-        expect(component.addressPoolComponents.get(0).handleDaemonsChange).toHaveBeenCalledOnceWith(4)
+        expect(component.addressPoolComponents.get(0).handleDaemonGroupsChange).toHaveBeenCalledOnceWith(4)
         expect(component.addressPoolComponents.get(0).selectableGroups.length).toBe(3)
 
         const options = component.state.group.get('options.data') as UntypedFormArray
@@ -1417,7 +1417,7 @@ describe('SubnetFormComponent', () => {
         fixture.detectChanges()
 
         component.state.group.get('selectedDaemonGroups').setValue([1])
-        component.onDaemonsChange({
+        component.onDaemonGroupsChange({
             itemValue: 0,
         })
         tick()

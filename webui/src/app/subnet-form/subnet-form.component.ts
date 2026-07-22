@@ -273,7 +273,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
         ).slice()
         // After the form has been initialized we need to filter out the daemons
         // that can be selected by a user for our subnet.
-        this.handleDaemonsChange()
+        this.handleDaemonGroupsChange()
         // Hide the spinner and show the form.
         this.state.loaded = true
     }
@@ -437,13 +437,13 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
      * form update because the parts of the form related to that server must be
      * removed.
      *
-     * @param toggledDaemonId optional id of the removed daemon in the controls.
+     * @param toggledDaemonGroupIndex optional index of the removed daemon group in the controls.
      */
-    handleDaemonsChange(toggledDaemonId?: number): void {
+    handleDaemonGroupsChange(toggledDaemonGroupIndex?: number): void {
         const selectedDaemonGroups: number[] = this.state.group.get('selectedDaemonGroups').value ?? []
         const toggleDaemonGroupIndex =
-            toggledDaemonId != null
-                ? this.previousSelectedDaemonGroups.findIndex((selectedGroup) => selectedGroup === toggledDaemonId)
+            toggledDaemonGroupIndex != null
+                ? this.previousSelectedDaemonGroups.findIndex((selectedGroup) => selectedGroup === toggledDaemonGroupIndex)
                 : -1
         this.subnetSetFormService.adjustFormForSelectedDaemons(
             this.state.group,
@@ -451,11 +451,11 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
             this.previousSelectedDaemonGroups.length
         )
         this.addressPoolComponents.forEach((apc) => {
-            apc.handleDaemonsChange(toggledDaemonId)
+            apc.handleDaemonGroupsChange(toggledDaemonGroupIndex)
             apc.selectableGroups = this.getSelectedDaemonGroups()
         })
         this.prefixPoolComponents.forEach((ppc) => {
-            ppc.handleDaemonsChange(toggledDaemonId)
+            ppc.handleDaemonGroupsChange(toggledDaemonGroupIndex)
             ppc.selectableGroups = this.getSelectedDaemonGroups()
         })
 
@@ -498,8 +498,8 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
      *
      * Adjusts the form state based on the selected daemons.
      */
-    onDaemonsChange(event: any): void {
-        this.handleDaemonsChange(event.itemValue)
+    onDaemonGroupsChange(event: any): void {
+        this.handleDaemonGroupsChange(event.itemValue)
     }
 
     /**
