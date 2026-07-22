@@ -64,12 +64,14 @@ type xfrTracker struct {
 	followChan     chan bind9xfr.State
 	followCtx      context.Context
 	followCancelFn context.CancelFunc
-	// The list of started zone transfers.
-	startedList list.List
-	// The map of started zone transfers indexed by the state key.
-	startedMap map[bind9xfr.StateKey]*list.Element
-	// The list of completed zone transfers.
-	completedList list.List
+	// The list of the zone transfers for which we still expect updates (e.g., statistics).
+	// The list allows for maintaining the ordering by least recently used.
+	openTransfersList list.List
+	// The map of the zone transfers for which we still expect updates (e.g., statistics).
+	// The map allows for quick lookup by the state key.
+	openTransfersMap map[bind9xfr.StateKey]*list.Element
+	// The list of the zone transfers for which we no longer expect updates.
+	closedTransfersList list.List
 	// The maximum number of zone transfers to track.
 	maxStates int
 	// The mutex to protect the tracker state from concurrent access.
@@ -81,9 +83,9 @@ type xfrTracker struct {
 // must be non-nil.
 func newXfrTracker(logTracker *logTracker) *xfrTracker {
 	return &xfrTracker{
-		logTracker: logTracker,
-		startedMap: make(map[bind9xfr.StateKey]*list.Element),
-		maxStates:  defaultXfrTrackingMaxStates,
+		logTracker:       logTracker,
+		openTransfersMap: make(map[bind9xfr.StateKey]*list.Element),
+		maxStates:        defaultXfrTrackingMaxStates,
 	}
 }
 
@@ -220,39 +222,66 @@ func (t *xfrTracker) feed(logLine string) {
 
 	// Check if the zone transfer state already exists.
 	var currState *bind9xfr.State
-	element, ok := t.startedMap[key]
-	if ok && element != nil {
-		st, ok := element.Value.(*bind9xfr.State)
+	currStateElement, ok := t.openTransfersMap[key]
+	if ok && currStateElement != nil {
+		st, ok := currStateElement.Value.(*bind9xfr.State)
 		if !ok {
 			t.mutex.Unlock()
 			return
 		}
 		currState = st
+		// Preserve the start time between the current and the new state.
+		currState.Derive(newState, "StartTime")
 	}
 
-	switch newState.Status {
-	case bind9xfr.StatusStarted, bind9xfr.StatusMessage, bind9xfr.StatusConnected:
-		if currState != nil {
-			// It exists, so let's replace it with a new one.
-			element.Value = newState
+	effectiveState := newState
+	if newState.HasAnyStatus(bind9xfr.StatusCompleted) && currState.HasAnyStatus(bind9xfr.StatusUpToDate, bind9xfr.StatusFailed) {
+		// Handle the case when the zone transfer was already marked failed or up to date but the
+		// statistics information arrived later. In this case, we want to only copy the statistics
+		// from the new state and leave the rest of the current state unchanged.
+		newState.Derive(currState, "RecordsCount", "BytesCount", "Duration", "MessagesCount", "Serial")
+		// Use the existing state with the updated statistics.
+		effectiveState = currState
+	}
+
+	switch {
+	case newState.HasAnyStatus(bind9xfr.StatusCompleted) || (newState.IsXFROut() && (newState.HasAnyStatus(bind9xfr.StatusFailed, bind9xfr.StatusUpToDate))):
+		// The zone transfer is now completed or an outgoing zone transfer has failed or is up to date.
+		// In both cases we can safely move the transfer to the closed transfers list. For the
+		// outgoing zone transfers we don't expect any updates. Statistics is only reported after the
+		// transfer status for incoming zone transfers.
+		if currStateElement != nil {
+			// If the current transfer exists, we should remove it from the open transfers.
+			t.openTransfersList.Remove(currStateElement)
+			delete(t.openTransfersMap, key)
+		}
+		// Add the state to the closed transfers container.
+		t.closedTransfersList.PushBack(effectiveState)
+		// Ensure that the number of closed transfers does not exceed the maximum
+		// allowed number. If it does, remove the oldest one.
+		if t.closedTransfersList.Len() > t.maxStates {
+			t.closedTransfersList.Remove(t.closedTransfersList.Front())
+		}
+	default:
+		// We may still expect updates for the zone transfer. We need to keep it in the
+		// open transfers containers.
+		if currStateElement != nil {
+			// Replace the current state with the updated one.
+			currStateElement.Value = effectiveState
 			// Move the element to the back of the list to keep the most recent one
 			// at the end.
-			t.startedList.MoveToBack(element)
-			if !currState.StartTime.IsZero() && newState.Status != bind9xfr.StatusStarted {
-				// Preserve the original start time.
-				newState.StartTime = currState.StartTime
-			}
+			t.openTransfersList.MoveToBack(currStateElement)
 			break
 		}
 		// The state does not exist. Let's add it to the container.
-		element := t.startedList.PushBack(newState)
-		t.startedMap[key] = element
+		element := t.openTransfersList.PushBack(effectiveState)
+		t.openTransfersMap[key] = element
 
-		// Ensure that the number of started transfers does not exceed the maximum
+		// Ensure that the number of open transfers does not exceed the maximum
 		// allowed number. If it does, remove the oldest one.
-		if t.startedList.Len() > t.maxStates {
+		if t.openTransfersList.Len() > t.maxStates {
 			// Remove the oldest one from the front of the list.
-			if element := t.startedList.Remove(t.startedList.Front()); element != nil {
+			if element := t.openTransfersList.Remove(t.openTransfersList.Front()); element != nil {
 				if state, ok := element.(*bind9xfr.State); ok {
 					key := bind9xfr.StateKey{
 						ViewName: state.ViewName,
@@ -260,76 +289,65 @@ func (t *xfrTracker) feed(logLine string) {
 						Client:   state.Client,
 					}
 					// Remove the element from the map.
-					delete(t.startedMap, key)
+					delete(t.openTransfersMap, key)
 				}
 			}
 		}
-	default:
-		if currState != nil {
-			// It exists, so let's remove it from the started container.
-			t.startedList.Remove(element)
-			delete(t.startedMap, key)
-			newState.StartTime = currState.StartTime
-		}
-		// Add the state to the completed container.
-		t.completedList.PushBack(newState)
-		// Ensure that the number of completed transfers does not exceed the maximum
-		// allowed number. If it does, remove the oldest one.
-		if t.completedList.Len() > t.maxStates {
-			t.completedList.Remove(t.completedList.Front())
-		}
 	}
+	// Send the updated transfer to the Stork server.
 	if t.followChan != nil && t.followCtx != nil {
 		select {
-		case t.followChan <- *newState:
+		case t.followChan <- *effectiveState:
 		case <-t.followCtx.Done():
 		}
 	}
 	t.mutex.Unlock()
 }
 
-// Returns the list of ongoing or stuck zone transfers. It is not safe for concurrent use
-// and must be called under the mutex.
-func (t *xfrTracker) getNotCompletedUnsafe() []bind9xfr.State {
-	states := make([]bind9xfr.State, 0, t.startedList.Len())
-	for element := t.startedList.Front(); element != nil; element = element.Next() {
+// Returns the list of open zone transfers (i.e., zone transfers for which we still expect updates).
+// It is not safe for concurrent use and must be called under the mutex.
+func (t *xfrTracker) getOpenZoneTransfersUnsafe() []bind9xfr.State {
+	states := make([]bind9xfr.State, 0, t.openTransfersList.Len())
+	for element := t.openTransfersList.Front(); element != nil; element = element.Next() {
 		states = append(states, *element.Value.(*bind9xfr.State))
 	}
 	return states
 }
 
-// Returns the list of ongoing or stuck zone transfers. It is safe for concurrent use.
-func (t *xfrTracker) getNotCompleted() []bind9xfr.State {
+// Returns the list of open zone transfers (i.e., zone transfers for which we still expect updates).
+// It is safe for concurrent use.
+func (t *xfrTracker) getOpenZoneTransfers() []bind9xfr.State {
 	t.mutex.RLock()
 	defer t.mutex.RUnlock()
-	return t.getNotCompletedUnsafe()
+	return t.getOpenZoneTransfersUnsafe()
 }
 
-// Returns the list of completed zone transfers. It is not safe for concurrent use
-// and must be called under the mutex.
-func (t *xfrTracker) getCompletedUnsafe() []bind9xfr.State {
-	states := make([]bind9xfr.State, 0, t.completedList.Len())
-	for element := t.completedList.Front(); element != nil; element = element.Next() {
+// Returns the list of closed zone transfers (i.e., zone transfers for which we no longer expect updates).
+// It is not safe for concurrent use and must be called under the mutex.
+func (t *xfrTracker) getClosedZoneTransfersUnsafe() []bind9xfr.State {
+	states := make([]bind9xfr.State, 0, t.closedTransfersList.Len())
+	for element := t.closedTransfersList.Front(); element != nil; element = element.Next() {
 		states = append(states, *element.Value.(*bind9xfr.State))
 	}
 	return states
 }
 
-// Returns the list of completed zone transfers. It is safe for concurrent use.
-func (t *xfrTracker) getCompleted() []bind9xfr.State {
+// Returns the list of closed zone transfers (i.e., zone transfers for which we no longer expect updates).
+// It is safe for concurrent use.
+func (t *xfrTracker) getClosedZoneTransfers() []bind9xfr.State {
 	t.mutex.RLock()
 	defer t.mutex.RUnlock()
-	return t.getCompletedUnsafe()
+	return t.getClosedZoneTransfersUnsafe()
 }
 
-// Returns the collection of completed and ongoing zone transfers as well as the
+// Returns the collection of closed and open zone transfers as well as the
 // channel to receive live updates about future zone transfers. The output from this
 // function is meant to be consumed by the gRPC API handler returning the stream of
 // zone transfers to the server. There may be only one caller receiving the updates
 // over the channel. If the function is called again while the updates are being consumed,
 // the channel is closed and the new channel is returned. In order to stop receiving the
 // updates, the caller should cancel the context passed as an argument.
-func (t *xfrTracker) follow(ctx context.Context) (completed iter.Seq[bind9xfr.State], ongoing iter.Seq[bind9xfr.State], followChan <-chan bind9xfr.State) {
+func (t *xfrTracker) follow(ctx context.Context) (closed iter.Seq[bind9xfr.State], open iter.Seq[bind9xfr.State], followChan <-chan bind9xfr.State) {
 	t.mutex.Lock()
 	if t.followChan != nil {
 		// We are already following the zone transfers. Let's cancel the
@@ -346,9 +364,9 @@ func (t *xfrTracker) follow(ctx context.Context) (completed iter.Seq[bind9xfr.St
 	t.followCtx, t.followCancelFn = context.WithCancel(ctx)
 	followCtx := t.followCtx
 
-	// Get the list of ongoing and completed zone transfers before the lock is released.
-	ongoing = slices.Values(t.getNotCompletedUnsafe())
-	completed = slices.Values(t.getCompletedUnsafe())
+	// Get the list of zone transfers before the lock is released.
+	open = slices.Values(t.getOpenZoneTransfersUnsafe())
+	closed = slices.Values(t.getClosedZoneTransfersUnsafe())
 	t.mutex.Unlock()
 
 	// Start the goutine to cancel the session if the context is cancelled.
@@ -517,7 +535,7 @@ func parseTransferLogLine(logLine string) *bind9xfr.State {
 			parseView(iterator, &state)
 		case "transfer":
 			// In most cases, the log message contains the "transfer of". It may also contain
-			// "Transfer started". This call handles both cases.
+			// "Transfer started" or "Transfer status". This call handles all cases.
 			parseTransfer(iterator, parsedTime, &state)
 		case "connected":
 			// The secondary server logs a useful message when it connects to the primary server
@@ -561,15 +579,14 @@ func parseTransferLogLine(logLine string) *bind9xfr.State {
 			}
 		}
 	}
-	if state.ZoneName == "" || state.Status == "" || (state.Status == bind9xfr.StatusConnected && state.Server == "") {
+	if state.ZoneName == "" || state.Status == "" {
 		// Zone name and status are required. If they are not set, the log message is
 		// malformed or not related to a zone transfer.
 		return nil
 	}
-	if state.RecordsCount > 0 {
-		// The presence of these counters indicates that the zone transfer has completed.
-		state.Status = bind9xfr.StatusCompleted
-		state.CompletionTime = parsedTime
+	if state.ViewName == "" {
+		// The view name is not set. It is likely a default view.
+		state.ViewName = "_default"
 	}
 	return &state
 }
@@ -589,9 +606,49 @@ func parseTransfer(iterator *storkutil.PeekingIterator[string], parsedTime time.
 		iterator.Next()
 		s.Status = bind9xfr.StatusStarted
 		s.StartTime = parsedTime
+	case "completed":
+		// Consume the token. We came across the "Transfer completed" statement.
+		// Let's mark the zone transfer completed and record the completion time.
+		iterator.Next()
+		s.Status = bind9xfr.StatusCompleted
+		s.CompletionTime = parsedTime
+	case "status":
+		// Consume the token. We came across the "Transfer status" statement.
+		// Let's parse the status message.
+		iterator.Next()
+		parseTransferStatus(iterator, parsedTime, s)
 	default:
 		// Unknown statement. The log message simply contains the "transfer" keyword
 		// in some unrecognized context.
+	}
+}
+
+func parseTransferStatus(iterator *storkutil.PeekingIterator[string], parsedTime time.Time, s *bind9xfr.State) {
+	subsequent := iterator.PeekSubsequent()
+	token, ok := iterator.Peek()
+	if !ok {
+		// No more tokens to process.
+		return
+	}
+	token = sanitizeToken(token)
+	switch token {
+	case "success":
+		iterator.Next()
+		return
+	case "up":
+		if strings.HasPrefix(strings.Join(subsequent, " "), "up to date") {
+			s.Status = bind9xfr.StatusUpToDate
+			s.CompletionTime = parsedTime
+			for range 3 {
+				iterator.Next()
+			}
+			return
+		}
+	default:
+		iterator.Next()
+		s.Status = bind9xfr.StatusFailed
+		s.CompletionTime = parsedTime
+		return
 	}
 }
 
@@ -631,13 +688,13 @@ func parseConnectedUsing(iterator *storkutil.PeekingIterator[string], s *bind9xf
 	// The "connected using" statement is followed by the server address in the
 	// same format as the "from <address>" statement
 	if parseFrom(iterator, s) {
-		s.Status = bind9xfr.StatusConnected
+		s.Status = bind9xfr.StatusStarted
 	}
 }
 
 // Parses the "AXFR/IXFR started/ended" statements.
 func parseXFR(iterator *storkutil.PeekingIterator[string], parsedTime time.Time, s *bind9xfr.State) {
-	token, ok := iterator.Next()
+	token, ok := iterator.Peek()
 	if !ok {
 		// No more tokens to process.
 		return
@@ -648,10 +705,20 @@ func parseXFR(iterator *storkutil.PeekingIterator[string], parsedTime time.Time,
 		// AXFR or IXFR started.
 		s.Status = bind9xfr.StatusStarted
 		s.StartTime = parsedTime
+		iterator.Next()
 	case "completed", "ended":
 		// AXFR or IXFR ended.
 		s.Status = bind9xfr.StatusCompleted
 		s.CompletionTime = parsedTime
+		iterator.Next()
+	case "aborted":
+		// Client timeout.
+		s.Status = bind9xfr.StatusFailed
+		s.CompletionTime = parsedTime
+		iterator.Next()
+	default:
+		s.Status = bind9xfr.StatusMessage
+		s.Message = strings.Join(iterator.PeekSubsequent(), " ")
 	}
 }
 

@@ -358,8 +358,9 @@ definitions:
     enum: &ZONETRANSFERSTATUS
       - started
       - completed
-      - connected
       - message
+      - failed
+      - up-to-date
 
   ZoneTransferSortField:
     type: string

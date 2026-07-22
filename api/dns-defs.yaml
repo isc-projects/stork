@@ -162,7 +162,7 @@
         format: duration
       status:
         type: string
-        enum: [started, connected, completed, message]
+        enum: [started, completed, up-to-date, failed, message]
       startedAt:
         type: string
         format: date-time

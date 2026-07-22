@@ -168,7 +168,7 @@ export class ZoneTransfersPageComponent implements OnInit {
      * Zone types values used for the UI filter dropdown options.
      * @protected
      */
-    protected readonly zoneTransferStatuses: string[] = ['started', 'connected', 'completed', 'message']
+    protected readonly zoneTransferStatuses: string[] = ['started', 'completed', 'message', 'failed', 'up-to-date']
 
     /**
      * Collection of machines fetched from backend.

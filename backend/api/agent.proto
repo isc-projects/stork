@@ -450,8 +450,8 @@ message ZoneTransfer {
   int64 bytesCount = 8;
   // Duration of the zone transfer in milliseconds.
   int64 duration = 9;
-  // Zone transfer status. Valid values are: "started", "connected",
-  // "completed" and "message".
+  // Zone transfer status. Valid values are: "started", "completed",
+  // "up to date", "failed" and "message".
   string status = 10;
   // Unix timestamp in milliseconds when the zone transfer started.
   int64 startTime = 11;

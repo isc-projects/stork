@@ -1096,22 +1096,22 @@ func (sa *StorkAgent) ReceiveZoneTransfers(req *agentapi.ReceiveZoneTransfersReq
 			fmt.Sprintf("BIND 9 zone transfer is disabled for daemon %s", daemon.GetName())).Err()
 	}
 	var (
-		completed  iter.Seq[bind9xfr.State]
-		ongoing    iter.Seq[bind9xfr.State]
+		closed     iter.Seq[bind9xfr.State]
+		open       iter.Seq[bind9xfr.State]
 		followChan <-chan bind9xfr.State
 	)
 	if req.Follow {
 		// Caller requests that we return currently recorded zone transfers, and keep
 		// the stream open to receive new zone transfers as they appear.
-		completed, ongoing, followChan = bind9Daemon.xfrTracker.follow(server.Context())
+		closed, open, followChan = bind9Daemon.xfrTracker.follow(server.Context())
 	} else {
 		// Caller requests that we return currently recorded zone transfers, and close
 		// the stream after returning the transfers.
-		completed = slices.Values(bind9Daemon.xfrTracker.getCompleted())
-		ongoing = slices.Values(bind9Daemon.xfrTracker.getNotCompleted())
+		closed = slices.Values(bind9Daemon.xfrTracker.getClosedZoneTransfers())
+		open = slices.Values(bind9Daemon.xfrTracker.getOpenZoneTransfers())
 	}
 	// Return the currently recorded zone transfers.
-	for _, group := range []iter.Seq[bind9xfr.State]{completed, ongoing} {
+	for _, group := range []iter.Seq[bind9xfr.State]{closed, open} {
 		for state := range group {
 			err := receiveZoneTransfer(server, state)
 			if err != nil {

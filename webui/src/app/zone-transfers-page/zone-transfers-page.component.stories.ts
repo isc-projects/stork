@@ -210,10 +210,11 @@ type Story = StoryObj<ZoneTransfersPageComponent>
 
 const zoneTransferMockDataUrls = [
     'http://localhost/api/zone-transfer-states?start=:start&limit=:limit',
-    'http://localhost/api/zone-transfer-states?start=:start&limit=:limit&status=started',
-    'http://localhost/api/zone-transfer-states?start=:start&limit=:limit&status=started&status=connected',
-    'http://localhost/api/zone-transfer-states?start=:start&limit=:limit&status=started&status=connected&status=completed',
-    'http://localhost/api/zone-transfer-states?start=:start&limit=:limit&status=started&status=connected&status=completed&status=message',
+    'http://localhost/api/zone-transfer-states?start=:start&limit=:limit&status=:status',
+    'http://localhost/api/zone-transfer-states?start=:start&limit=:limit&status=:status&status=:status',
+    'http://localhost/api/zone-transfer-states?start=:start&limit=:limit&status=:status&status=:status&status=:status',
+    'http://localhost/api/zone-transfer-states?start=:start&limit=:limit&status=:status&status=:status&status=:status&status=:status',
+    'http://localhost/api/zone-transfer-states?start=:start&limit=:limit&status=:status&status=:status&status=:status&status=:status&status=:status',
     'http://localhost/api/zone-transfer-states?start=:start&limit=:limit&serial=:serial',
     'http://localhost/api/zone-transfer-states?start=:start&limit=:limit&text=:text',
     'http://localhost/api/zone-transfer-states?start=:start&limit=:limit&sortField=:sortField&sortDir=:sortDir',

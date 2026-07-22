@@ -16,6 +16,12 @@
             from the BIND 9 logs.
         </p>
         <p>
+            The <span class="font-bold">up-to-date</span> status also indicates successful completion of the zone
+            transfer. In this case, however, the secondary does not receive the zone contents from the primary but
+            rather confirms that the zone copy it has is up to date. That's why it is common to see only one record as
+            part of the zone transfer, which is the SOA record.
+        </p>
+        <p>
             The <span class="font-bold">started</span> status indicates that the zone transfer had not finished before
             the list of transfers was displayed. Click the <span class="font-bold">Refresh List</span> button to check
             whether the started transfers have already ended. The current duration of the started transfer is estimated
@@ -25,6 +31,10 @@
             The <span class="font-bold">message</span> status indicates that Stork did not find the log message in the
             BIND 9 logs marking successful completion of the zone transfer. It is possible that BIND 9 emitted some
             intermediate log messages during the transfer or the transfer was interrupted or failed.
+        </p>
+        <p>
+            Failed zone transfers are marked with the <span class="font-bold">failed</span> status. For those transfers,
+            the captured BIND 9 logs clearly indicate that the zone transfer was neither successful nor up-to-date.
         </p>
         <p>
             The <span class="font-bold">Primary</span> and <span class="font-bold">Secondary</span>
@@ -417,16 +427,19 @@
                                 {{ zoneTransfer.status }}
                                 @switch (zoneTransfer.status) {
                                     @case ('started') {
-                                        <span class="pi pi-spinner pi-spin text-gray-400"></span>
-                                    }
-                                    @case ('connected') {
-                                        <span class="pi pi-spinner pi-spin text-gray-400"></span>
+                                        <span class="pi pi-arrow-right-arrow-left text-blue-400"></span>
                                     }
                                     @case ('completed') {
                                         <span class="pi pi-check text-green-500"></span>
                                     }
                                     @case ('message') {
                                         <span class="pi pi-exclamation-triangle text-orange-400"></span>
+                                    }
+                                    @case ('failed') {
+                                        <span class="pi pi-exclamation-circle text-red-500"></span>
+                                    }
+                                    @case ('up-to-date') {
+                                        <span class="pi pi-thumbs-up text-gray-500"></span>
                                     }
                                 }
                             </span>

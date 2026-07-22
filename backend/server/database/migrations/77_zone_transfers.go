@@ -34,7 +34,7 @@ func init() {
 					ON UPDATE CASCADE
 					ON DELETE CASCADE,
 				CONSTRAINT zone_transfer_state_status_check CHECK (
-					status IN ('started', 'connected', 'completed', 'message')
+					status IN ('started', 'completed', 'up-to-date', 'failed', 'message')
 				)
 			);
 

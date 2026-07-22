@@ -3427,7 +3427,7 @@ func TestReceiveZoneTransfersCancelReconnect(t *testing.T) {
 		<-doneChan2
 
 		// Make sure that the correct number of responses have been received.
-		require.Len(t, responses[1], 7)
+		require.Len(t, responses[1], 8)
 	})
 }
 
