@@ -194,9 +194,11 @@ export class LoginScreenComponent implements OnInit {
                 const index = methods.findIndex((m) => m.id === storedMethod)
                 if (index > -1) {
                     this.authenticationMethod = methods[index]
-                    this.updateNonFormLabel(this.authenticationMethod)
                 }
             }
+            // Always refresh non-form UI state and credential validators for the
+            // selected method (including OIDC-only and restored OIDC preference).
+            this.updateNonFormLabel(this.authenticationMethod)
             this.loginForm.controls.authenticationMethod.setValue(this.authenticationMethod)
         })
     }
@@ -294,6 +296,15 @@ export class LoginScreenComponent implements OnInit {
         this.nonFormAuth.set(id === 'oidc')
         if (this.nonFormAuth()) {
             this.nonFormButtonLabel.set(authMethod.name)
+            // OIDC has no identifier/secret fields; drop required validators so
+            // the form is not permanently invalid for non-form methods.
+            this.loginForm.controls.identifier.clearValidators()
+            this.loginForm.controls.secret.clearValidators()
+        } else {
+            this.loginForm.controls.identifier.setValidators(Validators.required)
+            this.loginForm.controls.secret.setValidators(Validators.required)
         }
+        this.loginForm.controls.identifier.updateValueAndValidity()
+        this.loginForm.controls.secret.updateValueAndValidity()
     }
 }

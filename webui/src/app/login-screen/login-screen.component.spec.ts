@@ -195,4 +195,79 @@ describe('LoginScreenComponent', () => {
             })
         )
     })
+
+    it('should enable OIDC when it is the only authentication method', fakeAsync(() => {
+        // Regression: with a single method there is no Select onChange, so non-form
+        // state must be applied during method load.
+        const authService = fixture.debugElement.injector.get(AuthService)
+        spyOn(authService, 'getAuthenticationMethods').and.returnValue(
+            of([
+                {
+                    description:
+                        'OAuth2/OIDC authentication. You will get redirected to OpenID Provider to authenticate and authorize your access to Stork.',
+                    id: 'oidc',
+                    name: 'Log in with OpenID Connect',
+                },
+            ] as AuthenticationMethod[])
+        )
+
+        component.ngOnInit()
+        tick()
+        fixture.detectChanges()
+
+        expect(component.nonFormAuth()).toBeTrue()
+        expect(component.loginForm.valid).toBeTrue()
+
+        const oidcLink = fixture.debugElement.query(By.css('.login-screen__authentication-inputs a'))
+        expect(oidcLink).toBeTruthy()
+        expect(oidcLink.nativeElement.getAttribute('href')).toContain('/oidc/login?returnUrl=')
+    }))
+
+    it('should restore OIDC preference from localStorage on init', fakeAsync(() => {
+        localStorage.setItem('selected-auth-method', 'oidc')
+
+        component.ngOnInit()
+        tick()
+        fixture.detectChanges()
+
+        expect(component.authenticationMethod.id).toEqual('oidc')
+        expect(component.nonFormAuth()).toBeTrue()
+        expect(component.loginForm.valid).toBeTrue()
+        expect(component.loginForm.controls.identifier.hasError('required')).toBeFalse()
+        expect(component.loginForm.controls.secret.hasError('required')).toBeFalse()
+    }))
+
+    it('should enable non-form OIDC login with absolute path', fakeAsync(() => {
+        component.ngOnInit()
+        tick()
+        fixture.detectChanges()
+
+        const dropdown = fixture.debugElement.query(By.css('.login-screen__authentication-selector .p-select'))
+        dropdown.nativeElement.click()
+        fixture.detectChanges()
+
+        const listItems = dropdown.queryAll(By.css('.p-select-list li'))
+        listItems[2].nativeElement.click()
+        tick()
+        fixture.detectChanges()
+
+        expect(component.nonFormAuth()).toBeTrue()
+        expect(component.loginForm.valid).toBeTrue()
+
+        const oidcLink = fixture.debugElement.query(By.css('.login-screen__authentication-inputs a'))
+        expect(oidcLink).toBeTruthy()
+        expect(oidcLink.nativeElement.getAttribute('href')).toContain('/oidc/login?returnUrl=')
+
+        // Switching back to a form method re-applies required credential validators.
+        dropdown.nativeElement.click()
+        fixture.detectChanges()
+        const formMethodItems = dropdown.queryAll(By.css('.p-select-list li'))
+        formMethodItems[0].nativeElement.click()
+        tick()
+        fixture.detectChanges()
+
+        expect(component.nonFormAuth()).toBeFalse()
+        expect(component.loginForm.controls.identifier.hasError('required')).toBeTrue()
+        expect(component.loginForm.controls.secret.hasError('required')).toBeTrue()
+    }))
 })
