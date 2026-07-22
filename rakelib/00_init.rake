@@ -718,11 +718,9 @@ node_dir = tool_command_output("npm", "config", "get", "prefix")
 
 go_tools_dir = File.join(tools_dir, "golang")
 gopath = tool_command_output("go", "env", "GOPATH")
+gopath = File.join(Dir.home, "go") if gopath.nil? || gopath.empty?
 gobin = tool_command_output("go", "env", "GOBIN")
-if gobin.nil? || gobin.empty?
-    gopath = File.join(Dir.home, "go") if gopath.nil? || gopath.empty?
-    gobin = File.join(gopath, "bin")
-end
+gobin = File.join(gopath, "bin") if gobin.nil? || gobin.empty?
 directory go_tools_dir
 
 ruby_tools_dir = File.join(tools_dir, "ruby")

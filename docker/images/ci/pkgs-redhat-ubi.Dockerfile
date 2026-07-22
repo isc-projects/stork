@@ -37,7 +37,7 @@ RUN dnf install -y \
     && git config --global --add safe.directory /app  \
     # Install latest Go. We chose to install version from the upstream to
     # ensure that we always can use the lastest version and not rely on
-    # the version that is available in Debian.
+    # the version that is available in the package manager.
     && ARCH="${TARGETARCH:-$(uname -m)}" \
     && case "${ARCH}" in \
         amd64|x86_64) GO_ARCH=amd64; GO_SHA256="${GO_SHA256_AMD64}" ;; \
