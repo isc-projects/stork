@@ -714,13 +714,12 @@ report_tool_version("node", label: "Node.js", version_pattern: /^v(\d+\.\d+(?:\.
 report_tool_version("npm", label: "npm", version_pattern: /^(\d+\.\d+(?:\.\d+)?)/)
 report_tool_version("go", label: "Go", version_flag: "version", version_pattern: /go version go(\d+\.\d+(?:\.\d+)?)/)
 
-# get the value of npm root. That's where the npm installs the
-# dependencies. This is the user-specific directory.
-node_dir = tool_command_output("npm", "root")
+node_dir = tool_command_output("npm", "config", "get", "prefix")
 
 go_tools_dir = File.join(tools_dir, "golang")
 gopath = tool_command_output("go", "env", "GOPATH")
-gobin = File.join(gopath, "bin")
+gobin = tool_command_output("go", "env", "GOBIN")
+gobin = gobin.empty? ? File.join(gopath, "bin") : gobin
 directory go_tools_dir
 
 ruby_tools_dir = File.join(tools_dir, "ruby")
