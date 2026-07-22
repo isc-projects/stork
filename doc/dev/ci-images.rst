@@ -121,9 +121,14 @@ To update the Docker CI images, follow these steps:
 
     1. Create a new access token for the registry.
 
-        Open `the Access Token GitLab page <https://gitlab.isc.org/-/profile/personal_access_tokens>`_
-        and add a new token with a 1-day validity (recommended) and the
-        ``read_registry`` and ``write_registry`` scopes. Copy the token value.
+        Open `the Access Token GitLab page <https://gitlab.isc.org/-/user_settings/personal_access_tokens>`_
+        and add legacy access token (the fine-grained don't work for the
+        registry yet as of July 2026), with the following properties:
+
+        - a 1-day validity (recommended)
+        ``read_registry`` and ``write_registry`` scopes.
+
+        Copy the token value.
 
     2. Login to the registry.
 

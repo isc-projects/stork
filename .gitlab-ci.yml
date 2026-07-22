@@ -1,4 +1,4 @@
-image: registry.gitlab.isc.org/isc-projects/stork/ci-base:9
+image: registry.gitlab.isc.org/isc-projects/stork/ci-base:19
 
 # Only create pipelines for merge requests and pushes/merges to the main branch
 workflow:
@@ -97,7 +97,7 @@ stages:
 
 # template with redhat image
 .image_redhat: &image_redhat
-  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-redhat-ubi:9
+  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-redhat-ubi:19
 
 # template with debian image
 .image_debian: &image_debian
