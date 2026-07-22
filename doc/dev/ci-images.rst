@@ -124,9 +124,7 @@ To update the Docker CI images, follow these steps:
         Open `the Access Token GitLab page <https://gitlab.isc.org/-/user_settings/personal_access_tokens>`_
         and add legacy access token (the fine-grained don't work for the
         registry yet as of July 2026), with the following properties:
-
-        - a 1-day validity (recommended)
-        ``read_registry`` and ``write_registry`` scopes.
+        a 1-day validity (recommended), ``read_registry`` and ``write_registry`` scopes.
 
         Copy the token value.
 
@@ -168,11 +166,16 @@ Changelog
 
 Below is the list of changes of CI images for particular tags.
 
-**Tag: 18**
+**Tag: 19**
 
-    - ``pkgs-alpine``:
+    - ``ci-base``:
 
-        Introduced in the #2495 ticket. Upgrades Golang to 1.26.5.
+        Introduced in #2470. Updated to Debian slim 13.5, several
+        dependencies updated, added Go 1.26.5, added NodeJS 20.
+
+    - ``pkgs-redhat-ubi``:
+
+        Introduced in #2470. Added Go 1.26.5, added NodeJS 22.23.
 
 **Tag: 17**
 
