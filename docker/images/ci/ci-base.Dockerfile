@@ -3,9 +3,9 @@ FROM debian:13.5-slim
 # To update the Go version, go to https://go.dev/dl/, find suitable
 # version, also get the linux-amd64 and linux-arm64 SHA256 sums.
 # In the future, we could semi automate it using https://go.dev/dl/?mode=json
-ARG GO_VERSION=1.25.12
-ARG GO_SHA256_AMD64=234828b7a89e0e303d2556310ee549fbcf253d28de937bac3da13d6294262ac1
-ARG GO_SHA256_ARM64=8b5884aef89600aef5b0b051fb971f11f49bb996521e911f30f02a66884f7bd2
+ARG GO_VERSION=1.26.5
+ARG GO_SHA256_AMD64=5c2c3b16caefa1d968a94c1daca04a7ca301a496d9b086e17ad77bb81393f053
+ARG GO_SHA256_ARM64=fe4789e92b1f33358680864bbe8704289e7bb5fc207d80623c308935bd696d49
 
 ENV PATH="/root/go/bin:/usr/local/go/bin:${PATH}"
 
@@ -39,12 +39,14 @@ RUN apt-get update \
         # Clean up cache.
         && rm -rf /var/lib/apt/lists/* \
         # Debian has dpkg configured to ignore man files by default.
-        && rm /etc/dpkg/dpkg.cfg.d/docker
-
-ARG GO_VERSION
-ARG GO_SHA256_AMD64
-ARG GO_SHA256_ARM64
-RUN ARCH="${TARGETARCH:-$(dpkg --print-architecture)}" \
+        && rm /etc/dpkg/dpkg.cfg.d/docker \
+        # Git sometimes gets grumpy if the host repo was cloned by a user,
+        # with a different UID than the one running the container.
+        && git config --global --add safe.directory /app \
+        # Install latest Go. We chose to install version from the upstream to
+        # ensure that we always can use the lastest version and not rely on
+        # the version that is available in Debian.
+        &&ARCH="${TARGETARCH:-$(dpkg --print-architecture)}" \
         && case "${ARCH}" in \
             amd64) GO_ARCH=amd64; GO_SHA256="${GO_SHA256_AMD64}" ;; \
             arm64) GO_ARCH=arm64; GO_SHA256="${GO_SHA256_ARM64}" ;; \
