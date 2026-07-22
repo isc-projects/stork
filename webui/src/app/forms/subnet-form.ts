@@ -32,7 +32,7 @@ export class DaemonGroup {
 
         if (daemons.length === 0) {
             // It should never happen.
-            this.label = "empty"
+            this.label = 'empty'
         } else if (daemons.length === 1) {
             const daemon = daemons[0]
             if (!!daemon.serverTag) {

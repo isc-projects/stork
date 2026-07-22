@@ -39,7 +39,8 @@
                 <small
                     *ngIf="
                         state.group.get('selectedDaemonGroups').invalid &&
-                        (state.group.get('selectedDaemonGroups').dirty || state.group.get('selectedDaemonGroups').touched)
+                        (state.group.get('selectedDaemonGroups').dirty ||
+                            state.group.get('selectedDaemonGroups').touched)
                     "
                     class="app-error block"
                     >At least one server must be selected.
