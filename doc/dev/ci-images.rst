@@ -30,6 +30,11 @@ Currently available images:
     - ``ci-base.Dockerfile`` - Debian-based image; a default base for CI tasks.
       Available for AMD64 and ARM64 architectures from the ``1`` tag. Stored in the
       registry as the ``ci-base`` image.
+    - ``pkgs-debian-old-glibc.Dockerfile`` - Debian-based image with a old
+      version of GLIBC. It is suitable only for compiling Go binaries with
+      already prepared all generated files. Available for AMD64 and ARM64
+      architectures for all tags. Stored in the registry as the
+      ``pkgs-debian-old-glibc`` image.
     - ``pkgs-redhat-ubi.Dockerfile`` (old name: ``redhat-ubi8.Dockerfile`` - RedHat-based
       image. Available for AMD64 and ARM64
       architectures from the ``1`` tag. Stored in the
@@ -155,6 +160,7 @@ The newly pushed image is available in the GitLab registry.
 The following Rake tasks are available:
 
 - ``rake push:debian`` - builds and pushes the image based on Debian.
+- ``rake push:debian-old-glibc`` - builds and pushes the image based on Debian with an old version of GLIBC.
 - ``rake push:rhel`` - builds and pushes the image based on RHEL (RH UBI).
 - ``rake push:alpine`` - builds and pushes the image based on Alpine.
 - ``rake push:compose`` - builds and pushes the image based on official
@@ -176,6 +182,11 @@ Below is the list of changes of CI images for particular tags.
     - ``pkgs-redhat-ubi``:
 
         Introduced in #2470. Added Go 1.26.5, added NodeJS 22.23.
+
+    - ``pkgs-debian-old-glibc``:
+
+        Introduced in #2470. Initial version of the image with Debian 11.11
+        (GLIBC 2.31) and Go 1.26.5.
 
 **Tag: 17**
 

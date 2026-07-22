@@ -101,7 +101,7 @@ stages:
 
 # template with debian image
 .image_debian: &image_debian
-  image: ruby:3.3.5-bullseye
+  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-debian-old-glibc:19
 
 # rule to run the job only when it is manually triggered; to be used in "rules"
 .rule_manual_allow_failure: &rule_manual_allow_failure

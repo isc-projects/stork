@@ -106,6 +106,18 @@ namespace :push do
         )
     end
 
+    desc 'Prepare CI-purpose image based on Debian with an old version of GLIBC.
+        TAG - number used as the image tag or "latest" keyword - required
+        CACHE - allow using cached image layers - default: true
+        DRY_RUN - do not push image to the registry, instead load it locally - optional, default: true'
+    task :debian_old_glibc do
+        Rake::Task["push:build_and_push"].invoke(
+            "docker/images/ci/pkgs-debian-old-glibc.Dockerfile",
+            "registry.gitlab.isc.org/isc-projects/stork/pkgs-debian-old-glibc",
+            true
+        )
+    end
+
     desc 'Prepare CI-purpose image based on RHEL.
         TAG - number used as the image tag or "latest" keyword - required
         CACHE - allow using cached image layers - default: true
