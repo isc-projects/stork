@@ -141,8 +141,6 @@
                         }
                     }
                 </p-fieldset>
-            }
-            @if (!state.wizard) {
                 <p-fieldset legend="Pools" styleClass="mt-4">
                     <p-accordion [value]="0">
                         @for (pool of state.group.get('pools')?.controls; track pool; let i = $index) {
@@ -197,64 +195,62 @@
                         </div>
                     </div>
                 </p-fieldset>
-            }
-            @if (!state.wizard && subnet.includes(':')) {
-                <p-fieldset legend="Prefix Delegation Pools" styleClass="mt-4">
-                    <p-accordion [value]="0">
-                        @for (pool of state.group.get('prefixPools')?.controls; track pool; let i = $index) {
-                            <p-accordion-panel [value]="i">
-                                <p-accordion-header>
-                                    <div class="flex align-items-center">
-                                        <span class="word-break-all">{{ getPrefixPoolHeader(i)[0] }}</span>
-                                        @if (
-                                            pool.invalid &&
-                                            (pool.dirty ||
-                                                pool.touched ||
-                                                pool.get('prefixes')?.hasError('ipv6PrefixOverlaps'))
-                                        ) {
-                                            <span
-                                                class="ml-2 pi pi-exclamation-triangle text-red-500 text-decoration-none"
-                                            ></span>
-                                        }
-                                    </div>
-                                </p-accordion-header>
-                                <p-accordion-content>
-                                    <app-prefix-pool-form
-                                        [subnet]="subnet"
-                                        [formGroup]="pool"
-                                        [selectableDaemons]="getSelectedDaemons()"
-                                    >
-                                    </app-prefix-pool-form>
-                                    <div class="flex justify-content-start mt-4 mb-4">
+                @if (subnet.includes(':')) {
+                    <p-fieldset legend="Prefix Delegation Pools" styleClass="mt-4">
+                        <p-accordion [value]="0">
+                            @for (pool of state.group.get('prefixPools')?.controls; track pool; let i = $index) {
+                                <p-accordion-panel [value]="i">
+                                    <p-accordion-header>
                                         <div class="flex align-items-center">
-                                            <p-button
-                                                size="small"
-                                                severity="danger"
-                                                icon="pi pi-times"
-                                                label="Delete Pool"
-                                                (click)="onPrefixPoolDelete(i)"
-                                            ></p-button>
+                                            <span class="word-break-all">{{ getPrefixPoolHeader(i)[0] }}</span>
+                                            @if (
+                                                pool.invalid &&
+                                                (pool.dirty ||
+                                                    pool.touched ||
+                                                    pool.get('prefixes')?.hasError('ipv6PrefixOverlaps'))
+                                            ) {
+                                                <span
+                                                    class="ml-2 pi pi-exclamation-triangle text-red-500 text-decoration-none"
+                                                ></span>
+                                            }
                                         </div>
-                                    </div>
-                                </p-accordion-content>
-                            </p-accordion-panel>
-                        }
-                    </p-accordion>
-                    <div class="flex justify-content-start">
-                        <div class="flex align-items-center">
-                            <p-button
-                                styleClass="ml-0 mt-4"
-                                size="small"
-                                icon="fa-solid fa-plus"
-                                label="Add Pool"
-                                severity="info"
-                                (click)="onPrefixPoolAdd()"
-                            ></p-button>
+                                    </p-accordion-header>
+                                    <p-accordion-content>
+                                        <app-prefix-pool-form
+                                            [subnet]="subnet"
+                                            [formGroup]="pool"
+                                            [selectableDaemons]="getSelectedDaemons()"
+                                        >
+                                        </app-prefix-pool-form>
+                                        <div class="flex justify-content-start mt-4 mb-4">
+                                            <div class="flex align-items-center">
+                                                <p-button
+                                                    size="small"
+                                                    severity="danger"
+                                                    icon="pi pi-times"
+                                                    label="Delete Pool"
+                                                    (click)="onPrefixPoolDelete(i)"
+                                                ></p-button>
+                                            </div>
+                                        </div>
+                                    </p-accordion-content>
+                                </p-accordion-panel>
+                            }
+                        </p-accordion>
+                        <div class="flex justify-content-start">
+                            <div class="flex align-items-center">
+                                <p-button
+                                    styleClass="ml-0 mt-4"
+                                    size="small"
+                                    icon="fa-solid fa-plus"
+                                    label="Add Pool"
+                                    severity="info"
+                                    (click)="onPrefixPoolAdd()"
+                                ></p-button>
+                            </div>
                         </div>
-                    </div>
-                </p-fieldset>
-            }
-            @if (!state.wizard) {
+                    </p-fieldset>
+                }
                 <p-fieldset legend="DHCP Parameters" styleClass="mt-4">
                     <app-shared-parameters-form
                         [clientClasses]="state.clientClasses"
@@ -263,8 +259,6 @@
                     >
                     </app-shared-parameters-form>
                 </p-fieldset>
-            }
-            @if (!state.wizard) {
                 <p-fieldset [formGroup]="state.group.get('options')" legend="DHCP Options" styleClass="mt-4">
                     <div class="flex mt-2 pb-4">
                         <p-checkbox formControlName="unlocked" [binary]="true"> </p-checkbox>
@@ -306,8 +300,7 @@
                 <p-button label="Cancel" severity="secondary" (onClick)="onCancel()"></p-button>
                 @if (!state.wizard) {
                     <p-button label="Submit" [disabled]="state.group?.invalid" (onClick)="onSubmit()"></p-button>
-                }
-                @if (state.wizard) {
+                } @else {
                     <p-button
                         [disabled]="state.group?.get('subnet').invalid"
                         label="Proceed"
