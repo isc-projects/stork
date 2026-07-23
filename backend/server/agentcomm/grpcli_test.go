@@ -47,28 +47,39 @@ func setupGrpcliTestCase(ctrl *gomock.Controller) (*MockAgentClient, *connectedA
 	return setupGrpcliTestCaseWithConnectionError(ctrl, nil)
 }
 
-// setupGrpcliTestCaseWithConnectionError sets up self-signed certificates, a mock
+// Sets up self-signed certificates, a mock
 // AgentClient, a mock AgentsConnector, and a fake EventCenter in order to run a
 // grpcli unit test. It also allows the caller to specify a connection error that
 // should be returned whenever an connection is attempted through the
 // mock AgentsConnector.
 func setupGrpcliTestCaseWithConnectionError(ctrl *gomock.Controller, err error) (*MockAgentClient, *connectedAgentsImpl) {
-	caCertPEM, serverCertPEM, serverKeyPEM, _ := generateSelfSignedCerts()
-
 	mockAgentClient := NewMockAgentClient(ctrl)
 	mockAgentsConnector := NewMockAgentConnector(ctrl)
 	mockAgentsConnector.EXPECT().connect().AnyTimes().Return(err)
 	mockAgentsConnector.EXPECT().close().AnyTimes()
-	mockAgentsConnector.EXPECT().createClient().AnyTimes().Return(mockAgentClient)
+	if err == nil {
+		mockAgentsConnector.EXPECT().createClient().AnyTimes().Return(mockAgentClient, nil)
+	} else {
+		mockAgentsConnector.EXPECT().createClient().AnyTimes().Return(nil, err)
+	}
+
+	agents := setupGrpcliTestCaseWithMockConnector(mockAgentsConnector)
+	return mockAgentClient, agents
+}
+
+// Sets up self-signed certificates and a fake EventCenter in order to run a
+// grpcli unit test.
+func setupGrpcliTestCaseWithMockConnector(connector agentConnector) *connectedAgentsImpl {
+	caCertPEM, serverCertPEM, serverKeyPEM, _ := generateSelfSignedCerts()
 
 	settings := AgentsSettings{}
 	fec := &storktest.FakeEventCenter{}
 	agents := newConnectedAgentsImpl(&settings, fec, caCertPEM, serverCertPEM, serverKeyPEM)
 	agents.setConnectorFactory(func(string) agentConnector {
-		return mockAgentsConnector
+		return connector
 	})
 
-	return mockAgentClient, agents
+	return agents
 }
 
 // Gomock-compatible matcher that asserts the GRPC call options. The assertion
@@ -115,7 +126,7 @@ func (*gzipMatcher) String() string {
 //go:generate mockgen -package=agentcomm -destination=agentcommmock_test.go -source=agentcomm.go -mock_names=agentConnector=MockAgentConnector agentConnector
 //go:generate mockgen -package=agentcomm -destination=serverstreamingclientmock_test.go google.golang.org/grpc ServerStreamingClient
 
-// Check if Ping works.
+// Check if Pingit stash --in	g works.
 func TestPing(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
@@ -1638,7 +1649,7 @@ func TestReceiveZonesConnectionError(t *testing.T) {
 	mockAgentConnector := NewMockAgentConnector(ctrl)
 	mockAgentConnector.EXPECT().connect().AnyTimes().Return(&testError{})
 	mockAgentConnector.EXPECT().close().AnyTimes()
-	mockAgentConnector.EXPECT().createClient().AnyTimes().Return(mockAgentClient)
+	mockAgentConnector.EXPECT().createClient().AnyTimes().Return(mockAgentClient, nil)
 
 	agents := newConnectedAgentsImpl(&AgentsSettings{}, &storktest.FakeEventCenter{}, caCertPEM, serverCertPEM, serverKeyPEM)
 	agents.setConnectorFactory(func(string) agentConnector {
@@ -2058,7 +2069,7 @@ func TestReceiveZoneRRsConnectionError(t *testing.T) {
 	mockAgentConnector := NewMockAgentConnector(ctrl)
 	mockAgentConnector.EXPECT().connect().AnyTimes().Return(&testError{})
 	mockAgentConnector.EXPECT().close().AnyTimes()
-	mockAgentConnector.EXPECT().createClient().AnyTimes().Return(mockAgentClient)
+	mockAgentConnector.EXPECT().createClient().AnyTimes().Return(mockAgentClient, nil)
 
 	agents := newConnectedAgentsImpl(&AgentsSettings{}, &storktest.FakeEventCenter{}, caCertPEM, serverCertPEM, serverKeyPEM)
 	agents.setConnectorFactory(func(string) agentConnector {
@@ -2272,20 +2283,26 @@ func TestReceiveZoneRRsNotConnectedClient(t *testing.T) {
 	}
 
 	ctrl := gomock.NewController(t)
-	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
 	defer ctrl.Finish()
 
-	mockAgentClient.EXPECT().ReceiveZoneRRs(gomock.Any(), gomock.Any()).Do(func(ctx context.Context, req any, opts ...grpc.CallOption) {
-		panic("nil pointer dereference")
-	})
+	mockAgentsConnector := NewMockAgentConnector(ctrl)
+	mockAgentsConnector.EXPECT().connect().AnyTimes().Return(nil)
+	mockAgentsConnector.EXPECT().close().AnyTimes()
+	// Simulate that the connector is not connected when this function is called.
+	mockAgentsConnector.EXPECT().createClient().AnyTimes().Return(nil, &testError{})
+
+	agents := setupGrpcliTestCaseWithMockConnector(mockAgentsConnector)
 
 	// Assert
-	require.Panics(t, func() {
+	callCount := 0
+	require.NotPanics(t, func() {
 		for rrs, err := range agents.ReceiveZoneRRs(context.Background(), daemon, "example.com", "_default") {
-			require.Error(t, err)
+			callCount++
+			require.ErrorIs(t, err, &testError{})
 			require.Nil(t, rrs)
 		}
 	})
+	require.Equal(t, 1, callCount)
 }
 
 // Test successful reception of zone contents over the stream.
@@ -3447,7 +3464,7 @@ func TestReceiveZoneTransfersConnectionError(t *testing.T) {
 	mockAgentConnector := NewMockAgentConnector(ctrl)
 	mockAgentConnector.EXPECT().connect().AnyTimes().Return(&testError{})
 	mockAgentConnector.EXPECT().close().AnyTimes()
-	mockAgentConnector.EXPECT().createClient().AnyTimes().Return(mockAgentClient)
+	mockAgentConnector.EXPECT().createClient().AnyTimes().Return(mockAgentClient, nil)
 
 	agents := newConnectedAgentsImpl(&AgentsSettings{}, &storktest.FakeEventCenter{}, caCertPEM, serverCertPEM, serverKeyPEM)
 	agents.setConnectorFactory(func(string) agentConnector {

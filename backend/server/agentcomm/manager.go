@@ -67,7 +67,11 @@ func doCall(ctx context.Context, agent *agentState, in interface{}) (interface{}
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	client := agent.connector.createClient()
+	client, err := agent.connector.createClient()
+	if err != nil {
+		return nil, err
+	}
+
 	switch inData := in.(type) {
 	case *agentapi.PingReq:
 		response, err = client.Ping(ctx, inData)

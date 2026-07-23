@@ -1095,10 +1095,18 @@ func (agents *connectedAgentsImpl) ReceiveZones(ctx context.Context, daemon Cont
 		// say how reliable they are. This approach worked well for several years so
 		// it should be fine to continue using it.
 		var stream grpc.ServerStreamingClient[agentapi.Zone]
-		if stream, err = agent.connector.createClient().ReceiveZones(ctx, request); err != nil {
+		client, err := agent.connector.createClient()
+		if err == nil {
+			stream, err = client.ReceiveZones(ctx, request)
+		}
+
+		if err != nil {
 			if err = agent.connector.connect(); err == nil {
-				stream, err = agent.connector.createClient().ReceiveZones(ctx, request)
-				err = errors.WithStack(err)
+				client, err = agent.connector.createClient()
+				if err == nil {
+					stream, err = client.ReceiveZones(ctx, request)
+					err = errors.WithStack(err)
+				}
 			}
 		}
 		if err != nil {
@@ -1203,10 +1211,17 @@ func (agents *connectedAgentsImpl) ReceiveZoneRRs(ctx context.Context, daemon Co
 		// say how reliable they are. This approach worked well for several years so
 		// it should be fine to continue using it.
 		var stream grpc.ServerStreamingClient[agentapi.ReceiveZoneRRsRsp]
-		if stream, err = agent.connector.createClient().ReceiveZoneRRs(ctx, request); err != nil {
+		client, err := agent.connector.createClient()
+		if err == nil {
+			stream, err = client.ReceiveZoneRRs(ctx, request)
+		}
+		if err != nil {
 			if err = agent.connector.connect(); err == nil {
-				stream, err = agent.connector.createClient().ReceiveZoneRRs(ctx, request)
-				err = errors.WithStack(err)
+				client, err = agent.connector.createClient()
+				if err == nil {
+					stream, err = client.ReceiveZoneRRs(ctx, request)
+					err = errors.WithStack(err)
+				}
 			}
 		}
 		if err != nil {
@@ -1306,10 +1321,17 @@ func (agents *connectedAgentsImpl) ReceiveBind9FormattedConfig(ctx context.Conte
 		// say how reliable they are. This approach worked well for several years so
 		// it should be fine to continue using it.
 		var stream grpc.ServerStreamingClient[agentapi.ReceiveBind9ConfigRsp]
-		if stream, err = agent.connector.createClient().ReceiveBind9Config(ctx, request); err != nil {
+		client, err := agent.connector.createClient()
+		if err == nil {
+			stream, err = client.ReceiveBind9Config(ctx, request)
+		}
+		if err != nil {
 			if err = agent.connector.connect(); err == nil {
-				stream, err = agent.connector.createClient().ReceiveBind9Config(ctx, request)
-				err = errors.WithStack(err)
+				client, err = agent.connector.createClient()
+				if err == nil {
+					stream, err = client.ReceiveBind9Config(ctx, request)
+					err = errors.WithStack(err)
+				}
 			}
 		}
 		if err != nil {
@@ -1364,10 +1386,17 @@ func (agents *connectedAgentsImpl) ReceiveKeaLeases(ctx context.Context, daemon 
 		}
 
 		var stream grpc.ServerStreamingClient[agentapi.ReceiveKeaLeasesRsp]
-		if stream, err = agent.connector.createClient().ReceiveKeaLeases(ctx, request); err != nil {
+		client, err := agent.connector.createClient()
+		if err == nil {
+			stream, err = client.ReceiveKeaLeases(ctx, request)
+		}
+		if err != nil {
 			if err = agent.connector.connect(); err == nil {
-				stream, err = agent.connector.createClient().ReceiveKeaLeases(ctx, request)
-				err = errors.WithStack(err)
+				client, err = agent.connector.createClient()
+				if err == nil {
+					stream, err = client.ReceiveKeaLeases(ctx, request)
+					err = errors.WithStack(err)
+				}
 			}
 		}
 		if err != nil {
@@ -1429,10 +1458,17 @@ func (agents *connectedAgentsImpl) ReceiveZoneTransfers(ctx context.Context, dae
 		// say how reliable they are. This approach worked well for several years so
 		// it should be fine to continue using it.
 		var stream grpc.ServerStreamingClient[agentapi.ReceiveZoneTransfersRsp]
-		if stream, err = agent.connector.createClient().ReceiveZoneTransfers(ctx, request); err != nil {
+		client, err := agent.connector.createClient()
+		if err == nil {
+			stream, err = client.ReceiveZoneTransfers(ctx, request)
+		}
+		if err != nil {
 			if err = agent.connector.connect(); err == nil {
-				stream, err = agent.connector.createClient().ReceiveZoneTransfers(ctx, request)
-				err = errors.WithStack(err)
+				client, err = agent.connector.createClient()
+				if err == nil {
+					stream, err = client.ReceiveZoneTransfers(ctx, request)
+					err = errors.WithStack(err)
+				}
 			}
 		}
 		if err != nil {

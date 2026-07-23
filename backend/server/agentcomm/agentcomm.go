@@ -69,7 +69,10 @@ type agentConnector interface {
 	// The client typically is not cached for future use because it is
 	// created using a lightweight call with an already established connection.
 	// Several clients can use the same underlying connection.
-	createClient() agentapi.AgentClient
+	// Returns an error if the connection is not established.
+	// The connector must be connected before calling this function. Otherwise,
+	// it returns an error.
+	createClient() (agentapi.AgentClient, error)
 }
 
 // Default implementation of the connector.
@@ -135,8 +138,11 @@ func (impl *agentConnectorImpl) closeUnsafe() {
 }
 
 // Instantiates gRPC client using established connection.
-func (impl *agentConnectorImpl) createClient() agentapi.AgentClient {
-	return agentapi.NewAgentClient(impl.conn)
+func (impl *agentConnectorImpl) createClient() (agentapi.AgentClient, error) {
+	if impl.conn == nil {
+		return nil, errors.New("connection is not established")
+	}
+	return agentapi.NewAgentClient(impl.conn), nil
 }
 
 // Runtime information about the connected agent.

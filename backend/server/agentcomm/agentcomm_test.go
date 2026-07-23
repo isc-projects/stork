@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/security/advancedtls"
 	"isc.org/stork/pki"
 	storktest "isc.org/stork/server/test/dbmodel"
@@ -112,7 +113,18 @@ func TestVerifyPeerCorrectCertificate(t *testing.T) {
 
 // Test that the agent client can be instantiated.
 func TestConnectedAgentsConnectorCreateClient(t *testing.T) {
-	agentConnector := &agentConnectorImpl{}
-	client := agentConnector.createClient()
-	require.NotNil(t, client)
+	t.Run("unconnected", func(t *testing.T) {
+		agentConnector := &agentConnectorImpl{}
+		client, err := agentConnector.createClient()
+		require.Error(t, err)
+		require.Nil(t, client)
+	})
+
+	t.Run("connected", func(t *testing.T) {
+		agentConnector := &agentConnectorImpl{}
+		agentConnector.conn = &grpc.ClientConn{}
+		client, err := agentConnector.createClient()
+		require.NoError(t, err)
+		require.NotNil(t, client)
+	})
 }
