@@ -44,7 +44,7 @@
                             state.group.get('selectedDaemons').invalid &&
                             (state.group.get('selectedDaemons').dirty || state.group.get('selectedDaemons').touched)
                         ) {
-                            <small class="app-error block">At least one server must be selected. </small>
+                            <small class="app-error block">At least one server must be selected.</small>
                         }
                         @if (state.group.get('selectedDaemons')?.disabled) {
                             <div class="flex align-items-center">
@@ -76,7 +76,7 @@
                         <small class="app-error block">A subnet with this prefix already exists. </small>
                     }
                     @if (state.group.get('subnet').hasError('ipPrefix')) {
-                        <small class="app-error block">{{ state.group.get('subnet').errors.ipPrefix }} </small>
+                        <small class="app-error block">{{ state.group.get('subnet').errors.ipPrefix }}</small>
                     }
                     @if (
                         !state.group.get('subnet').hasError('prefixInList') &&
