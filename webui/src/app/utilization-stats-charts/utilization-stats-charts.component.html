@@ -19,28 +19,26 @@
             </div>
         }
         @if (localSubnets && localSubnets.length > 1) {
-            <ng-container class="flex flex-wrap">
-                @for (localSubnet of localSubnets; track localSubnet) {
-                    @if (localSubnet.pools?.length > 0) {
-                        <div class="min-w-0 overflow-auto">
-                            <app-utilization-stats-chart
-                                [title]="localSubnet.daemonLabel"
-                                leaseType="na"
-                                [network]="localSubnet"
-                            ></app-utilization-stats-chart>
-                        </div>
-                    }
-                    @if (localSubnet.prefixDelegationPools?.length > 0) {
-                        <div class="min-w-0 overflow-auto">
-                            <app-utilization-stats-chart
-                                [title]="localSubnet.daemonLabel"
-                                leaseType="pd"
-                                [network]="localSubnet"
-                            ></app-utilization-stats-chart>
-                        </div>
-                    }
+            @for (localSubnet of localSubnets; track localSubnet) {
+                @if (localSubnet.pools?.length > 0) {
+                    <div class="min-w-0 overflow-auto">
+                        <app-utilization-stats-chart
+                            [title]="localSubnet.daemonLabel"
+                            leaseType="na"
+                            [network]="localSubnet"
+                        ></app-utilization-stats-chart>
+                    </div>
                 }
-            </ng-container>
+                @if (localSubnet.prefixDelegationPools?.length > 0) {
+                    <div class="min-w-0 overflow-auto">
+                        <app-utilization-stats-chart
+                            [title]="localSubnet.daemonLabel"
+                            leaseType="pd"
+                            [network]="localSubnet"
+                        ></app-utilization-stats-chart>
+                    </div>
+                }
+            }
         }
     </div>
     <p-divider></p-divider>
