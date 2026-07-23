@@ -4,8 +4,6 @@ import { Subnet } from '../backend/model/subnet'
 import { SharedNetwork } from '../backend/model/sharedNetwork'
 import { clamp } from '../utils'
 import { LocalSubnet } from '../backend'
-import {} from 'chart.js'
-
 import { UIChart } from 'primeng/chart'
 import { HumanCountComponent } from '../human-count/human-count.component'
 import { PositivePipe } from '../pipes/positive.pipe'

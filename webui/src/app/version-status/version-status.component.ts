@@ -11,7 +11,6 @@ import { ToastMessageOptions, MessageService } from 'primeng/api'
 import { first, Subscription } from 'rxjs'
 import { daemonNameToFriendlyName, getErrorMessage, getIconBySeverity } from '../utils'
 import { map } from 'rxjs/operators'
-
 import { RouterLink } from '@angular/router'
 import { Tooltip } from 'primeng/tooltip'
 import { Message } from 'primeng/message'
