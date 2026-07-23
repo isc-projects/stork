@@ -10,7 +10,6 @@ import { deepEqual, getErrorMessage } from '../utils'
 import { ConfirmationService, MessageService } from 'primeng/api'
 import { lastValueFrom } from 'rxjs'
 import { ConfirmDialog } from 'primeng/confirmdialog'
-import { NgFor, NgIf } from '@angular/common'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { Button } from 'primeng/button'
@@ -31,14 +30,12 @@ import { DhcpOptionSetViewComponent } from '../dhcp-option-set-view/dhcp-option-
     styleUrls: ['./subnet-tab.component.sass'],
     imports: [
         ConfirmDialog,
-        NgIf,
         EntityLinkComponent,
         HelpTipComponent,
         Button,
         ManagedAccessDirective,
         Fieldset,
         TableModule,
-        NgFor,
         PoolBarsComponent,
         UtilizationStatsChartsComponent,
         JsonTreeRootComponent,

@@ -42,7 +42,7 @@ import { convertSortingFields, tableFiltersToQueryParams, tableHasFilter } from 
 import { Router, RouterLink } from '@angular/router'
 import { getTooltip, getSeverity } from '../zone-inventory-utils'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
-import { NgIf, NgFor, NgTemplateOutlet, TitleCasePipe } from '@angular/common'
+import { NgTemplateOutlet, TitleCasePipe } from '@angular/common'
 import { Message } from 'primeng/message'
 import { ProgressBar } from 'primeng/progressbar'
 import { Skeleton } from 'primeng/skeleton'
@@ -88,10 +88,8 @@ interface ExtendedLocalZone extends LocalZone {
     styleUrl: './zones-page.component.sass',
     imports: [
         BreadcrumbsComponent,
-        NgIf,
         Message,
         ProgressBar,
-        NgFor,
         Skeleton,
         Button,
         ManagedAccessDirective,

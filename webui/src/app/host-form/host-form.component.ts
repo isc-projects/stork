@@ -32,7 +32,7 @@ import { getErrorMessage, stringToHex } from '../utils'
 import { SelectableClientClass } from '../forms/selectable-client-class'
 import { hasDifferentLocalHostData } from '../hosts'
 import { GenericFormService } from '../forms/generic-form.service'
-import { NgIf, NgFor, NgSwitch, NgSwitchCase, NgTemplateOutlet } from '@angular/common'
+import { NgTemplateOutlet } from '@angular/common'
 import { RouterLink } from '@angular/router'
 import { Button } from 'primeng/button'
 import { Fieldset } from 'primeng/fieldset'
@@ -194,7 +194,6 @@ export interface MappedHostBeginData {
     templateUrl: './host-form.component.html',
     styleUrls: ['./host-form.component.sass'],
     imports: [
-        NgIf,
         FormsModule,
         ReactiveFormsModule,
         Fieldset,
@@ -203,9 +202,6 @@ export interface MappedHostBeginData {
         MultiSelect,
         Select,
         InputText,
-        NgFor,
-        NgSwitch,
-        NgSwitchCase,
         NgTemplateOutlet,
         InputNumber,
         Button,

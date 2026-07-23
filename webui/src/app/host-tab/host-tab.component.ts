@@ -14,7 +14,7 @@ import {
 } from '../hosts'
 import { durationToString, epochToLocal, getErrorMessage } from '../utils'
 import { Tooltip } from 'primeng/tooltip'
-import { NgIf, NgFor, NgTemplateOutlet, NgSwitch, NgSwitchCase, NgSwitchDefault } from '@angular/common'
+import { NgTemplateOutlet } from '@angular/common'
 import { RouterLink } from '@angular/router'
 import { Button } from 'primeng/button'
 import { ConfirmDialog } from 'primeng/confirmdialog'
@@ -70,23 +70,18 @@ interface LeaseInfo {
     styleUrls: ['./host-tab.component.sass'],
     imports: [
         ConfirmDialog,
-        NgIf,
         EntityLinkComponent,
         HelpTipComponent,
         Button,
         ManagedAccessDirective,
         Message,
         HostDataSourceLabelComponent,
-        NgFor,
         RouterLink,
         Fieldset,
         TableModule,
         NgTemplateOutlet,
         IdentifierComponent,
         ProgressSpinner,
-        NgSwitch,
-        NgSwitchCase,
-        NgSwitchDefault,
         DhcpClientClassSetViewComponent,
         DhcpOptionSetViewComponent,
         Tag,

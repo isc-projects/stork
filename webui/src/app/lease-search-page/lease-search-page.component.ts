@@ -13,7 +13,7 @@ import { FormsModule } from '@angular/forms'
 import { InputText } from 'primeng/inputtext'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { TableModule } from 'primeng/table'
-import { NgIf, NgFor, NgClass } from '@angular/common'
+import { NgClass } from '@angular/common'
 import { Message } from 'primeng/message'
 import { Fieldset } from 'primeng/fieldset'
 import { IdentifierComponent } from '../identifier/identifier.component'
@@ -66,9 +66,7 @@ enum LeasesSearchStatus {
         InputText,
         HelpTipComponent,
         TableModule,
-        NgIf,
         Message,
-        NgFor,
         NgClass,
         Fieldset,
         IdentifierComponent,

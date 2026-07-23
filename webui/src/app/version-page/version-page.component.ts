@@ -6,7 +6,7 @@ import { Observable, of, Subscription, tap } from 'rxjs'
 import { catchError, concatMap, map } from 'rxjs/operators'
 import { MessageService } from 'primeng/api'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
-import { NgIf, NgFor, AsyncPipe, DatePipe } from '@angular/common'
+import { AsyncPipe, DatePipe } from '@angular/common'
 import { Message } from 'primeng/message'
 import { Button } from 'primeng/button'
 import { Panel } from 'primeng/panel'
@@ -29,13 +29,11 @@ import { EntityLinkComponent } from '../entity-link/entity-link.component'
     styleUrl: './version-page.component.sass',
     imports: [
         BreadcrumbsComponent,
-        NgIf,
         Message,
         Button,
         Panel,
         TableModule,
         Badge,
-        NgFor,
         VersionStatusComponent,
         AsyncPipe,
         DatePipe,

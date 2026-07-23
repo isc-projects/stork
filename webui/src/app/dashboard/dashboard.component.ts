@@ -21,7 +21,7 @@ import { DhcpDaemon, DhcpDaemonHARelationshipOverview, DhcpOverview, Settings, Z
 import { ModifyDeep } from '../utiltypes'
 import { TableLazyLoadEvent, TableModule } from 'primeng/table'
 import { getSeverity, getTooltip } from '../zone-inventory-utils'
-import { NgIf, NgFor, NgStyle, NgTemplateOutlet, DecimalPipe, TitleCasePipe } from '@angular/common'
+import { NgStyle, NgTemplateOutlet, DecimalPipe, TitleCasePipe } from '@angular/common'
 import { Panel } from 'primeng/panel'
 import { RouterLink } from '@angular/router'
 import { Button } from 'primeng/button'
@@ -88,12 +88,10 @@ type DhcpOverviewParsed = ModifyDeep<
     templateUrl: './dashboard.component.html',
     styleUrls: ['./dashboard.component.sass'],
     imports: [
-        NgIf,
         Panel,
         RouterLink,
         Button,
         HelpTipComponent,
-        NgFor,
         SubnetBarComponent,
         EntityLinkComponent,
         TableModule,
