@@ -27,6 +27,8 @@ func mockFilterableDaemon(name daemonname.Name, id, machineID int64) *dbmodel.Da
 		Name:      name,
 		ID:        id,
 		MachineID: machineID,
+		Monitored: true,
+		Active:    true,
 	}
 }
 
@@ -332,6 +334,28 @@ func TestFilterDaemons(t *testing.T) {
 			mockFilterableDaemon(daemonname.DHCPv6, 26, 12),
 			nil,
 		)
+		notMonitored = daemonWithLeaseSQLDB(
+			&dbmodel.Daemon{
+				Name:      daemonname.DHCPv6,
+				ID:        27,
+				MachineID: 13,
+				Monitored: false,
+				Active:    true,
+			},
+			dbPg,
+			dbFoo,
+		)
+		notActive = daemonWithLeaseSQLDB(
+			&dbmodel.Daemon{
+				Name:      daemonname.DHCPv6,
+				ID:        28,
+				MachineID: 14,
+				Monitored: true,
+				Active:    false,
+			},
+			dbPg,
+			dbFoo,
+		)
 		// Non-DHCP daemons:
 		bind9Daemon = mockFilterableDaemon(daemonname.Bind9, 100, 100)
 		keaCADaemon = mockFilterableDaemon(daemonname.CA, 101, 101)
@@ -529,6 +553,28 @@ func TestFilterDaemons(t *testing.T) {
 		t.Parallel()
 		locahosts := []dbmodel.Daemon{
 			*noLeaseDB,
+		}
+
+		result := filterDaemons(locahosts, false)
+
+		// Assert
+		require.Len(t, result, 0)
+	})
+	t.Run("daemons that are not monitored are skipped", func(t *testing.T) {
+		t.Parallel()
+		locahosts := []dbmodel.Daemon{
+			*notMonitored,
+		}
+
+		result := filterDaemons(locahosts, false)
+
+		// Assert
+		require.Len(t, result, 0)
+	})
+	t.Run("daemons that are not active are skipped", func(t *testing.T) {
+		t.Parallel()
+		locahosts := []dbmodel.Daemon{
+			*notActive,
 		}
 
 		result := filterDaemons(locahosts, false)

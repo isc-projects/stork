@@ -125,6 +125,11 @@ func filterDaemons(daemons []dbmodel.Daemon, onlyMemfile bool) []*dbmodel.Daemon
 			log.WithField("daemon_id", daemon.ID).Debug("Ignoring non-Kea or configless daemon")
 			continue
 		}
+		if !daemon.Monitored || !daemon.Active {
+			log.WithField("daemon_id", daemon.ID).Debug("Ignoring unmonitored or inactive daemon")
+			continue
+		}
+
 		databases := daemon.KeaDaemon.Config.GetAllDatabases()
 		if databases.Lease == nil {
 			log.WithField("daemon_id", daemon.ID).Debug("Ignoring daemon with no lease database")
