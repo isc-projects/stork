@@ -82,7 +82,7 @@ CLEAN.append CODE_GEN_BINARY_FILE
 # The include directive can be specified as a hash key.
 #
 # It doesn't parse the YAML file because it is possible to have multiple
-# includes one-by-one in the same hash what is incompatible with YAML syntax.
+# includes one-by-one in the same hash which is incompatible with YAML syntax.
 # The function just looks for the include directive and replaces it with the
 # content of the included file. It supports in-line comments.
 def resolve_yaml_includes(input_file, output_file)
