@@ -1,6 +1,14 @@
 import { Component, OnDestroy, OnInit, ViewChild, inject } from '@angular/core'
 import { tableHasFilter, tableFiltersToQueryParams, convertSortingFields } from '../table'
-import { DHCPService, Lease, LeaseListSortField, Leases } from '../backend'
+import {
+    DHCPService,
+    Lease,
+    LeaseListSortField,
+    Leases,
+    Daemon,
+    MachinesDirectoryEntry,
+    ServicesService,
+} from '../backend'
 import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table'
 import { Router } from '@angular/router'
 import { MenuItem, MessageService, PrimeTemplate, TableState, FilterMetadata } from 'primeng/api'
@@ -14,13 +22,14 @@ import { IconField } from 'primeng/iconfield'
 import { InputIcon } from 'primeng/inputicon'
 import { InputNumber } from 'primeng/inputnumber'
 import { InputText } from 'primeng/inputtext'
+import { SelectModule } from 'primeng/select'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { PluralizePipe } from '../pipes/pluralize.pipe'
 import { TableCaptionComponent } from '../table-caption/table-caption.component'
 import { SplitButton } from 'primeng/splitbutton'
 import { DaemonFilterComponent } from '../daemon-filter/daemon-filter.component'
 import { LeaseDetailBoxComponent } from '../lease-detail-box/lease-detail-box.component'
-import { stateToString } from '../lease-utils'
+import { stateToString, leaseStates } from '../lease-utils'
 
 /**
  * This component implements a table of leases.
@@ -35,6 +44,7 @@ import { stateToString } from '../lease-utils'
     imports: [
         Button,
         TableModule,
+        SelectModule,
         PrimeTemplate,
         FloatLabel,
         InputNumber,
@@ -54,6 +64,7 @@ export class LeasesListTableComponent implements OnInit, OnDestroy {
     private router = inject(Router)
     private dhcpApi = inject(DHCPService)
     private messageService = inject(MessageService)
+    private servicesService = inject(ServicesService)
 
     /**
      * PrimeNG table instance.
@@ -83,6 +94,25 @@ export class LeasesListTableComponent implements OnInit, OnDestroy {
     private _subscriptions: Subscription = new Subscription()
 
     /**
+     * Lease states mapping for the state filter.
+     */
+    leaseStates = leaseStates
+
+    /**
+     * Collection of machines fetched from the backend.
+     *
+     * They are listed in the UI filter dropdown.
+     */
+    machines: MachinesDirectoryEntry[] = []
+
+    /**
+     * Flag indicating that the machines are loading.
+     *
+     * This is used in the filter dropdown to control a loading spinner.
+     */
+    machinesLoading: boolean = false
+
+    /**
      * Loads leases from the database into the component.
      *
      * @param event Event object containing an index if the first row, maximum
@@ -102,6 +132,7 @@ export class LeasesListTableComponent implements OnInit, OnDestroy {
                 (event.filters['daemonId'] as FilterMetadata)?.value ?? null,
                 (event.filters['subnetId'] as FilterMetadata)?.value ?? null,
                 (event.filters['localSubnetId'] as FilterMetadata)?.value ?? null,
+                (event.filters['state'] as FilterMetadata)?.value ?? null,
                 (event.filters['text'] as FilterMetadata)?.value || null,
                 ...convertSortingFields<LeaseListSortField>(event)
             )
@@ -109,7 +140,6 @@ export class LeasesListTableComponent implements OnInit, OnDestroy {
             .then((data: Leases) => {
                 this.dataCollection = data.items ?? []
                 this.totalRecords = data.total ?? 0
-                console.log('received data:', data)
             })
             .catch((err: any) => {
                 const msg = getErrorMessage(err)
@@ -119,7 +149,6 @@ export class LeasesListTableComponent implements OnInit, OnDestroy {
                     detail: 'Error getting leases list: ' + msg,
                     life: 10000,
                 })
-                console.log('WILLIAM received error:', err)
             })
             .finally(() => {
                 this.dataLoading = false
@@ -144,6 +173,24 @@ export class LeasesListTableComponent implements OnInit, OnDestroy {
      */
     ngOnInit(): void {
         this._restoreTableRowsPerPage()
+
+        this.machinesLoading = true
+        lastValueFrom(this.servicesService.getMachinesDirectory([Daemon.NameEnum.Dhcp4, Daemon.NameEnum.Dhcp6]))
+            .then((machines) => {
+                this.machines = machines.items ?? []
+            })
+            .catch((err) => {
+                const msg = getErrorMessage(err)
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error retrieving machines',
+                    detail: 'Failed to retrieve machines information for filtering by machine: ' + msg,
+                    life: 10000,
+                })
+            })
+            .finally(() => {
+                this.machinesLoading = false
+            })
 
         this._subscriptions.add(
             this._tableFilter$

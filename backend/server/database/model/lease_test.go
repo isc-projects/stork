@@ -547,6 +547,27 @@ func TestGetLeasesByPageFilteredByMachine(t *testing.T) {
 	require.Equal(t, leases[3].ID, returned[3].ID)
 }
 
+// Verify that [GetLeasesByPage] correctly filters the list of leases by lease state.
+func TestGetLeasesByPageFilteredByState(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	daemons, subnets := addTestLeaseDaemons(t, db)
+	leases := testHelperAddMockLeases(t, db, daemons, subnets)
+
+	state := int64(keadata.LeaseStateExpiredReclaimed)
+	filters := LeasesByPageFilters{
+		State: &state,
+	}
+	returned, total, err := GetLeasesByPage(db, 0, 10, filters, "", SortDirAsc)
+
+	require.NoError(t, err)
+	require.EqualValues(t, 1, total)
+	require.Len(t, returned, 1)
+	require.NotNil(t, returned[0])
+	require.Equal(t, leases[1].ID, returned[0].ID)
+	require.EqualValues(t, state, returned[0].State)
+}
+
 // Verify that [GetLeasesByPage] correctly filters the list of leases by text.
 func TestGetLeasesByPageFilteredByText(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)

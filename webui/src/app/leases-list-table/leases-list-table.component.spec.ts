@@ -28,7 +28,7 @@ const exampleV4Lease = {
     daemonLabel: 'DHCPv4',
     cltt: 11,
     ipAddress: '10.168.1.67',
-    state: 1,
+    state: 3,
     subnetId: 27,
     validLifetime: 3600,
 }
@@ -63,7 +63,10 @@ describe('LeasesListTableComponent', () => {
                 ]),
                 {
                     provide: ServicesService,
-                    useValue: { getDaemonsDirectory: () => of({ items: [{ id: 1, label: 'daemon' }], total: 1 }) },
+                    useValue: {
+                        getDaemonsDirectory: () => of({ items: [{ id: 1, label: 'daemon' }], total: 1 }),
+                        getMachinesDirectory: () => of({ items: [{ id: 1, label: 'machine' }], total: 1 }),
+                    },
                 },
             ],
         }).compileComponents()
@@ -91,20 +94,17 @@ describe('LeasesListTableComponent', () => {
         // Arrange
         const inputNumbers = fixture.debugElement.queryAll(By.directive(InputNumber))
         expect(inputNumbers).toBeTruthy()
-        expect(inputNumbers.length).toEqual(3)
+        expect(inputNumbers.length).toEqual(2)
         getLeaseListSpy.and.callThrough()
 
         // Act
         component.table.clear()
         tick()
         fixture.detectChanges()
-        inputNumbers[0].componentInstance.handleOnInput(new InputEvent('input'), '', 0) // machineId
+        inputNumbers[0].componentInstance.handleOnInput(new InputEvent('input'), '', 0) // subnetId
         tick(300)
         fixture.detectChanges()
-        inputNumbers[1].componentInstance.handleOnInput(new InputEvent('input'), '', 0) // subnetId
-        tick(300)
-        fixture.detectChanges()
-        inputNumbers[2].componentInstance.handleOnInput(new InputEvent('input'), '', 0) // keaSubnetId
+        inputNumbers[1].componentInstance.handleOnInput(new InputEvent('input'), '', 0) // keaSubnetId
         tick(300)
         fixture.detectChanges()
 
@@ -113,10 +113,11 @@ describe('LeasesListTableComponent', () => {
         // Since zero is forbidden filter value for numeric inputs, we expect that minimum allowed value (i.e. 1) will be used.
         expect(router.navigate).toHaveBeenCalledWith([], {
             queryParams: {
-                machineId: 1,
+                machineId: null,
                 daemonId: null,
                 subnetId: 1,
                 localSubnetId: 1,
+                state: null,
                 text: null,
             },
         })
@@ -150,6 +151,7 @@ describe('LeasesListTableComponent', () => {
                 daemonId: 8,
                 subnetId: null,
                 localSubnetId: null,
+                state: null,
                 text: null,
             },
         })
@@ -171,6 +173,7 @@ describe('LeasesListTableComponent', () => {
                 daemonId: null,
                 subnetId: null,
                 localSubnetId: 10,
+                state: null,
                 text: null,
             },
         })
@@ -214,6 +217,29 @@ describe('LeasesListTableComponent', () => {
                 daemonId: null,
                 subnetId: null,
                 localSubnetId: null,
+                state: null,
+                text: null,
+            },
+        })
+    }))
+    it('should be filtered by state', fakeAsync(() => {
+        component.dataCollection = [exampleV4Lease, exampleV6Lease]
+        fixture.detectChanges()
+
+        getLeaseListSpy.and.callThrough()
+
+        component.filterTable(3, <FilterMetadata>component.table.filters['state'])
+
+        tick(300)
+        fixture.detectChanges()
+
+        expect(router.navigate).toHaveBeenCalledWith([], {
+            queryParams: {
+                machineId: null,
+                daemonId: null,
+                subnetId: null,
+                localSubnetId: null,
+                state: 3,
                 text: null,
             },
         })

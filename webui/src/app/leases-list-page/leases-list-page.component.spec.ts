@@ -29,7 +29,10 @@ describe('LeasesListsPageComponent', () => {
                 provideRouter([]),
                 {
                     provide: ServicesService,
-                    useValue: { getDaemonsDirectory: () => of({ items: [{ id: 1, label: 'daemon' }], total: 1 }) },
+                    useValue: {
+                        getDaemonsDirectory: () => of({ items: [{ id: 1, label: 'daemon' }], total: 1 }),
+                        getMachinesDirectory: () => of({ items: [{ id: 1, label: 'machine' }], total: 1 }),
+                    },
                 },
             ],
         }).compileComponents()

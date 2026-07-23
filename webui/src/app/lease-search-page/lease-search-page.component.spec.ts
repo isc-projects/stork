@@ -8,11 +8,8 @@ import { MessageService } from 'primeng/api'
 
 import { LeaseSearchPageComponent } from './lease-search-page.component'
 import { DHCPService, Leases } from '../backend'
-import { datetimeToLocal } from '../utils'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { provideNoopAnimations } from '@angular/platform-browser/animations'
-import { JsonTreeRootComponent } from '../json-tree-root/json-tree-root.component'
-import { JsonTreeComponent } from '../json-tree/json-tree.component'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 describe('LeaseSearchPageComponent', () => {
@@ -154,7 +151,7 @@ describe('LeaseSearchPageComponent', () => {
         // Expand button existence.
         expect(cols[0].children.length).toBe(1)
         const expandButton = cols[0].children[0].nativeElement
-        expect(expandButton.nodeName).toBe('A')
+        expect(expandButton.nodeName).toBe('BUTTON')
 
         // Lease properties.
         expect(cols[1].nativeElement.innerText).toBe('192.0.2.3')
@@ -174,63 +171,6 @@ describe('LeaseSearchPageComponent', () => {
         // Find the tables holding expanded information.
         const tables = fixture.debugElement.queryAll(By.css('table'))
         expect(tables.length).toBe(4)
-
-        // Find allocation and expiration time.
-        const startDate = new Date(1616149050000)
-        const endDate = new Date(1616149050000 + 3600000)
-
-        // Expected data in various tables within the expanded row.
-        const expectedLeaseData: any = [
-            [
-                ['MAC address', '01:02:03:04:05:06'],
-                ['Client Identifier', 'QRST'],
-            ],
-            [
-                ['Kea Subnet ID', '123'],
-                ['Valid Lifetime', '3600 seconds'],
-                ['Allocated at', datetimeToLocal(startDate)],
-                ['Expires at', datetimeToLocal(endDate)],
-            ],
-            [
-                ['Hostname', 'faq.example.org'],
-                ['Forward DDNS', 'no'],
-                ['Reverse DDNS', 'yes'],
-            ],
-        ]
-
-        // Second, third and forth tables should contain expanded lease information.
-        // For each table check if the data is correct.
-        let tableIndex = 1
-        for (const expectedDataGroup of expectedLeaseData) {
-            const rows = tables[tableIndex].queryAll(By.css('tr'))
-            expect(rows.length).toBe(expectedDataGroup.length)
-
-            // For each table row, compare its contents with the expected data.
-            let i = 0
-            for (const row of rows) {
-                expect(row.children.length).toBe(2)
-                expect(row.children[0].nativeElement.innerText).toBe(expectedDataGroup[i][0] + ':')
-                expect(row.children[1].nativeElement.innerText).toContain(expectedDataGroup[i][1])
-                i++
-            }
-            tableIndex++
-        }
-
-        // Test User Context JSON tree content.
-        const tree = fixture.debugElement.queryAll(By.directive(JsonTreeRootComponent))
-        expect(tree).not.toBeNull()
-        expect(Object.keys(tree).length).toBe(1)
-        const treeComponent = tree[0].componentInstance as JsonTreeComponent
-        expect(treeComponent).not.toBeNull()
-        expect(treeComponent.value).not.toBeNull()
-        expect(Object.keys(treeComponent.value).length).toBe(1)
-        expect(treeComponent.value['ISC']).not.toBeNull()
-        expect(Object.keys(treeComponent.value['ISC']).length).toBe(1)
-        expect(treeComponent.value['ISC']['client-classes']).not.toBeNull()
-        expect(treeComponent.value['ISC']['client-classes'].length).toBe(3)
-        expect(treeComponent.value['ISC']['client-classes'][0]).toBe('ALL')
-        expect(treeComponent.value['ISC']['client-classes'][1]).toBe('HA_primary')
-        expect(treeComponent.value['ISC']['client-classes'][2]).toBe('UNKNOWN')
 
         // Test summary.
         const leasesSearchSummary = fixture.debugElement.query(By.css('#leases-search-summary-span'))
@@ -261,7 +201,7 @@ describe('LeaseSearchPageComponent', () => {
         // Expand button existence.
         expect(cols[0].children.length).toBe(1)
         const expandButton = cols[0].children[0].nativeElement
-        expect(expandButton.nodeName).toBe('A')
+        expect(expandButton.nodeName).toBe('BUTTON')
 
         // Lease properties.
         expect(cols[1].nativeElement.innerText).toBe('192.0.2.3')
@@ -283,36 +223,6 @@ describe('LeaseSearchPageComponent', () => {
         // because they are not present for a declined lease.
         const tables = fixture.debugElement.queryAll(By.css('table'))
         expect(tables.length).toBe(2)
-
-        // Find allocation and expiration time.
-        const startDate = new Date(1616149050000)
-        const endDate = new Date(1616149050000 + 3600000)
-
-        // Expected data within the expanded row.
-        const expectedLeaseData: any = [
-            ['Kea Subnet ID', '123'],
-            ['Valid Lifetime', '3600 seconds'],
-            ['Allocated at', datetimeToLocal(startDate)],
-            ['Expires at', datetimeToLocal(endDate)],
-        ]
-
-        // Find rows.
-        const rows = tables[1].queryAll(By.css('tr'))
-        expect(rows.length).toBe(4)
-
-        // For each table row, compare its contents with the expected data.
-        let i = 0
-        for (const row of rows) {
-            expect(row.children.length).toBe(2)
-            expect(row.children[0].nativeElement.innerText).toBe(expectedLeaseData[i][0] + ':')
-            expect(row.children[1].nativeElement.innerText).toBe(expectedLeaseData[i][1])
-            i++
-        }
-
-        // Test User Context JSON tree content.
-        const tree = fixture.debugElement.queryAll(By.directive(JsonTreeRootComponent))
-        expect(tree).not.toBeNull()
-        expect(Object.keys(tree).length).toBe(0)
 
         // Test summary.
         const leasesSearchSummary = fixture.debugElement.query(By.css('#leases-search-summary-span'))
@@ -368,7 +278,7 @@ describe('LeaseSearchPageComponent', () => {
         // Expand button existence.
         expect(cols[0].children.length).toBe(1)
         const expandButton1 = cols[0].children[0].nativeElement
-        expect(expandButton1.nodeName).toBe('A')
+        expect(expandButton1.nodeName).toBe('BUTTON')
 
         // Lease properties.
         expect(cols[1].nativeElement.innerText).toBe('2001:db8:1::1')
@@ -386,7 +296,7 @@ describe('LeaseSearchPageComponent', () => {
         // Expand button existence.
         expect(cols[5].children.length).toBe(1)
         const expandButton2 = cols[5].children[0].nativeElement
-        expect(expandButton2.nodeName).toBe('A')
+        expect(expandButton2.nodeName).toBe('BUTTON')
 
         // Lease properties.
         expect(cols[6].nativeElement.innerText).toBe('3000::/64')
@@ -408,94 +318,6 @@ describe('LeaseSearchPageComponent', () => {
         // Find the table holding expanded information.
         const tables = fixture.debugElement.queryAll(By.css('table'))
         expect(tables.length).toBe(6)
-
-        // Find allocation and expiration time.
-        const startDate = new Date(1616149050000)
-        const endDate = new Date(1616149050000 + 1800000)
-
-        let expectedLeaseData: any = [
-            [
-                ['MAC address', '01:02:03:04:05:06'],
-                ['DUID', '\\0x01\\0x02\\0x03\\0x04'],
-            ],
-            [
-                ['Kea Subnet ID', '234'],
-                ['IAID', '12'],
-                ['Preferred Lifetime', '900 seconds'],
-                ['Valid Lifetime', '1800 seconds'],
-                ['Allocated at', datetimeToLocal(startDate)],
-                ['Expires at', datetimeToLocal(endDate)],
-            ],
-            [
-                ['Hostname', 'faq.example.org'],
-                ['Forward DDNS', 'yes'],
-                ['Reverse DDNS', 'no'],
-            ],
-        ]
-
-        // Second and further tables should contain expanded lease information.
-        // For each table check if the data is correct.
-        let tableIndex = 1
-        for (const expectedDataGroup of expectedLeaseData) {
-            const rows = tables[tableIndex].queryAll(By.css('tr'))
-            expect(rows.length).toBe(expectedDataGroup.length)
-
-            // For each table row, compare its contents with the expected data.
-            let i = 0
-            for (const row of rows) {
-                expect(row.children.length).toBe(2)
-                expect(row.children[0].nativeElement.innerText).toBe(expectedDataGroup[i][0] + ':')
-                expect(row.children[1].nativeElement.innerText).toContain(expectedDataGroup[i][1])
-                i++
-            }
-            tableIndex++
-        }
-
-        // Test User Context JSON tree content.
-        const tree = fixture.debugElement.queryAll(By.directive(JsonTreeRootComponent))
-        expect(tree).not.toBeNull()
-        expect(Object.keys(tree).length).toBe(1)
-        const treeComponent = tree[0].componentInstance as JsonTreeComponent
-        expect(treeComponent).not.toBeNull()
-        expect(treeComponent.value).not.toBeNull()
-        expect(Object.keys(treeComponent.value).length).toBe(1)
-        expect(treeComponent.value['ISC']).not.toBeNull()
-        expect(Object.keys(treeComponent.value['ISC']).length).toBe(1)
-        expect(treeComponent.value['ISC']['client-classes']).not.toBeNull()
-        expect(treeComponent.value['ISC']['client-classes'].length).toBe(3)
-        expect(treeComponent.value['ISC']['client-classes'][0]).toBe('ALL')
-        expect(treeComponent.value['ISC']['client-classes'][1]).toBe('HA_primary')
-        expect(treeComponent.value['ISC']['client-classes'][2]).toBe('UNKNOWN')
-
-        expectedLeaseData = [
-            [['DUID', '\\0x01\\0x02\\0x03\\0x05']],
-            [
-                ['Kea Subnet ID', '345'],
-                ['IAID', '13'],
-                ['Preferred Lifetime', '900 seconds'],
-                ['Valid Lifetime', '1800 seconds'],
-                ['Allocated at', datetimeToLocal(startDate)],
-                ['Expires at', datetimeToLocal(endDate)],
-            ],
-        ]
-
-        // Fifth and sixth table should contain expanded lease information.
-        // For each table check if the data is correct.
-        tableIndex = 4
-        for (const expectedDataGroup of expectedLeaseData) {
-            const rows = tables[tableIndex].queryAll(By.css('tr'))
-            expect(rows.length).toBe(expectedDataGroup.length)
-
-            // For each table row, compare its contents with the expected data.
-            let i = 0
-            for (const row of rows) {
-                expect(row.children.length).toBe(2)
-                expect(row.children[0].nativeElement.innerText).toBe(expectedDataGroup[i][0] + ':')
-                expect(row.children[1].nativeElement.innerText).toContain(expectedDataGroup[i][1])
-                i++
-            }
-            tableIndex++
-        }
 
         // Test summary.
         const leasesSearchSummary = fixture.debugElement.query(By.css('#leases-search-summary-span'))

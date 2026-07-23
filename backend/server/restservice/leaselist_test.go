@@ -91,6 +91,7 @@ func TestConvertLeaseFromRestAPIWithValidLease(t *testing.T) {
 			PrefixLength:  128,
 			DUID:          keadata.NewColonSepHexStr(&duid),
 			ValidLifetime: 3600,
+			LocalSubnetID: 67,
 		},
 		Subnet: &dbmodel.Subnet{
 			ID:     9,
@@ -102,6 +103,8 @@ func TestConvertLeaseFromRestAPIWithValidLease(t *testing.T) {
 	require.Nil(t, err)
 	require.NotNil(t, result)
 	require.EqualValues(t, lease.CLTT, *result.Cltt)
+	require.EqualValues(t, lease.LocalSubnetID, *result.SubnetID)
+	require.EqualValues(t, lease.SubnetID, result.StorkSubnetID)
 }
 
 // Verify that [convertSortFieldToColumnName] converts all of the supported sort
@@ -419,7 +422,7 @@ func helperSetUpLeases(t *testing.T, db *dbops.PgDB) ([]*dbmodel.Lease, *dbmodel
 				IPAddress:     "2001:db8:1::404",
 				CLTT:          10002,
 				Hostname:      "client.example",
-				State:         keadata.LeaseStateDefault,
+				State:         keadata.LeaseStateRegistered,
 				ValidLifetime: 3600,
 				LocalSubnetID: 123,
 			},
@@ -433,7 +436,7 @@ func helperSetUpLeases(t *testing.T, db *dbops.PgDB) ([]*dbmodel.Lease, *dbmodel
 				IPAddress:     "2001:db8:1::408",
 				CLTT:          10002,
 				Hostname:      "client.example",
-				State:         keadata.LeaseStateDefault,
+				State:         keadata.LeaseStateRegistered,
 				ValidLifetime: 3600,
 				LocalSubnetID: 123,
 			},
@@ -477,6 +480,7 @@ func TestGetLeaseListHandlesParams(t *testing.T) {
 	machineID := machine.ID
 	subnetID := leases[0].SubnetID
 	localSubnetID := int64(leases[0].LocalSubnetID)
+	state := int64(keadata.LeaseStateRegistered)
 	filterText := "client.example"
 
 	// Act
@@ -489,6 +493,7 @@ func TestGetLeaseListHandlesParams(t *testing.T) {
 		MachineID:     &machineID,
 		SubnetID:      &subnetID,
 		LocalSubnetID: &localSubnetID,
+		State:         &state,
 		Text:          &filterText,
 	}
 	rsp := rapi.GetLeaseList(ctx, getLeaseListParams)

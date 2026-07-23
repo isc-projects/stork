@@ -64,6 +64,11 @@
             Limit returned list of leases to these which belong to a given
             subnet having a specified subnet ID in the Kea configuration.
           type: integer
+        - name: state
+          in: query
+          description: >-
+            Limit returned list of leases to those which are in a specific state.
+          type: integer
         - name: text
           in: query
           description: >-

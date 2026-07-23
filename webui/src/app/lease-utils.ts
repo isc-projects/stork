@@ -27,3 +27,22 @@ export function stateToString(state: number): string {
             return '(invalid state)'
     }
 }
+
+/**
+ * Lease state information (a pairing of the human-readable name and the enum value).
+ */
+export interface LeaseState {
+    name: string
+    code: number
+}
+
+/**
+ * List of all valid lease states.
+ */
+export let leaseStates: LeaseState[] = [
+    { name: 'Valid', code: 0 },
+    { name: 'Declined', code: 1 },
+    { name: 'Expired-Reclaimed', code: 2 },
+    { name: 'Released', code: 3 },
+    { name: 'Registered', code: 4 },
+]

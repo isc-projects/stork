@@ -29,6 +29,7 @@
         daemonId: { type: 'numeric', matchMode: 'equals' },
         subnetId: { type: 'numeric', matchMode: 'equals' },
         localSubnetId: { type: 'numeric', matchMode: 'equals' },
+        state: { type: 'numeric', matchMode: 'equals' },
         text: { type: 'string', matchMode: 'contains' },
     }"
     [entitiesTable]="leasesListTable()?.table"

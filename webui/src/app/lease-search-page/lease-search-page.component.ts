@@ -13,7 +13,6 @@ import { FormsModule } from '@angular/forms'
 import { InputText } from 'primeng/inputtext'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { TableModule } from 'primeng/table'
-import { NgClass } from '@angular/common'
 import { Message } from 'primeng/message'
 import { ProgressSpinner } from 'primeng/progressspinner'
 import { Lease, LeasesSearchErredDaemon } from '../backend'
@@ -64,7 +63,6 @@ enum LeasesSearchStatus {
         HelpTipComponent,
         TableModule,
         Message,
-        NgClass,
         ProgressSpinner,
         EntityLinkComponent,
         LeaseDetailBoxComponent,

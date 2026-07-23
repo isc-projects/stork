@@ -1,11 +1,11 @@
-<div class="flex flex-wrap gap-3">
+<div class="flex flex-wrap gap-3 flex-col md:flex-row max-w-screen">
     @if (lease().hwAddress || lease().clientId || lease().duid) {
         <div class="flex-auto">
             <p-fieldset legend="Client" styleClass="max-width-100vw">
                 <table>
                     @if (lease().hwAddress) {
                         <tr>
-                            <td style="width: 10rem">MAC address:</td>
+                            <td style="width: 10rem">HW Address:</td>
                             <td>
                                 <app-identifier
                                     [hexValue]="lease().hwAddress"

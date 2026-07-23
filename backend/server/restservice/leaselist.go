@@ -33,6 +33,7 @@ func convertLeaseToRestAPI(dbLease *dbmodel.Lease) (*models.Lease, error) {
 	}
 	daemonLabel := dbLease.Daemon.GetLabel()
 	validLifetime := int64(dbLease.ValidLifetime)
+	localSubnetID := int64(dbLease.LocalSubnetID)
 	return &models.Lease{
 			ClientID:          dbLease.ClientID.String(),
 			Cltt:              &dbLease.CLTT,
@@ -50,7 +51,8 @@ func convertLeaseToRestAPI(dbLease *dbmodel.Lease) (*models.Lease, error) {
 			PreferredLifetime: int64(dbLease.PreferredLifetime),
 			PrefixLength:      int64(dbLease.PrefixLength),
 			State:             &dbLease.State,
-			SubnetID:          &dbLease.Subnet.ID,
+			SubnetID:          &localSubnetID,
+			StorkSubnetID:     dbLease.Subnet.ID,
 			SubnetPrefix:      dbLease.Subnet.Prefix,
 			UserContext:       dbLease.UserContext,
 			ValidLifetime:     &validLifetime,
@@ -157,6 +159,7 @@ func (r *RestAPI) GetLeaseList(ctx context.Context, params dhcp.GetLeaseListPara
 		DaemonID:      params.DaemonID,
 		SubnetID:      params.SubnetID,
 		LocalSubnetID: params.LocalSubnetID,
+		State:         params.State,
 		FilterText:    params.Text,
 	}
 	leases, err := r.getLeases(start, limit, filters, sortField, sortDir)

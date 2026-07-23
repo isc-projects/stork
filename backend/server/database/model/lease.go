@@ -98,6 +98,7 @@ type LeasesByPageFilters struct {
 	SubnetID      *int64
 	DaemonID      *int64
 	LocalSubnetID *int64
+	State         *int64
 	FilterText    *string
 }
 
@@ -158,6 +159,10 @@ func GetLeasesByPage(dbi dbops.DBI, offset, limit int64, filters LeasesByPageFil
 
 	if filters.SubnetID != nil && *filters.SubnetID != 0 {
 		q = q.Where("lease.subnet_id = ?", *filters.SubnetID)
+	}
+
+	if filters.State != nil && *filters.State != 0 {
+		q = q.Where("lease.state = ?", *filters.State)
 	}
 
 	if filters.LocalSubnetID != nil && *filters.LocalSubnetID != 0 {
