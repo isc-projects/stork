@@ -637,8 +637,8 @@ go_live_pprof_ver = 'v1.0.9'
 mockgen_ver = 'v0.6.0'
 dlv_ver = 'v1.26.3'
 gdlv_ver = 'v1.16.0'
-govulncheck_ver = 'v1.5.0'
-goswagger_ver = 'v0.35.0'
+govulncheck_ver = 'v1.6.0'
+goswagger_ver = 'v0.35.3'
 protoc_ver = '31.1'
 protoc_gen_go_ver = 'v1.36.11'
 protoc_gen_go_grpc_ver = 'v1.6.2'
@@ -649,9 +649,7 @@ nfpm_ver = 'v2.47.0'
 golangcilint_ver = '2.12.2'
 
 # UI-related
-node_ver = '20.20.2'
-npm_ver = '11.18.0'
-openapi_generator_ver = '7.23.0'
+openapi_generator_ver = '7.24.0'
 
 # Other
 bundler_ver = '2.6.9'
