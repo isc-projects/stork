@@ -188,7 +188,9 @@
                 <div class="flex gap-1">Name<p-sortIcon [field]="SubnetSortField.Name" /></div>
             </th>
             <th colspan="3">Addresses</th>
-            <th colspan="3" *ngIf="ipV6SubnetsFilterIncluded()">Prefixes</th>
+            @if (ipV6SubnetsFilterIncluded()) {
+                <th colspan="3">Prefixes</th>
+            }
             <th rowspan="2">Pools</th>
             <th rowspan="2" [pSortableColumn]="SubnetSortField.SharedNetwork">
                 <div class="flex gap-1 align-items-center">
@@ -196,9 +198,11 @@
                 </div>
             </th>
             <th colspan="2">Daemon</th>
-            <th rowspan="2" *ngIf="grafanaUrl" pTooltip="Link to Grafana charts">
-                <i class="pi pi-chart-line text-2xl"></i>
-            </th>
+            @if (grafanaUrl) {
+                <th rowspan="2" pTooltip="Link to Grafana charts">
+                    <i class="pi pi-chart-line text-2xl"></i>
+                </th>
+            }
         </tr>
         <tr>
             <th [pSortableColumn]="SubnetSortField.TotalAddresses">
@@ -218,7 +222,7 @@
                     Used % <p-sortIcon [field]="SubnetSortField.AddrUtilization" />
                 </div>
             </th>
-            <ng-container *ngIf="ipV6SubnetsFilterIncluded()">
+            @if (ipV6SubnetsFilterIncluded()) {
                 <th [pSortableColumn]="SubnetSortField.TotalPds">
                     <div class="flex gap-1">Total <p-sortIcon [field]="SubnetSortField.TotalPds" /></div>
                 </th>
@@ -230,7 +234,7 @@
                         Used % <p-sortIcon [field]="SubnetSortField.PdUtilization" />
                     </div>
                 </th>
-            </ng-container>
+            }
             <th>Name</th>
             <th class="white-space-nowrap" [pSortableColumn]="SubnetSortField.KeaSubnetId">
                 <div class="flex gap-1">Kea Subnet ID<p-sortIcon [field]="SubnetSortField.KeaSubnetId" /></div>
@@ -243,16 +247,19 @@
                 <app-subnet-bar [subnet]="sn"></app-subnet-bar>
             </td>
             <td>
-                <div class="grid" *ngIf="hasAssignedMultipleSubnetNames(sn); else elseSingleSubnetName">
-                    <div class="col-fixed flex flex-column">
-                        <span *ngFor="let lsn of sn.localSubnets">
-                            {{ lsn.userContext?.['subnet-name'] }}
-                        </span>
+                @if (hasAssignedMultipleSubnetNames(sn)) {
+                    <div class="grid">
+                        <div class="col-fixed flex flex-column">
+                            @for (lsn of sn.localSubnets; track lsn) {
+                                <span>
+                                    {{ lsn.userContext?.['subnet-name'] }}
+                                </span>
+                            }
+                        </div>
                     </div>
-                </div>
-                <ng-template #elseSingleSubnetName>
+                } @else {
                     <span>{{ sn.localSubnets?.[0].userContext?.['subnet-name'] }}</span>
-                </ng-template>
+                }
             </td>
             <td>
                 <app-human-count [value]="getTotalAddresses(sn)"></app-human-count>
@@ -262,35 +269,35 @@
             </td>
             <td>
                 {{ sn.addrUtilization ?? 0 | number: '1.0-1' }}%
-                <i
-                    *ngIf="sn.addrUtilization > 80 && sn.addrUtilization <= 90"
-                    class="pi pi-exclamation-triangle text-2xl vertical-align-text-top text-orange-400"
-                ></i>
-                <i
-                    *ngIf="sn.addrUtilization > 90"
-                    class="pi pi-exclamation-circle text-2xl vertical-align-text-top text-red-500"
-                ></i>
+                @if (sn.addrUtilization > 80 && sn.addrUtilization <= 90) {
+                    <i class="pi pi-exclamation-triangle text-2xl vertical-align-text-top text-orange-400"></i>
+                }
+                @if (sn.addrUtilization > 90) {
+                    <i class="pi pi-exclamation-circle text-2xl vertical-align-text-top text-red-500"></i>
+                }
             </td>
-            <ng-container *ngIf="ipV6SubnetsFilterIncluded()">
+            @if (ipV6SubnetsFilterIncluded()) {
                 <td>
                     <app-human-count [value]="getTotalDelegatedPrefixes(sn)"></app-human-count>
                 </td>
                 <td>
                     <app-human-count [value]="getAssignedDelegatedPrefixes(sn)"></app-human-count>
                 </td>
-                <td *ngIf="sn.subnet.includes(':')">
-                    {{ sn.pdUtilization ?? 0 | number: '1.0-1' }}%
-                    <i
-                        *ngIf="sn.pdUtilization > 80 && sn.pdUtilization <= 90"
-                        class="pi pi-exclamation-triangle text-2xl vertical-align-text-top text-orange-400"
-                    ></i>
-                    <i
-                        *ngIf="sn.pdUtilization > 90"
-                        class="pi pi-exclamation-circle text-2xl vertical-align-text-top text-red-500"
-                    ></i>
-                </td>
-                <td *ngIf="sn.subnet.includes('.')">-</td>
-            </ng-container>
+                @if (sn.subnet.includes(':')) {
+                    <td>
+                        {{ sn.pdUtilization ?? 0 | number: '1.0-1' }}%
+                        @if (sn.pdUtilization > 80 && sn.pdUtilization <= 90) {
+                            <i class="pi pi-exclamation-triangle text-2xl vertical-align-text-top text-orange-400"></i>
+                        }
+                        @if (sn.pdUtilization > 90) {
+                            <i class="pi pi-exclamation-circle text-2xl vertical-align-text-top text-red-500"></i>
+                        }
+                    </td>
+                }
+                @if (sn.subnet.includes('.')) {
+                    <td>-</td>
+                }
+            }
             <td>
                 <app-pool-bars [source]="sn"></app-pool-bars>
             </td>
@@ -298,56 +305,66 @@
                 {{ sn.sharedNetwork }}
             </td>
             <td>
-                <div *ngFor="let lsn of sn.localSubnets">
-                    <app-entity-link entity="daemon" [showEntityName]="false" [attrs]="lsn"></app-entity-link>
-                </div>
+                @for (lsn of sn.localSubnets; track lsn) {
+                    <div>
+                        <app-entity-link entity="daemon" [showEntityName]="false" [attrs]="lsn"></app-entity-link>
+                    </div>
+                }
             </td>
             <td>
-                <div class="grid" *ngIf="hasAssignedMultipleKeaSubnetIds(sn); else elseSingleKeaSubnetId">
-                    <div class="col-fixed flex flex-column">
-                        <span *ngFor="let lsn of sn.localSubnets">
-                            {{ lsn.id }}
-                        </span>
+                @if (hasAssignedMultipleKeaSubnetIds(sn)) {
+                    <div class="grid">
+                        <div class="col-fixed flex flex-column">
+                            @for (lsn of sn.localSubnets; track lsn) {
+                                <span>
+                                    {{ lsn.id }}
+                                </span>
+                            }
+                        </div>
+                        <div class="col-fixed flex align-items-center">
+                            <p-message severity="error" text="Inconsistent IDs"></p-message>
+                        </div>
                     </div>
-                    <div class="col-fixed flex align-items-center">
-                        <p-message severity="error" text="Inconsistent IDs"></p-message>
-                    </div>
-                </div>
-                <ng-template #elseSingleKeaSubnetId>
+                } @else {
                     <span>{{ sn.localSubnets?.[0].id }}</span>
-                </ng-template>
+                }
             </td>
-            <td *ngIf="grafanaUrl">
-                <a
-                    [href]="
-                        getGrafanaUrl(
-                            sn.subnet?.includes('.') ? 'dhcp4' : 'dhcp6',
-                            sn.localSubnets[0].id,
-                            sn.localSubnets[0].machineHostname
-                        )
-                    "
-                    [title]="getGrafanaTooltip(sn.localSubnets[0].id, sn.localSubnets[0].machineHostname)"
-                    target="_blank"
-                    *ngIf="sn.localSubnets?.[0]"
-                >
-                    <i class="pi pi-chart-line text-2xl"></i>
-                </a>
-            </td>
+            @if (grafanaUrl) {
+                <td>
+                    @if (sn.localSubnets?.[0]) {
+                        <a
+                            [href]="
+                                getGrafanaUrl(
+                                    sn.subnet?.includes('.') ? 'dhcp4' : 'dhcp6',
+                                    sn.localSubnets[0].id,
+                                    sn.localSubnets[0].machineHostname
+                                )
+                            "
+                            [title]="getGrafanaTooltip(sn.localSubnets[0].id, sn.localSubnets[0].machineHostname)"
+                            target="_blank"
+                        >
+                            <i class="pi pi-chart-line text-2xl"></i>
+                        </a>
+                    }
+                </td>
+            }
         </tr>
     </ng-template>
     <ng-template #emptymessage>
         <tr>
             <td [attr.colspan]="emptyMessageColspan()">
                 No subnets found.
-                <span *ngIf="tableHasFilter(subnetsTable)">
-                    Clear filtering and try again.
-                    <p-button
-                        label="Clear"
-                        [outlined]="true"
-                        icon="pi pi-filter-slash"
-                        (click)="clearTableFiltering()"
-                    ></p-button>
-                </span>
+                @if (tableHasFilter(subnetsTable)) {
+                    <span>
+                        Clear filtering and try again.
+                        <p-button
+                            label="Clear"
+                            [outlined]="true"
+                            icon="pi pi-filter-slash"
+                            (click)="clearTableFiltering()"
+                        ></p-button>
+                    </span>
+                }
             </td>
         </tr>
     </ng-template>

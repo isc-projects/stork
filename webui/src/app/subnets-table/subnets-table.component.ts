@@ -16,7 +16,7 @@ import {
 import { distinctUntilChanged, map } from 'rxjs/operators'
 import { Button } from 'primeng/button'
 import { ManagedAccessDirective } from '../managed-access.directive'
-import { NgIf, NgFor, DecimalPipe } from '@angular/common'
+import { DecimalPipe } from '@angular/common'
 import { FloatLabel } from 'primeng/floatlabel'
 import { InputNumber } from 'primeng/inputnumber'
 import { FormsModule } from '@angular/forms'
@@ -44,7 +44,6 @@ import { DaemonFilterComponent } from '../daemon-filter/daemon-filter.component'
         RouterLink,
         ManagedAccessDirective,
         TableModule,
-        NgIf,
         PrimeTemplate,
         FloatLabel,
         InputNumber,
@@ -55,7 +54,6 @@ import { DaemonFilterComponent } from '../daemon-filter/daemon-filter.component'
         InputText,
         Tooltip,
         SubnetBarComponent,
-        NgFor,
         HumanCountComponent,
         PoolBarsComponent,
         Message,

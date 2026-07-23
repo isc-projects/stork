@@ -11,7 +11,7 @@ import { ToastMessageOptions, MessageService } from 'primeng/api'
 import { first, Subscription } from 'rxjs'
 import { daemonNameToFriendlyName, getErrorMessage, getIconBySeverity } from '../utils'
 import { map } from 'rxjs/operators'
-import { NgIf } from '@angular/common'
+
 import { RouterLink } from '@angular/router'
 import { Tooltip } from 'primeng/tooltip'
 import { Message } from 'primeng/message'
@@ -29,7 +29,7 @@ import { Message } from 'primeng/message'
     selector: 'app-version-status',
     templateUrl: './version-status.component.html',
     styleUrl: './version-status.component.sass',
-    imports: [NgIf, RouterLink, Tooltip, Message],
+    imports: [RouterLink, Tooltip, Message],
 })
 export class VersionStatusComponent implements OnInit, OnDestroy {
     /**

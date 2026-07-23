@@ -5,7 +5,7 @@ import { SharedNetwork } from '../backend/model/sharedNetwork'
 import { clamp } from '../utils'
 import { LocalSubnet } from '../backend'
 import {} from 'chart.js'
-import { NgIf } from '@angular/common'
+
 import { UIChart } from 'primeng/chart'
 import { HumanCountComponent } from '../human-count/human-count.component'
 import { PositivePipe } from '../pipes/positive.pipe'
@@ -23,7 +23,7 @@ import { PositivePipe } from '../pipes/positive.pipe'
     selector: 'app-utilization-stats-chart',
     templateUrl: './utilization-stats-chart.component.html',
     styleUrls: ['./utilization-stats-chart.component.sass'],
-    imports: [NgIf, UIChart, HumanCountComponent, PositivePipe],
+    imports: [UIChart, HumanCountComponent, PositivePipe],
 })
 export class UtilizationStatsChartComponent {
     /**

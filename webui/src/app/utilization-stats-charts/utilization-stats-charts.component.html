@@ -1,35 +1,52 @@
-<ng-container *ngIf="network; else noNetworkBlock">
+@if (network) {
     <div class="flex flex-wrap">
-        <div *ngIf="network.addrUtilization || hasAddressPools" class="min-w-0 overflow-auto">
-            <app-utilization-stats-chart title="Total" leaseType="na" [network]="network"></app-utilization-stats-chart>
-        </div>
-        <div *ngIf="network.pdUtilization || hasPrefixPools" class="min-w-0 overflow-auto">
-            <app-utilization-stats-chart title="Total" leaseType="pd" [network]="network"></app-utilization-stats-chart>
-        </div>
-        <ng-container class="flex flex-wrap" *ngIf="localSubnets && localSubnets.length > 1">
-            <ng-container *ngFor="let localSubnet of localSubnets">
-                <div *ngIf="localSubnet.pools?.length > 0" class="min-w-0 overflow-auto">
-                    <app-utilization-stats-chart
-                        [title]="localSubnet.daemonLabel"
-                        leaseType="na"
-                        [network]="localSubnet"
-                    ></app-utilization-stats-chart>
-                </div>
-                <div *ngIf="localSubnet.prefixDelegationPools?.length > 0" class="min-w-0 overflow-auto">
-                    <app-utilization-stats-chart
-                        [title]="localSubnet.daemonLabel"
-                        leaseType="pd"
-                        [network]="localSubnet"
-                    ></app-utilization-stats-chart>
-                </div>
+        @if (network.addrUtilization || hasAddressPools) {
+            <div class="min-w-0 overflow-auto">
+                <app-utilization-stats-chart
+                    title="Total"
+                    leaseType="na"
+                    [network]="network"
+                ></app-utilization-stats-chart>
+            </div>
+        }
+        @if (network.pdUtilization || hasPrefixPools) {
+            <div class="min-w-0 overflow-auto">
+                <app-utilization-stats-chart
+                    title="Total"
+                    leaseType="pd"
+                    [network]="network"
+                ></app-utilization-stats-chart>
+            </div>
+        }
+        @if (localSubnets && localSubnets.length > 1) {
+            <ng-container class="flex flex-wrap">
+                @for (localSubnet of localSubnets; track localSubnet) {
+                    @if (localSubnet.pools?.length > 0) {
+                        <div class="min-w-0 overflow-auto">
+                            <app-utilization-stats-chart
+                                [title]="localSubnet.daemonLabel"
+                                leaseType="na"
+                                [network]="localSubnet"
+                            ></app-utilization-stats-chart>
+                        </div>
+                    }
+                    @if (localSubnet.prefixDelegationPools?.length > 0) {
+                        <div class="min-w-0 overflow-auto">
+                            <app-utilization-stats-chart
+                                [title]="localSubnet.daemonLabel"
+                                leaseType="pd"
+                                [network]="localSubnet"
+                            ></app-utilization-stats-chart>
+                        </div>
+                    }
+                }
             </ng-container>
-        </ng-container>
+        }
     </div>
     <p-divider></p-divider>
     <span class="font-italic text-sm"
         >Statistics collected at {{ network.statsCollectedAt | date: 'short' | placeholder: 'never' }}</span
     >
-</ng-container>
-<ng-template #noNetworkBlock>
+} @else {
     <div>Statistics data unavailable.</div>
-</ng-template>
+}

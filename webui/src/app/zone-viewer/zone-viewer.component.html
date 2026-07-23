@@ -119,20 +119,23 @@
         </ng-template>
         <ng-template #header let-columns>
             <tr>
-                <th *ngFor="let column of columns" [ngClass]="'col-' + column.name">{{ column.label }}</th>
+                @for (column of columns; track column) {
+                    <th [ngClass]="'col-' + column.name">{{ column.label }}</th>
+                }
             </tr>
         </ng-template>
         <ng-template #body let-rr let-columns="columns">
             <tr>
-                <td
-                    *ngFor="let column of columns"
-                    [ngClass]="[
-                        column.name === 'rrType' ? 'rr-type-' + rr.rrType.toLowerCase() : '',
-                        'cell-' + column.name,
-                    ]"
-                >
-                    {{ rr[column.name] }}
-                </td>
+                @for (column of columns; track column) {
+                    <td
+                        [ngClass]="[
+                            column.name === 'rrType' ? 'rr-type-' + rr.rrType.toLowerCase() : '',
+                            'cell-' + column.name,
+                        ]"
+                    >
+                        {{ rr[column.name] }}
+                    </td>
+                }
             </tr>
         </ng-template>
         <ng-template #emptymessage>

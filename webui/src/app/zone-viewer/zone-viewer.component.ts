@@ -4,7 +4,7 @@ import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { Button } from 'primeng/button'
 import { Tooltip } from 'primeng/tooltip'
 import { TableLazyLoadEvent, TableModule } from 'primeng/table'
-import { NgClass, NgFor, NgTemplateOutlet } from '@angular/common'
+import { NgClass, NgTemplateOutlet } from '@angular/common'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { debounceTime, distinctUntilChanged, lastValueFrom, map, Observable, Subject, tap } from 'rxjs'
@@ -46,7 +46,6 @@ interface Column {
         Tooltip,
         TableModule,
         NgClass,
-        NgFor,
         NgTemplateOutlet,
         FormsModule,
         ReactiveFormsModule,
