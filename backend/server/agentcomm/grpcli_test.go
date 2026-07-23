@@ -2254,6 +2254,40 @@ func TestReceiveZoneRRsZoneInventoryReceiveError(t *testing.T) {
 	}
 }
 
+// Test that reception of zone contents doesn't panic when the GRPC client is
+// not connected.
+func TestReceiveZoneRRsNotConnectedClient(t *testing.T) {
+	// Arrange
+	daemon := &dbmodel.Daemon{
+		Machine: &dbmodel.Machine{
+			Address:   "127.0.0.1",
+			AgentPort: 8080,
+		},
+		AccessPoints: []*dbmodel.AccessPoint{{
+			Type:    dbmodel.AccessPointControl,
+			Address: "localhost",
+			Port:    8000,
+			Key:     "",
+		}},
+	}
+
+	ctrl := gomock.NewController(t)
+	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
+	defer ctrl.Finish()
+
+	mockAgentClient.EXPECT().ReceiveZoneRRs(gomock.Any(), gomock.Any()).Do(func(ctx context.Context, req any, opts ...grpc.CallOption) {
+		panic("nil pointer dereference")
+	})
+
+	// Assert
+	require.Panics(t, func() {
+		for rrs, err := range agents.ReceiveZoneRRs(context.Background(), daemon, "example.com", "_default") {
+			require.Error(t, err)
+			require.Nil(t, rrs)
+		}
+	})
+}
+
 // Test successful reception of zone contents over the stream.
 func TestReceiveZoneRRs(t *testing.T) {
 	// Create an daemon.
