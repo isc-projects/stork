@@ -130,12 +130,7 @@
     </div>
     @if (optionFields.length !== 0) {
         <div formArrayName="optionFields" class="flex flex-column gap-5 mt-4">
-            @for (
-                fieldControl of optionFields.controls as DhcpOptionFieldFormGroup;
-                track fieldControl;
-                let i = $index;
-                let first = $first
-            ) {
+            @for (fieldControl of $any(optionFields.controls); track fieldControl; let i = $index) {
                 <div [formGroupName]="i" class="flex gap-2 sm:pl-3">
                     @switch (fieldControl.data.fieldType) {
                         @case (FieldType.Binary) {
