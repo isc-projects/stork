@@ -80,68 +80,75 @@
 <div>
     <div class="flex flex-wrap gap-2 justify-content-between mb-3">
         <div class="max-w-50rem header-message">
-            <p-message
-                styleClass="mb-2"
-                *ngIf="showAlert$ | async"
-                [closable]="true"
-                (onClose)="dismissAlert()"
-                text="Action required"
-                severity="warn"
-                [icon]="getIconBySeverity(Severity.warn)"
-                class="custom-message"
-            >
-                Stork has detected an ISC software version in use that requires your attention. Please review the
-                Summary table below.
-            </p-message>
-            <p-message
-                styleClass="mb-2"
-                *ngIf="isOfflineData$ | async"
-                [closable]="true"
-                text="Note"
-                severity="info"
-                [icon]="getIconBySeverity(Severity.info)"
-                class="custom-message"
-                ><div>
-                    The information below about ISC software versions relies on an offline built-in JSON file that was
-                    generated on {{ dataDate$ | async }}. To see up-to-date information, please visit the
-                    <a target="_blank" href="https://www.isc.org/download/">ISC website</a>
-                </div>
-            </p-message>
-            <p-message
-                styleClass="mb-2"
-                *ngIf="errorOccurred"
-                [closable]="true"
-                severity="error"
-                text="Error while fetching data!"
-                [icon]="getIconBySeverity(Severity.error)"
-                class="custom-message"
-                >An error occurred while retrieving software version data from the Stork server!</p-message
-            >
+            @if (showAlert$ | async) {
+                <p-message
+                    styleClass="mb-2"
+                    [closable]="true"
+                    (onClose)="dismissAlert()"
+                    text="Action required"
+                    severity="warn"
+                    [icon]="getIconBySeverity(Severity.warn)"
+                    class="custom-message"
+                >
+                    Stork has detected an ISC software version in use that requires your attention. Please review the
+                    Summary table below.
+                </p-message>
+            }
+            @if (isOfflineData$ | async) {
+                <p-message
+                    styleClass="mb-2"
+                    [closable]="true"
+                    text="Note"
+                    severity="info"
+                    [icon]="getIconBySeverity(Severity.info)"
+                    class="custom-message"
+                    ><div>
+                        The information below about ISC software versions relies on an offline built-in JSON file that
+                        was generated on {{ dataDate$ | async }}. To see up-to-date information, please visit the
+                        <a target="_blank" href="https://www.isc.org/download/">ISC website</a>
+                    </div>
+                </p-message>
+            }
+            @if (errorOccurred) {
+                <p-message
+                    styleClass="mb-2"
+                    [closable]="true"
+                    severity="error"
+                    text="Error while fetching data!"
+                    [icon]="getIconBySeverity(Severity.error)"
+                    class="custom-message"
+                    >An error occurred while retrieving software version data from the Stork server!</p-message
+                >
+            }
         </div>
-        <p-button
-            *ngIf="!errorOccurred"
-            styleClass="flex-none"
-            label="Refresh Versions"
-            icon="pi pi-refresh"
-            (onClick)="refreshVersions()"
-            [disabled]="summaryDataLoading || swVersionsDataLoading"
-        ></p-button>
+        @if (!errorOccurred) {
+            <p-button
+                styleClass="flex-none"
+                label="Refresh Versions"
+                icon="pi pi-refresh"
+                (onClick)="refreshVersions()"
+                [disabled]="summaryDataLoading || swVersionsDataLoading"
+            ></p-button>
+        }
     </div>
     <!-- to be used in the future: Stork server couldn't connect to ISC GitLab to retrieve the latest data about recent software versions. -->
     <p-panel header="Summary of ISC software versions detected by Stork" styleClass="mt-3">
-        <p-message
-            data-testid="stork-server-update-message"
-            *ngIf="(storkServerUpdateAvailable$ | async).available === true"
-            styleClass="mb-2 inline-block"
-            class="custom-message"
-            [severity]="(storkServerUpdateAvailable$ | async).feedback?.severity === Severity.error ? 'error' : 'warn'"
-            [icon]="getIconBySeverity((storkServerUpdateAvailable$ | async).feedback?.severity ?? Severity.warn)"
-            text="Stork server update available!"
-            >{{
-                (storkServerUpdateAvailable$ | async)?.feedback?.messages?.[0] ||
-                    'A Stork server version update is available.'
-            }}</p-message
-        >
+        @if ((storkServerUpdateAvailable$ | async).available === true) {
+            <p-message
+                data-testid="stork-server-update-message"
+                styleClass="mb-2 inline-block"
+                class="custom-message"
+                [severity]="
+                    (storkServerUpdateAvailable$ | async).feedback?.severity === Severity.error ? 'error' : 'warn'
+                "
+                [icon]="getIconBySeverity((storkServerUpdateAvailable$ | async).feedback?.severity ?? Severity.warn)"
+                text="Stork server update available!"
+                >{{
+                    (storkServerUpdateAvailable$ | async)?.feedback?.messages?.[0] ||
+                        'A Stork server version update is available.'
+                }}</p-message
+            >
+        }
         <p-table
             [value]="machines"
             [stripedRows]="true"
@@ -209,16 +216,16 @@
                     </td>
                     <td>
                         <span class="p-datatable-column-title">Daemon(s)</span>
-                        <ng-container *ngFor="let d of m.daemons">
+                        @for (d of m.daemons; track d) {
                             <div class="flex justify-content-between gap-2">
                                 <app-entity-link [showEntityName]="false" entity="daemon" [attrs]="d"></app-entity-link>
                                 <div>{{ sanitizeSemver(d.version) }}</div>
                             </div>
-                        </ng-container>
+                        }
                     </td>
                     <td>
                         <span class="p-datatable-column-title">Summary</span>
-                        <ng-container *ngIf="m.mismatchingDaemons">
+                        @if (m.mismatchingDaemons) {
                             <p-message
                                 severity="error"
                                 text="Kea daemons version mismatch!"
@@ -230,14 +237,14 @@
                                 {{ getDaemonsVersions(m) }}.<br />
                                 All daemons should have the same version!
                             </p-message>
-                        </ng-container>
-                        <ng-container *ngFor="let d of getFlattenedIscDaemons(m)">
+                        }
+                        @for (d of getFlattenedIscDaemons(m); track d) {
                             <app-version-status
                                 [daemon]="d"
                                 [inline]="false"
                                 styleClass="max-w-50rem"
                             ></app-version-status>
-                        </ng-container>
+                        }
                         <app-version-status
                             [daemon]="{ name: 'stork', version: m.agentVersion }"
                             [inline]="false"
@@ -323,7 +330,12 @@
             <ng-template #body let-v>
                 <tr>
                     <td>{{ v.version }}</td>
-                    <td>{{ v.status }}<ng-container *ngIf="v.esv">, ESV</ng-container></td>
+                    <td>
+                        {{ v.status }}
+                        @if (v.esv) {
+                            , ESV
+                        }
+                    </td>
                     <td>
                         BIND {{ v.major + '.' + v.minor }} ARM (<a
                             href="https://bind9.readthedocs.io/en/v{{ v.version }}/"

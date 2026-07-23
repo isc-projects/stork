@@ -1,26 +1,38 @@
 <div class="flex align-items-center flex-wrap" [ngClass]="styleClass">
     <!-- Optional link. -->
-    <a *ngIf="link.length !== 0; else identifierTemplate" routerLink="{{ link }}">
+    @if (link.length !== 0) {
+        <a routerLink="{{ link }}">
+            <ng-container *ngTemplateOutlet="identifierTemplate"></ng-container>
+        </a>
+    } @else {
         <ng-container *ngTemplateOutlet="identifierTemplate"></ng-container>
-    </a>
+    }
     <ng-template #identifierTemplate>
         <!-- This wrapper with "block" display property ensures the identifier
              (and optional label) are copy in expected format (without any
              extra spaces). -->
         <div class="block">
-            <span *ngIf="label">{{ label }}=</span>
-            <span *ngIf="!!label">(</span>
+            @if (label) {
+                <span>{{ label }}=</span>
+            }
+            @if (!!label) {
+                <span>(</span>
+            }
             <!-- Hex format. -->
-            <ng-container *ngIf="hexFormat; else identifierTextTemplate">
+            @if (hexFormat) {
                 <span>{{ hexValue }}</span>
-            </ng-container>
-            <!-- Text format. -->
-            <ng-template #identifierTextTemplate>
-                <app-byte-character *ngFor="let byte of hexBytes" [byteValue]="byte"></app-byte-character>
-            </ng-template>
+            } @else {
+                @for (byte of hexBytes; track byte) {
+                    <app-byte-character [byteValue]="byte"></app-byte-character>
+                }
+            }
             <!-- Empty placeholder. -->
-            <span *ngIf="isEmpty" class="font-italic text-color-secondary">Empty identifier</span>
-            <span *ngIf="!!label">)</span>
+            @if (isEmpty) {
+                <span class="font-italic text-color-secondary">Empty identifier</span>
+            }
+            @if (!!label) {
+                <span>)</span>
+            }
         </div>
     </ng-template>
     <p-toggleButton

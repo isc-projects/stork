@@ -1,549 +1,621 @@
-<section class="stork-layout" *ngIf="loaded">
-    <article>
-        <div *ngIf="noDaemons" class="max-w-50rem">
-            <p-panel>
-                <ng-template #header>
-                    <span class="font-semibold text-3xl">Welcome to Stork!</span>
-                </ng-template>
+@if (loaded) {
+    <section class="stork-layout">
+        <article>
+            @if (noDaemons) {
+                <div class="max-w-50rem">
+                    <p-panel>
+                        <ng-template #header>
+                            <span class="font-semibold text-3xl">Welcome to Stork!</span>
+                        </ng-template>
 
-                <p class="pb-3">
-                    Stork is a monitoring solution for <em>ISC Kea DHCP</em> and <em>ISC BIND 9</em>. It also integrates
-                    with the third-party <em>PowerDNS</em> server.
-                </p>
+                        <p class="pb-3">
+                            Stork is a monitoring solution for <em>ISC Kea DHCP</em> and <em>ISC BIND 9</em>. It also
+                            integrates with the third-party <em>PowerDNS</em> server.
+                        </p>
 
-                <p class="pb-3">
-                    The
-                    <a target="_blank" routerLink="/assets/arm/index.html">
-                        Stork documentation
-                        <i class="pi pi-external-link text-xs"></i>
-                    </a>
-                    describes how to configure and use Stork.
-                </p>
+                        <p class="pb-3">
+                            The
+                            <a target="_blank" routerLink="/assets/arm/index.html">
+                                Stork documentation
+                                <i class="pi pi-external-link text-xs"></i>
+                            </a>
+                            describes how to configure and use Stork.
+                        </p>
 
-                <p class="pb-3">
-                    Currently, no machines are specified for monitoring in Stork. To add a new machine, visit the
-                    <a routerLink="/machines/all" [queryParams]="{ authorized: 'false' }">Machines page</a> (under the
-                    Services menu in the top bar).
-                </p>
+                        <p class="pb-3">
+                            Currently, no machines are specified for monitoring in Stork. To add a new machine, visit
+                            the
+                            <a routerLink="/machines/all" [queryParams]="{ authorized: 'false' }">Machines page</a>
+                            (under the Services menu in the top bar).
+                        </p>
 
-                <p>
-                    Stork uses the "status-get" command to collect Kea status information. This command is only
-                    available in Kea 1.6.3 and later, so Stork cannot fully interact with older Kea versions.
-                </p>
-            </p-panel>
-        </div>
+                        <p>
+                            Stork uses the "status-get" command to collect Kea status information. This command is only
+                            available in Kea 1.6.3 and later, so Stork cannot fully interact with older Kea versions.
+                        </p>
+                    </p-panel>
+                </div>
+            }
 
-        <div *ngIf="stats.dhcpDaemonsTotal > 0">
-            <p-panel
-                [toggleable]="true"
-                [collapsed]="isDHCPDashboardHidden()"
-                iconPos="start"
-                (onAfterToggle)="storeDHCPDashboardHidden($event.collapsed)"
-                [toggleButtonProps]="{ severity: 'primary', text: false }"
-            >
-                <ng-template #headericons let-collapsed>
-                    <i
-                        [class]="{
-                            pi: true,
-                            'pi-chevron-down': !collapsed,
-                            'pi-chevron-right': collapsed,
-                        }"
-                    ></i>
-                </ng-template>
+            @if (stats.dhcpDaemonsTotal > 0) {
+                <div>
+                    <p-panel
+                        [toggleable]="true"
+                        [collapsed]="isDHCPDashboardHidden()"
+                        iconPos="start"
+                        (onAfterToggle)="storeDHCPDashboardHidden($event.collapsed)"
+                        [toggleButtonProps]="{ severity: 'primary', text: false }"
+                    >
+                        <ng-template #headericons let-collapsed>
+                            <i
+                                [class]="{
+                                    pi: true,
+                                    'pi-chevron-down': !collapsed,
+                                    'pi-chevron-right': collapsed,
+                                }"
+                            ></i>
+                        </ng-template>
+                        <ng-template #header>
+                            <div class="flex align-items-center">
+                                <span class="mr-4 text-3xl font-semibold">DHCP Dashboard</span>
+                                <p-button
+                                    id="refresh-dhcp-button"
+                                    icon="pi pi-refresh"
+                                    (click)="refreshDhcpOverview()"
+                                ></p-button>
+                            </div>
+                        </ng-template>
+                        <h1 class="section-heading">DHCPv4</h1>
+                        <div class="grid dashboard-dhcp" id="dashboard-dhcp4">
+                            <div class="col-12 lg:col-4 dashboard-dhcp__subnets dashboard-section">
+                                <h2 class="section-heading dashboard-section__header">
+                                    Subnets: {{ overview.subnets4?.total ?? 0 }}
+                                    <app-help-tip subject="subnets listed" id="subnets4-help-button">
+                                        <p>
+                                            This list shows up to five DHCPv4 subnets with the highest utilization. The
+                                            total number of subnets is {{ overview.subnets4?.total ?? 0 }}. On the left
+                                            of each subnet entry, there is a Kea Subnet ID assigned in the Kea DHCP
+                                            daemon configuration.
+                                        </p>
+                                    </app-help-tip>
+                                </h2>
+                                <table class="dashboard-section__data">
+                                    @for (sn of overview.subnets4?.items ?? []; track sn) {
+                                        <tr class="utilization-row">
+                                            <td class="utilization-row__id">
+                                                {{ sn.localSubnets?.[0]?.id | surround: '[' : ']' }}
+                                            </td>
+                                            <td class="utilization-row__bar">
+                                                <app-subnet-bar [subnet]="sn"></app-subnet-bar>
+                                            </td>
+                                            <td class="utilization-row__value">
+                                                {{ sn.addrUtilization ?? 0 | number: '1.0-1' }}% used
+                                                @if (sn.addrUtilization > 80 && sn.addrUtilization <= 90) {
+                                                    <i
+                                                        class="pi pi-exclamation-triangle text-2xl text-orange-400 vertical-align-middle"
+                                                    ></i>
+                                                }
+                                                @if (sn.addrUtilization > 90) {
+                                                    <i
+                                                        class="pi pi-exclamation-circle text-2xl text-red-500 vertical-align-middle"
+                                                    ></i>
+                                                }
+                                            </td>
+                                            @if (grafanaUrl) {
+                                                <td>
+                                                    @if (sn.localSubnets?.[0]) {
+                                                        <a
+                                                            [href]="
+                                                                getGrafanaUrl(
+                                                                    'dhcp4',
+                                                                    sn.localSubnets[0].id,
+                                                                    sn.localSubnets[0].machineHostname
+                                                                )
+                                                            "
+                                                            [title]="
+                                                                getGrafanaTooltip(
+                                                                    sn.localSubnets[0].id,
+                                                                    sn.localSubnets[0].machineHostname
+                                                                )
+                                                            "
+                                                            target="_blank"
+                                                        >
+                                                            <i
+                                                                class="pi pi-chart-line text-2xl vertical-align-middle"
+                                                            ></i>
+                                                        </a>
+                                                    }
+                                                </td>
+                                            }
+                                        </tr>
+                                    }
+
+                                    <tr>
+                                        <td>
+                                            <a routerLink="/dhcp/subnets" [queryParams]="{ dhcpVersion: '4' }">more</a>
+                                        </td>
+                                        <td></td>
+                                        <td></td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div class="col-12 lg:col-4 dashboard-dhcp__shared-networks dashboard-section">
+                                <h2 class="section-heading dashboard-section__header">
+                                    Shared Networks: {{ overview.sharedNetworks4?.total ?? 0 }}
+                                    <app-help-tip subject="networks listed" id="networks4-help-button">
+                                        <p>
+                                            This list shows up to five shared networks with the highest utilization. The
+                                            total number of networks is
+                                            {{ overview.sharedNetworks4?.total ?? 0 }}.
+                                        </p>
+                                    </app-help-tip>
+                                </h2>
+                                <div class="dashboard-section__data flex flex-column gap-2">
+                                    @for (net of overview.sharedNetworks4?.items ?? []; track net) {
+                                        <div class="utilization-row grid grid-nogutter">
+                                            <div class="utilization-row__name col-6">
+                                                <app-entity-link
+                                                    [showEntityName]="false"
+                                                    entity="shared-network"
+                                                    [attrs]="net"
+                                                ></app-entity-link>
+                                            </div>
+                                            <div class="utilization-row__count col-3">
+                                                {{ net.subnets.length }} subnets
+                                            </div>
+                                            <div class="utilization-row__value col-3">
+                                                {{ net.addrUtilization ?? 0 | number: '1.0-1' }}% used
+                                            </div>
+                                        </div>
+                                    }
+                                    <a routerLink="/dhcp/shared-networks" [queryParams]="{ dhcpVersion: '4' }">more</a>
+                                </div>
+                            </div>
+                            <div class="col-12 lg:col-4 dashboard-dhcp__globals dashboard-section">
+                                <h2 class="section-heading dashboard-section__header">Statistics</h2>
+                                <table class="dashboard-section__data">
+                                    <tr class="statistics-row">
+                                        <td class="statistics-row__label">Addresses</td>
+                                        <td class="statistics-row__value">
+                                            {{ overview.dhcp4Stats?.assignedAddresses ?? 0 | humanCount }}
+                                            /
+                                            {{ overview.dhcp4Stats?.totalAddresses ?? 0 | humanCount }}
+                                            ({{
+                                                getPercent(
+                                                    overview.dhcp4Stats?.assignedAddresses,
+                                                    overview.dhcp4Stats?.totalAddresses
+                                                )
+                                            }}% used)
+                                        </td>
+                                    </tr>
+                                    <tr class="statistics-row">
+                                        <td class="statistics-row__label">Declined</td>
+                                        <td class="statistics-row__value">
+                                            {{ overview.dhcp4Stats?.declinedAddresses ?? 0 | humanCount }}
+                                        </td>
+                                    </tr>
+                                    <!-- TODO <tr> -->
+                                    <!--     <td><a routerLink="/dhcp/hosts">Reservations</a></td> -->
+                                    <!--     <td>123 / 321 (30% used)</td> -->
+                                    <!-- </tr> -->
+                                </table>
+                            </div>
+                        </div>
+
+                        <h1 class="section-heading">DHCPv6</h1>
+                        <div class="grid dashboard-dhcp" id="dashboard-dhcp6">
+                            <div class="col-12 lg:col-4 dashboard-dhcp__subnets dashboard-section">
+                                <h2 class="section-heading dashboard-section__header">
+                                    Subnets: {{ overview.subnets6?.total ?? 0 }}
+                                    <app-help-tip subject="subnets listed" id="subnets6-help-button">
+                                        <p>
+                                            This list shows up to five DHCPv6 subnets with the highest utilization. The
+                                            total number of subnets is {{ overview.subnets6?.total ?? 0 }}. On the left
+                                            of each subnet entry, there is a Kea Subnet ID assigned in the Kea DHCP
+                                            daemon configuration.
+                                        </p>
+                                    </app-help-tip>
+                                </h2>
+                                <table class="dashboard-section__data">
+                                    @for (sn of overview.subnets6?.items ?? []; track sn) {
+                                        <tr class="utilization-row">
+                                            <td class="utilization-row__id">
+                                                {{ sn.localSubnets?.[0]?.id | surround: '[' : ']' }}
+                                            </td>
+                                            <td class="utilization-row__bar">
+                                                <app-subnet-bar [subnet]="sn"></app-subnet-bar>
+                                            </td>
+                                            <td class="utilization-row__value">
+                                                {{ sn.addrUtilization ?? 0 | number: '1.0-1' }}% used
+                                                @if (sn.addrUtilization > 80 && sn.addrUtilization <= 90) {
+                                                    <i
+                                                        class="pi pi-exclamation-triangle text-2xl text-orange-400 vertical-align-middle"
+                                                    ></i>
+                                                }
+                                                @if (sn.addrUtilization > 90) {
+                                                    <i
+                                                        class="pi pi-exclamation-circle text-2xl text-red-500 vertical-align-middle"
+                                                    ></i>
+                                                }
+                                            </td>
+                                            @if (grafanaUrl) {
+                                                <td>
+                                                    @if (sn.localSubnets?.[0]) {
+                                                        <a
+                                                            [href]="
+                                                                getGrafanaUrl(
+                                                                    'dhcp6',
+                                                                    sn.localSubnets[0].id,
+                                                                    sn.localSubnets[0].machineHostname
+                                                                )
+                                                            "
+                                                            [title]="
+                                                                getGrafanaTooltip(
+                                                                    sn.localSubnets[0].id,
+                                                                    sn.localSubnets[0].machineHostname
+                                                                )
+                                                            "
+                                                            target="_blank"
+                                                        >
+                                                            <i
+                                                                class="pi pi-chart-line text-2xl vertical-align-middle"
+                                                            ></i>
+                                                        </a>
+                                                    }
+                                                </td>
+                                            }
+                                        </tr>
+                                    }
+
+                                    <tr>
+                                        <td>
+                                            <a routerLink="/dhcp/subnets" [queryParams]="{ dhcpVersion: '6' }">more</a>
+                                        </td>
+                                        <td></td>
+                                        <td></td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div class="col-12 lg:col-4 dashboard-dhcp__shared-networks dashboard-section">
+                                <h2 class="section-heading dashboard-section__header">
+                                    Shared Networks: {{ overview.sharedNetworks6?.total ?? 0 }}
+                                    <app-help-tip subject="networks listed" id="networks6-help-button">
+                                        <p>
+                                            This list shows up to five shared networks with the highest utilization. The
+                                            total number of networks is
+                                            {{ overview.sharedNetworks6?.total ?? 0 }}.
+                                        </p>
+                                    </app-help-tip>
+                                </h2>
+                                <div class="dashboard-section__data flex flex-column gap-2">
+                                    @for (net of overview.sharedNetworks6?.items ?? []; track net) {
+                                        <div class="utilization-row grid grid-nogutter">
+                                            <div class="utilization-row__name col-6">
+                                                <app-entity-link
+                                                    [showEntityName]="false"
+                                                    entity="shared-network"
+                                                    [attrs]="net"
+                                                ></app-entity-link>
+                                            </div>
+                                            <div class="utilization-row__count col-3">
+                                                {{ net.subnets.length }} subnets
+                                            </div>
+                                            <div class="utilization-row__value col-3">
+                                                {{ net.addrUtilization ?? 0 | number: '1.0-1' }}% used
+                                            </div>
+                                        </div>
+                                    }
+                                    <a routerLink="/dhcp/shared-networks" [queryParams]="{ dhcpVersion: '6' }">more</a>
+                                </div>
+                            </div>
+                            <div class="col-12 lg:col-4 dashboard-dhcp__globals dashboard-section">
+                                <h2 class="section-heading dashboard-section__header">Statistics</h2>
+                                <table class="dashboard-section__data">
+                                    <tr class="statistics-row">
+                                        <td class="statistics-row__label">Addresses</td>
+                                        <td class="statistics-row__value">
+                                            {{ overview.dhcp6Stats?.assignedNAs ?? 0 | humanCount }}
+                                            /
+                                            {{ overview.dhcp6Stats?.totalNAs ?? 0 | humanCount }}
+                                            ({{
+                                                getPercent(
+                                                    overview.dhcp6Stats?.assignedNAs,
+                                                    overview.dhcp6Stats?.totalNAs
+                                                )
+                                            }}% used)
+                                        </td>
+                                    </tr>
+                                    <tr class="statistics-row">
+                                        <td class="statistics-row__label">Prefixes</td>
+                                        <td class="statistics-row__value">
+                                            {{ overview.dhcp6Stats?.assignedPDs ?? 0 | humanCount }}
+                                            /
+                                            {{ overview.dhcp6Stats?.totalPDs ?? 0 | humanCount }}
+                                            ({{
+                                                getPercent(
+                                                    overview.dhcp6Stats?.assignedPDs,
+                                                    overview.dhcp6Stats?.totalPDs
+                                                )
+                                            }}% used)
+                                        </td>
+                                    </tr>
+                                    <tr class="statistics-row">
+                                        <td class="statistics-row__label">Declined</td>
+                                        <td class="statistics-row__value">
+                                            {{ overview.dhcp6Stats?.declinedNAs ?? 0 | humanCount }}
+                                        </td>
+                                    </tr>
+                                    <!-- TODO <tr> -->
+                                    <!--     <td><a routerLink="/dhcp/hosts">Reservations</a></td> -->
+                                    <!--     <td>123 / 321 (30% used)</td> -->
+                                    <!-- </tr> -->
+                                </table>
+                            </div>
+                        </div>
+
+                        <h1 class="section-heading">Service Status</h1>
+
+                        <p-table
+                            [value]="overview.dhcpDaemons"
+                            size="small"
+                            [stripedRows]="true"
+                            styleClass="max-w-100vw"
+                        >
+                            <ng-template #header>
+                                <tr>
+                                    <th>Host</th>
+                                    <th>Version</th>
+                                    <th>Daemon</th>
+                                    <th>Status</th>
+                                    <th>RPS (15min)</th>
+                                    <th>RPS (24h)</th>
+                                    <!-- <th>Pool Used</th> -->
+                                    <th>HA State</th>
+                                    <th>Detected Failure w/HA</th>
+                                    <th>Uptime</th>
+                                </tr>
+                            </ng-template>
+                            <ng-template #body let-d>
+                                <tr>
+                                    <td>
+                                        <app-entity-link
+                                            [showEntityName]="false"
+                                            entity="machine"
+                                            [attrs]="d"
+                                        ></app-entity-link>
+                                    </td>
+                                    <td>
+                                        <app-version-status [daemon]="d"></app-version-status>
+                                    </td>
+                                    <td>
+                                        <app-entity-link
+                                            [showEntityName]="false"
+                                            entity="daemon"
+                                            [attrs]="d"
+                                        ></app-entity-link>
+                                    </td>
+                                    <td>
+                                        <i
+                                            pTooltip="{{ daemonStatusIconTooltip(d) }}"
+                                            class="{{ daemonStatusIconClass(d) }} text-2xl"
+                                        ></i>
+                                    </td>
+                                    <td pTooltip="{{ daemonRpsTooltip(d, 1) }}">{{ d.rps1 | number: '1.0-2' }}</td>
+                                    <td pTooltip="{{ daemonRpsTooltip(d, 2) }}">{{ d.rps2 | number: '1.0-2' }}</td>
+                                    <td>
+                                        @if (d.haEnabled && d.haOverview && d.haOverview.length > 0) {
+                                            <span>
+                                                <a routerLink="/daemons/{{ d.id }}">
+                                                    {{ showHAState(d) }}
+                                                </a>
+                                            </span>
+                                        } @else {
+                                            <span [class.text-color-secondary]="!d.haEnabled"
+                                                >{{ showHAState(d) }}
+                                            </span>
+                                        }
+                                        <span
+                                            class="p-0 pi pi-{{ haStateIcon(d) }} text-sm"
+                                            [ngStyle]="{ color: haStateIconColor(haStateIcon(d)) }"
+                                        ></span>
+                                    </td>
+                                    <td>
+                                        <span [class.text-color-secondary]="!d.haEnabled">
+                                            {{ showHAFailureTime(d) }}
+                                        </span>
+                                    </td>
+                                    <td>{{ showDuration(d.uptime) }}</td>
+                                </tr>
+                            </ng-template>
+                        </p-table>
+                    </p-panel>
+                </div>
+            }
+
+            @if (stats.dnsDaemonsTotal > 0) {
+                <div>
+                    <p-panel
+                        [toggleable]="true"
+                        [collapsed]="isDNSDashboardHidden()"
+                        iconPos="start"
+                        (onAfterToggle)="storeDNSDashboardHidden($event.collapsed)"
+                        [toggleButtonProps]="{ severity: 'primary', text: false }"
+                    >
+                        <ng-template #headericons let-collapsed>
+                            <i [class]="{ pi: true, 'pi-chevron-down': !collapsed, 'pi-chevron-right': collapsed }"></i>
+                        </ng-template>
+                        <ng-template #header>
+                            <div class="flex align-items-center">
+                                <span class="mr-4 text-3xl font-semibold">DNS Dashboard</span>
+                                <p-button
+                                    id="refresh-dns-button"
+                                    icon="pi pi-refresh"
+                                    (click)="refreshDnsOverview(dnsServiceStatusTable.createLazyLoadMetadata())"
+                                ></p-button>
+                            </div>
+                        </ng-template>
+                        <h1 class="section-heading">Service Status</h1>
+                        <p-table
+                            #dnsServiceStatusTable
+                            [value]="dnsDaemons"
+                            size="small"
+                            [stripedRows]="true"
+                            styleClass="max-w-100vw"
+                            [lazy]="true"
+                            (onLazyLoad)="refreshDnsOverview($event)"
+                            [totalRecords]="dnsDaemonsTotalCount"
+                            [loading]="dnsServiceStatusLoading"
+                            [paginator]="true"
+                            [rows]="5"
+                            [rowsPerPageOptions]="[5, 10, 20]"
+                            [alwaysShowPaginator]="false"
+                        >
+                            <ng-template #header>
+                                <tr>
+                                    <th>Host</th>
+                                    <th>Version</th>
+                                    <th>Daemon</th>
+                                    <th>Status</th>
+                                    <th>Zone Fetch Status</th>
+                                    <th
+                                        pTooltip="Zone config is a zone specification in the BIND9 view.
+                                    If the zone appears in several views, this count is increased
+                                    for each occurrence of that zone.
+                                    "
+                                        class="cursor-pointer"
+                                    >
+                                        Zone Configs Count
+                                    </th>
+                                    <th
+                                        pTooltip="The number of distinct zone (zone names) in all views.
+                                    If the zone appears in several views, it is counted only once.
+                                    "
+                                        class="cursor-pointer"
+                                    >
+                                        Distinct Zones
+                                    </th>
+                                    <th
+                                        pTooltip="The number of distinct builtin zones in all views.
+                                    Builtin zones are special types of zones generated by BIND9. Their
+                                    number is interesting to see how many zones are generated comparing
+                                    to the number of configured zones.
+                                    "
+                                        class="cursor-pointer"
+                                    >
+                                        Builtin Zones
+                                    </th>
+                                    <th>Uptime</th>
+                                </tr>
+                            </ng-template>
+                            <ng-template #body let-d>
+                                <tr>
+                                    <td>
+                                        <app-entity-link
+                                            [showEntityName]="false"
+                                            entity="machine"
+                                            [attrs]="d"
+                                        ></app-entity-link>
+                                    </td>
+                                    <td><app-version-status [daemon]="d"></app-version-status></td>
+                                    <td>
+                                        <app-entity-link
+                                            [showEntityName]="false"
+                                            entity="daemon"
+                                            [attrs]="d"
+                                        ></app-entity-link>
+                                    </td>
+                                    <td>
+                                        @if (d) {
+                                            <i
+                                                pTooltip="{{ daemonStatusIconTooltip(d) }}"
+                                                class="{{ daemonStatusIconClass(d) }} text-2xl"
+                                            ></i>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (d.id) {
+                                            <a routerLink="/dns/zones" [queryParams]="{ daemonId: d.id }">
+                                                {{ !zoneInventoryStateMap.get(d.id) ? 'n/a' : '' }}
+                                                @if (zoneInventoryStateMap.get(d.id)) {
+                                                    <p-tag
+                                                        value="{{
+                                                            zoneInventoryStateMap.get(d.id).status === 'erred'
+                                                                ? 'Error'
+                                                                : (zoneInventoryStateMap.get(d.id).status | titlecase)
+                                                        }} "
+                                                        [severity]="getSeverity(zoneInventoryStateMap.get(d.id).status)"
+                                                        [pTooltip]="getTooltip(zoneInventoryStateMap.get(d.id).status)"
+                                                    />
+                                                }
+                                            </a>
+                                        }
+                                    </td>
+                                    <td>
+                                        <ng-template
+                                            #zoneCountCell
+                                            let-daemonId="daemonId"
+                                            let-propertyName="propertyName"
+                                        >
+                                            @if (zoneInventoryStateMap.get(daemonId)) {
+                                                <a routerLink="/dns/zones" [queryParams]="{ daemonId: daemonId }">{{
+                                                    zoneInventoryStateMap.get(daemonId)[propertyName] ?? 0
+                                                }}</a>
+                                            } @else {
+                                                n/a
+                                            }
+                                        </ng-template>
+                                        <ng-container
+                                            *ngTemplateOutlet="
+                                                zoneCountCell;
+                                                context: { daemonId: d.id, propertyName: 'zoneConfigsCount' }
+                                            "
+                                        >
+                                        </ng-container>
+                                    </td>
+                                    <td>
+                                        <ng-container
+                                            *ngTemplateOutlet="
+                                                zoneCountCell;
+                                                context: { daemonId: d.id, propertyName: 'distinctZonesCount' }
+                                            "
+                                        >
+                                        </ng-container>
+                                    </td>
+                                    <td>
+                                        <ng-container
+                                            *ngTemplateOutlet="
+                                                zoneCountCell;
+                                                context: { daemonId: d.id, propertyName: 'builtinZonesCount' }
+                                            "
+                                        >
+                                        </ng-container>
+                                    </td>
+                                    <td>{{ showDuration(d)?.uptime ?? 0 }}</td>
+                                </tr>
+                            </ng-template>
+                        </p-table>
+                    </p-panel>
+                </div>
+            }
+        </article>
+
+        <aside>
+            <p-panel class="dashboard-events-panel" iconPos="start">
                 <ng-template #header>
                     <div class="flex align-items-center">
-                        <span class="mr-4 text-3xl font-semibold">DHCP Dashboard</span>
+                        <span class="mr-4 text-3xl font-semibold">Events</span>
                         <p-button
-                            id="refresh-dhcp-button"
                             icon="pi pi-refresh"
-                            (click)="refreshDhcpOverview()"
+                            id="refresh-events-button"
+                            (click)="eventsTable.refreshEvents(null)"
                         ></p-button>
                     </div>
                 </ng-template>
-                <h1 class="section-heading">DHCPv4</h1>
-                <div class="grid dashboard-dhcp" id="dashboard-dhcp4">
-                    <div class="col-12 lg:col-4 dashboard-dhcp__subnets dashboard-section">
-                        <h2 class="section-heading dashboard-section__header">
-                            Subnets: {{ overview.subnets4?.total ?? 0 }}
-                            <app-help-tip subject="subnets listed" id="subnets4-help-button">
-                                <p>
-                                    This list shows up to five DHCPv4 subnets with the highest utilization. The total
-                                    number of subnets is {{ overview.subnets4?.total ?? 0 }}. On the left of each subnet
-                                    entry, there is a Kea Subnet ID assigned in the Kea DHCP daemon configuration.
-                                </p>
-                            </app-help-tip>
-                        </h2>
-                        <table class="dashboard-section__data">
-                            <tr *ngFor="let sn of overview.subnets4?.items ?? []" class="utilization-row">
-                                <td class="utilization-row__id">
-                                    {{ sn.localSubnets?.[0]?.id | surround: '[' : ']' }}
-                                </td>
-                                <td class="utilization-row__bar">
-                                    <app-subnet-bar [subnet]="sn"></app-subnet-bar>
-                                </td>
-                                <td class="utilization-row__value">
-                                    {{ sn.addrUtilization ?? 0 | number: '1.0-1' }}% used
-                                    <i
-                                        *ngIf="sn.addrUtilization > 80 && sn.addrUtilization <= 90"
-                                        class="pi pi-exclamation-triangle text-2xl text-orange-400 vertical-align-middle"
-                                    ></i>
-                                    <i
-                                        *ngIf="sn.addrUtilization > 90"
-                                        class="pi pi-exclamation-circle text-2xl text-red-500 vertical-align-middle"
-                                    ></i>
-                                </td>
-                                <td *ngIf="grafanaUrl">
-                                    <a
-                                        *ngIf="sn.localSubnets?.[0]"
-                                        [href]="
-                                            getGrafanaUrl(
-                                                'dhcp4',
-                                                sn.localSubnets[0].id,
-                                                sn.localSubnets[0].machineHostname
-                                            )
-                                        "
-                                        [title]="
-                                            getGrafanaTooltip(sn.localSubnets[0].id, sn.localSubnets[0].machineHostname)
-                                        "
-                                        target="_blank"
-                                    >
-                                        <i class="pi pi-chart-line text-2xl vertical-align-middle"></i>
-                                    </a>
-                                </td>
-                            </tr>
 
-                            <tr>
-                                <td><a routerLink="/dhcp/subnets" [queryParams]="{ dhcpVersion: '4' }">more</a></td>
-                                <td></td>
-                                <td></td>
-                            </tr>
-                        </table>
-                    </div>
-                    <div class="col-12 lg:col-4 dashboard-dhcp__shared-networks dashboard-section">
-                        <h2 class="section-heading dashboard-section__header">
-                            Shared Networks: {{ overview.sharedNetworks4?.total ?? 0 }}
-                            <app-help-tip subject="networks listed" id="networks4-help-button">
-                                <p>
-                                    This list shows up to five shared networks with the highest utilization. The total
-                                    number of networks is
-                                    {{ overview.sharedNetworks4?.total ?? 0 }}.
-                                </p>
-                            </app-help-tip>
-                        </h2>
-                        <div class="dashboard-section__data flex flex-column gap-2">
-                            <div
-                                *ngFor="let net of overview.sharedNetworks4?.items ?? []"
-                                class="utilization-row grid grid-nogutter"
-                            >
-                                <div class="utilization-row__name col-6">
-                                    <app-entity-link
-                                        [showEntityName]="false"
-                                        entity="shared-network"
-                                        [attrs]="net"
-                                    ></app-entity-link>
-                                </div>
-                                <div class="utilization-row__count col-3">{{ net.subnets.length }} subnets</div>
-                                <div class="utilization-row__value col-3">
-                                    {{ net.addrUtilization ?? 0 | number: '1.0-1' }}% used
-                                </div>
-                            </div>
-                            <a routerLink="/dhcp/shared-networks" [queryParams]="{ dhcpVersion: '4' }">more</a>
-                        </div>
-                    </div>
-                    <div class="col-12 lg:col-4 dashboard-dhcp__globals dashboard-section">
-                        <h2 class="section-heading dashboard-section__header">Statistics</h2>
-                        <table class="dashboard-section__data">
-                            <tr class="statistics-row">
-                                <td class="statistics-row__label">Addresses</td>
-                                <td class="statistics-row__value">
-                                    {{ overview.dhcp4Stats?.assignedAddresses ?? 0 | humanCount }}
-                                    /
-                                    {{ overview.dhcp4Stats?.totalAddresses ?? 0 | humanCount }}
-                                    ({{
-                                        getPercent(
-                                            overview.dhcp4Stats?.assignedAddresses,
-                                            overview.dhcp4Stats?.totalAddresses
-                                        )
-                                    }}% used)
-                                </td>
-                            </tr>
-                            <tr class="statistics-row">
-                                <td class="statistics-row__label">Declined</td>
-                                <td class="statistics-row__value">
-                                    {{ overview.dhcp4Stats?.declinedAddresses ?? 0 | humanCount }}
-                                </td>
-                            </tr>
-                            <!-- TODO <tr> -->
-                            <!--     <td><a routerLink="/dhcp/hosts">Reservations</a></td> -->
-                            <!--     <td>123 / 321 (30% used)</td> -->
-                            <!-- </tr> -->
-                        </table>
-                    </div>
+                <div>
+                    <app-events-panel [showRowsPerPage]="false" #eventsTable></app-events-panel>
                 </div>
-
-                <h1 class="section-heading">DHCPv6</h1>
-                <div class="grid dashboard-dhcp" id="dashboard-dhcp6">
-                    <div class="col-12 lg:col-4 dashboard-dhcp__subnets dashboard-section">
-                        <h2 class="section-heading dashboard-section__header">
-                            Subnets: {{ overview.subnets6?.total ?? 0 }}
-                            <app-help-tip subject="subnets listed" id="subnets6-help-button">
-                                <p>
-                                    This list shows up to five DHCPv6 subnets with the highest utilization. The total
-                                    number of subnets is {{ overview.subnets6?.total ?? 0 }}. On the left of each subnet
-                                    entry, there is a Kea Subnet ID assigned in the Kea DHCP daemon configuration.
-                                </p>
-                            </app-help-tip>
-                        </h2>
-                        <table class="dashboard-section__data">
-                            <tr *ngFor="let sn of overview.subnets6?.items ?? []" class="utilization-row">
-                                <td class="utilization-row__id">
-                                    {{ sn.localSubnets?.[0]?.id | surround: '[' : ']' }}
-                                </td>
-                                <td class="utilization-row__bar">
-                                    <app-subnet-bar [subnet]="sn"></app-subnet-bar>
-                                </td>
-                                <td class="utilization-row__value">
-                                    {{ sn.addrUtilization ?? 0 | number: '1.0-1' }}% used
-                                    <i
-                                        *ngIf="sn.addrUtilization > 80 && sn.addrUtilization <= 90"
-                                        class="pi pi-exclamation-triangle text-2xl text-orange-400 vertical-align-middle"
-                                    ></i>
-                                    <i
-                                        *ngIf="sn.addrUtilization > 90"
-                                        class="pi pi-exclamation-circle text-2xl text-red-500 vertical-align-middle"
-                                    ></i>
-                                </td>
-                                <td *ngIf="grafanaUrl">
-                                    <a
-                                        *ngIf="sn.localSubnets?.[0]"
-                                        [href]="
-                                            getGrafanaUrl(
-                                                'dhcp6',
-                                                sn.localSubnets[0].id,
-                                                sn.localSubnets[0].machineHostname
-                                            )
-                                        "
-                                        [title]="
-                                            getGrafanaTooltip(sn.localSubnets[0].id, sn.localSubnets[0].machineHostname)
-                                        "
-                                        target="_blank"
-                                    >
-                                        <i class="pi pi-chart-line text-2xl vertical-align-middle"></i>
-                                    </a>
-                                </td>
-                            </tr>
-
-                            <tr>
-                                <td><a routerLink="/dhcp/subnets" [queryParams]="{ dhcpVersion: '6' }">more</a></td>
-                                <td></td>
-                                <td></td>
-                            </tr>
-                        </table>
-                    </div>
-                    <div class="col-12 lg:col-4 dashboard-dhcp__shared-networks dashboard-section">
-                        <h2 class="section-heading dashboard-section__header">
-                            Shared Networks: {{ overview.sharedNetworks6?.total ?? 0 }}
-                            <app-help-tip subject="networks listed" id="networks6-help-button">
-                                <p>
-                                    This list shows up to five shared networks with the highest utilization. The total
-                                    number of networks is
-                                    {{ overview.sharedNetworks6?.total ?? 0 }}.
-                                </p>
-                            </app-help-tip>
-                        </h2>
-                        <div class="dashboard-section__data flex flex-column gap-2">
-                            <div
-                                *ngFor="let net of overview.sharedNetworks6?.items ?? []"
-                                class="utilization-row grid grid-nogutter"
-                            >
-                                <div class="utilization-row__name col-6">
-                                    <app-entity-link
-                                        [showEntityName]="false"
-                                        entity="shared-network"
-                                        [attrs]="net"
-                                    ></app-entity-link>
-                                </div>
-                                <div class="utilization-row__count col-3">{{ net.subnets.length }} subnets</div>
-                                <div class="utilization-row__value col-3">
-                                    {{ net.addrUtilization ?? 0 | number: '1.0-1' }}% used
-                                </div>
-                            </div>
-                            <a routerLink="/dhcp/shared-networks" [queryParams]="{ dhcpVersion: '6' }">more</a>
-                        </div>
-                    </div>
-                    <div class="col-12 lg:col-4 dashboard-dhcp__globals dashboard-section">
-                        <h2 class="section-heading dashboard-section__header">Statistics</h2>
-                        <table class="dashboard-section__data">
-                            <tr class="statistics-row">
-                                <td class="statistics-row__label">Addresses</td>
-                                <td class="statistics-row__value">
-                                    {{ overview.dhcp6Stats?.assignedNAs ?? 0 | humanCount }}
-                                    /
-                                    {{ overview.dhcp6Stats?.totalNAs ?? 0 | humanCount }}
-                                    ({{ getPercent(overview.dhcp6Stats?.assignedNAs, overview.dhcp6Stats?.totalNAs) }}%
-                                    used)
-                                </td>
-                            </tr>
-                            <tr class="statistics-row">
-                                <td class="statistics-row__label">Prefixes</td>
-                                <td class="statistics-row__value">
-                                    {{ overview.dhcp6Stats?.assignedPDs ?? 0 | humanCount }}
-                                    /
-                                    {{ overview.dhcp6Stats?.totalPDs ?? 0 | humanCount }}
-                                    ({{ getPercent(overview.dhcp6Stats?.assignedPDs, overview.dhcp6Stats?.totalPDs) }}%
-                                    used)
-                                </td>
-                            </tr>
-                            <tr class="statistics-row">
-                                <td class="statistics-row__label">Declined</td>
-                                <td class="statistics-row__value">
-                                    {{ overview.dhcp6Stats?.declinedNAs ?? 0 | humanCount }}
-                                </td>
-                            </tr>
-                            <!-- TODO <tr> -->
-                            <!--     <td><a routerLink="/dhcp/hosts">Reservations</a></td> -->
-                            <!--     <td>123 / 321 (30% used)</td> -->
-                            <!-- </tr> -->
-                        </table>
-                    </div>
-                </div>
-
-                <h1 class="section-heading">Service Status</h1>
-
-                <p-table [value]="overview.dhcpDaemons" size="small" [stripedRows]="true" styleClass="max-w-100vw">
-                    <ng-template #header>
-                        <tr>
-                            <th>Host</th>
-                            <th>Version</th>
-                            <th>Daemon</th>
-                            <th>Status</th>
-                            <th>RPS (15min)</th>
-                            <th>RPS (24h)</th>
-                            <!-- <th>Pool Used</th> -->
-                            <th>HA State</th>
-                            <th>Detected Failure w/HA</th>
-                            <th>Uptime</th>
-                        </tr>
-                    </ng-template>
-                    <ng-template #body let-d>
-                        <tr>
-                            <td>
-                                <app-entity-link
-                                    [showEntityName]="false"
-                                    entity="machine"
-                                    [attrs]="d"
-                                ></app-entity-link>
-                            </td>
-                            <td>
-                                <app-version-status [daemon]="d"></app-version-status>
-                            </td>
-                            <td>
-                                <app-entity-link [showEntityName]="false" entity="daemon" [attrs]="d"></app-entity-link>
-                            </td>
-                            <td>
-                                <i
-                                    pTooltip="{{ daemonStatusIconTooltip(d) }}"
-                                    class="{{ daemonStatusIconClass(d) }} text-2xl"
-                                ></i>
-                            </td>
-                            <td pTooltip="{{ daemonRpsTooltip(d, 1) }}">{{ d.rps1 | number: '1.0-2' }}</td>
-                            <td pTooltip="{{ daemonRpsTooltip(d, 2) }}">{{ d.rps2 | number: '1.0-2' }}</td>
-                            <td>
-                                <span *ngIf="d.haEnabled && d.haOverview && d.haOverview.length > 0">
-                                    <a routerLink="/daemons/{{ d.id }}">
-                                        {{ showHAState(d) }}
-                                    </a>
-                                </span>
-                                <span
-                                    *ngIf="!d.haEnabled || !d.haOverview || d.haOverview.length === 0"
-                                    [class.text-color-secondary]="!d.haEnabled"
-                                    >{{ showHAState(d) }}
-                                </span>
-                                <span
-                                    class="p-0 pi pi-{{ haStateIcon(d) }} text-sm"
-                                    [ngStyle]="{ color: haStateIconColor(haStateIcon(d)) }"
-                                ></span>
-                            </td>
-                            <td>
-                                <span [class.text-color-secondary]="!d.haEnabled">
-                                    {{ showHAFailureTime(d) }}
-                                </span>
-                            </td>
-                            <td>{{ showDuration(d.uptime) }}</td>
-                        </tr>
-                    </ng-template>
-                </p-table>
             </p-panel>
-        </div>
-
-        <div *ngIf="stats.dnsDaemonsTotal > 0">
-            <p-panel
-                [toggleable]="true"
-                [collapsed]="isDNSDashboardHidden()"
-                iconPos="start"
-                (onAfterToggle)="storeDNSDashboardHidden($event.collapsed)"
-                [toggleButtonProps]="{ severity: 'primary', text: false }"
-            >
-                <ng-template #headericons let-collapsed>
-                    <i [class]="{ pi: true, 'pi-chevron-down': !collapsed, 'pi-chevron-right': collapsed }"></i>
-                </ng-template>
-                <ng-template #header>
-                    <div class="flex align-items-center">
-                        <span class="mr-4 text-3xl font-semibold">DNS Dashboard</span>
-                        <p-button
-                            id="refresh-dns-button"
-                            icon="pi pi-refresh"
-                            (click)="refreshDnsOverview(dnsServiceStatusTable.createLazyLoadMetadata())"
-                        ></p-button>
-                    </div>
-                </ng-template>
-                <h1 class="section-heading">Service Status</h1>
-                <p-table
-                    #dnsServiceStatusTable
-                    [value]="dnsDaemons"
-                    size="small"
-                    [stripedRows]="true"
-                    styleClass="max-w-100vw"
-                    [lazy]="true"
-                    (onLazyLoad)="refreshDnsOverview($event)"
-                    [totalRecords]="dnsDaemonsTotalCount"
-                    [loading]="dnsServiceStatusLoading"
-                    [paginator]="true"
-                    [rows]="5"
-                    [rowsPerPageOptions]="[5, 10, 20]"
-                    [alwaysShowPaginator]="false"
-                >
-                    <ng-template #header>
-                        <tr>
-                            <th>Host</th>
-                            <th>Version</th>
-                            <th>Daemon</th>
-                            <th>Status</th>
-                            <th>Zone Fetch Status</th>
-                            <th
-                                pTooltip="Zone config is a zone specification in the BIND9 view.
-                            If the zone appears in several views, this count is increased
-                            for each occurrence of that zone.
-                            "
-                                class="cursor-pointer"
-                            >
-                                Zone Configs Count
-                            </th>
-                            <th
-                                pTooltip="The number of distinct zone (zone names) in all views.
-                            If the zone appears in several views, it is counted only once.
-                            "
-                                class="cursor-pointer"
-                            >
-                                Distinct Zones
-                            </th>
-                            <th
-                                pTooltip="The number of distinct builtin zones in all views.
-                            Builtin zones are special types of zones generated by BIND9. Their
-                            number is interesting to see how many zones are generated comparing
-                            to the number of configured zones.
-                            "
-                                class="cursor-pointer"
-                            >
-                                Builtin Zones
-                            </th>
-                            <th>Uptime</th>
-                        </tr>
-                    </ng-template>
-                    <ng-template #body let-d>
-                        <tr>
-                            <td>
-                                <app-entity-link
-                                    [showEntityName]="false"
-                                    entity="machine"
-                                    [attrs]="d"
-                                ></app-entity-link>
-                            </td>
-                            <td><app-version-status [daemon]="d"></app-version-status></td>
-                            <td>
-                                <app-entity-link [showEntityName]="false" entity="daemon" [attrs]="d"></app-entity-link>
-                            </td>
-                            <td>
-                                <i
-                                    *ngIf="d"
-                                    pTooltip="{{ daemonStatusIconTooltip(d) }}"
-                                    class="{{ daemonStatusIconClass(d) }} text-2xl"
-                                ></i>
-                            </td>
-                            <td>
-                                <a *ngIf="d.id" routerLink="/dns/zones" [queryParams]="{ daemonId: d.id }">
-                                    {{ !zoneInventoryStateMap.get(d.id) ? 'n/a' : '' }}
-                                    <p-tag
-                                        *ngIf="zoneInventoryStateMap.get(d.id)"
-                                        value="{{
-                                            zoneInventoryStateMap.get(d.id).status === 'erred'
-                                                ? 'Error'
-                                                : (zoneInventoryStateMap.get(d.id).status | titlecase)
-                                        }} "
-                                        [severity]="getSeverity(zoneInventoryStateMap.get(d.id).status)"
-                                        [pTooltip]="getTooltip(zoneInventoryStateMap.get(d.id).status)"
-                                    />
-                                </a>
-                            </td>
-                            <td>
-                                <ng-template #zoneCountCell let-daemonId="daemonId" let-propertyName="propertyName">
-                                    <ng-container *ngIf="zoneInventoryStateMap.get(daemonId)">
-                                        <a routerLink="/dns/zones" [queryParams]="{ daemonId: daemonId }">{{
-                                            zoneInventoryStateMap.get(daemonId)[propertyName] ?? 0
-                                        }}</a>
-                                    </ng-container>
-                                    <ng-container *ngIf="!zoneInventoryStateMap.get(daemonId)"> n/a </ng-container>
-                                </ng-template>
-                                <ng-container
-                                    *ngTemplateOutlet="
-                                        zoneCountCell;
-                                        context: { daemonId: d.id, propertyName: 'zoneConfigsCount' }
-                                    "
-                                >
-                                </ng-container>
-                            </td>
-                            <td>
-                                <ng-container
-                                    *ngTemplateOutlet="
-                                        zoneCountCell;
-                                        context: { daemonId: d.id, propertyName: 'distinctZonesCount' }
-                                    "
-                                >
-                                </ng-container>
-                            </td>
-                            <td>
-                                <ng-container
-                                    *ngTemplateOutlet="
-                                        zoneCountCell;
-                                        context: { daemonId: d.id, propertyName: 'builtinZonesCount' }
-                                    "
-                                >
-                                </ng-container>
-                            </td>
-                            <td>{{ showDuration(d)?.uptime ?? 0 }}</td>
-                        </tr>
-                    </ng-template>
-                </p-table>
-            </p-panel>
-        </div>
-    </article>
-
-    <aside>
-        <p-panel class="dashboard-events-panel" iconPos="start">
-            <ng-template #header>
-                <div class="flex align-items-center">
-                    <span class="mr-4 text-3xl font-semibold">Events</span>
-                    <p-button
-                        icon="pi pi-refresh"
-                        id="refresh-events-button"
-                        (click)="eventsTable.refreshEvents(null)"
-                    ></p-button>
-                </div>
-            </ng-template>
-
-            <div>
-                <app-events-panel [showRowsPerPage]="false" #eventsTable></app-events-panel>
-            </div>
-        </p-panel>
-    </aside>
-</section>
+        </aside>
+    </section>
+}

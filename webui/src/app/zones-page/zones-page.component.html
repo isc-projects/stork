@@ -5,7 +5,7 @@
 </app-breadcrumbs>
 
 <ng-template #emptyMessage let-colspan let-empty="empty">
-    <ng-container *ngIf="fetchInProgress()">
+    @if (fetchInProgress()) {
         <tr>
             <td [attr.colspan]="colspan">
                 <p-message
@@ -28,42 +28,47 @@
                 </p-progressBar>
             </td>
         </tr>
-        <tr *ngFor="let i of Array(3)">
-            <td *ngFor="let j of Array(colspan)">
-                <p-skeleton />
+        @for (i of Array(3); track $index) {
+            <tr>
+                @for (j of Array(colspan); track $index) {
+                    <td>
+                        <p-skeleton />
+                    </td>
+                }
+            </tr>
+        }
+    } @else {
+        <tr>
+            <td [attr.colspan]="colspan">
+                @if (!wasZoneFetchSent()) {
+                    <p-message
+                        styleClass="mb-2 mx-0 md:mx-8"
+                        severity="info"
+                        [text]="
+                            'Zones were not fetched yet from DNS servers. You can now trigger zones fetch operation. ' +
+                            'This operation instructs the Stork server to fetch the zones from all DNS servers' +
+                            ' and update them in the Stork database. It may take some time, depending on the number of the ' +
+                            'DNS servers and zones. If you decide to trigger the zones fetch ' +
+                            'operation, you can use the button below.'
+                        "
+                    ></p-message>
+                    <p-button
+                        styleClass="mx-0 md:mx-8"
+                        label="Fetch Zones"
+                        icon="pi pi-download"
+                        (onClick)="sendPutZonesFetch(true)"
+                        [disabled]="fetchInProgress() || putZonesFetchLocked()"
+                        appAccessEntity="zones"
+                        appAccessType="update"
+                    />
+                } @else {
+                    <p>
+                        {{ empty }}
+                    </p>
+                }
             </td>
         </tr>
-    </ng-container>
-
-    <tr *ngIf="!fetchInProgress()">
-        <td [attr.colspan]="colspan">
-            <ng-container *ngIf="!wasZoneFetchSent()">
-                <p-message
-                    styleClass="mb-2 mx-0 md:mx-8"
-                    severity="info"
-                    [text]="
-                        'Zones were not fetched yet from DNS servers. You can now trigger zones fetch operation. ' +
-                        'This operation instructs the Stork server to fetch the zones from all DNS servers' +
-                        ' and update them in the Stork database. It may take some time, depending on the number of the ' +
-                        'DNS servers and zones. If you decide to trigger the zones fetch ' +
-                        'operation, you can use the button below.'
-                    "
-                ></p-message>
-                <p-button
-                    styleClass="mx-0 md:mx-8"
-                    label="Fetch Zones"
-                    icon="pi pi-download"
-                    (onClick)="sendPutZonesFetch(true)"
-                    [disabled]="fetchInProgress() || putZonesFetchLocked()"
-                    appAccessEntity="zones"
-                    appAccessType="update"
-                />
-            </ng-container>
-            <p *ngIf="wasZoneFetchSent()">
-                {{ empty }}
-            </p>
-        </td>
-    </tr>
+    }
 </ng-template>
 
 <ng-template #clearFilterBtn let-value let-filterConstraint="filterConstraint">
@@ -91,16 +96,16 @@
             <a routerLink="/dns/zones" [queryParams]="{ zoneType: (localZone.zoneType | zoneTypeAlias) }">{{
                 localZone.zoneType
             }}</a>
-            <p-tag *ngIf="localZone.rpz" value="RPZ" severity="success" />
+            @if (localZone.rpz) {
+                <p-tag value="RPZ" severity="success" />
+            }
         </div>
     </td>
     <td [class.app-error]="serialInfo.hasMismatch">
-        {{ localZone.serial
-        }}<i
-            *ngIf="serialInfo.hasMismatch"
-            class="pi pi-exclamation-triangle ml-2"
-            pTooltip="Serial numbers mismatch across servers"
-        ></i>
+        {{ localZone.serial }}
+        @if (serialInfo.hasMismatch) {
+            <i class="pi pi-exclamation-triangle ml-2" pTooltip="Serial numbers mismatch across servers"></i>
+        }
     </td>
     <td>
         <a routerLink="/dns/zones" [queryParams]="{ zoneClass: localZone.zoneClass }">{{ localZone.zoneClass }}</a>
@@ -109,7 +114,7 @@
 </ng-template>
 
 <ng-template #zoneSerialInfo let-zoneSerialInfo>
-    <ng-container *ngIf="zoneSerialInfo.hasMismatch">
+    @if (zoneSerialInfo.hasMismatch) {
         <p-tag
             severity="danger"
             [value]="zoneSerialInfo.serial"
@@ -117,10 +122,9 @@
             styleClass="text-base serial-mismatch font-normal"
             icon="pi pi-exclamation-triangle"
         />
-    </ng-container>
-    <ng-container *ngIf="!zoneSerialInfo.hasMismatch">
+    } @else {
         {{ zoneSerialInfo.serial }}
-    </ng-container>
+    }
 </ng-template>
 
 <p-dialog header="Zones Fetch Status" [modal]="true" [(visible)]="fetchStatusVisible" styleClass="max-w-screen">
@@ -194,11 +198,9 @@ to the number of configured zones.
                     />
                 </td>
                 <td>
-                    <p-message
-                        *ngIf="state.error"
-                        severity="error"
-                        [text]="getStateErrorMessage(state.error)"
-                    ></p-message>
+                    @if (state.error) {
+                        <p-message severity="error" [text]="getStateErrorMessage(state.error)"></p-message>
+                    }
                 </td>
                 <td>{{ state.createdAt | localtime | placeholder: 'never' }}</td>
             </tr>
@@ -606,7 +608,9 @@ to the number of configured zones.
                     <td>
                         <div class="flex flex-wrap justify-center align-items-center gap-2">
                             <span>{{ getUniqueZoneTypes(zone).join(', ') }}</span>
-                            <p-tag *ngIf="includesRPZ(zone)" value="RPZ" severity="success" />
+                            @if (includesRPZ(zone)) {
+                                <p-tag value="RPZ" severity="success" />
+                            }
                         </div>
                     </td>
                     <td>
@@ -632,7 +636,9 @@ to the number of configured zones.
                             >
                                 <ng-template #header let-columns>
                                     <tr>
-                                        <th *ngFor="let col of columns">{{ col }}</th>
+                                        @for (col of columns; track col) {
+                                            <th>{{ col }}</th>
+                                        }
                                     </tr>
                                 </ng-template>
                                 <ng-template #body let-localZone>
@@ -715,7 +721,9 @@ to the number of configured zones.
                     >
                         <ng-template #header let-columns>
                             <tr>
-                                <th *ngFor="let col of columns">{{ col }}</th>
+                                @for (col of columns; track col) {
+                                    <th>{{ col }}</th>
+                                }
                                 <th>Fetch Status</th>
                                 <th>Show Zone</th>
                             </tr>
@@ -729,16 +737,21 @@ to the number of configured zones.
                                     "
                                 ></ng-container>
                                 <td>
-                                    <p-tag
-                                        *ngIf="zoneInventoryStateMap.get(localZone.daemonId)"
-                                        value="{{
-                                            zoneInventoryStateMap.get(localZone.daemonId).status === 'erred'
-                                                ? 'Error'
-                                                : (zoneInventoryStateMap.get(localZone.daemonId).status | titlecase)
-                                        }} "
-                                        [severity]="getSeverity(zoneInventoryStateMap.get(localZone.daemonId).status)"
-                                        [pTooltip]="getTooltip(zoneInventoryStateMap.get(localZone.daemonId).status)"
-                                    />
+                                    @if (zoneInventoryStateMap.get(localZone.daemonId)) {
+                                        <p-tag
+                                            value="{{
+                                                zoneInventoryStateMap.get(localZone.daemonId).status === 'erred'
+                                                    ? 'Error'
+                                                    : (zoneInventoryStateMap.get(localZone.daemonId).status | titlecase)
+                                            }} "
+                                            [severity]="
+                                                getSeverity(zoneInventoryStateMap.get(localZone.daemonId).status)
+                                            "
+                                            [pTooltip]="
+                                                getTooltip(zoneInventoryStateMap.get(localZone.daemonId).status)
+                                            "
+                                        />
+                                    }
                                 </td>
                                 <td>
                                     <p-button
@@ -755,77 +768,80 @@ to the number of configured zones.
                                         "
                                     />
                                     <!-- Dialog displaying a zone viewer for a selected view and daemon -->
-                                    <p-dialog
-                                        *ngIf="!localZone.disableShowZone"
-                                        [modal]="true"
-                                        [visible]="
-                                            zoneViewerDialogVisible()[
-                                                `${localZone.daemonId}:${localZone.view}:${zone.id}`
-                                            ]
-                                        "
-                                        [maximizable]="true"
-                                        [breakpoints]="{ '1199px': '75vw', '575px': '90vw' }"
-                                        styleClass="h-screen"
-                                        [draggable]="false"
-                                        [resizable]="false"
-                                        (visibleChange)="
-                                            setZoneViewerDialogVisible(
-                                                localZone.daemonId,
-                                                localZone.view,
-                                                zone.id,
-                                                $event
-                                            )
-                                        "
-                                    >
-                                        <ng-template #header>
-                                            <div class="inline-flex align-items-center justify-content-center gap-2">
-                                                <span>
-                                                    <span class="font-bold text-2xl">{{ zone.name | unroot }}</span>
-                                                    <span class="text-lg">
-                                                        for
-                                                        <app-entity-link
-                                                            [showEntityName]="false"
-                                                            entity="daemon"
-                                                            [attrs]="localZone"
-                                                        ></app-entity-link
-                                                        >, view:
-                                                        <a
-                                                            routerLink="/dns/zones"
-                                                            [queryParams]="{ text: localZone.view }"
-                                                            (click)="
-                                                                setZoneViewerDialogVisible(
-                                                                    localZone.daemonId,
-                                                                    localZone.view,
-                                                                    zone.id,
-                                                                    false
-                                                                )
-                                                            "
-                                                            >{{ localZone.view }}</a
-                                                        >
+                                    @if (!localZone.disableShowZone) {
+                                        <p-dialog
+                                            [modal]="true"
+                                            [visible]="
+                                                zoneViewerDialogVisible()[
+                                                    `${localZone.daemonId}:${localZone.view}:${zone.id}`
+                                                ]
+                                            "
+                                            [maximizable]="true"
+                                            [breakpoints]="{ '1199px': '75vw', '575px': '90vw' }"
+                                            styleClass="h-screen"
+                                            [draggable]="false"
+                                            [resizable]="false"
+                                            (visibleChange)="
+                                                setZoneViewerDialogVisible(
+                                                    localZone.daemonId,
+                                                    localZone.view,
+                                                    zone.id,
+                                                    $event
+                                                )
+                                            "
+                                        >
+                                            <ng-template #header>
+                                                <div
+                                                    class="inline-flex align-items-center justify-content-center gap-2"
+                                                >
+                                                    <span>
+                                                        <span class="font-bold text-2xl">{{ zone.name | unroot }}</span>
+                                                        <span class="text-lg">
+                                                            for
+                                                            <app-entity-link
+                                                                [showEntityName]="false"
+                                                                entity="daemon"
+                                                                [attrs]="localZone"
+                                                            ></app-entity-link
+                                                            >, view:
+                                                            <a
+                                                                routerLink="/dns/zones"
+                                                                [queryParams]="{ text: localZone.view }"
+                                                                (click)="
+                                                                    setZoneViewerDialogVisible(
+                                                                        localZone.daemonId,
+                                                                        localZone.view,
+                                                                        zone.id,
+                                                                        false
+                                                                    )
+                                                                "
+                                                                >{{ localZone.view }}</a
+                                                            >
+                                                        </span>
                                                     </span>
-                                                </span>
-                                            </div>
-                                        </ng-template>
-                                        @if (
-                                            zoneViewerDialogVisible()[
-                                                `${localZone.daemonId}:${localZone.view}:${zone.id}`
-                                            ]
-                                        ) {
-                                            <app-zone-viewer
-                                                [daemonId]="localZone.daemonId"
-                                                [viewName]="localZone.view"
-                                                [zoneId]="zone.id"
-                                                (viewerError)="
-                                                    setZoneViewerDialogVisible(
-                                                        localZone.daemonId,
-                                                        localZone.view,
-                                                        zone.id,
-                                                        false
-                                                    )
-                                                "
-                                            ></app-zone-viewer>
-                                        }
-                                    </p-dialog>
+                                                </div>
+                                            </ng-template>
+                                            @if (
+                                                zoneViewerDialogVisible()[
+                                                    `${localZone.daemonId}:${localZone.view}:${zone.id}`
+                                                ]
+                                            ) {
+                                                <app-zone-viewer
+                                                    [daemonId]="localZone.daemonId"
+                                                    [viewName]="localZone.view"
+                                                    [zoneId]="zone.id"
+                                                    (viewerError)="
+                                                        setZoneViewerDialogVisible(
+                                                            localZone.daemonId,
+                                                            localZone.view,
+                                                            zone.id,
+                                                            false
+                                                        )
+                                                    "
+                                                ></app-zone-viewer>
+                                            }
+                                        </p-dialog>
+                                    }
                                 </td>
                             </tr>
                         </ng-template>
