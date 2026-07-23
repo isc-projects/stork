@@ -49,7 +49,7 @@ file CHROME_LINK => [NPX, NODE_MODULES, playwright_browsers_dir] do
             # system dependencies. It may occur when running on the system that
             # is not officially supported by Playwright and, for example,
             # misses apt-get. In some cases dependencies may be installed manually in OS specific way.
-            # We ignore this error and try first to install without dependencies and if that fails too, 
+            # We ignore this error and try first to install without dependencies and if that fails too,
             # we fallback to detection of system-wide chromium.
             puts stdout
             puts stderr
@@ -1080,7 +1080,7 @@ namespace :audit do
     desc 'Check the backend security issues'
     task :backend => [GOVULNCHECK] + go_codebase do
         Dir.chdir("backend") do
-            show_opts = ["version"]
+            show_opts = ["version", "verbose"]
             if ENV["CI"] != "true"
                 show_opts.append "color"
             end
