@@ -95,7 +95,7 @@
                         <div>
                             @if (nonFormAuth()) {
                                 <a
-                                    href="oidc/login?returnUrl={{ returnUrl }}"
+                                    href="/oidc/login?returnUrl={{ returnUrl }}"
                                     pButton
                                     class="w-full no-underline"
                                     [loading]="nonFormAuthSubmitted()"
