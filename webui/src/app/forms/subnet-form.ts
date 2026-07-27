@@ -35,13 +35,15 @@ export class DaemonGroup {
             this.label = 'empty'
         } else if (daemons.length === 1) {
             const daemon = daemons[0]
-            if (!!daemon.serverTag) {
-                this.label = `${daemon.serverTag} (${daemon.label})`
+            if (daemon.backends?.some((b) => b.dataTypes?.includes('Config Backend'))) {
+                // Daemon with the config backend hook loaded.
+                this.label = `${daemon.serverTag || 'all'} (1 daemon)`
             } else {
-                this.label = daemon.label as string
+                // It is a single non-CB daemon.
+                this.label = daemons[0].label!
             }
         } else {
-            this.label = `${daemons[0].serverTag} (${daemons[0].label}) + ${daemons.length - 1} more`
+            this.label = `${daemons[0].serverTag || 'all'} (${daemons.length} daemons)`
         }
     }
 }

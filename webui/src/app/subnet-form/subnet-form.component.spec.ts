@@ -658,9 +658,9 @@ describe('SubnetFormComponent', () => {
         fixture.detectChanges()
 
         expect(component.state.allDaemonGroups.length).toBe(2)
-        expect(component.state.allDaemonGroups[0].label).toBe('tag-a (zeta) + 1 more')
+        expect(component.state.allDaemonGroups[0].label).toBe('tag-a (2 daemons)')
         expect(component.state.allDaemonGroups[0].daemons.map((daemon) => daemon.id)).toEqual([10, 11])
-        expect(component.state.allDaemonGroups[1].label).toBe('tag-b (beta)')
+        expect(component.state.allDaemonGroups[1].label).toBe('tag-b (1 daemon)')
         expect(component.state.allDaemonGroups[1].daemons.map((daemon) => daemon.id)).toEqual([12])
     }))
 
