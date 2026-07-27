@@ -72,7 +72,7 @@ func (s *State) HasAnyStatus(statuses ...Status) bool {
 }
 
 // Checks if the state describes an outgoing zone transfer.
-func (s *State) IsXFROut() bool {
+func (s *State) IsOutgoingTransfer() bool {
 	return s.Client != ""
 }
 

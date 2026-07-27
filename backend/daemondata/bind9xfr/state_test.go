@@ -24,13 +24,13 @@ func TestStateHasAnyStatus(t *testing.T) {
 }
 
 // Test that the state correctly reports that it is an outgoing zone transfer.
-func TestStateIsXFROut(t *testing.T) {
+func TestStateIsOutgoingTransfer(t *testing.T) {
 	state := &State{Client: "127.0.0.1"}
-	require.True(t, state.IsXFROut())
+	require.True(t, state.IsOutgoingTransfer())
 }
 
 // Test that the state correctly reports that it is not an outgoing zone transfer.
-func TestStateIsNotXFROut(t *testing.T) {
+func TestStateIsNotOutgoingTransfer(t *testing.T) {
 	state := &State{Server: "127.0.0.1"}
-	require.False(t, state.IsXFROut())
+	require.False(t, state.IsOutgoingTransfer())
 }

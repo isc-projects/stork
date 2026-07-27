@@ -261,7 +261,7 @@ func (t *xfrTracker) feed(logLine string) {
 	}
 
 	switch {
-	case newState.HasAnyStatus(bind9xfr.StatusCompleted) || (newState.IsXFROut() && (newState.HasAnyStatus(bind9xfr.StatusFailed, bind9xfr.StatusUpToDate))):
+	case newState.HasAnyStatus(bind9xfr.StatusCompleted) || (newState.IsOutgoingTransfer() && (newState.HasAnyStatus(bind9xfr.StatusFailed, bind9xfr.StatusUpToDate))):
 		// The zone transfer is now completed or an outgoing zone transfer has failed or is up to date.
 		// In both cases we can safely move the transfer to the closed transfers list. For the
 		// outgoing zone transfers we don't expect any updates. Statistics is only reported after the
