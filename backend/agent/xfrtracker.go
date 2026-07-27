@@ -740,7 +740,6 @@ func parseXFR(iterator *storkutil.PeekingIterator[string], parsedTime time.Time,
 		iterator.Next()
 	default:
 		s.Status = bind9xfr.StatusMessage
-		s.Message = strings.Join(iterator.PeekSubsequent(), " ")
 	}
 }
 

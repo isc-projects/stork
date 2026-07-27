@@ -596,9 +596,29 @@ func TestXfrTrackerParseSettingUpZoneTransferFailed(t *testing.T) {
 	require.Equal(t, "setting up zone transfer: failed", xfrState.Message)
 }
 
-// Test parsing the setting up zone transfer aborted message.
-func TestXfrTrackerParseSettingUpZoneTransferAborted(t *testing.T) {
-	xfrState := parseTransferLogLine("16-Apr-2026 12:09:11.650 client @0x7ffffa436000 127.0.0.1#55256 (bind.example.org): transfer of 'bind.example.org/IN': aborted")
+// Test parsing the outgoing zone transfer message when the transfer was aborted.
+func TestXfrTrackerParseOutgoingZoneTransferAborted(t *testing.T) {
+	xfrState := parseTransferLogLine("16-Apr-2026 12:09:11.650 client @0x7ffffa436000 127.0.0.1#55256 (bind.example.org): transfer of 'bind.example.org/IN': AXFR aborted")
+	require.NotNil(t, xfrState)
+	require.Equal(t, bind9xfr.StatusFailed, xfrState.Status)
+	require.Equal(t, "_default", xfrState.ViewName)
+	require.Equal(t, "bind.example.org", xfrState.ZoneName)
+	require.Zero(t, xfrState.Serial)
+	require.Equal(t, "127.0.0.1", xfrState.Client)
+	require.Empty(t, xfrState.Server)
+	require.Zero(t, xfrState.MessagesCount)
+	require.Zero(t, xfrState.RecordsCount)
+	require.Zero(t, xfrState.BytesCount)
+	require.Zero(t, xfrState.Duration)
+	require.Zero(t, xfrState.StartTime)
+	require.NotZero(t, xfrState.CompletionTime)
+	require.Equal(t, bind9xfr.TimeFormatBind9, xfrState.TimeFormat)
+	require.Equal(t, "AXFR aborted", xfrState.Message)
+}
+
+// Test parsing the outgoing zone transfer message when other error was encountered.
+func TestXfrTrackerOutgoingZoneTransferFailed(t *testing.T) {
+	xfrState := parseTransferLogLine("16-Apr-2026 12:09:11.650 client @0x7ffffa436000 127.0.0.1#55256 (bind.example.org): transfer of 'bind.example.org/IN': IXFR unexpected error")
 	require.NotNil(t, xfrState)
 	require.Equal(t, bind9xfr.StatusMessage, xfrState.Status)
 	require.Equal(t, "_default", xfrState.ViewName)
@@ -613,7 +633,7 @@ func TestXfrTrackerParseSettingUpZoneTransferAborted(t *testing.T) {
 	require.Zero(t, xfrState.StartTime)
 	require.Zero(t, xfrState.CompletionTime)
 	require.Equal(t, bind9xfr.TimeFormatBind9, xfrState.TimeFormat)
-	require.Equal(t, "aborted", xfrState.Message)
+	require.Equal(t, "IXFR unexpected error", xfrState.Message)
 }
 
 // Test parsing the systemd log line containing the AXFR started message.
