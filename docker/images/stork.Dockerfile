@@ -107,7 +107,7 @@ WORKDIR /app/rakelib
 COPY rakelib/10_codebase.rake ./
 WORKDIR /app/backend
 COPY backend/go.mod backend/go.sum ./
-RUN rake prepare:backend_deps
+RUN rake prepare:backend_deps && go mod vendor && rm -rf $(go env GOMODCACHE) $(go env GOPATH)
 
 # Frontend dependencies installation
 FROM prepare AS nodemodules-prepare
@@ -134,9 +134,8 @@ WORKDIR /app/rakelib
 COPY rakelib/10_codebase.rake rakelib/20_build.rake rakelib/30_dev.rake rakelib/40_dist.rake ./
 
 FROM codebase AS codebase-backend
-WORKDIR /app/tools/golang
-COPY --from=gopath-prepare /app/tools/golang .
 WORKDIR /app/backend
+COPY --from=gopath-prepare /app/backend/vendor .
 COPY backend .
 
 FROM codebase-backend AS codebase-hooks
@@ -149,9 +148,8 @@ WORKDIR /app/backend
 FROM codebase AS codebase-webui
 WORKDIR /app/grafana
 COPY grafana .
-WORKDIR /app/tools/golang/go
-COPY --from=gopath-prepare /app/tools/golang/go .
 WORKDIR /app/backend
+COPY --from=gopath-prepare /app/backend/vendor .
 COPY backend/go.mod ./
 COPY backend/go.sum ./
 COPY backend/version.go ./
