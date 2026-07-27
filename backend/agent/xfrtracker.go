@@ -639,6 +639,12 @@ func parseTransfer(iterator *storkutil.PeekingIterator[string], parsedTime time.
 	}
 }
 
+// Parses the "Transfer status" statement indicating the result of the
+// zone transfer. If the status is "success" it returns without modifying
+// the state - the parser will later set the status to completed when the
+// statistics are received. If the status is "up to date" it marks the
+// zone transfer as up-to-date and records the completion time. For all
+// other cases it sets the status to failed.
 func parseTransferStatus(iterator *storkutil.PeekingIterator[string], parsedTime time.Time, s *bind9xfr.State) {
 	subsequent := iterator.PeekSubsequent()
 	token, ok := iterator.Peek()
