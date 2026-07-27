@@ -1314,18 +1314,10 @@ func (module *ConfigModule) ApplySubnetUpdate(ctx context.Context, subnet *dbmod
 		// Check if any of the daemons in the existing association are still
 		// associated with the subnet. For subnet_cmds daemons, the passed
 		// slice has always one element.
-		areSomeDaemonsStillAssociated := false
 		for _, localSubnet := range localSubnets {
 			if _, found := currentAssociationByDaemonID[localSubnet.DaemonID]; found {
-				areSomeDaemonsStillAssociated = true
-				break
+				return nil
 			}
-		}
-		if areSomeDaemonsStillAssociated {
-			// The subnet is still in use by some daemons. Do not remove it.
-			// For cb_cmds daemons, the server tags are altered by update
-			// commands.
-			return nil
 		}
 
 		// The subnet is no longer associated with any of the daemons.
