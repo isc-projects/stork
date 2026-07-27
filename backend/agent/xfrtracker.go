@@ -231,7 +231,9 @@ func (t *xfrTracker) feed(logLine string) {
 		}
 		currState = st
 		// Preserve the start time between the current and the new state.
-		currState.Derive(newState, "StartTime")
+		if newState.StartTime.IsZero() && !currState.StartTime.IsZero() {
+			newState.StartTime = currState.StartTime
+		}
 	}
 
 	effectiveState := newState
@@ -239,7 +241,21 @@ func (t *xfrTracker) feed(logLine string) {
 		// Handle the case when the zone transfer was already marked failed or up to date but the
 		// statistics information arrived later. In this case, we want to only copy the statistics
 		// from the new state and leave the rest of the current state unchanged.
-		newState.Derive(currState, "RecordsCount", "BytesCount", "Duration", "MessagesCount", "Serial")
+		if currState.RecordsCount == 0 && newState.RecordsCount != 0 {
+			currState.RecordsCount = newState.RecordsCount
+		}
+		if currState.BytesCount == 0 && newState.BytesCount != 0 {
+			currState.BytesCount = newState.BytesCount
+		}
+		if currState.Duration == 0 && newState.Duration != 0 {
+			currState.Duration = newState.Duration
+		}
+		if currState.MessagesCount == 0 && newState.MessagesCount != 0 {
+			currState.MessagesCount = newState.MessagesCount
+		}
+		if currState.Serial == 0 && newState.Serial != 0 {
+			currState.Serial = newState.Serial
+		}
 		// Use the existing state with the updated statistics.
 		effectiveState = currState
 	}

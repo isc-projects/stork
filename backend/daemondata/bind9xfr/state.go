@@ -2,7 +2,6 @@ package bind9xfr
 
 import (
 	"fmt"
-	"reflect"
 	"slices"
 	"time"
 )
@@ -75,28 +74,6 @@ func (s *State) HasAnyStatus(statuses ...Status) bool {
 // Checks if the state describes an outgoing zone transfer.
 func (s *State) IsXFROut() bool {
 	return s.Client != ""
-}
-
-// Derives selected fields from the source state to the destination state.
-// The field value is copied to the destination of the field is not set
-// in the destination but is set in the source. This function is useful when
-// there is an existing state and the new state should inherit selected fields
-// from it.
-func (s *State) Derive(newState *State, fieldNames ...string) {
-	if s == nil || newState == nil {
-		return
-	}
-	source := reflect.ValueOf(s).Elem()
-	dest := reflect.ValueOf(newState).Elem()
-	for field, sourceValue := range source.Fields() {
-		if !slices.Contains(fieldNames, field.Name) {
-			continue
-		}
-		destValue := dest.FieldByName(field.Name)
-		if !sourceValue.IsZero() && destValue.IsZero() {
-			destValue.Set(sourceValue)
-		}
-	}
 }
 
 // The key used to index the started zone transfers in the LRU cache.
