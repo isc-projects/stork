@@ -128,14 +128,15 @@ namespace :utils do
 
         # The dictionary of the relations between the stages. The key is the
         # stage name (spefied after the AS keyword) and the value is the name
-        # of the parent stage (specified after the FROM keyword).
+        # of the parent stage (specified after the FROM keyword) and its
+        # platform.
         # The dictionary is used to find the most precedent base image.
         stage_parents = { }
         # The dictionary of the arguments (ARG) and environment variables (ENV)
         # specified in the Dockerfile. It is used to substitute the variables.
         arguments_and_envs = { }
         # The list of the environment variables that are not substituted.
-        excluded_envs = ["PATH", "HOME", "USER", "SHELL", "TERM", "PWD"]
+        excluded_envs = ["PATH", "HOME", "USER", "SHELL", "TERM", "PWD", "ARCH"]
         # The list of the detected packages. Each element is an array of the
         # following elements:
         #   - base image
@@ -154,14 +155,29 @@ namespace :utils do
                 # Strip the line.
                 line_content = line_content.strip
 
+                # Substitute the environment variables.
+                line_content_substituted = line_content.gsub(/\$\{([a-zA-Z0-9_]+)\}/) do |match|
+                    # TODO: It may be useful to support overriding the values
+                    # with the environment variables.
+                    if !arguments_and_envs[$1].nil?
+                        next arguments_and_envs[$1]
+                    elsif excluded_envs.include? $1
+                        next ENV[$1]
+                    else
+                        warn "The argument or environment variable #{$1} is not defined"
+                        next line_content
+                    end
+                end
+
                 # Skip empty lines.
                 if line_content.empty?
                     next
                 end
 
                 # Check if the line is a beginning of a new stage.
-                if line_content =~ /^FROM\s+(?:--platform=.*?\s+)?(.*)$/i
-                    base_image = $1
+                if line_content_substituted =~ /^FROM\s+(?:--platform=(.*?)\s+)?(.*)$/i
+                    platform = $1
+                    base_image = $2
                     # Check if it is a stage.
                     if base_image =~ /(.*)\s+AS\s+(.*)/i
                         # It is a stage. Split the parent image and the stage
@@ -169,7 +185,7 @@ namespace :utils do
                         # parent. Set the base image to the stage name.
                         parent = $1
                         child = $2
-                        stage_parents[child] = parent
+                        stage_parents[child] = [parent, platform]
                         base_image = child
                     end
                 # Check if the line is a declaration of an argument or an
@@ -197,18 +213,7 @@ namespace :utils do
                         next
                     end
 
-                    # Substitute the environment variables.
-                    line_content = line_content.gsub(/\$\{([a-zA-Z0-9_]+)\}/) do |match|
-                        # TODO: It may be useful to support overriding the values
-                        # with the environment variables.
-                        if !arguments_and_envs[$1].nil?
-                            next arguments_and_envs[$1]
-                        elsif excluded_envs.include? $1
-                            next ENV[$1]
-                        else
-                            fail "The argument or environment variable #{$1} is not defined"
-                        end
-                    end
+                    line_content = line_content_substituted
 
                     # Check if line is last. The line is last if it doesn't end
                     # with the breaking line character (\)
@@ -281,7 +286,7 @@ namespace :utils do
                     # Search for the most precedent base image.
                     parent_image = base_image
                     while !stage_parents[parent_image].nil?
-                        parent_image = stage_parents[parent_image]
+                        parent_image, parent_platform = stage_parents[parent_image]
                     end
 
                     # Start a container.
@@ -299,7 +304,12 @@ namespace :utils do
                     # Remove the container if it exists.
                     sh DOCKER, "rm", "-f", container_name
                     # Create and run the container.
-                    sh DOCKER, "run", "-d", "--name", container_name, parent_image, "sleep", "infinity"
+                    opts = []
+                    if !parent_platform.nil?
+                        opts.append "--platform", parent_platform
+                    end
+
+                    sh DOCKER, "run", *opts, "-d", "--entrypoint", "/bin/sleep", "--name", container_name, parent_image, "infinity"
                     # Update the package manager database.
                     package_update_command = package_managers[package_manager_key][0]
                     sh DOCKER, "exec", container_name, *package_update_command
