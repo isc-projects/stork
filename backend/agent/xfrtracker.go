@@ -241,22 +241,8 @@ func (t *xfrTracker) feed(logLine string) {
 		// Handle the case when the zone transfer was already marked failed or up to date but the
 		// statistics information arrived later. In this case, we want to only copy the statistics
 		// from the new state and leave the rest of the current state unchanged.
-		if currState.RecordsCount == 0 && newState.RecordsCount != 0 {
-			currState.RecordsCount = newState.RecordsCount
-		}
-		if currState.BytesCount == 0 && newState.BytesCount != 0 {
-			currState.BytesCount = newState.BytesCount
-		}
-		if currState.Duration == 0 && newState.Duration != 0 {
-			currState.Duration = newState.Duration
-		}
-		if currState.MessagesCount == 0 && newState.MessagesCount != 0 {
-			currState.MessagesCount = newState.MessagesCount
-		}
-		if currState.Serial == 0 && newState.Serial != 0 {
-			currState.Serial = newState.Serial
-		}
 		// Use the existing state with the updated statistics.
+		deriveTransferStats(newState, currState)
 		effectiveState = currState
 	}
 
@@ -318,6 +304,27 @@ func (t *xfrTracker) feed(logLine string) {
 		}
 	}
 	t.mutex.Unlock()
+}
+
+// Conditionally copies zone transfer statistics from the source state
+// to the target state. This function is called internally by the feed
+// function.
+func deriveTransferStats(source, target *bind9xfr.State) {
+	if target.RecordsCount == 0 && source.RecordsCount != 0 {
+		target.RecordsCount = source.RecordsCount
+	}
+	if target.BytesCount == 0 && source.BytesCount != 0 {
+		target.BytesCount = source.BytesCount
+	}
+	if target.Duration == 0 && source.Duration != 0 {
+		target.Duration = source.Duration
+	}
+	if target.MessagesCount == 0 && source.MessagesCount != 0 {
+		target.MessagesCount = source.MessagesCount
+	}
+	if target.Serial == nil && source.Serial != nil {
+		target.Serial = source.Serial
+	}
 }
 
 // Returns the list of open zone transfers (i.e., zone transfers for which we still expect updates).
