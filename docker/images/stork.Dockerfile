@@ -16,6 +16,13 @@ ARG KEA_PRIOR_2_7_5="false"
 ARG KEA_PRIOR_2_7_7="false"
 ARG BIND9_VERSION=9.20
 
+# To update the Go version, go to https://go.dev/dl/, find suitable
+# version, also get the linux-amd64 and linux-arm64 SHA256 sums.
+# In the future, we could semi automate it using https://go.dev/dl/?mode=json
+ARG GO_VERSION=1.26.5
+ARG GO_SHA256_AMD64=5c2c3b16caefa1d968a94c1daca04a7ca301a496d9b086e17ad77bb81393f053
+ARG GO_SHA256_ARM64=fe4789e92b1f33358680864bbe8704289e7bb5fc207d80623c308935bd696d49
+
 ###################
 ### Base images ###
 ###################
@@ -36,7 +43,11 @@ ENV CI=true
 
 # Install system-wide dependencies
 FROM debian-base AS base
+ARG GO_VERSION
+ARG GO_SHA256_AMD64
+ARG GO_SHA256_ARM64
 ENV DEBIAN_FRONTEND=noninteractive
+ENV PATH="/root/go/bin:/usr/local/go/bin:${PATH}"
 RUN apt-get update \
         # System-wise dependencies
         && apt-get install \
@@ -55,7 +66,25 @@ RUN apt-get update \
                 openjdk-17-jre-headless=17.0.* \
                 git=1:2.39.* \
         && apt-get clean \
-        && rm -rf /var/lib/apt/lists/*
+        && rm -rf /var/lib/apt/lists/* \
+        # Install NodeJS. Minimal required version is 20. Minimal available
+        # version in Debian 12 is 18.
+        && ARCH="${TARGETARCH:-$(dpkg --print-architecture)}" \
+        && wget --no-verbose https://nodejs.org/dist/v22.23.1/node-v22.23.1-linux-${ARCH}.tar.xz \
+        && tar -xf node-v22.23.1-linux-${ARCH}.tar.xz -C /usr/local --strip-components=1 \
+        && rm node-v22.23.1-linux-${ARCH}.tar.xz \
+        && npm install -g npm@12.0.1 \
+        # Install Golang.
+        && case "${ARCH}" in \
+            amd64) GO_ARCH=amd64; GO_SHA256="${GO_SHA256_AMD64}" ;; \
+            arm64) GO_ARCH=arm64; GO_SHA256="${GO_SHA256_ARM64}" ;; \
+            *) echo "unsupported architecture: ${ARCH}" >&2; exit 1 ;; \
+        esac \
+        && wget --no-verbose "https://go.dev/dl/go${GO_VERSION}.linux-${GO_ARCH}.tar.gz" -O /tmp/go.tar.gz \
+        && echo "${GO_SHA256}  /tmp/go.tar.gz" | sha256sum -c - \
+        && rm -rf /usr/local/go \
+        && tar -C /usr/local -xzf /tmp/go.tar.gz \
+        && rm /tmp/go.tar.gz
 
 #############
 ### Stork ###
