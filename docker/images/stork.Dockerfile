@@ -22,6 +22,10 @@ ARG BIND9_VERSION=9.20
 ARG GO_VERSION=1.26.5
 ARG GO_SHA256_AMD64=5c2c3b16caefa1d968a94c1daca04a7ca301a496d9b086e17ad77bb81393f053
 ARG GO_SHA256_ARM64=fe4789e92b1f33358680864bbe8704289e7bb5fc207d80623c308935bd696d49
+ARG NODEJS_VERSION=22.23.1
+ARG NODEJS_SHA256_AMD64=9749e988f437343b7fa832c69ded82a312e41a03116d766797ac14f6f9eee578
+ARG NODEJS_SHA256_ARM64=0294e8b915ab75f92c7513d2fcb830ae06e10684e6c603e99a87dbf8835389c1
+ARG NPM_VERSION=12.0.1
 
 ###################
 ### Base images ###
@@ -46,6 +50,10 @@ FROM debian-base AS base
 ARG GO_VERSION
 ARG GO_SHA256_AMD64
 ARG GO_SHA256_ARM64
+ARG NODEJS_VERSION
+ARG NPM_VERSION
+ARG NODEJS_SHA256_AMD64
+ARG NODEJS_SHA256_ARM64
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PATH="/root/go/bin:/usr/local/go/bin:${PATH}"
 RUN apt-get update \
@@ -70,10 +78,16 @@ RUN apt-get update \
         # Install NodeJS. Minimal required version is 20. Minimal available
         # version in Debian 12 is 18.
         && ARCH="${TARGETARCH:-$(dpkg --print-architecture)}" \
-        && wget --no-verbose https://nodejs.org/dist/v22.23.1/node-v22.23.1-linux-${ARCH}.tar.xz \
-        && tar -xf node-v22.23.1-linux-${ARCH}.tar.xz -C /usr/local --strip-components=1 \
-        && rm node-v22.23.1-linux-${ARCH}.tar.xz \
-        && npm install -g npm@12.0.1 \
+        && case "${ARCH}" in \
+            amd64) NODEJS_SHA256="${NODEJS_SHA256_AMD64}" ;; \
+            arm64) NODEJS_SHA256="${NODEJS_SHA256_ARM64}" ;; \
+            *) echo "unsupported architecture: ${ARCH}" >&2; exit 1 ;; \
+        esac \
+        && wget --no-verbose https://nodejs.org/dist/v${NODEJS_VERSION}/node-v${NODEJS_VERSION}-linux-${ARCH}.tar.xz -O /tmp/nodejs.tar.xz \
+        && echo "${NODEJS_SHA256}  /tmp/nodejs.tar.xz" | sha256sum -c - \
+        && tar -xf /tmp/nodejs.tar.xz -C /usr/local --strip-components=1 \
+        && rm /tmp/nodejs.tar.xz \
+        && npm install -g npm@${NPM_VERSION} \
         # Install Golang.
         && case "${ARCH}" in \
             amd64) GO_ARCH=amd64; GO_SHA256="${GO_SHA256_AMD64}" ;; \
