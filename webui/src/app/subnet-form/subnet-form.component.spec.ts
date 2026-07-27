@@ -25,6 +25,12 @@ describe('SubnetFormComponent', () => {
     let messageService: MessageService
 
     // TODO: This structure doesn't implement CreateSubnetBeginResponse.
+    // The cannedResponseGroupedDaemons variable of the
+    // UpdateSubnetBeginResponse type is used to mock the return value of the
+    // createSubnetBegin function. This function should be an instance of
+    // CreateSubnetBeginResponse. The UpdateSubnetBeginResponse type is
+    // slightly different than CreateSubnetBeginResponse but it doesn't affect
+    // our current unit tests. However, it may be problematic in the future.
     let cannedResponseBeginSubnet4: UpdateSubnetBeginResponse = {
         id: 123,
         subnet: {
@@ -194,6 +200,12 @@ describe('SubnetFormComponent', () => {
     }
 
     // TODO: This structure doesn't implement CreateSubnetBeginResponse.
+    // The cannedResponseGroupedDaemons variable of the
+    // UpdateSubnetBeginResponse type is used to mock the return value of the
+    // createSubnetBegin function. This function should be an instance of
+    // CreateSubnetBeginResponse. The UpdateSubnetBeginResponse type is
+    // slightly different than CreateSubnetBeginResponse but it doesn't affect
+    // our current unit tests. However, it may be problematic in the future.
     let cannedResponseGroupedDaemons: UpdateSubnetBeginResponse = {
         id: 456,
         daemons: [
