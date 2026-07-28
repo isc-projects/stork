@@ -79,11 +79,11 @@ RUN apt-get update \
         # version in Debian 12 is 18.
         && ARCH="${TARGETARCH:-$(dpkg --print-architecture)}" \
         && case "${ARCH}" in \
-            amd64) NODEJS_SHA256="${NODEJS_SHA256_AMD64}" ;; \
-            arm64) NODEJS_SHA256="${NODEJS_SHA256_ARM64}" ;; \
+            amd64) NODE_ARCH=x64; NODEJS_SHA256="${NODEJS_SHA256_AMD64}" ;; \
+            arm64) NODE_ARCH=arm64; NODEJS_SHA256="${NODEJS_SHA256_ARM64}" ;; \
             *) echo "unsupported architecture: ${ARCH}" >&2; exit 1 ;; \
         esac \
-        && wget --no-verbose https://nodejs.org/dist/v${NODEJS_VERSION}/node-v${NODEJS_VERSION}-linux-${ARCH}.tar.xz -O /tmp/nodejs.tar.xz \
+        && wget --no-verbose https://nodejs.org/dist/v${NODEJS_VERSION}/node-v${NODEJS_VERSION}-linux-${NODE_ARCH}.tar.xz -O /tmp/nodejs.tar.xz \
         && echo "${NODEJS_SHA256}  /tmp/nodejs.tar.xz" | sha256sum -c - \
         && tar -xf /tmp/nodejs.tar.xz -C /usr/local --strip-components=1 \
         && rm /tmp/nodejs.tar.xz \
