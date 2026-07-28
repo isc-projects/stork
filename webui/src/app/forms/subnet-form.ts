@@ -35,7 +35,7 @@ export class DaemonGroup {
             this.label = 'empty'
         } else if (daemons.length === 1) {
             const daemon = daemons[0]
-            if (daemon.backends?.some((b) => b.dataTypes?.includes('Config Backend'))) {
+            if (daemon.hooks?.includes('libdhcp_cb_cmds.so')) {
                 // Daemon with the config backend hook loaded.
                 this.label = `${daemon.serverTag || 'all'} (1 daemon)`
             } else {

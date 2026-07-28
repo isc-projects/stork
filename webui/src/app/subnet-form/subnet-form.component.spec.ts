@@ -223,6 +223,7 @@ describe('SubnetFormComponent', () => {
                         dataTypes: ['Config Backend'],
                     },
                 ],
+                hooks: ['libdhcp_cb_cmds.so'],
             },
             {
                 id: 11,
@@ -238,6 +239,7 @@ describe('SubnetFormComponent', () => {
                         dataTypes: ['Config Backend'],
                     },
                 ],
+                hooks: ['libdhcp_cb_cmds.so'],
             },
             {
                 id: 12,
@@ -253,6 +255,7 @@ describe('SubnetFormComponent', () => {
                         dataTypes: ['Config Backend'],
                     },
                 ],
+                hooks: ['libdhcp_cb_cmds.so'],
             },
         ],
         sharedNetworks4: [],
@@ -294,6 +297,7 @@ describe('SubnetFormComponent', () => {
                         dataTypes: ['Config Backend'],
                     },
                 ],
+                hooks: ['libdhcp_cb_cmds.so'],
             },
             {
                 id: 4,
@@ -309,6 +313,7 @@ describe('SubnetFormComponent', () => {
                         dataTypes: ['Config Backend'],
                     },
                 ],
+                hooks: ['libdhcp_cb_cmds.so'],
             },
         ],
         sharedNetworks4: [],
