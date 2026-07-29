@@ -16,7 +16,7 @@ var (
 type SharedNetworkAccessor interface {
 	dhcpmodel.SharedNetworkAccessor
 	GetName() string
-	GetKeaParameters(int64) *SharedNetworkParameters
+	GetKeaParameters(int64) SharedNetworkParameters
 	GetSubnets(int64) []SubnetAccessor
 }
 
@@ -27,7 +27,7 @@ type SharedNetworkAccessor interface {
 type SharedNetwork interface {
 	GetName() string
 	GetSubnets() []Subnet
-	GetSharedNetworkParameters() *SharedNetworkParameters
+	GetSharedNetworkParameters() SharedNetworkParameters
 	GetDHCPOptions() []SingleOptionData
 }
 
@@ -151,8 +151,8 @@ func (s SharedNetwork4) GetDHCPOptions() []SingleOptionData {
 }
 
 // Returns Kea-specific DHCPv4 shared network configuration parameters.
-func (s SharedNetwork4) GetSharedNetworkParameters() *SharedNetworkParameters {
-	return &SharedNetworkParameters{
+func (s SharedNetwork4) GetSharedNetworkParameters() SharedNetworkParameters {
+	return SharedNetworkParameters{
 		CacheParameters:         s.CacheParameters,
 		ClientClassParameters:   s.ClientClassParameters,
 		DDNSParameters:          s.DDNSParameters,
@@ -216,8 +216,8 @@ func (s SharedNetwork6) GetDHCPOptions() []SingleOptionData {
 }
 
 // Returns Kea-specific DHCPv6 shared network configuration parameters.
-func (s SharedNetwork6) GetSharedNetworkParameters() *SharedNetworkParameters {
-	return &SharedNetworkParameters{
+func (s SharedNetwork6) GetSharedNetworkParameters() SharedNetworkParameters {
+	return SharedNetworkParameters{
 		CacheParameters:             s.CacheParameters,
 		ClientClassParameters:       s.ClientClassParameters,
 		DDNSParameters:              s.DDNSParameters,
@@ -273,27 +273,27 @@ func CreateSharedNetwork4(daemonID int64, lookup DHCPOptionDefinitionLookup, sha
 			Name: sharedNetwork.GetName(),
 		},
 	}
-	if params := sharedNetwork.GetKeaParameters(daemonID); params != nil {
-		sharedNetwork4.CommonSharedNetworkParameters = CommonSharedNetworkParameters{
-			CacheParameters:         params.CacheParameters,
-			ClientClassParameters:   params.ClientClassParameters,
-			DDNSParameters:          params.DDNSParameters,
-			HostnameCharParameters:  params.HostnameCharParameters,
-			ReservationParameters:   params.ReservationParameters,
-			TimerParameters:         params.TimerParameters,
-			ValidLifetimeParameters: params.ValidLifetimeParameters,
-			Allocator:               params.Allocator,
-			Interface:               params.Interface,
-			StoreExtendedInfo:       params.StoreExtendedInfo,
-			Relay:                   params.Relay,
-		}
-		sharedNetwork4.Authoritative = params.Authoritative
-		sharedNetwork4.BootFileName = params.BootFileName
-		sharedNetwork4.MatchClientID = params.MatchClientID
-		sharedNetwork4.NextServer = params.NextServer
-		sharedNetwork4.ServerHostname = params.ServerHostname
-		sharedNetwork4.UnknownParameters = params.UnknownParameters
+	params := sharedNetwork.GetKeaParameters(daemonID)
+	sharedNetwork4.CommonSharedNetworkParameters = CommonSharedNetworkParameters{
+		CacheParameters:         params.CacheParameters,
+		ClientClassParameters:   params.ClientClassParameters,
+		DDNSParameters:          params.DDNSParameters,
+		HostnameCharParameters:  params.HostnameCharParameters,
+		ReservationParameters:   params.ReservationParameters,
+		TimerParameters:         params.TimerParameters,
+		ValidLifetimeParameters: params.ValidLifetimeParameters,
+		Allocator:               params.Allocator,
+		Interface:               params.Interface,
+		StoreExtendedInfo:       params.StoreExtendedInfo,
+		Relay:                   params.Relay,
 	}
+	sharedNetwork4.Authoritative = params.Authoritative
+	sharedNetwork4.BootFileName = params.BootFileName
+	sharedNetwork4.MatchClientID = params.MatchClientID
+	sharedNetwork4.NextServer = params.NextServer
+	sharedNetwork4.ServerHostname = params.ServerHostname
+	sharedNetwork4.UnknownParameters = params.UnknownParameters
+
 	for _, option := range sharedNetwork.GetDHCPOptions(daemonID) {
 		optionData, err := CreateSingleOptionData(daemonID, lookup, option)
 		if err != nil {
@@ -323,26 +323,26 @@ func CreateSharedNetwork6(daemonID int64, lookup DHCPOptionDefinitionLookup, sha
 			Name: sharedNetwork.GetName(),
 		},
 	}
-	if params := sharedNetwork.GetKeaParameters(daemonID); params != nil {
-		sharedNetwork6.CommonSharedNetworkParameters = CommonSharedNetworkParameters{
-			CacheParameters:         params.CacheParameters,
-			ClientClassParameters:   params.ClientClassParameters,
-			DDNSParameters:          params.DDNSParameters,
-			HostnameCharParameters:  params.HostnameCharParameters,
-			ReservationParameters:   params.ReservationParameters,
-			TimerParameters:         params.TimerParameters,
-			ValidLifetimeParameters: params.ValidLifetimeParameters,
-			Allocator:               params.Allocator,
-			Interface:               params.Interface,
-			StoreExtendedInfo:       params.StoreExtendedInfo,
-			Relay:                   params.Relay,
-		}
-		sharedNetwork6.PreferredLifetimeParameters = params.PreferredLifetimeParameters
-		sharedNetwork6.PDAllocator = params.PDAllocator
-		sharedNetwork6.InterfaceID = params.InterfaceID
-		sharedNetwork6.RapidCommit = params.RapidCommit
-		sharedNetwork6.UnknownParameters = params.UnknownParameters
+	params := sharedNetwork.GetKeaParameters(daemonID)
+	sharedNetwork6.CommonSharedNetworkParameters = CommonSharedNetworkParameters{
+		CacheParameters:         params.CacheParameters,
+		ClientClassParameters:   params.ClientClassParameters,
+		DDNSParameters:          params.DDNSParameters,
+		HostnameCharParameters:  params.HostnameCharParameters,
+		ReservationParameters:   params.ReservationParameters,
+		TimerParameters:         params.TimerParameters,
+		ValidLifetimeParameters: params.ValidLifetimeParameters,
+		Allocator:               params.Allocator,
+		Interface:               params.Interface,
+		StoreExtendedInfo:       params.StoreExtendedInfo,
+		Relay:                   params.Relay,
 	}
+	sharedNetwork6.PreferredLifetimeParameters = params.PreferredLifetimeParameters
+	sharedNetwork6.PDAllocator = params.PDAllocator
+	sharedNetwork6.InterfaceID = params.InterfaceID
+	sharedNetwork6.RapidCommit = params.RapidCommit
+	sharedNetwork6.UnknownParameters = params.UnknownParameters
+
 	for _, option := range sharedNetwork.GetDHCPOptions(daemonID) {
 		optionData, err := CreateSingleOptionData(daemonID, lookup, option)
 		if err != nil {

@@ -62,7 +62,7 @@ func TestCounterAddSingleIPv4LocalSubnet(t *testing.T) {
 							"assigned-addresses": uint64(5),
 							"declined-addresses": uint64(13),
 						},
-						KeaParameters: &keaconfig.PoolParameters{
+						KeaParameters: keaconfig.PoolParameters{
 							PoolID: 0,
 						},
 					},
@@ -72,7 +72,7 @@ func TestCounterAddSingleIPv4LocalSubnet(t *testing.T) {
 							"assigned-addresses": uint64(5),
 							"declined-addresses": uint64(13),
 						},
-						KeaParameters: &keaconfig.PoolParameters{
+						KeaParameters: keaconfig.PoolParameters{
 							PoolID: 0,
 						},
 					},
@@ -82,7 +82,7 @@ func TestCounterAddSingleIPv4LocalSubnet(t *testing.T) {
 							"assigned-addresses": uint64(2),
 							"declined-addresses": uint64(5),
 						},
-						KeaParameters: &keaconfig.PoolParameters{
+						KeaParameters: keaconfig.PoolParameters{
 							PoolID: 42,
 						},
 					},
@@ -157,7 +157,7 @@ func TestCounterAddSingleIPv6LocalSubnet(t *testing.T) {
 							"assigned-nas": uint64(5),
 							"declined-nas": uint64(13),
 						},
-						KeaParameters: &keaconfig.PoolParameters{PoolID: 0},
+						KeaParameters: keaconfig.PoolParameters{PoolID: 0},
 					},
 					{
 						Stats: dbmodel.Stats{
@@ -165,7 +165,7 @@ func TestCounterAddSingleIPv6LocalSubnet(t *testing.T) {
 							"assigned-nas": uint64(5),
 							"declined-nas": uint64(13),
 						},
-						KeaParameters: &keaconfig.PoolParameters{PoolID: 0},
+						KeaParameters: keaconfig.PoolParameters{PoolID: 0},
 					},
 					{
 						Stats: dbmodel.Stats{
@@ -173,7 +173,7 @@ func TestCounterAddSingleIPv6LocalSubnet(t *testing.T) {
 							"assigned-nas": uint64(15),
 							"declined-nas": uint64(5),
 						},
-						KeaParameters: &keaconfig.PoolParameters{PoolID: 42},
+						KeaParameters: keaconfig.PoolParameters{PoolID: 42},
 					},
 				},
 				PrefixPools: []dbmodel.PrefixPool{
@@ -185,21 +185,21 @@ func TestCounterAddSingleIPv6LocalSubnet(t *testing.T) {
 							"total-pds":    uint64(10),
 							"assigned-pds": uint64(4),
 						},
-						KeaParameters: &keaconfig.PoolParameters{PoolID: 0},
+						KeaParameters: keaconfig.PoolParameters{PoolID: 0},
 					},
 					{
 						Stats: dbmodel.Stats{
 							"total-pds":    uint64(10),
 							"assigned-pds": uint64(4),
 						},
-						KeaParameters: &keaconfig.PoolParameters{PoolID: 0},
+						KeaParameters: keaconfig.PoolParameters{PoolID: 0},
 					},
 					{
 						Stats: dbmodel.Stats{
 							"total-pds":    uint64(8),
 							"assigned-pds": uint64(5),
 						},
-						KeaParameters: &keaconfig.PoolParameters{PoolID: 42},
+						KeaParameters: keaconfig.PoolParameters{PoolID: 42},
 					},
 				},
 			},
@@ -436,14 +436,14 @@ func TestCounterAddSharedNetworkSubnets(t *testing.T) {
 							"assigned-nas": uint64(10),
 							"declined-nas": uint64(20),
 						},
-						KeaParameters: &keaconfig.PoolParameters{PoolID: 0},
+						KeaParameters: keaconfig.PoolParameters{PoolID: 0},
 					}},
 					PrefixPools: []dbmodel.PrefixPool{{
 						Stats: dbmodel.Stats{
 							"total-pds":    uint64(40),
 							"assigned-pds": uint64(30),
 						},
-						KeaParameters: &keaconfig.PoolParameters{PoolID: 0},
+						KeaParameters: keaconfig.PoolParameters{PoolID: 0},
 					}},
 				},
 			},
@@ -466,14 +466,14 @@ func TestCounterAddSharedNetworkSubnets(t *testing.T) {
 							"assigned-nas": uint64(30),
 							"declined-nas": uint64(50),
 						},
-						KeaParameters: &keaconfig.PoolParameters{PoolID: 0},
+						KeaParameters: keaconfig.PoolParameters{PoolID: 0},
 					}},
 					PrefixPools: []dbmodel.PrefixPool{{
 						Stats: dbmodel.Stats{
 							"total-pds":    uint64(40),
 							"assigned-pds": uint64(50),
 						},
-						KeaParameters: &keaconfig.PoolParameters{PoolID: 0},
+						KeaParameters: keaconfig.PoolParameters{PoolID: 0},
 					}},
 				},
 			},
@@ -494,7 +494,7 @@ func TestCounterAddSharedNetworkSubnets(t *testing.T) {
 							"assigned-addresses": uint64(90),
 							"declined-addresses": uint64(100),
 						},
-						KeaParameters: &keaconfig.PoolParameters{PoolID: 0},
+						KeaParameters: keaconfig.PoolParameters{PoolID: 0},
 					}},
 				},
 			},
@@ -1140,7 +1140,7 @@ func TestGetStatisticsIdempotent(t *testing.T) {
 							"total-pds":    uint64(36),
 							"assigned-pds": uint64(27),
 						},
-						KeaParameters: &keaconfig.PoolParameters{PoolID: 0},
+						KeaParameters: keaconfig.PoolParameters{PoolID: 0},
 					},
 				},
 				PrefixPools: []dbmodel.PrefixPool{
@@ -1149,7 +1149,7 @@ func TestGetStatisticsIdempotent(t *testing.T) {
 							"total-pds":    uint64(30),
 							"assigned-pds": uint64(10),
 						},
-						KeaParameters: &keaconfig.PoolParameters{PoolID: 0},
+						KeaParameters: keaconfig.PoolParameters{PoolID: 0},
 					},
 				},
 			},

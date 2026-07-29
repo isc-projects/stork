@@ -222,7 +222,7 @@ type LocalSubnet struct {
 	AddressPools []AddressPool `pg:"rel:has-many"`
 	PrefixPools  []PrefixPool  `pg:"rel:has-many"`
 
-	KeaParameters *keaconfig.SubnetParameters
+	KeaParameters keaconfig.SubnetParameters
 	UserContext   map[string]any
 }
 
@@ -259,13 +259,13 @@ func (s *Subnet) GetID(daemonID int64) int64 {
 }
 
 // Returns the Kea DHCP parameters for the subnet configured in the specified daemon.
-func (s *Subnet) GetKeaParameters(daemonID int64) *keaconfig.SubnetParameters {
+func (s *Subnet) GetKeaParameters(daemonID int64) keaconfig.SubnetParameters {
 	for _, ls := range s.LocalSubnets {
 		if ls.DaemonID == daemonID {
 			return ls.KeaParameters
 		}
 	}
-	return nil
+	return keaconfig.SubnetParameters{}
 }
 
 // Returns subnet prefix.

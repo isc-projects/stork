@@ -2065,26 +2065,23 @@ func TestSubnetGetKeaParameters(t *testing.T) {
 		LocalSubnets: []*LocalSubnet{
 			{
 				DaemonID: 110,
-				KeaParameters: &keaconfig.SubnetParameters{
+				KeaParameters: keaconfig.SubnetParameters{
 					Allocator: storkutil.Ptr("random"),
 				},
 			},
 			{
 				DaemonID: 111,
-				KeaParameters: &keaconfig.SubnetParameters{
+				KeaParameters: keaconfig.SubnetParameters{
 					Allocator: storkutil.Ptr("iterative"),
 				},
 			},
 		},
 	}
 	params0 := subnet.GetKeaParameters(110)
-	require.NotNil(t, params0)
 	require.Equal(t, "random", *params0.Allocator)
 	params1 := subnet.GetKeaParameters(111)
-	require.NotNil(t, params1)
 	require.Equal(t, "iterative", *params1.Allocator)
-
-	require.Nil(t, subnet.GetKeaParameters(1000))
+	require.Zero(t, subnet.GetKeaParameters(1000))
 }
 
 // Test implementation of the dhcpmodel.SubnetAccessor interface (GetPrefix() function).
@@ -2201,7 +2198,7 @@ func TestLocalSubnet(t *testing.T) {
 		LocalSubnets: []*LocalSubnet{
 			{
 				DaemonID: 1,
-				KeaParameters: &keaconfig.SubnetParameters{
+				KeaParameters: keaconfig.SubnetParameters{
 					Allocator: storkutil.Ptr("random"),
 				},
 			},
@@ -2218,14 +2215,13 @@ func TestLocalSubnet(t *testing.T) {
 	// Replace the first instance with a new one.
 	subnet.SetLocalSubnet(&LocalSubnet{
 		DaemonID: 1,
-		KeaParameters: &keaconfig.SubnetParameters{
+		KeaParameters: keaconfig.SubnetParameters{
 			Allocator: storkutil.Ptr("iterative"),
 		},
 	})
 	require.Len(t, subnet.LocalSubnets, 2)
 	require.EqualValues(t, 1, subnet.LocalSubnets[0].DaemonID)
 	require.EqualValues(t, 2, subnet.LocalSubnets[1].DaemonID)
-	require.NotNil(t, subnet.LocalSubnets[0].KeaParameters)
 	require.Equal(t, "iterative", *subnet.LocalSubnets[0].KeaParameters.Allocator)
 }
 

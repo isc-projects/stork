@@ -19,7 +19,7 @@ var (
 type SubnetAccessor interface {
 	dhcpmodel.SubnetAccessor
 	GetID(int64) int64
-	GetKeaParameters(int64) *SubnetParameters
+	GetKeaParameters(int64) SubnetParameters
 }
 
 // An interface representing a subnet in Kea. It is implemented by the
@@ -33,7 +33,7 @@ type Subnet interface {
 	GetPools() []Pool
 	GetPDPools() []PDPool
 	GetReservations() []Reservation
-	GetSubnetParameters() *SubnetParameters
+	GetSubnetParameters() SubnetParameters
 	GetDHCPOptions() []SingleOptionData
 	GetUniverse() storkutil.IPType
 	GetUserContext() map[string]any
@@ -325,8 +325,8 @@ func (s *Subnet4) GetUserContext() map[string]any {
 }
 
 // Returns Kea-specific IPv4 subnet configuration parameters.
-func (s *Subnet4) GetSubnetParameters() *SubnetParameters {
-	return &SubnetParameters{
+func (s *Subnet4) GetSubnetParameters() SubnetParameters {
+	return SubnetParameters{
 		CacheParameters:         s.CacheParameters,
 		ClientClassParameters:   s.ClientClassParameters,
 		DDNSParameters:          s.DDNSParameters,
@@ -403,8 +403,8 @@ func (s *Subnet6) GetUserContext() map[string]any {
 }
 
 // Returns Kea-specific IPv6 subnet configuration parameters.
-func (s *Subnet6) GetSubnetParameters() *SubnetParameters {
-	return &SubnetParameters{
+func (s *Subnet6) GetSubnetParameters() SubnetParameters {
+	return SubnetParameters{
 		CacheParameters:             s.CacheParameters,
 		ClientClassParameters:       s.ClientClassParameters,
 		DDNSParameters:              s.DDNSParameters,
@@ -485,40 +485,39 @@ func CreateSubnet4(daemonID int64, lookup DHCPOptionDefinitionLookup, subnet Sub
 		// Pool-level Kea-specific parameters.
 		keaPoolAccessor := pool.(AddressPool)
 		params := keaPoolAccessor.GetKeaParameters()
-		if params != nil {
-			if params.ClientClass != nil {
-				keaPool.ClientClass = params.ClientClass
-			}
-			keaPool.ClientClasses = params.ClientClasses
-			keaPool.RequireClientClasses = params.RequireClientClasses
-			keaPool.EvaluateAdditionalClasses = params.EvaluateAdditionalClasses
-			keaPool.PoolID = params.PoolID
-			keaPool.UnknownParameters = params.UnknownParameters
+		if params.ClientClass != nil {
+			keaPool.ClientClass = params.ClientClass
 		}
+		keaPool.ClientClasses = params.ClientClasses
+		keaPool.RequireClientClasses = params.RequireClientClasses
+		keaPool.EvaluateAdditionalClasses = params.EvaluateAdditionalClasses
+		keaPool.PoolID = params.PoolID
+		keaPool.UnknownParameters = params.UnknownParameters
+
 		// Add the pool to the subnet.
 		subnet4.Pools = append(subnet4.Pools, keaPool)
 	}
 	// Subnet-level Kea-specific parameters.
-	if params := subnet.GetKeaParameters(daemonID); params != nil {
-		subnet4.CacheParameters = params.CacheParameters
-		subnet4.ClientClassParameters = params.ClientClassParameters
-		subnet4.DDNSParameters = params.DDNSParameters
-		subnet4.HostnameCharParameters = params.HostnameCharParameters
-		subnet4.ReservationParameters = params.ReservationParameters
-		subnet4.TimerParameters = params.TimerParameters
-		subnet4.ValidLifetimeParameters = params.ValidLifetimeParameters
-		subnet4.Allocator = params.Allocator
-		subnet4.Interface = params.Interface
-		subnet4.StoreExtendedInfo = params.StoreExtendedInfo
-		subnet4.Relay = params.Relay
-		subnet4.FourOverSixParameters = params.FourOverSixParameters
-		subnet4.Authoritative = params.Authoritative
-		subnet4.BootFileName = params.BootFileName
-		subnet4.MatchClientID = params.MatchClientID
-		subnet4.NextServer = params.NextServer
-		subnet4.ServerHostname = params.ServerHostname
-		subnet4.UnknownParameters = params.UnknownParameters
-	}
+	params := subnet.GetKeaParameters(daemonID)
+	subnet4.CacheParameters = params.CacheParameters
+	subnet4.ClientClassParameters = params.ClientClassParameters
+	subnet4.DDNSParameters = params.DDNSParameters
+	subnet4.HostnameCharParameters = params.HostnameCharParameters
+	subnet4.ReservationParameters = params.ReservationParameters
+	subnet4.TimerParameters = params.TimerParameters
+	subnet4.ValidLifetimeParameters = params.ValidLifetimeParameters
+	subnet4.Allocator = params.Allocator
+	subnet4.Interface = params.Interface
+	subnet4.StoreExtendedInfo = params.StoreExtendedInfo
+	subnet4.Relay = params.Relay
+	subnet4.FourOverSixParameters = params.FourOverSixParameters
+	subnet4.Authoritative = params.Authoritative
+	subnet4.BootFileName = params.BootFileName
+	subnet4.MatchClientID = params.MatchClientID
+	subnet4.NextServer = params.NextServer
+	subnet4.ServerHostname = params.ServerHostname
+	subnet4.UnknownParameters = params.UnknownParameters
+
 	// Subnet-level DHCP options.
 	for _, option := range subnet.GetDHCPOptions(daemonID) {
 		optionData, err := CreateSingleOptionData(daemonID, lookup, option)
@@ -566,16 +565,15 @@ func CreateSubnet6(daemonID int64, lookup DHCPOptionDefinitionLookup, subnet Sub
 		// Pool-level Kea-specific parameters.
 		keaPoolAccessor := pool.(AddressPool)
 		params := keaPoolAccessor.GetKeaParameters()
-		if params != nil {
-			if params.ClientClass != nil {
-				keaPool.ClientClass = params.ClientClass
-			}
-			keaPool.ClientClasses = params.ClientClasses
-			keaPool.RequireClientClasses = params.RequireClientClasses
-			keaPool.EvaluateAdditionalClasses = params.EvaluateAdditionalClasses
-			keaPool.PoolID = params.PoolID
-			keaPool.UnknownParameters = params.UnknownParameters
+		if params.ClientClass != nil {
+			keaPool.ClientClass = params.ClientClass
 		}
+		keaPool.ClientClasses = params.ClientClasses
+		keaPool.RequireClientClasses = params.RequireClientClasses
+		keaPool.EvaluateAdditionalClasses = params.EvaluateAdditionalClasses
+		keaPool.PoolID = params.PoolID
+		keaPool.UnknownParameters = params.UnknownParameters
+
 		// Add the pool to the subnet.
 		subnet6.Pools = append(subnet6.Pools, keaPool)
 	}
@@ -611,38 +609,37 @@ func CreateSubnet6(daemonID int64, lookup DHCPOptionDefinitionLookup, subnet Sub
 		// Pool-level Kea-specific parameters.
 		keaPoolAccessor := pool.(PrefixPool)
 		params := keaPoolAccessor.GetKeaParameters()
-		if params != nil {
-			if params.ClientClass != nil {
-				keaPool.ClientClass = params.ClientClass
-			}
-			keaPool.ClientClasses = params.ClientClasses
-			keaPool.RequireClientClasses = params.RequireClientClasses
-			keaPool.EvaluateAdditionalClasses = params.EvaluateAdditionalClasses
-			keaPool.PoolID = params.PoolID
-			keaPool.UnknownParameters = params.UnknownParameters
+		if params.ClientClass != nil {
+			keaPool.ClientClass = params.ClientClass
 		}
+		keaPool.ClientClasses = params.ClientClasses
+		keaPool.RequireClientClasses = params.RequireClientClasses
+		keaPool.EvaluateAdditionalClasses = params.EvaluateAdditionalClasses
+		keaPool.PoolID = params.PoolID
+		keaPool.UnknownParameters = params.UnknownParameters
+
 		// Add the pool to the subnet.
 		subnet6.PDPools = append(subnet6.PDPools, keaPool)
 	}
 	// Subnet-level Kea-specific parameters.
-	if params := subnet.GetKeaParameters(daemonID); params != nil {
-		subnet6.CacheParameters = params.CacheParameters
-		subnet6.ClientClassParameters = params.ClientClassParameters
-		subnet6.DDNSParameters = params.DDNSParameters
-		subnet6.HostnameCharParameters = params.HostnameCharParameters
-		subnet6.ReservationParameters = params.ReservationParameters
-		subnet6.TimerParameters = params.TimerParameters
-		subnet6.ValidLifetimeParameters = params.ValidLifetimeParameters
-		subnet6.Allocator = params.Allocator
-		subnet6.Interface = params.Interface
-		subnet6.StoreExtendedInfo = params.StoreExtendedInfo
-		subnet6.Relay = params.Relay
-		subnet6.PreferredLifetimeParameters = params.PreferredLifetimeParameters
-		subnet6.PDAllocator = params.PDAllocator
-		subnet6.InterfaceID = params.InterfaceID
-		subnet6.RapidCommit = params.RapidCommit
-		subnet6.UnknownParameters = params.UnknownParameters
-	}
+	params := subnet.GetKeaParameters(daemonID)
+	subnet6.CacheParameters = params.CacheParameters
+	subnet6.ClientClassParameters = params.ClientClassParameters
+	subnet6.DDNSParameters = params.DDNSParameters
+	subnet6.HostnameCharParameters = params.HostnameCharParameters
+	subnet6.ReservationParameters = params.ReservationParameters
+	subnet6.TimerParameters = params.TimerParameters
+	subnet6.ValidLifetimeParameters = params.ValidLifetimeParameters
+	subnet6.Allocator = params.Allocator
+	subnet6.Interface = params.Interface
+	subnet6.StoreExtendedInfo = params.StoreExtendedInfo
+	subnet6.Relay = params.Relay
+	subnet6.PreferredLifetimeParameters = params.PreferredLifetimeParameters
+	subnet6.PDAllocator = params.PDAllocator
+	subnet6.InterfaceID = params.InterfaceID
+	subnet6.RapidCommit = params.RapidCommit
+	subnet6.UnknownParameters = params.UnknownParameters
+
 	// Subnet-level DHCP options.
 	for _, option := range subnet.GetDHCPOptions(daemonID) {
 		optionData, err := CreateSingleOptionData(daemonID, lookup, option)

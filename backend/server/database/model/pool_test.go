@@ -188,7 +188,7 @@ func TestPrefixPoolGetModel(t *testing.T) {
 func TestPrefixPoolGetKeaParameters(t *testing.T) {
 	pool := PrefixPool{
 		Prefix:        "3001::/80",
-		KeaParameters: &keaconfig.PoolParameters{},
+		KeaParameters: keaconfig.PoolParameters{},
 	}
 	require.Equal(t, pool.GetKeaParameters(), pool.KeaParameters)
 }
@@ -198,7 +198,7 @@ func TestPrefixPoolGetNilKeaParameters(t *testing.T) {
 	pool := PrefixPool{
 		Prefix: "3001::/80",
 	}
-	require.Nil(t, pool.GetKeaParameters())
+	require.Zero(t, pool.GetKeaParameters())
 }
 
 // Test the implementation of the dhcpmodel.PrefixPoolAccessor interface
@@ -237,14 +237,13 @@ func TestAddressPoolGetKeaParameters(t *testing.T) {
 	pool := AddressPool{
 		LowerBound: "2001:db8:1::cafe",
 		UpperBound: "2001:db8:1::ffff",
-		KeaParameters: &keaconfig.PoolParameters{
+		KeaParameters: keaconfig.PoolParameters{
 			ClientClassParameters: keaconfig.ClientClassParameters{
 				ClientClass: &clientClass,
 			},
 		},
 	}
 	params := pool.GetKeaParameters()
-	require.NotNil(t, params)
 	require.Equal(t, "foo", *params.ClientClass)
 }
 

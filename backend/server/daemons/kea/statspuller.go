@@ -245,7 +245,7 @@ func (statsPuller *StatsPuller) storeStats(response []*keactrl.StatisticGetAllRe
 // statistics.
 type measurablePools interface {
 	UpdateStats(dbi dbops.DBI, stats dbmodel.Stats) error
-	GetKeaParameters() *keaconfig.PoolParameters
+	GetKeaParameters() keaconfig.PoolParameters
 }
 
 // Process statistics from the given command response for address pools

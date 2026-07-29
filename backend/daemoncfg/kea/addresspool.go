@@ -17,7 +17,7 @@ import (
 // of Kea-specific pool parameters, such as client classes.
 type AddressPool interface {
 	dhcpmodel.AddressPoolAccessor
-	GetKeaParameters() *PoolParameters
+	GetKeaParameters() PoolParameters
 }
 
 // A structure holding Kea-specific pool parameters. Note that the same
@@ -102,8 +102,8 @@ func (p Pool) GetBoundaries() (net.IP, net.IP, error) {
 }
 
 // Returns a pointer to the pool parameters.
-func (p Pool) GetPoolParameters() *PoolParameters {
-	return &PoolParameters{
+func (p Pool) GetPoolParameters() PoolParameters {
+	return PoolParameters{
 		ClientClassParameters: p.ClientClassParameters,
 		PoolID:                p.PoolID,
 		UnknownParameters:     p.UnknownParameters,

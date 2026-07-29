@@ -412,7 +412,7 @@ func TestCreateSharedNetwork4(t *testing.T) {
 	// Shared network name.
 	mock.EXPECT().GetName().Return("my-secret-network")
 	// Return shared-network-level Kea parameters.
-	mock.EXPECT().GetKeaParameters(gomock.Eq(int64(1))).Return(&keaconfig.SharedNetworkParameters{
+	mock.EXPECT().GetKeaParameters(gomock.Eq(int64(1))).Return(keaconfig.SharedNetworkParameters{
 		CacheParameters: keaconfig.CacheParameters{
 			CacheMaxAge:    ptr[int64](1001),
 			CacheThreshold: ptr[float32](0.25),
@@ -486,7 +486,7 @@ func TestCreateSharedNetwork4(t *testing.T) {
 	subnetMock.EXPECT().GetID(gomock.Any()).Return(int64(5))
 	subnetMock.EXPECT().GetPrefix().Return("192.0.2.0/24")
 	subnetMock.EXPECT().GetAddressPools(gomock.Any()).Return([]dhcpmodel.AddressPoolAccessor{})
-	subnetMock.EXPECT().GetKeaParameters(gomock.Any()).Return(&keaconfig.SubnetParameters{})
+	subnetMock.EXPECT().GetKeaParameters(gomock.Any()).Return(keaconfig.SubnetParameters{})
 	subnetMock.EXPECT().GetDHCPOptions(gomock.Any()).Return([]dhcpmodel.DHCPOptionAccessor{})
 	subnetMock.EXPECT().GetUserContext(gomock.Any()).Return(nil)
 
@@ -569,7 +569,7 @@ func TestCreateSharedNetwork6(t *testing.T) {
 	// Shared network name.
 	mock.EXPECT().GetName().Return("my-secret-network")
 	// Return shared-network-level Kea parameters.
-	mock.EXPECT().GetKeaParameters(gomock.Eq(int64(1))).Return(&keaconfig.SharedNetworkParameters{
+	mock.EXPECT().GetKeaParameters(gomock.Eq(int64(1))).Return(keaconfig.SharedNetworkParameters{
 		CacheParameters: keaconfig.CacheParameters{
 			CacheMaxAge:    ptr[int64](1001),
 			CacheThreshold: ptr[float32](0.25),
@@ -647,7 +647,7 @@ func TestCreateSharedNetwork6(t *testing.T) {
 	subnetMock.EXPECT().GetPrefix().Return("2001:db8:1::/64")
 	subnetMock.EXPECT().GetAddressPools(gomock.Any()).Return([]dhcpmodel.AddressPoolAccessor{})
 	subnetMock.EXPECT().GetPrefixPools(gomock.Any()).Return([]dhcpmodel.PrefixPoolAccessor{})
-	subnetMock.EXPECT().GetKeaParameters(gomock.Any()).Return(&keaconfig.SubnetParameters{})
+	subnetMock.EXPECT().GetKeaParameters(gomock.Any()).Return(keaconfig.SubnetParameters{})
 	subnetMock.EXPECT().GetDHCPOptions(gomock.Any()).Return([]dhcpmodel.DHCPOptionAccessor{})
 	subnetMock.EXPECT().GetUserContext(gomock.Any()).Return(nil)
 

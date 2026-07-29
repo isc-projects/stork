@@ -246,8 +246,8 @@ func TestGetParametersSubnet4(t *testing.T) {
 	err := json.Unmarshal(AllKeysDHCPv4JSON, &subnet4)
 	require.NoError(t, err)
 
-	params := *subnet4.GetSubnetParameters()
-	require.NotNil(t, params)
+	params := subnet4.GetSubnetParameters()
+	require.NotZero(t, params)
 
 	require.Equal(t, "eth1", *params.FourOverSixInterface)
 	require.Equal(t, "ethx", *params.FourOverSixInterfaceID)
@@ -416,8 +416,8 @@ func TestGetParametersSubnet6(t *testing.T) {
 	err := json.Unmarshal(AllKeysDHCPv6JSON, &subnet6)
 	require.NoError(t, err)
 
-	params := *subnet6.GetSubnetParameters()
-	require.NotNil(t, params)
+	params := subnet6.GetSubnetParameters()
+	require.NotZero(t, params)
 
 	require.Equal(t, "iterative", *params.Allocator)
 	require.Equal(t, "iterative", *params.PDAllocator)
@@ -476,7 +476,7 @@ func TestCreateSubnet4(t *testing.T) {
 	poolMock.EXPECT().GetLowerBound().AnyTimes().Return("192.0.2.10")
 	poolMock.EXPECT().GetUpperBound().AnyTimes().Return("192.0.2.20")
 	// Return Kea specific pool parameters.
-	poolMock.EXPECT().GetKeaParameters().AnyTimes().Return(&keaconfig.PoolParameters{
+	poolMock.EXPECT().GetKeaParameters().AnyTimes().Return(keaconfig.PoolParameters{
 		ClientClassParameters: keaconfig.ClientClassParameters{
 			ClientClass:               ptr("baz"),
 			ClientClasses:             []string{"bar"},
@@ -504,7 +504,7 @@ func TestCreateSubnet4(t *testing.T) {
 	// Return a user context.
 	mock.EXPECT().GetUserContext(gomock.Any()).Return(map[string]any{"foo": "bar"})
 	// Return subnet-level Kea parameters.
-	mock.EXPECT().GetKeaParameters(gomock.Eq(int64(1))).Return(&keaconfig.SubnetParameters{
+	mock.EXPECT().GetKeaParameters(gomock.Eq(int64(1))).Return(keaconfig.SubnetParameters{
 		CacheParameters: keaconfig.CacheParameters{
 			CacheMaxAge:    ptr[int64](1001),
 			CacheThreshold: ptr[float32](0.25),
@@ -666,7 +666,7 @@ func TestCreateSubnet6(t *testing.T) {
 	// A mock to define an address pool.
 	poolMock.EXPECT().GetLowerBound().AnyTimes().Return("2001:db8:1::10")
 	poolMock.EXPECT().GetUpperBound().AnyTimes().Return("2001:db8:1::20")
-	poolMock.EXPECT().GetKeaParameters().AnyTimes().Return(&keaconfig.PoolParameters{
+	poolMock.EXPECT().GetKeaParameters().AnyTimes().Return(keaconfig.PoolParameters{
 		ClientClassParameters: keaconfig.ClientClassParameters{
 			ClientClass:               ptr("baz"),
 			ClientClasses:             []string{"bar"},
@@ -691,7 +691,7 @@ func TestCreateSubnet6(t *testing.T) {
 		DelegatedLen:   64,
 		ExcludedPrefix: "3001:1::/64",
 	})
-	pdPoolMock.EXPECT().GetKeaParameters().AnyTimes().Return(&keaconfig.PoolParameters{
+	pdPoolMock.EXPECT().GetKeaParameters().AnyTimes().Return(keaconfig.PoolParameters{
 		ClientClassParameters: keaconfig.ClientClassParameters{
 			ClientClass:               ptr("baz"),
 			ClientClasses:             []string{"bar"},
@@ -721,7 +721,7 @@ func TestCreateSubnet6(t *testing.T) {
 	// Return a user context.
 	mock.EXPECT().GetUserContext(gomock.Any()).Return(map[string]any{"foo": "bar"})
 	// Return subnet-level Kea parameters.
-	mock.EXPECT().GetKeaParameters(gomock.Eq(int64(1))).Return(&keaconfig.SubnetParameters{
+	mock.EXPECT().GetKeaParameters(gomock.Eq(int64(1))).Return(keaconfig.SubnetParameters{
 		CacheParameters: keaconfig.CacheParameters{
 			CacheMaxAge:    ptr[int64](1001),
 			CacheThreshold: ptr[float32](0.25),

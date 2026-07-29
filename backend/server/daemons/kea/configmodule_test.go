@@ -2243,8 +2243,8 @@ func TestCommitSharedNetworkAdd(t *testing.T) {
 	require.Len(t, addedSharedNetworks, 1)
 	require.NotNil(t, addedSharedNetworks[0])
 	require.Len(t, addedSharedNetworks[0].LocalSharedNetworks, 2)
-	require.Nil(t, addedSharedNetworks[0].LocalSharedNetworks[0].KeaParameters)
-	require.Nil(t, addedSharedNetworks[0].LocalSharedNetworks[1].KeaParameters)
+	require.Zero(t, addedSharedNetworks[0].LocalSharedNetworks[0].KeaParameters)
+	require.Zero(t, addedSharedNetworks[0].LocalSharedNetworks[1].KeaParameters)
 
 	recipe, err := config.GetRecipeForUpdate[ConfigRecipe](ctx, 0)
 	require.NoError(t, err)
@@ -2417,8 +2417,8 @@ func TestCommitScheduledSharedNetworkAdd(t *testing.T) {
 	require.Len(t, addedSharedNetworks, 1)
 	require.NotNil(t, addedSharedNetworks[0])
 	require.Len(t, addedSharedNetworks[0].LocalSharedNetworks, 2)
-	require.Nil(t, addedSharedNetworks[0].LocalSharedNetworks[0].KeaParameters)
-	require.Nil(t, addedSharedNetworks[0].LocalSharedNetworks[1].KeaParameters)
+	require.Zero(t, addedSharedNetworks[0].LocalSharedNetworks[0].KeaParameters)
+	require.Zero(t, addedSharedNetworks[0].LocalSharedNetworks[1].KeaParameters)
 
 	recipe, err := config.GetRecipeForUpdate[ConfigRecipe](ctx, 0)
 	require.NoError(t, err)
@@ -4191,13 +4191,13 @@ func TestCommitSubnetAdd(t *testing.T) {
 		LocalSubnets: []*dbmodel.LocalSubnet{
 			{
 				DaemonID: daemons[0].ID,
-				KeaParameters: &keaconfig.SubnetParameters{
+				KeaParameters: keaconfig.SubnetParameters{
 					Allocator: storkutil.Ptr("random"),
 				},
 			},
 			{
 				DaemonID: daemons[1].ID,
-				KeaParameters: &keaconfig.SubnetParameters{
+				KeaParameters: keaconfig.SubnetParameters{
 					Allocator: storkutil.Ptr("random"),
 				},
 			},
@@ -5239,28 +5239,28 @@ func TestCommitSubnetUpdate(t *testing.T) {
 		{
 			DaemonID: daemonSubnetCmds2.ID,
 			SubnetID: subnet.ID,
-			KeaParameters: &keaconfig.SubnetParameters{
+			KeaParameters: keaconfig.SubnetParameters{
 				Allocator: storkutil.Ptr("random"),
 			},
 		},
 		{
 			DaemonID: daemonSubnetCmds3.ID,
 			SubnetID: subnet.ID,
-			KeaParameters: &keaconfig.SubnetParameters{
+			KeaParameters: keaconfig.SubnetParameters{
 				Allocator: storkutil.Ptr("random"),
 			},
 		},
 		{
 			DaemonID: daemonCBCmds2.ID,
 			SubnetID: subnet.ID,
-			KeaParameters: &keaconfig.SubnetParameters{
+			KeaParameters: keaconfig.SubnetParameters{
 				Allocator: storkutil.Ptr("random"),
 			},
 		},
 		{
 			DaemonID: daemonCBCmds3.ID,
 			SubnetID: subnet.ID,
-			KeaParameters: &keaconfig.SubnetParameters{
+			KeaParameters: keaconfig.SubnetParameters{
 				Allocator: storkutil.Ptr("random"),
 			},
 		},

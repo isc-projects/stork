@@ -33,7 +33,7 @@ type AddressPool struct {
 	Stats            Stats
 	StatsCollectedAt time.Time
 
-	KeaParameters *keaconfig.PoolParameters
+	KeaParameters keaconfig.PoolParameters
 }
 
 // Returns lower pool boundary.
@@ -47,7 +47,7 @@ func (ap *AddressPool) GetUpperBound() string {
 }
 
 // Returns a slice of interfaces describing the DHCP options for a pool.
-func (ap *AddressPool) GetKeaParameters() *keaconfig.PoolParameters {
+func (ap *AddressPool) GetKeaParameters() keaconfig.PoolParameters {
 	return ap.KeaParameters
 }
 
@@ -80,7 +80,7 @@ type PrefixPool struct {
 	Stats            Stats
 	StatsCollectedAt time.Time
 
-	KeaParameters *keaconfig.PoolParameters
+	KeaParameters keaconfig.PoolParameters
 }
 
 // Returns a pointer to a structure holding the delegated prefix data.
@@ -93,7 +93,7 @@ func (pp *PrefixPool) GetModel() *dhcpmodel.PrefixPool {
 }
 
 // Returns a slice of interfaces describing the DHCP options for a prefix pool.
-func (pp *PrefixPool) GetKeaParameters() *keaconfig.PoolParameters {
+func (pp *PrefixPool) GetKeaParameters() keaconfig.PoolParameters {
 	return pp.KeaParameters
 }
 

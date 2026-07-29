@@ -51,26 +51,23 @@ func TestSharedNetworkGetKeaParameters(t *testing.T) {
 		LocalSharedNetworks: []*LocalSharedNetwork{
 			{
 				DaemonID: 110,
-				KeaParameters: &keaconfig.SharedNetworkParameters{
+				KeaParameters: keaconfig.SharedNetworkParameters{
 					Allocator: storkutil.Ptr("random"),
 				},
 			},
 			{
 				DaemonID: 111,
-				KeaParameters: &keaconfig.SharedNetworkParameters{
+				KeaParameters: keaconfig.SharedNetworkParameters{
 					Allocator: storkutil.Ptr("iterative"),
 				},
 			},
 		},
 	}
 	params0 := network.GetKeaParameters(110)
-	require.NotNil(t, params0)
 	require.Equal(t, "random", *params0.Allocator)
 	params1 := network.GetKeaParameters(111)
-	require.NotNil(t, params1)
 	require.Equal(t, "iterative", *params1.Allocator)
-
-	require.Nil(t, network.GetKeaParameters(1000))
+	require.Zero(t, network.GetKeaParameters(1000))
 }
 
 // Test implementation of the dhcpmodel.SharedNetworkAccessor interface
@@ -673,7 +670,7 @@ func TestAddLocalSharedNetworks(t *testing.T) {
 		LocalSharedNetworks: []*LocalSharedNetwork{
 			{
 				DaemonID: daemons[0].ID,
-				KeaParameters: &keaconfig.SharedNetworkParameters{
+				KeaParameters: keaconfig.SharedNetworkParameters{
 					Authoritative: storkutil.Ptr(true),
 					Allocator:     storkutil.Ptr("iterative"),
 					Interface:     storkutil.Ptr("eth0"),
@@ -1050,7 +1047,7 @@ func TestLocalSharedNetwork(t *testing.T) {
 		LocalSharedNetworks: []*LocalSharedNetwork{
 			{
 				DaemonID: 1,
-				KeaParameters: &keaconfig.SharedNetworkParameters{
+				KeaParameters: keaconfig.SharedNetworkParameters{
 					Allocator: storkutil.Ptr("random"),
 				},
 			},
@@ -1067,7 +1064,7 @@ func TestLocalSharedNetwork(t *testing.T) {
 	// Replace the first instance with a new one.
 	sharedNetwork.SetLocalSharedNetwork(&LocalSharedNetwork{
 		DaemonID: 1,
-		KeaParameters: &keaconfig.SharedNetworkParameters{
+		KeaParameters: keaconfig.SharedNetworkParameters{
 			Allocator: storkutil.Ptr("iterative"),
 		},
 	})

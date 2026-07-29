@@ -11,7 +11,7 @@ import (
 // with a set of Kea-specific pool parameters, such as client classes.
 type PrefixPool interface {
 	dhcpmodel.PrefixPoolAccessor
-	GetKeaParameters() *PoolParameters
+	GetKeaParameters() PoolParameters
 }
 
 // Represents known (supported by Stork) configuration parameters for a delegated prefix pool.
@@ -73,8 +73,8 @@ func (p PDPool) GetCanonicalExcludedPrefix() string {
 }
 
 // Returns a pointer to the pool parameters.
-func (p PDPool) GetPoolParameters() *PoolParameters {
-	return &PoolParameters{
+func (p PDPool) GetPoolParameters() PoolParameters {
+	return PoolParameters{
 		PoolID:                p.PoolID,
 		ClientClassParameters: p.ClientClassParameters,
 		UnknownParameters:     p.UnknownParameters,

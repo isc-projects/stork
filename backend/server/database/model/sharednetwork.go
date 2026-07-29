@@ -70,7 +70,7 @@ type LocalSharedNetwork struct {
 	Daemon          *Daemon        `pg:"rel:has-one"`
 	SharedNetwork   *SharedNetwork `pg:"rel:has-one"`
 
-	KeaParameters *keaconfig.SharedNetworkParameters
+	KeaParameters keaconfig.SharedNetworkParameters
 }
 
 // Returns shared network name.
@@ -90,13 +90,13 @@ func (sn *SharedNetwork) GetLocalSharedNetwork(daemonID int64) *LocalSharedNetwo
 
 // Returns the Kea DHCP parameters for the shared network configured in the
 // specified daemon.
-func (sn *SharedNetwork) GetKeaParameters(daemonID int64) *keaconfig.SharedNetworkParameters {
+func (sn *SharedNetwork) GetKeaParameters(daemonID int64) keaconfig.SharedNetworkParameters {
 	for _, lsn := range sn.LocalSharedNetworks {
 		if lsn.DaemonID == daemonID {
 			return lsn.KeaParameters
 		}
 	}
-	return nil
+	return keaconfig.SharedNetworkParameters{}
 }
 
 // Returns DHCP options for the shared network configured in the specified

@@ -21,7 +21,7 @@ import (
 // Converts Kea specific configuration parameters for a shared network to a format used
 // in the REST API. This function is called to convert the shared-network level parameters
 // for a subnet and/or shared network.
-func convertSharedNetworkParametersToRestAPI(keaParameters *keaconfig.SharedNetworkParameters) *models.KeaConfigSubnetDerivedParameters {
+func convertSharedNetworkParametersToRestAPI(keaParameters keaconfig.SharedNetworkParameters) *models.KeaConfigSubnetDerivedParameters {
 	parameters := &models.KeaConfigSubnetDerivedParameters{
 		KeaConfigCacheParameters: models.KeaConfigCacheParameters{
 			CacheThreshold: keaParameters.CacheThreshold,
@@ -125,15 +125,13 @@ func (r *RestAPI) convertSharedNetworkToRestAPI(sn *dbmodel.SharedNetwork) *mode
 			DaemonID:    lsn.Daemon.ID,
 			DaemonLabel: lsn.Daemon.GetLabel(),
 		}
-		keaParameters := lsn.KeaParameters
-		if keaParameters != nil {
-			if localSharedNetwork.KeaConfigSharedNetworkParameters == nil {
-				localSharedNetwork.KeaConfigSharedNetworkParameters = &models.KeaConfigSharedNetworkParameters{}
-			}
-			localSharedNetwork.KeaConfigSharedNetworkParameters.SharedNetworkLevelParameters = convertSharedNetworkParametersToRestAPI(keaParameters)
-			localSharedNetwork.KeaConfigSharedNetworkParameters.SharedNetworkLevelParameters.OptionsHash = lsn.Hash
-			localSharedNetwork.KeaConfigSharedNetworkParameters.SharedNetworkLevelParameters.Options = r.unflattenDHCPOptions(lsn.Options, "", 0)
+
+		if localSharedNetwork.KeaConfigSharedNetworkParameters == nil {
+			localSharedNetwork.KeaConfigSharedNetworkParameters = &models.KeaConfigSharedNetworkParameters{}
 		}
+		localSharedNetwork.KeaConfigSharedNetworkParameters.SharedNetworkLevelParameters = convertSharedNetworkParametersToRestAPI(lsn.KeaParameters)
+		localSharedNetwork.KeaConfigSharedNetworkParameters.SharedNetworkLevelParameters.OptionsHash = lsn.Hash
+		localSharedNetwork.KeaConfigSharedNetworkParameters.SharedNetworkLevelParameters.Options = r.unflattenDHCPOptions(lsn.Options, "", 0)
 
 		// Global configuration parameters.
 		if lsn.Daemon != nil && lsn.Daemon.KeaDaemon != nil && lsn.Daemon.KeaDaemon.Config != nil &&
@@ -189,7 +187,7 @@ func (r *RestAPI) convertSharedNetworkFromRestAPI(restSharedNetwork *models.Shar
 
 		if lsn.KeaConfigSharedNetworkParameters != nil && lsn.KeaConfigSharedNetworkParameters.SharedNetworkLevelParameters != nil {
 			keaParameters := lsn.KeaConfigSharedNetworkParameters.SharedNetworkLevelParameters
-			localSharedNetwork.KeaParameters = &keaconfig.SharedNetworkParameters{
+			localSharedNetwork.KeaParameters = keaconfig.SharedNetworkParameters{
 				CacheParameters: keaconfig.CacheParameters{
 					CacheThreshold: keaParameters.CacheThreshold,
 					CacheMaxAge:    keaParameters.CacheMaxAge,

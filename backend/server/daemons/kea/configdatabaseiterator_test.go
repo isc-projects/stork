@@ -82,8 +82,8 @@ func TestForEachUniqueConfigSource(t *testing.T) {
 	daemon6.ID = 6
 
 	subnet := newTestSubnet(daemon1, daemon2, daemon3, daemon4, daemon5, daemon6)
-	subnet.LocalSubnets[0].KeaParameters = &keaconfig.SubnetParameters{Allocator: storkutil.Ptr("iterative")}
-	subnet.LocalSubnets[1].KeaParameters = &keaconfig.SubnetParameters{Allocator: storkutil.Ptr("random")}
+	subnet.LocalSubnets[0].KeaParameters = keaconfig.SubnetParameters{Allocator: storkutil.Ptr("iterative")}
+	subnet.LocalSubnets[1].KeaParameters = keaconfig.SubnetParameters{Allocator: storkutil.Ptr("random")}
 
 	called := 0
 
@@ -256,7 +256,7 @@ func TestForEachUniqueConsistentConfigSourceRejectsInconsistentLocalSubnetData(t
 	}{
 		{
 			configure: func(ls *dbmodel.LocalSubnet) {
-				ls.KeaParameters = &keaconfig.SubnetParameters{Allocator: storkutil.Ptr("iterative")}
+				ls.KeaParameters = keaconfig.SubnetParameters{Allocator: storkutil.Ptr("iterative")}
 			},
 			inconsistentField: "Kea parameters",
 		},
@@ -295,7 +295,7 @@ func TestForEachUniqueConsistentConfigSourceRejectsInconsistentLocalSubnetData(t
 
 			subnet := newTestSubnet(daemon1)
 			reference := subnet.LocalSubnets[0]
-			reference.KeaParameters = &keaconfig.SubnetParameters{Allocator: storkutil.Ptr("random")}
+			reference.KeaParameters = keaconfig.SubnetParameters{Allocator: storkutil.Ptr("random")}
 			reference.PrefixPools = []dbmodel.PrefixPool{{Prefix: "2001:db8:1::/64", DelegatedLen: 80}}
 			reference.AddressPools = []dbmodel.AddressPool{{LowerBound: "192.0.2.10", UpperBound: "192.0.2.20"}}
 			reference.UserContext = map[string]any{"site": "dc1"}
@@ -305,7 +305,7 @@ func TestForEachUniqueConsistentConfigSourceRejectsInconsistentLocalSubnetData(t
 				Daemon:        daemon2,
 				LocalSubnetID: reference.LocalSubnetID,
 				SubnetID:      subnet.ID,
-				KeaParameters: &keaconfig.SubnetParameters{Allocator: storkutil.Ptr("random")},
+				KeaParameters: keaconfig.SubnetParameters{Allocator: storkutil.Ptr("random")},
 				PrefixPools:   []dbmodel.PrefixPool{{Prefix: "2001:db8:1::/64", DelegatedLen: 80}},
 				AddressPools:  []dbmodel.AddressPool{{LowerBound: "192.0.2.10", UpperBound: "192.0.2.20"}},
 				UserContext:   map[string]any{"site": "dc1"},
@@ -334,11 +334,11 @@ func TestForEachUniqueConsistentConfigSourceAcceptsConsistentLocalSubnetData(t *
 
 	subnet := newTestSubnet(daemon1)
 	reference := subnet.LocalSubnets[0]
-	reference.KeaParameters = &keaconfig.SubnetParameters{Allocator: storkutil.Ptr("random")}
+	reference.KeaParameters = keaconfig.SubnetParameters{Allocator: storkutil.Ptr("random")}
 	reference.PrefixPools = []dbmodel.PrefixPool{{
 		Prefix:       "2001:db8:1::/64",
 		DelegatedLen: 80,
-		KeaParameters: &keaconfig.PoolParameters{
+		KeaParameters: keaconfig.PoolParameters{
 			PoolID: 1,
 		},
 	}}
@@ -353,11 +353,11 @@ func TestForEachUniqueConsistentConfigSourceAcceptsConsistentLocalSubnetData(t *
 		Daemon:        daemon2,
 		LocalSubnetID: reference.LocalSubnetID,
 		SubnetID:      subnet.ID,
-		KeaParameters: &keaconfig.SubnetParameters{Allocator: storkutil.Ptr("random")},
+		KeaParameters: keaconfig.SubnetParameters{Allocator: storkutil.Ptr("random")},
 		PrefixPools: []dbmodel.PrefixPool{{
 			Prefix:       "2001:db8:1::/64",
 			DelegatedLen: 80,
-			KeaParameters: &keaconfig.PoolParameters{
+			KeaParameters: keaconfig.PoolParameters{
 				PoolID: 1,
 			},
 		}},
