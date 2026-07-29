@@ -36,8 +36,7 @@
                                 <td class="whitespace-no-wrap">Used Addresses:</td>
                                 <td class="pl-2"><app-human-count [value]="used | positive"></app-human-count></td>
                             </tr>
-                        }
-                        @if (chartCase === 'invalid') {
+                        } @else if (chartCase === 'invalid') {
                             <tr>
                                 <td class="whitespace-no-wrap">Uncertain Addresses:</td>
                                 <td class="pl-2"><app-human-count [value]="uncertain | positive"></app-human-count></td>

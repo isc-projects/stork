@@ -14,8 +14,6 @@
         <div class="block">
             @if (label) {
                 <span>{{ label }}=</span>
-            }
-            @if (!!label) {
                 <span>(</span>
             }
             <!-- Hex format. -->
@@ -30,7 +28,7 @@
             @if (isEmpty) {
                 <span class="font-italic text-color-secondary">Empty identifier</span>
             }
-            @if (!!label) {
+            @if (label) {
                 <span>)</span>
             }
         </div>

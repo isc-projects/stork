@@ -14,8 +14,7 @@
                 </a>
             }
         </div>
-    }
-    @if (!inline && iscApp()) {
+    } @else if (iscApp()) {
         @for (message of messages; track message.summary) {
             <p-message
                 [styleClass]="styleClass"
