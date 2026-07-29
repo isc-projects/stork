@@ -90,14 +90,13 @@
                                             </td>
                                             <td class="utilization-row__value">
                                                 {{ sn.addrUtilization ?? 0 | number: '1.0-1' }}% used
-                                                @if (sn.addrUtilization > 80 && sn.addrUtilization <= 90) {
-                                                    <i
-                                                        class="pi pi-exclamation-triangle text-2xl text-orange-400 vertical-align-middle"
-                                                    ></i>
-                                                }
                                                 @if (sn.addrUtilization > 90) {
                                                     <i
                                                         class="pi pi-exclamation-circle text-2xl text-red-500 vertical-align-middle"
+                                                    ></i>
+                                                } @else if (sn.addrUtilization > 80) {
+                                                    <i
+                                                        class="pi pi-exclamation-triangle text-2xl text-orange-400 vertical-align-middle"
                                                     ></i>
                                                 }
                                             </td>
@@ -227,14 +226,13 @@
                                             </td>
                                             <td class="utilization-row__value">
                                                 {{ sn.addrUtilization ?? 0 | number: '1.0-1' }}% used
-                                                @if (sn.addrUtilization > 80 && sn.addrUtilization <= 90) {
-                                                    <i
-                                                        class="pi pi-exclamation-triangle text-2xl text-orange-400 vertical-align-middle"
-                                                    ></i>
-                                                }
                                                 @if (sn.addrUtilization > 90) {
                                                     <i
                                                         class="pi pi-exclamation-circle text-2xl text-red-500 vertical-align-middle"
+                                                    ></i>
+                                                } @else if (sn.addrUtilization > 80) {
+                                                    <i
+                                                        class="pi pi-exclamation-triangle text-2xl text-orange-400 vertical-align-middle"
                                                     ></i>
                                                 }
                                             </td>

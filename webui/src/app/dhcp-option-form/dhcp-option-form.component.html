@@ -53,8 +53,7 @@
                             one record, but additional records can be defined as necessary by adding suitable option
                             fields.
                         </div>
-                    }
-                    @if (optionDef.optionType !== 'record') {
+                    } @else {
                         <div>
                             This option can comprise an array of the
                             <span class="font-semibold">{{ optionDef.optionType }}</span>
@@ -66,8 +65,7 @@
                 @if (!optionDef.array) {
                     @if (optionDef.optionType === 'empty') {
                         <div>This option carries no option fields (is empty).</div>
-                    }
-                    @if (optionDef.optionType === 'record') {
+                    } @else if (optionDef.optionType === 'record') {
                         <div>
                             This option carries a single record of the following fields:
                             <ul>
@@ -76,8 +74,7 @@
                                 }
                             </ul>
                         </div>
-                    }
-                    @if (optionDef.optionType !== 'record' && optionDef.optionType !== 'empty') {
+                    } @else {
                         <div>
                             This option comprises a single
                             <span class="font-semibold">{{ optionDef.optionType }}</span>

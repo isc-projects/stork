@@ -432,9 +432,8 @@
                                 severity="danger"
                                 pTooltip="The host's configurations are different in the configuration file and the host database."
                             ></p-tag>
-                        }
-                        <!-- Duplicate label -->
-                        @if (getLocalHostsState(lhs) === 'duplicate') {
+                        } @else if (getLocalHostsState(lhs) === 'duplicate') {
+                            <!-- Duplicate label -->
                             <p-tag
                                 class="ml-2 mt-1"
                                 value="duplicate"
