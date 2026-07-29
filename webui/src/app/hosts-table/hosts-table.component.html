@@ -348,24 +348,6 @@
             <th style="width: 14%">Daemon</th>
         </tr>
     </ng-template>
-    <ng-template #emptymessage>
-        <tr>
-            <td colspan="6">
-                No hosts found.
-                @if (tableHasFilter(hostsTable)) {
-                    <span>
-                        Clear filtering and try again.
-                        <p-button
-                            label="Clear"
-                            [outlined]="true"
-                            icon="pi pi-filter-slash"
-                            (click)="clearTableFiltering()"
-                        ></p-button>
-                    </span>
-                }
-            </td>
-        </tr>
-    </ng-template>
     <ng-template #body let-h>
         <tr id="host-row-{{ h.id }}">
             <td>

@@ -278,20 +278,4 @@
     <ng-template #paginatorright let-paginatorState>
         Total: {{ paginatorState.totalRecords | pluralize: 'lease' }}
     </ng-template>
-    <ng-template #emptymessage>
-        <tr>
-            <td colspan="6">
-                No leases found.
-                @if (tableHasFilter(leasesListTable)) {
-                    Clear filters and try again.
-                    <p-button
-                        label="Clear"
-                        [outlined]="true"
-                        icon="pi pi-filter-slash"
-                        (click)="clearTableFiltering()"
-                    ></p-button>
-                }
-            </td>
-        </tr>
-    </ng-template>
 </p-table>
