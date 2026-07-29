@@ -8,6 +8,7 @@ import { createDefaultDhcpOptionFormGroup } from '../forms/dhcp-option-form'
 import { IPType } from '../iptype'
 import { StorkValidators } from '../validators'
 import { DhcpOptionDef } from '../dhcp-option-def'
+import { NgIf, NgFor, NgSwitch, NgSwitchCase } from '@angular/common'
 import { Select } from 'primeng/select'
 import { Tooltip } from 'primeng/tooltip'
 import { Divider } from 'primeng/divider'
@@ -19,6 +20,7 @@ import { SplitButton } from 'primeng/splitbutton'
 import { Button } from 'primeng/button'
 import { Textarea } from 'primeng/textarea'
 import { InputText } from 'primeng/inputtext'
+import { Ripple } from 'primeng/ripple'
 import { ToggleButton } from 'primeng/togglebutton'
 import { Tag } from 'primeng/tag'
 import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
@@ -51,17 +53,22 @@ type AddFieldFn = () => void
     imports: [
         FormsModule,
         ReactiveFormsModule,
+        NgIf,
         Select,
         Tooltip,
         Divider,
         FloatLabel,
         InputNumber,
         HelpTipComponent,
+        NgFor,
         Checkbox,
         SplitButton,
         Button,
+        NgSwitch,
+        NgSwitchCase,
         Textarea,
         InputText,
+        Ripple,
         ToggleButton,
         Tag,
         forwardRef(() => DhcpOptionSetFormComponent),
