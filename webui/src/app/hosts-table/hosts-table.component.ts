@@ -10,6 +10,7 @@ import { debounceTime, last, lastValueFrom, Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map } from 'rxjs/operators'
 import { ManagedAccessDirective } from '../managed-access.directive'
 import { ConfirmDialog } from 'primeng/confirmdialog'
+import { NgFor, NgIf } from '@angular/common'
 import { Button } from 'primeng/button'
 import { FormsModule } from '@angular/forms'
 import { FloatLabel } from 'primeng/floatlabel'
@@ -43,9 +44,11 @@ import { DaemonFilterComponent } from '../daemon-filter/daemon-filter.component'
     imports: [
         ManagedAccessDirective,
         ConfirmDialog,
+        NgFor,
         Button,
         RouterLink,
         TableModule,
+        NgIf,
         Tag,
         PrimeTemplate,
         FloatLabel,

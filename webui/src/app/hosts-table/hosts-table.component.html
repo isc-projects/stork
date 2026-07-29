@@ -16,12 +16,10 @@
                     >. They are selected by the following filter:
                 </p>
                 <div class="w-full">
-                    @for (entry of migrationFilterEntries; track entry) {
-                        <div class="flex flex-row gap-2">
-                            <span class="font-bold text-right flex-1">{{ entry[0] }}</span>
-                            <span class="flex-1">{{ entry[1] }}</span>
-                        </div>
-                    }
+                    <div *ngFor="let entry of migrationFilterEntries" class="flex flex-row gap-2">
+                        <span class="font-bold text-right flex-1">{{ entry[0] }}</span>
+                        <span class="flex-1">{{ entry[1] }}</span>
+                    </div>
                 </div>
 
                 <p>
@@ -352,98 +350,87 @@
         <tr>
             <td colspan="6">
                 No hosts found.
-                @if (tableHasFilter(hostsTable)) {
-                    <span>
-                        Clear filtering and try again.
-                        <p-button
-                            label="Clear"
-                            [outlined]="true"
-                            icon="pi pi-filter-slash"
-                            (click)="clearTableFiltering()"
-                        ></p-button>
-                    </span>
-                }
+                <span *ngIf="tableHasFilter(hostsTable)">
+                    Clear filtering and try again.
+                    <p-button
+                        label="Clear"
+                        [outlined]="true"
+                        icon="pi pi-filter-slash"
+                        (click)="clearTableFiltering()"
+                    ></p-button>
+                </span>
             </td>
         </tr>
     </ng-template>
     <ng-template #body let-h>
         <tr id="host-row-{{ h.id }}">
             <td>
-                @for (i of h.hostIdentifiers; track i) {
-                    <app-identifier
-                        [label]="i.idType"
-                        [hexValue]="i.idHexValue"
-                        [defaultHexFormat]="['hw-address', 'duid', 'client-id'].includes(i.idType)"
-                        link="/dhcp/hosts/{{ h.id }}"
-                    >
-                    </app-identifier>
-                }
+                <app-identifier
+                    *ngFor="let i of h.hostIdentifiers"
+                    [label]="i.idType"
+                    [hexValue]="i.idHexValue"
+                    [defaultHexFormat]="['hw-address', 'duid', 'client-id'].includes(i.idType)"
+                    link="/dhcp/hosts/{{ h.id }}"
+                >
+                </app-identifier>
             </td>
             <td>
-                @for (r of h.addressReservations; track r) {
-                    <app-entity-link
-                        entity="host"
-                        [showEntityName]="false"
-                        [attrs]="{ id: h.id, label: r.address }"
-                    ></app-entity-link>
-                }
+                <app-entity-link
+                    *ngFor="let r of h.addressReservations"
+                    entity="host"
+                    [showEntityName]="false"
+                    [attrs]="{ id: h.id, label: r.address }"
+                ></app-entity-link>
             </td>
             <td>
-                @for (r of h.prefixReservations; track r) {
-                    <app-entity-link
-                        entity="host"
-                        [showEntityName]="false"
-                        [attrs]="{ id: h.id, label: r.address }"
-                    ></app-entity-link>
-                }
+                <app-entity-link
+                    *ngFor="let r of h.prefixReservations"
+                    entity="host"
+                    [showEntityName]="false"
+                    [attrs]="{ id: h.id, label: r.address }"
+                ></app-entity-link>
             </td>
             <td>
                 {{ h.hostname }}
             </td>
-            @if (h.subnetId) {
-                <td>
-                    <app-entity-link
-                        entity="subnet"
-                        [showEntityName]="false"
-                        [attrs]="{ id: h.subnetId, subnet: h.subnetPrefix }"
-                        [showIdentifier]="true"
-                    ></app-entity-link>
-                </td>
-            } @else {
+            <td *ngIf="h.subnetId; else globalSubnetBlock">
+                <app-entity-link
+                    entity="subnet"
+                    [showEntityName]="false"
+                    [attrs]="{ id: h.subnetId, subnet: h.subnetPrefix }"
+                    [showIdentifier]="true"
+                ></app-entity-link>
+            </td>
+            <ng-template #globalSubnetBlock>
                 <td>global</td>
-            }
+            </ng-template>
             <td>
-                @for (lhs of localHostsGroupedByDaemon[h.id]; track lhs) {
-                    <div class="flex align-items-baseline">
-                        <!-- Hyperlink to the daemon details -->
-                        <app-entity-link entity="daemon" [showEntityName]="false" [attrs]="lhs[0]"></app-entity-link>
-                        <!-- Data source labels -->
-                        @for (lh of lhs; track lh) {
-                            <app-host-data-source-label
-                                class="ml-2 mt-1"
-                                [dataSource]="lh.dataSource"
-                            ></app-host-data-source-label>
-                        }
-                        <!-- Conflict label -->
-                        @if (getLocalHostsState(lhs) === 'conflict') {
-                            <p-tag
-                                class="ml-2 mt-1"
-                                value="conflict"
-                                severity="danger"
-                                pTooltip="The host's configurations are different in the configuration file and the host database."
-                            ></p-tag>
-                        }
-                        <!-- Duplicate label -->
-                        @if (getLocalHostsState(lhs) === 'duplicate') {
-                            <p-tag
-                                class="ml-2 mt-1"
-                                value="duplicate"
-                                severity="warn"
-                                pTooltip="The host is duplicated in the configuration file and host database."
-                            ></p-tag>
-                        }
-                    </div>
-                }
+                <div *ngFor="let lhs of localHostsGroupedByDaemon[h.id]" class="flex align-items-baseline">
+                    <!-- Hyperlink to the daemon details -->
+                    <app-entity-link entity="daemon" [showEntityName]="false" [attrs]="lhs[0]"></app-entity-link>
+                    <!-- Data source labels -->
+                    <app-host-data-source-label
+                        *ngFor="let lh of lhs"
+                        class="ml-2 mt-1"
+                        [dataSource]="lh.dataSource"
+                    ></app-host-data-source-label>
+                    <!-- Conflict label -->
+                    <p-tag
+                        *ngIf="getLocalHostsState(lhs) === 'conflict'"
+                        class="ml-2 mt-1"
+                        value="conflict"
+                        severity="danger"
+                        pTooltip="The host's configurations are different in the configuration file and the host database."
+                    ></p-tag>
+                    <!-- Duplicate label -->
+                    <p-tag
+                        *ngIf="getLocalHostsState(lhs) === 'duplicate'"
+                        class="ml-2 mt-1"
+                        value="duplicate"
+                        severity="warn"
+                        pTooltip="The host is duplicated in the configuration file and host database."
+                    ></p-tag>
+                </div>
             </td>
         </tr>
     </ng-template>
@@ -454,17 +441,15 @@
         <tr>
             <td colspan="6">
                 No hosts found.
-                @if (tableHasFilter(hostsTable)) {
-                    <span>
-                        Clear filtering and try again.
-                        <p-button
-                            label="Clear"
-                            [outlined]="true"
-                            icon="pi pi-filter-slash"
-                            (click)="clearTableFiltering()"
-                        ></p-button>
-                    </span>
-                }
+                <span *ngIf="tableHasFilter(hostsTable)">
+                    Clear filtering and try again.
+                    <p-button
+                        label="Clear"
+                        [outlined]="true"
+                        icon="pi pi-filter-slash"
+                        (click)="clearTableFiltering()"
+                    ></p-button>
+                </span>
             </td>
         </tr>
     </ng-template>
