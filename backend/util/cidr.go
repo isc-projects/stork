@@ -284,9 +284,10 @@ func IsIPAddress(ipAddress string) bool {
 	return net.ParseIP(ipAddress) != nil
 }
 
-// Convenience function returning the list of IP addresses on the
-// host as strings.
-func GetHostIPAddresses() ([]string, error) {
+// Returns a list of IP addresses with filtering. The specified function should
+// return true if the address should be included in the list. If the function is
+// nil, all addresses are included.
+func getHostIPAddressesFunc(filter func(addr net.Addr) bool) ([]string, error) {
 	addrs, err := net.InterfaceAddrs()
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot get IP addresses from network interfaces")
@@ -294,9 +295,68 @@ func GetHostIPAddresses() ([]string, error) {
 	// Collect unique IP addresses.
 	uniqueAddrs := make(map[string]struct{})
 	for _, addr := range addrs {
+		if filter != nil && !filter(addr) {
+			continue
+		}
 		// Remove the prefix length from the IP address.
 		ip, _, _ := strings.Cut(addr.String(), "/")
 		uniqueAddrs[ip] = struct{}{}
 	}
 	return slices.Collect(maps.Keys(uniqueAddrs)), nil
+}
+
+// Returns a list of IPv4 addresses on the host.
+func GetHostIPv4Addresses() ([]string, error) {
+	return getHostIPAddressesFunc(func(addr net.Addr) bool {
+		ip, _, err := net.ParseCIDR(addr.String())
+		return err == nil && ip.To4() != nil
+	})
+}
+
+// Returns a list of IPv6 addresses on the host.
+func GetHostIPv6Addresses() ([]string, error) {
+	return getHostIPAddressesFunc(func(addr net.Addr) bool {
+		ip, _, err := net.ParseCIDR(addr.String())
+		return err == nil && ip.To4() == nil
+	})
+}
+
+// Checks if the specified IP address is assigned to a network interface on the host.
+func IsHostIPAddress(ipAddress string) bool {
+	localAddresses, err := getHostIPAddressesFunc(nil)
+	if err != nil {
+		return false
+	}
+	return slices.Contains(localAddresses, ipAddress)
+}
+
+// Checks if the specified IP address belongs to a network where one of the
+// host network interface addresses belongs.
+func IsIPAddressInHostNetwork(ipAddress string) bool {
+	target := net.ParseIP(ipAddress)
+	if target == nil {
+		return false
+	}
+
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return false
+	}
+	for _, addr := range addrs {
+		ip, network, err := net.ParseCIDR(addr.String())
+		if err != nil {
+			continue
+		}
+
+		// Skip IPv4/IPv6 mismatches.
+		if (target.To4() != nil) != (ip.To4() != nil) {
+			continue
+		}
+
+		if network.Contains(target) {
+			return true
+		}
+	}
+
+	return false
 }

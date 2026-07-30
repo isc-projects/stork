@@ -1,6 +1,11 @@
 package bind9config
 
-import storkutil "isc.org/stork/util"
+import (
+	"slices"
+
+	"github.com/pkg/errors"
+	storkutil "isc.org/stork/util"
+)
 
 var _ formattedElement = (*ListenOn)(nil)
 
@@ -82,25 +87,77 @@ func (l ListenOnClauses) GetMatchingListenOnClause(port int64) *ListenOn {
 	return nil
 }
 
+// Returns IP addresses effectively enabled by the listen-on or listen-on-v6 setting.
+func (l *ListenOn) GetEffectiveIPAddresses() ([]string, error) {
+	var ipAddresses []string
+	for _, element := range l.AddressMatchList.Elements {
+		if element.IPAddressOrACLName != "" {
+			switch {
+			case l.Variant == "listen-on" && slices.Contains([]string{"0.0.0.0", "any"}, element.IPAddressOrACLName):
+				ipv4Addresses, err := storkutil.GetHostIPv4Addresses()
+				if err != nil {
+					return nil, err
+				}
+				ipAddresses = append(ipAddresses, ipv4Addresses...)
+			case l.Variant == "listen-on-v6" && slices.Contains([]string{"::", "any"}, element.IPAddressOrACLName):
+				ipv6Addresses, err := storkutil.GetHostIPv6Addresses()
+				if err != nil {
+					return nil, err
+				}
+				ipAddresses = append(ipAddresses, ipv6Addresses...)
+			default:
+				if storkutil.IsIPAddress(element.IPAddressOrACLName) {
+					ipAddresses = append(ipAddresses, element.IPAddressOrACLName)
+				}
+			}
+		}
+	}
+	return ipAddresses, nil
+}
+
 // Gets the preferred IP address from the listen-on clause.
 // The function prefers loopback and zero addresses.
-func (l *ListenOn) GetPreferredIPAddress(allowTransferMatchList *AddressMatchList) string {
-	switch l.Variant {
-	case "listen-on":
-		if (l.Includes("127.0.0.1") || l.Includes("0.0.0.0")) || l.Includes("any") && !allowTransferMatchList.Excludes("127.0.0.1") {
-			return "127.0.0.1"
-		}
-	case "listen-on-v6":
-		if (l.Includes("::1") || l.Includes("::")) || l.Includes("any") && !allowTransferMatchList.Excludes("::1") {
-			return "::1"
-		}
+// It takes into account the match-clients and allow-transfer match lists
+// to determine whether the selected IP address and key are allowed. If
+// both match lists are present, the IP address and key must be allowed by
+// both lists.
+func (l *ListenOn) GetPreferredIPAddress(globalConfig AddressMatchListGlobalConfigAccessor, matchClientsMatchList *AddressMatchList, allowTransferMatchList *AddressMatchList, keyID string) (string, error) {
+	ipAddresses, err := l.GetEffectiveIPAddresses()
+	if err != nil {
+		return "", err
 	}
-	for _, element := range l.AddressMatchList.Elements {
-		if element.IPAddressOrACLName != "" && storkutil.IsIPAddress(element.IPAddressOrACLName) && !element.Negation && !allowTransferMatchList.Excludes(element.IPAddressOrACLName) {
-			return element.IPAddressOrACLName
+	// Sort the IP addresses to prefer loopback addresses.
+	slices.SortFunc(ipAddresses, func(first, second string) int {
+		switch {
+		case first == "127.0.0.1", first == "::1" && second != "127.0.0.1":
+			return -1
+		case second == "127.0.0.1", second == "::1" && first != "127.0.0.1":
+			return 1
+		default:
+			return 0
 		}
+	})
+	matchLists := []*AddressMatchList{}
+	if matchClientsMatchList != nil {
+		matchLists = append(matchLists, matchClientsMatchList)
 	}
-	return ""
+	if allowTransferMatchList != nil {
+		matchLists = append(matchLists, allowTransferMatchList)
+	}
+OUTER_LOOP:
+	for _, ipAddress := range ipAddresses {
+		for _, matchList := range matchLists {
+			allowed, err := matchList.IsIPAddressAndKeyAllowed(globalConfig, ipAddress, keyID)
+			if err != nil {
+				return "", err
+			}
+			if !allowed {
+				continue OUTER_LOOP
+			}
+		}
+		return ipAddress, nil
+	}
+	return "", errors.Errorf("no preferred IP address found in %s clause", l.Variant)
 }
 
 // Gets the port from the listen-on clause. If the port is not specified,

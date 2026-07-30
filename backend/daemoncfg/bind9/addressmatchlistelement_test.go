@@ -6,38 +6,36 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Test checking that the ACL match list element is formatted correctly.
-func TestAddressMatchListElementFormatACL(t *testing.T) {
-	amle := &AddressMatchListElement{
-		Negation: false,
-		ACL: &ACL{
-			Name: "test-acl",
-		},
-		KeyID:              "test-key",
-		IPAddressOrACLName: "test-ip",
-	}
-	output := amle.getFormattedOutput(nil)
-	require.NotNil(t, output)
-	builder := newFormatterStringBuilder()
-	err := output.write(0, false, builder)
-	require.NoError(t, err)
-	require.Equal(t, `"test-acl";`, builder.getString())
-}
-
-// Test checking that the negated ACL match list element is formatted correctly.
-func TestAddressMatchListElementFormatACLNegation(t *testing.T) {
+// Test checking that the address match list element is formatted correctly.
+func TestAddressMatchListElementFormatAddressMatchList(t *testing.T) {
 	amle := &AddressMatchListElement{
 		Negation: true,
-		ACL: &ACL{
-			Name: "test-acl",
+		AddressMatchList: &AddressMatchList{
+			Elements: []*AddressMatchListElement{
+				{
+					Negation: true,
+					AddressMatchList: &AddressMatchList{
+						Elements: []*AddressMatchListElement{
+							{
+								IPAddressOrACLName: "1.1.1.1",
+							},
+						},
+					},
+				},
+				{
+					IPAddressOrACLName: "1.1.1.2",
+				},
+			},
 		},
 	}
 	output := amle.getFormattedOutput(nil)
 	require.NotNil(t, output)
-	builder := newFormatterStringBuilder()
-	err := output.write(0, false, builder)
-	require.NoError(t, err)
-	require.Equal(t, `! "test-acl";`, builder.getString())
+	requireConfigEq(t, `! {
+		! {
+			"1.1.1.1";
+		};
+		"1.1.1.2";
+	};`, output)
 }
 
 // Test that the key match list element is formatted correctly.

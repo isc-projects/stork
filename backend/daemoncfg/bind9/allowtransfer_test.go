@@ -7,6 +7,12 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
+// Test that zone transfer is disabled when address match list in allow-transfer is nil.
+func TestAllowTransferIsDisabledNil(t *testing.T) {
+	at := &AllowTransfer{}
+	require.True(t, at.IsDisabled())
+}
+
 // Test that zone transfer is disabled when allow-transfer is not specified.
 func TestAllowTransferIsDisabledEmpty(t *testing.T) {
 	at := &AllowTransfer{

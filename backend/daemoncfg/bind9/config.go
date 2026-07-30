@@ -12,6 +12,8 @@ import (
 	storkutil "isc.org/stork/util"
 )
 
+var _ AddressMatchListGlobalConfigAccessor = (*Config)(nil)
+
 const DefaultViewName = "_default"
 
 // Config is the root of the Bind9 configuration. It contains a list of
@@ -172,9 +174,9 @@ func (c *Config) getKeyFromAddressMatchList(level int, addressMatchList *Address
 		case element.KeyID != "":
 			// Find a key by specified name.
 			return c.GetKey(element.KeyID), nil
-		case element.ACL != nil:
-			// Recursively search for a key in the inline ACL.
-			return c.getKeyFromAddressMatchList(level+1, element.ACL.AddressMatchList)
+		case element.AddressMatchList != nil:
+			// Recursively search for a key in the address match list.
+			return c.getKeyFromAddressMatchList(level+1, element.AddressMatchList)
 		case element.IPAddressOrACLName != "":
 			// Recursively search for a key in the referenced ACL.
 			acl := c.GetACL(element.IPAddressOrACLName)
@@ -219,20 +221,14 @@ func (c *Config) getAXFRCredentialsForDefaultView(zoneName string) (address stri
 
 	// The allow-transfer may specify the key that is allowed to run the zone transfer.
 	// If that key is specified the client will use it.
-	var key *Key
-	if key, err = c.getKeyFromAddressMatchList(0, allowTransfer.AddressMatchList); err != nil {
+	keys, err := allowTransfer.AddressMatchList.GetKeys(c)
+	if err != nil {
 		return "", "", "", "", errors.WithMessagef(err, "failed to get AXFR credentials for zone %s", zoneName)
 	}
-
-	if key != nil {
-		// Key is optional when the zone is in the default view. If it is specified, let's get
-		// the key details.
-		keyName = key.Name
-		if algorithm, secret, err = key.GetAlgorithmSecret(); err != nil {
-			return "", "", "", "", errors.WithMessagef(err, "failed to get AXFR credentials for zone %s", zoneName)
-		}
+	if len(keys) == 0 {
+		// No keys found, so we'll try the access using no key.
+		keys = append(keys, nil)
 	}
-
 	// The allow-transfer clause may optionally specify the port number. The client should send
 	// the request to this port number. The default port is 53.
 	port := int64(53)
@@ -261,13 +257,26 @@ func (c *Config) getAXFRCredentialsForDefaultView(zoneName string) (address stri
 		return "", "", "", "", errors.Errorf("failed to get AXFR credentials for zone %s: allow-transfer port %d does not match any listen-on setting", zoneName, port)
 	}
 
-	// Return the address and port to connect to.
-	preferredIPAddress := listenOn.GetPreferredIPAddress(allowTransfer.AddressMatchList)
-	if preferredIPAddress == "" {
-		return "", "", "", "", errors.Errorf("failed to get AXFR credentials for zone %s: allow-transfer port %d does not match any listen-on setting", zoneName, port)
+	// For each key, try to find an IP address that matches the listen-on settings.
+	for _, key := range keys {
+		var keyName string
+		if key != nil {
+			keyName = key.Name
+		}
+		preferredIPAddress, err := listenOn.GetPreferredIPAddress(c, nil, allowTransfer.AddressMatchList, keyName)
+		if err != nil {
+			continue
+		}
+		if key != nil {
+			algorithm, secret, err = key.GetAlgorithmSecret()
+			if err != nil {
+				return "", "", "", "", errors.WithMessagef(err, "failed to get AXFR credentials for zone %s", zoneName)
+			}
+		}
+		addr := net.JoinHostPort(preferredIPAddress, strconv.Itoa(int(listenOn.GetPort())))
+		return addr, keyName, algorithm, secret, nil
 	}
-	addr := net.JoinHostPort(preferredIPAddress, strconv.Itoa(int(listenOn.GetPort())))
-	return addr, keyName, algorithm, secret, nil
+	return "", "", "", "", errors.Errorf("failed to get AXFR credentials for zone %s: none of the IP addresses and keys in the allow-transfer port %d clause can be used to transfer the zone", zoneName, port)
 }
 
 // Gets credentials for the zone transfer for the given view and zone.
@@ -317,34 +326,30 @@ func (c *Config) getAXFRCredentialsForView(viewName string, zoneName string) (ad
 	// If that key is specified the client will use it.
 
 	// Check if the match-clients clause contains a reference to the key.
-	var key *Key
-	if matchClients != nil {
-		key, err = c.getKeyFromAddressMatchList(0, matchClients.AddressMatchList)
+	var (
+		keys                  []*Key
+		matchClientsMatchList *AddressMatchList
+	)
+	if matchClients != nil && matchClients.AddressMatchList != nil {
+		keys, err = matchClients.AddressMatchList.GetKeys(c)
 		if err != nil {
 			return "", "", "", "", err
 		}
+		matchClientsMatchList = matchClients.AddressMatchList
 	}
 
-	if key == nil {
-		// Allow transfer may specify the key that is allowed to run the zone transfer.
-		// If this key is specified the client will use it.
-		key, err = c.getKeyFromAddressMatchList(0, allowTransfer.AddressMatchList)
-		if err != nil {
-			return "", "", "", "", err
-		}
+	// Allow transfer may specify the key that is allowed to run the zone transfer.
+	// If this key is specified the client will use it.
+	allowTransferKeys, err := allowTransfer.AddressMatchList.GetKeys(c)
+	if err != nil {
+		return "", "", "", "", err
 	}
+	keys = append(keys, allowTransferKeys...)
 
 	// The key is required when dealing with views. Otherwise, it is not possible to
 	// discriminate between the zones from different views.
-	if key == nil {
-		return "", "", "", "", errors.Errorf("failed to get AXFR credentials for view %s, zone %s: no key found", viewName, zoneName)
-	}
-
-	// Get the key details.
-	keyName = key.Name
-	algorithm, secret, err = key.GetAlgorithmSecret()
-	if err != nil {
-		return "", "", "", "", errors.WithMessagef(err, "failed to get AXFR credentials for zone %s", zoneName)
+	if len(keys) == 0 {
+		return "", "", "", "", errors.Errorf("failed to get AXFR credentials for view %s, zone %s: no keys in the match-clients or allow-transfer clause can be used to transfer the zone", viewName, zoneName)
 	}
 
 	// The allow-transfer clause may optionally specify the port number. The client should send
@@ -375,13 +380,20 @@ func (c *Config) getAXFRCredentialsForView(viewName string, zoneName string) (ad
 		return "", "", "", "", errors.Errorf("failed to get AXFR credentials for zone %s: allow-transfer port %d does not match any listen-on setting", zoneName, port)
 	}
 
-	// Return the address and port to connect to.
-	preferredIPAddress := listenOn.GetPreferredIPAddress(allowTransfer.AddressMatchList)
-	if preferredIPAddress == "" {
-		return "", "", "", "", errors.Errorf("failed to get AXFR credentials for zone %s: allow-transfer port %d does not match any listen-on setting", zoneName, port)
+	for _, key := range keys {
+		keyName = key.Name
+		preferredIPAddress, err := listenOn.GetPreferredIPAddress(c, matchClientsMatchList, allowTransfer.AddressMatchList, keyName)
+		if err != nil {
+			continue
+		}
+		algorithm, secret, err = key.GetAlgorithmSecret()
+		if err != nil {
+			return "", "", "", "", errors.WithMessagef(err, "failed to get AXFR credentials for zone %s", zoneName)
+		}
+		addr := net.JoinHostPort(preferredIPAddress, strconv.Itoa(int(listenOn.GetPort())))
+		return addr, keyName, algorithm, secret, nil
 	}
-	addr := net.JoinHostPort(preferredIPAddress, strconv.Itoa(int(listenOn.GetPort())))
-	return addr, keyName, algorithm, secret, nil
+	return "", "", "", "", errors.Errorf("failed to get AXFR credentials for view %s, zone %s: none of the IP addresses and keys in the match-clients or allow-transfer port %d clause can be used to transfer the zone", viewName, zoneName, port)
 }
 
 // Gets the target address and the required credentials for the zone transfer.

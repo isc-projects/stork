@@ -4,6 +4,7 @@ import (
 	"math"
 	"math/big"
 	"net"
+	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -504,18 +505,101 @@ func TestIsIPAddress(t *testing.T) {
 	require.False(t, IsIPAddress("2001:db8:1::1/64"))
 }
 
-// Test the function returning the list of IP addresses on the host.
-// It expects that the list contains only unique IP addresses.
-func TestGetHostIPAddresses(t *testing.T) {
-	ips, err := GetHostIPAddresses()
+// Test that the function returning a list of IPv4 addresses correctly picks
+// only IPv4 addresses.
+func TestGetHostIPv4Addresses(t *testing.T) {
+	ipv4Addresses, err := GetHostIPv4Addresses()
 	require.NoError(t, err)
-	uniqueIPs := make(map[string]struct{})
-	for _, ip := range ips {
-		require.True(t, IsIPAddress(ip))
-		uniqueIPs[ip] = struct{}{}
+	require.NoError(t, err)
+	for _, ipv4Address := range ipv4Addresses {
+		require.True(t, IsIPAddress(ipv4Address))
+		require.True(t, net.ParseIP(ipv4Address).To4() != nil)
 	}
-	// The number of unique IP addresses must be the same as the
-	// total number of IP addresses. It effectively tests that the
-	// list contains only unique IP addresses.
-	require.Equal(t, len(uniqueIPs), len(ips))
+}
+
+// Test that the function returning a list of IPv6 addresses correctly picks
+// only IPv6 addresses.
+func TestGetHostIPv6Addresses(t *testing.T) {
+	ipv6Addresses, err := GetHostIPv6Addresses()
+	require.NoError(t, err)
+	for _, ipv6Address := range ipv6Addresses {
+		require.True(t, IsIPAddress(ipv6Address))
+		require.True(t, net.ParseIP(ipv6Address).To4() == nil)
+	}
+}
+
+// Test that the function correctly determines that an IP address is
+// assigned to a local network interface.
+func TestIsLocalIPAddress(t *testing.T) {
+	addrs, err := net.InterfaceAddrs()
+	require.NoError(t, err)
+	for _, addr := range addrs {
+		ip, _, err := net.ParseCIDR(addr.String())
+		require.NoError(t, err)
+		require.True(t, IsHostIPAddress(ip.String()), "Address %s is not local", ip.String())
+	}
+}
+
+// Test that the function checking if the address is assigned to a local
+// network interface returns false for non-IP addresses.
+func TestIsLocalIPAddressNotAnAddress(t *testing.T) {
+	require.False(t, IsHostIPAddress("foobar"))
+	require.False(t, IsHostIPAddress(""))
+	require.False(t, IsHostIPAddress("192.0.2.1/24"))
+	require.False(t, IsHostIPAddress("2001:db8:1::1/64"))
+}
+
+// Test that the function correctly determines that the address not assigned
+// to a local network interface. We're using public DNS server address as a test
+// case. It is unlikely that this address is assigned to the local network interface.
+// The test is skipped if it is assigned.
+func TestIsNotLocalIPAddress(t *testing.T) {
+	addrs, err := net.InterfaceAddrs()
+	require.NoError(t, err)
+	if slices.ContainsFunc(addrs, func(addr net.Addr) bool {
+		ip, _, err := net.ParseCIDR(addr.String())
+		require.NoError(t, err)
+		return ip.String() == "8.8.8.8"
+	}) {
+		t.Skip("8.8.8.8 is a local IP address")
+	}
+	require.False(t, IsHostIPAddress("8.8.8.8"))
+}
+
+// Test that the function correctly determines that an IP address belongs
+// to the prefixes assigned to the local network interface.
+func TestIsIPAddressInLocalNetwork(t *testing.T) {
+	addrs, err := net.InterfaceAddrs()
+	require.NoError(t, err)
+	for _, addr := range addrs {
+		ip, _, err := net.ParseCIDR(addr.String())
+		require.NoError(t, err)
+		require.True(t, IsIPAddressInHostNetwork(ip.String()), "Address %s is not in local network", ip.String())
+	}
+}
+
+// Test that the function checking if the address belongs to the prefixes
+// assigned to the local network interface returns false for non-IP addresses.
+func TestIsIPAddressInLocalNetworkNotAnAddress(t *testing.T) {
+	require.False(t, IsIPAddressInHostNetwork("foobar"))
+	require.False(t, IsIPAddressInHostNetwork(""))
+	require.False(t, IsIPAddressInHostNetwork("192.0.2.1/24"))
+	require.False(t, IsIPAddressInHostNetwork("2001:db8:1::1/64"))
+}
+
+// Test that the function correctly determines that an IP address does not belong
+// to the prefixes assigned to the local network interface. We're using public DNS
+// server address as a test case. It is unlikely that this address is assigned to
+// the local network interface. The test is skipped if it is assigned.
+func TestIsNotIPAddressInLocalNetwork(t *testing.T) {
+	addrs, err := net.InterfaceAddrs()
+	require.NoError(t, err)
+	if slices.ContainsFunc(addrs, func(addr net.Addr) bool {
+		ip, _, err := net.ParseCIDR(addr.String())
+		require.NoError(t, err)
+		return ip.String() == "8.8.8.8"
+	}) {
+		t.Skip("8.8.8.8 is a local IP address")
+	}
+	require.False(t, IsIPAddressInHostNetwork("8.8.8.8"))
 }

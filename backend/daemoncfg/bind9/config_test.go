@@ -205,8 +205,38 @@ func TestGetViewKey(t *testing.T) {
 	require.Nil(t, key)
 }
 
-// Test that that IPv4 listener address and port is used when the
-// allow-transfer clause matches.
+// Test that correct credentials are returned when multiple keys are specified
+// in the allow-transfer clause, and only one of the keys is allowed for the
+// zone transfer.
+func TestGetAXFRCredentialsMultipleKeys(t *testing.T) {
+	config := `
+		options {
+			allow-transfer { !{ !192.0.2.1; any }; !key trusted-key; key guest-key; };
+			listen-on { 192.0.2.1; 127.0.0.1; };
+		};
+		key "trusted-key" {
+			algorithm hmac-sha256;
+			secret "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=";
+		};
+		key "guest-key" {
+			algorithm hmac-sha256;
+			secret "6L8DwXFboA7FDQJQP051hjFV/n9B3IR/SwDLX7y5czE=";
+		};
+	`
+	cfg, err := NewParser().Parse("", "", strings.NewReader(config))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	address, keyName, algorithm, secret, err := cfg.GetAXFRCredentials(DefaultViewName, "example.com")
+	require.NoError(t, err)
+	require.Equal(t, "192.0.2.1:53", address)
+	require.Equal(t, "guest-key", keyName)
+	require.Equal(t, "hmac-sha256", algorithm)
+	require.Equal(t, "6L8DwXFboA7FDQJQP051hjFV/n9B3IR/SwDLX7y5czE=", secret)
+}
+
+// Test that correct credentials are returned when port number is specified
+// in the allow-transfer clause and it matches the listener port.
 func TestGetAXFRCredentialsForViewListenOnIPv4(t *testing.T) {
 	config := `
 		options {
@@ -512,6 +542,39 @@ func TestGetAXFRCredentialsForView(t *testing.T) {
 	require.Equal(t, "trusted-key", keyName)
 	require.Equal(t, "hmac-sha256", algorithm)
 	require.Equal(t, "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=", secret)
+}
+
+// Test that correct credentials are returned when multiple keys are specified
+// in the allow-transfer clause, and only one of the keys is allowed for the
+// zone transfer.
+func TestGetAXFRCredentialsForViewMultipleKeys(t *testing.T) {
+	config := `
+		options {
+			listen-on { 192.0.2.1; 127.0.0.1; };
+		};
+		key "trusted-key" {
+			algorithm hmac-sha256;
+			secret "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=";
+		};
+		key "guest-key" {
+			algorithm hmac-sha256;
+			secret "6L8DwXFboA7FDQJQP051hjFV/n9B3IR/SwDLX7y5czE=";
+		};
+		view "trusted" {
+			match-clients { key guest-key; };
+			allow-transfer { !{ !127.0.0.1; any }; !key trusted-key; key guest-key; };
+		};
+	`
+	cfg, err := NewParser().Parse("", "", strings.NewReader(config))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	address, keyName, algorithm, secret, err := cfg.GetAXFRCredentials("trusted", "example.com")
+	require.NoError(t, err)
+	require.Equal(t, "127.0.0.1:53", address)
+	require.Equal(t, "guest-key", keyName)
+	require.Equal(t, "hmac-sha256", algorithm)
+	require.Equal(t, "6L8DwXFboA7FDQJQP051hjFV/n9B3IR/SwDLX7y5czE=", secret)
 }
 
 // Test that that IPv4 listener address and port is used when the

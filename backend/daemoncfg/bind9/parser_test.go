@@ -1255,6 +1255,41 @@ func TestParseDenyAnswerAliases(t *testing.T) {
 	require.NotNil(t, cfg.Statements[0].Options.Clauses[0].Option)
 }
 
+// Test parsing an allow-transfer statement with a negated nested address
+// match list.
+func TestParseComplexNestedAllowTransfer(t *testing.T) {
+	cfgText := `
+		zone "example.com" {
+			type master;
+			allow-transfer { !{ !axfr-clients; any; }; key inside-view-key; };
+		}
+	`
+	cfg, err := NewParser().Parse("", "", strings.NewReader(cfgText))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+	require.Len(t, cfg.Statements, 1)
+	require.NotNil(t, cfg.Statements[0].Zone)
+	require.Equal(t, "example.com", cfg.Statements[0].Zone.Name)
+
+	allowTransfer := cfg.Statements[0].Zone.GetAllowTransfer()
+	require.NotNil(t, allowTransfer)
+	require.Len(t, allowTransfer.AddressMatchList.Elements, 2)
+
+	require.NotNil(t, allowTransfer.AddressMatchList.Elements[0])
+	nestedMatchList := allowTransfer.AddressMatchList.Elements[0].AddressMatchList
+	require.NotNil(t, nestedMatchList)
+	require.Len(t, nestedMatchList.Elements, 2)
+	require.NotNil(t, nestedMatchList.Elements[0])
+	require.True(t, nestedMatchList.Elements[0].Negation)
+	require.Equal(t, "axfr-clients", nestedMatchList.Elements[0].IPAddressOrACLName)
+	require.NotNil(t, nestedMatchList.Elements[1])
+	require.False(t, nestedMatchList.Elements[1].Negation)
+	require.Equal(t, "any", nestedMatchList.Elements[1].IPAddressOrACLName)
+
+	require.NotNil(t, allowTransfer.AddressMatchList.Elements[1])
+	require.Equal(t, "inside-view-key", allowTransfer.AddressMatchList.Elements[1].KeyID)
+}
+
 // A benchmark that measures the performance of the @stork:no-parse directive.
 // It creates a set of zones and runs two independent checks. First, how long
 // it takes to parse the zones. Second, how long it takes to process the config

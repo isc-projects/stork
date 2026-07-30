@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	gomock "go.uber.org/mock/gomock"
 	storkutil "isc.org/stork/util"
 )
 
@@ -300,6 +301,132 @@ func TestListenOnFormatNilValues(t *testing.T) {
 	require.NotPanics(t, func() { listenOn.getFormattedOutput(nil) })
 }
 
+// Test getting IPv4 addresses from the listen-on clause containing actual addresses.
+func TestGetEffectiveIPv4Addresses(t *testing.T) {
+	listenOn := &ListenOn{
+		Variant: "listen-on",
+		AddressMatchList: &AddressMatchList{
+			Elements: []*AddressMatchListElement{
+				{IPAddressOrACLName: "1.1.1.1"},
+				{IPAddressOrACLName: "2.2.2.2"},
+				{IPAddressOrACLName: "127.0.0.1"},
+			},
+		},
+	}
+	ipAddresses, err := listenOn.GetEffectiveIPAddresses()
+	require.NoError(t, err)
+	require.Len(t, ipAddresses, 3)
+	require.Equal(t, "1.1.1.1", ipAddresses[0])
+	require.Equal(t, "2.2.2.2", ipAddresses[1])
+	require.Equal(t, "127.0.0.1", ipAddresses[2])
+}
+
+// Test that all IPv4 addresses assigned to the interfaces are returned when the
+// listen-on clause contains any or zero addresses.
+func TestGetEffectiveIPv4AddressesWithAny(t *testing.T) {
+	testCases := []string{"any", "0.0.0.0"}
+
+	for _, testCase := range testCases {
+		t.Run(testCase, func(t *testing.T) {
+			listenOn := &ListenOn{
+				Variant: "listen-on",
+				AddressMatchList: &AddressMatchList{
+					Elements: []*AddressMatchListElement{
+						{IPAddressOrACLName: testCase},
+					},
+				},
+			}
+			ipAddresses, err := listenOn.GetEffectiveIPAddresses()
+			require.NoError(t, err)
+			hostAddresses, err := storkutil.GetHostIPv4Addresses()
+			require.NoError(t, err)
+			require.Len(t, hostAddresses, len(ipAddresses))
+			for _, ipAddress := range ipAddresses {
+				require.Contains(t, hostAddresses, ipAddress)
+			}
+		})
+	}
+}
+
+// Test that no IPv4 addresses are returned when the listen-on clause contains
+// none keyword.
+func TestGetEffectiveIPv4AddressesWithNone(t *testing.T) {
+	listenOn := &ListenOn{
+		Variant: "listen-on",
+		AddressMatchList: &AddressMatchList{
+			Elements: []*AddressMatchListElement{
+				{IPAddressOrACLName: "none"},
+			},
+		},
+	}
+	ipAddresses, err := listenOn.GetEffectiveIPAddresses()
+	require.NoError(t, err)
+	require.Empty(t, ipAddresses)
+}
+
+// Test getting IPv6 addresses from the listen-on-v6 clause containing actual addresses.
+func TestGetEffectiveIPv6Addresses(t *testing.T) {
+	listenOn := &ListenOn{
+		Variant: "listen-on-v6",
+		AddressMatchList: &AddressMatchList{
+			Elements: []*AddressMatchListElement{
+				{IPAddressOrACLName: "2001:db8:1::1"},
+				{IPAddressOrACLName: "2001:db8:2::2"},
+				{IPAddressOrACLName: "::1"},
+			},
+		},
+	}
+	ipAddresses, err := listenOn.GetEffectiveIPAddresses()
+	require.NoError(t, err)
+	require.Len(t, ipAddresses, 3)
+	require.Equal(t, "2001:db8:1::1", ipAddresses[0])
+	require.Equal(t, "2001:db8:2::2", ipAddresses[1])
+	require.Equal(t, "::1", ipAddresses[2])
+}
+
+// Test that all IPv6 addresses assigned to the interfaces are returned when the
+// listen-on-v6 clause contains any or zero addresses.
+func TestGetEffectiveIPv6AddressesWithAny(t *testing.T) {
+	testCases := []string{"any", "::"}
+
+	for _, testCase := range testCases {
+		t.Run(testCase, func(t *testing.T) {
+			listenOn := &ListenOn{
+				Variant: "listen-on-v6",
+				AddressMatchList: &AddressMatchList{
+					Elements: []*AddressMatchListElement{
+						{IPAddressOrACLName: "any"},
+					},
+				},
+			}
+			ipAddresses, err := listenOn.GetEffectiveIPAddresses()
+			require.NoError(t, err)
+			hostAddresses, err := storkutil.GetHostIPv6Addresses()
+			require.NoError(t, err)
+			require.Len(t, hostAddresses, len(ipAddresses))
+			for _, ipAddress := range ipAddresses {
+				require.Contains(t, hostAddresses, ipAddress)
+			}
+		})
+	}
+}
+
+// Test that no IPv6 addresses are returned when the listen-on-v6 clause contains
+// none keyword.
+func TestGetEffectiveIPv6AddressesWithNone(t *testing.T) {
+	listenOn := &ListenOn{
+		Variant: "listen-on-v6",
+		AddressMatchList: &AddressMatchList{
+			Elements: []*AddressMatchListElement{
+				{IPAddressOrACLName: "none"},
+			},
+		},
+	}
+	ipAddresses, err := listenOn.GetEffectiveIPAddresses()
+	require.NoError(t, err)
+	require.Empty(t, ipAddresses)
+}
+
 // Test that local loopback address is preferred over other addresses.
 func TestGetPreferredIPAddressLocalLoopback(t *testing.T) {
 	listenOn := &ListenOn{
@@ -314,10 +441,11 @@ func TestGetPreferredIPAddressLocalLoopback(t *testing.T) {
 	}
 	allowTransferMatchList := &AddressMatchList{
 		Elements: []*AddressMatchListElement{
-			{IPAddressOrACLName: "192.0.2.1"},
+			{KeyID: "stork"},
 		},
 	}
-	preferredIPAddress := listenOn.GetPreferredIPAddress(allowTransferMatchList)
+	preferredIPAddress, err := listenOn.GetPreferredIPAddress(nil, nil, allowTransferMatchList, "stork")
+	require.NoError(t, err)
 	require.Equal(t, "127.0.0.1", preferredIPAddress)
 }
 
@@ -329,17 +457,18 @@ func TestGetPreferredIPAddressZeroAddress(t *testing.T) {
 		AddressMatchList: &AddressMatchList{
 			Elements: []*AddressMatchListElement{
 				{IPAddressOrACLName: "192.0.2.1"},
-				{IPAddressOrACLName: "key"},
+				{IPAddressOrACLName: "stork"},
 				{IPAddressOrACLName: "0.0.0.0"},
 			},
 		},
 	}
 	allowTransferMatchList := &AddressMatchList{
 		Elements: []*AddressMatchListElement{
-			{IPAddressOrACLName: "192.0.2.1"},
+			{KeyID: "stork"},
 		},
 	}
-	preferredIPAddress := listenOn.GetPreferredIPAddress(allowTransferMatchList)
+	preferredIPAddress, err := listenOn.GetPreferredIPAddress(nil, nil, allowTransferMatchList, "stork")
+	require.NoError(t, err)
 	require.Equal(t, "127.0.0.1", preferredIPAddress)
 }
 
@@ -358,16 +487,22 @@ func TestGetPreferredIPAddressAny(t *testing.T) {
 	}
 	allowTransferMatchList := &AddressMatchList{
 		Elements: []*AddressMatchListElement{
-			{IPAddressOrACLName: "192.0.2.1"},
+			{KeyID: "stork"},
 		},
 	}
-	preferredIPAddress := listenOn.GetPreferredIPAddress(allowTransferMatchList)
+	preferredIPAddress, err := listenOn.GetPreferredIPAddress(nil, nil, allowTransferMatchList, "stork")
+	require.NoError(t, err)
 	require.Equal(t, "127.0.0.1", preferredIPAddress)
 }
 
 // Test that an IP address is returned when preceding match list element
 // is not an IP address.
 func TestGetPreferredIPAddressNotAnIPAddress(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	globalConfig := NewMockAddressMatchListGlobalConfigAccessor(ctrl)
+	globalConfig.EXPECT().GetACL(gomock.Any()).Return(nil)
+
 	listenOn := &ListenOn{
 		Variant: "listen-on",
 		AddressMatchList: &AddressMatchList{
@@ -383,7 +518,8 @@ func TestGetPreferredIPAddressNotAnIPAddress(t *testing.T) {
 			{IPAddressOrACLName: "192.0.2.1"},
 		},
 	}
-	preferredIPAddress := listenOn.GetPreferredIPAddress(allowTransferMatchList)
+	preferredIPAddress, err := listenOn.GetPreferredIPAddress(globalConfig, nil, allowTransferMatchList, "key")
+	require.NoError(t, err)
 	require.Equal(t, "192.0.2.1", preferredIPAddress)
 }
 
@@ -401,10 +537,11 @@ func TestGetPreferredIPAddressLocalLoopbackIPv6(t *testing.T) {
 	}
 	allowTransferMatchList := &AddressMatchList{
 		Elements: []*AddressMatchListElement{
-			{IPAddressOrACLName: "2001:db8:1::1"},
+			{KeyID: "stork"},
 		},
 	}
-	preferredIPAddress := listenOn.GetPreferredIPAddress(allowTransferMatchList)
+	preferredIPAddress, err := listenOn.GetPreferredIPAddress(nil, nil, allowTransferMatchList, "stork")
+	require.NoError(t, err)
 	require.Equal(t, "::1", preferredIPAddress)
 }
 
@@ -423,10 +560,11 @@ func TestGetPreferredIPAddressZeroAddressIPv6(t *testing.T) {
 	}
 	allowTransferMatchList := &AddressMatchList{
 		Elements: []*AddressMatchListElement{
-			{IPAddressOrACLName: "2001:db8:1::1"},
+			{KeyID: "stork"},
 		},
 	}
-	preferredIPAddress := listenOn.GetPreferredIPAddress(allowTransferMatchList)
+	preferredIPAddress, err := listenOn.GetPreferredIPAddress(nil, nil, allowTransferMatchList, "stork")
+	require.NoError(t, err)
 	require.Equal(t, "::1", preferredIPAddress)
 }
 
@@ -445,16 +583,22 @@ func TestGetPreferredIPAddressAnyIPv6(t *testing.T) {
 	}
 	allowTransferMatchList := &AddressMatchList{
 		Elements: []*AddressMatchListElement{
-			{IPAddressOrACLName: "2001:db8:1::1"},
+			{KeyID: "stork"},
 		},
 	}
-	preferredIPAddress := listenOn.GetPreferredIPAddress(allowTransferMatchList)
+	preferredIPAddress, err := listenOn.GetPreferredIPAddress(nil, nil, allowTransferMatchList, "stork")
+	require.NoError(t, err)
 	require.Equal(t, "::1", preferredIPAddress)
 }
 
 // Test that an IP address is returned when preceding match list element
 // is not an IP address.
 func TestGetPreferredIPAddressNotAnIPAddressIPv6(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	globalConfig := NewMockAddressMatchListGlobalConfigAccessor(ctrl)
+	globalConfig.EXPECT().GetACL(gomock.Any()).Return(nil)
+
 	listenOn := &ListenOn{
 		Variant: "listen-on-v6",
 		AddressMatchList: &AddressMatchList{
@@ -466,10 +610,92 @@ func TestGetPreferredIPAddressNotAnIPAddressIPv6(t *testing.T) {
 	}
 	allowTransferMatchList := &AddressMatchList{
 		Elements: []*AddressMatchListElement{
-			{IPAddressOrACLName: "key"},
+			{IPAddressOrACLName: "stork"},
 			{IPAddressOrACLName: "2001:db8:1::1"},
 		},
 	}
-	preferredIPAddress := listenOn.GetPreferredIPAddress(allowTransferMatchList)
+	preferredIPAddress, err := listenOn.GetPreferredIPAddress(globalConfig, nil, allowTransferMatchList, "stork")
+	require.NoError(t, err)
 	require.Equal(t, "2001:db8:1::1", preferredIPAddress)
+}
+
+// Test that the preferred IP address is returned when the listen-on clause contains
+// a nested address match list.
+func TestGetPreferredIPAddressNestedAddressMatchList(t *testing.T) {
+	listenOn := &ListenOn{
+		Variant: "listen-on",
+		AddressMatchList: &AddressMatchList{
+			Elements: []*AddressMatchListElement{
+				{IPAddressOrACLName: "192.0.2.1"},
+			},
+		},
+	}
+	allowTransferMatchList := &AddressMatchList{
+		Elements: []*AddressMatchListElement{
+			{
+				Negation: true,
+				AddressMatchList: &AddressMatchList{
+					Elements: []*AddressMatchListElement{
+						{
+							Negation:           true,
+							IPAddressOrACLName: "192.0.2.1",
+						},
+						{
+							IPAddressOrACLName: "any",
+						},
+					},
+				},
+			},
+			{
+				KeyID: "stork",
+			},
+		},
+	}
+	preferredIPAddress, err := listenOn.GetPreferredIPAddress(nil, nil, allowTransferMatchList, "stork")
+	require.NoError(t, err)
+	require.Equal(t, "192.0.2.1", preferredIPAddress)
+}
+
+// Test that both match-clients and allow-transfer match lists are considered
+// when determining the preferred IP address.
+func TestGetPreferredIPAddressMatchClientsMatchList(t *testing.T) {
+	listenOn := &ListenOn{
+		Variant: "listen-on",
+		AddressMatchList: &AddressMatchList{
+			Elements: []*AddressMatchListElement{
+				{IPAddressOrACLName: "192.0.2.1"},
+			},
+		},
+	}
+	matchClientsMatchList := &AddressMatchList{
+		Elements: []*AddressMatchListElement{
+			{KeyID: "first"},
+			{KeyID: "second"},
+		},
+	}
+	allowTransferMatchList := &AddressMatchList{
+		Elements: []*AddressMatchListElement{
+			{KeyID: "second"},
+			{KeyID: "third"},
+		},
+	}
+	// First key is not allowed by the allow-transfer match list.
+	preferredIPAddress, err := listenOn.GetPreferredIPAddress(nil, matchClientsMatchList, allowTransferMatchList, "first")
+	require.Error(t, err)
+	require.Empty(t, preferredIPAddress)
+
+	// Third key is not allowed by the match-clients match list.
+	preferredIPAddress, err = listenOn.GetPreferredIPAddress(nil, matchClientsMatchList, allowTransferMatchList, "third")
+	require.Error(t, err)
+	require.Empty(t, preferredIPAddress)
+
+	// Second key is allowed by both match-clients and allow-transfer match lists.
+	preferredIPAddress, err = listenOn.GetPreferredIPAddress(nil, matchClientsMatchList, allowTransferMatchList, "second")
+	require.NoError(t, err)
+	require.Equal(t, "192.0.2.1", preferredIPAddress)
+
+	// When only match-clients match list is specified, the first key is allowed.
+	preferredIPAddress, err = listenOn.GetPreferredIPAddress(nil, matchClientsMatchList, nil, "first")
+	require.NoError(t, err)
+	require.Equal(t, "192.0.2.1", preferredIPAddress)
 }
