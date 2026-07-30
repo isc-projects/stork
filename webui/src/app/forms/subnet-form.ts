@@ -29,7 +29,7 @@ export class DaemonGroup {
     constructor(index: number, daemons: KeaDaemon[]) {
         this.index = index
         this.daemons = daemons
-        this.label = daemons.map(d => d.label).join(', ')
+        this.label = daemons.map((d) => d.label).join(', ')
     }
 }
 
@@ -86,7 +86,7 @@ export class SubnetFormState implements FormState {
      *
      * They are grouped, daemons in the same group must be configured at the
      * same time.
-     * 
+     *
      * Maintaining a filtered list prevents the user from selecting the
      * servers of different kinds, e.g. one DHCPv4 and one DHCPv6 server.
      */
@@ -162,7 +162,7 @@ export class SubnetFormState implements FormState {
      * @returns specified daemon or undefined if it doesn't exist.
      */
     getDaemonById(id: number): KeaDaemon | undefined {
-        return this.allDaemons.flatMap(g => g.daemons).find((d) => d.id === id)
+        return this.allDaemons.flatMap((g) => g.daemons).find((d) => d.id === id)
     }
 
     /**
@@ -209,8 +209,9 @@ export class SubnetFormState implements FormState {
                 this.allSharedNetworks4
                     ?.filter(
                         (sn) =>
-                            sn.localSharedNetworks.every((lsn) => selectedDaemonIDs.some((id) => id === lsn.daemonId)) &&
-                            sn.localSharedNetworks.length === selectedDaemonIDs.length
+                            sn.localSharedNetworks.every((lsn) =>
+                                selectedDaemonIDs.some((id) => id === lsn.daemonId)
+                            ) && sn.localSharedNetworks.length === selectedDaemonIDs.length
                     )
                     .map((sn) => {
                         return { name: sn.name, id: sn.id }
@@ -221,8 +222,9 @@ export class SubnetFormState implements FormState {
                 this.allSharedNetworks6
                     ?.filter(
                         (sn) =>
-                            sn.localSharedNetworks.every((lsn) => selectedDaemonIDs.some((id) => id === lsn.daemonId)) &&
-                            sn.localSharedNetworks.length === selectedDaemonIDs.length
+                            sn.localSharedNetworks.every((lsn) =>
+                                selectedDaemonIDs.some((id) => id === lsn.daemonId)
+                            ) && sn.localSharedNetworks.length === selectedDaemonIDs.length
                     )
                     .map((sn) => {
                         return { name: sn.name, id: sn.id }

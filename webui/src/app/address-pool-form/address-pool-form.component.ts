@@ -15,7 +15,7 @@ import { Checkbox } from 'primeng/checkbox'
 import { Divider } from 'primeng/divider'
 import { Tag } from 'primeng/tag'
 import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
-import { KeaDaemon } from '../backend'
+import type { DaemonGroup } from '../forms/subnet-form'
 
 /**
  * A component providing a form for editing and adding an address pool.
@@ -51,9 +51,9 @@ export class AddressPoolFormComponent implements OnInit {
     @Input() subnet: string
 
     /**
-     * An array of daemons that can be associated with a pool.
+     * An array of daemon groups that can be associated with a pool.
      */
-    @Input() selectableDaemons: KeaDaemon[]
+    @Input() selectableGroups: DaemonGroup[]
 
     /**
      * Form group holding address pool data.
@@ -71,19 +71,19 @@ export class AddressPoolFormComponent implements OnInit {
     uuids = {
         poolStart: crypto.randomUUID(),
         poolEnd: crypto.randomUUID(),
-        selectedDaemons: crypto.randomUUID(),
+        selectedGroups: crypto.randomUUID(),
     }
 
     /**
      * A component lifecycle hook invoked when the component is initialized.
      *
-     * It initializes the server names using the set of selected daemons in the form.
+     * It initializes the server names using the set of selected daemon groups in the form.
      */
     ngOnInit(): void {
-        const selectedDaemons = this.formGroup.get('selectedDaemons').value ?? []
-        if (selectedDaemons.length > 0) {
-            this.servers = selectedDaemons.map(
-                (sd) => this.selectableDaemons.find((d) => d.id === sd)?.label ?? 'unknown'
+        const selectedGroups = this.formGroup.get('selectedGroups').value ?? []
+        if (selectedGroups.length > 0) {
+            this.servers = selectedGroups.map(
+                (sg) => this.selectableGroups.find((group) => group.index === sg)?.label ?? 'unknown'
             )
         }
     }
@@ -110,7 +110,7 @@ export class AddressPoolFormComponent implements OnInit {
     }
 
     /**
-     * Adjusts the form state based on the selected daemons.
+     * Adjusts the form state based on the selected daemon groups.
      *
      * Servers selection affects the form contents. When none are selected, the
      * default form should be displayed. Otherwise, we should track the configuration
@@ -118,35 +118,36 @@ export class AddressPoolFormComponent implements OnInit {
      * form update because the parts of the form related to that server must be
      * removed.
      *
-     * @param toggledDaemonId optional id of the removed daemon in the controls.
+     * @param toggledDaemonId optional index of the toggled daemon group.
      */
     handleDaemonsChange(toggledDaemonId?: number): void {
-        const toggledDaemonIndex = toggledDaemonId
-            ? this.selectableDaemons.findIndex((fd) => fd.id === toggledDaemonId)
-            : -1
-        // Selecting new daemons may have a large impact on the data already
+        const toggleDaemonGroupIndex =
+            toggledDaemonId != null ? this.selectableGroups.findIndex((group) => group.index === toggledDaemonId) : -1
+        // Selecting new daemon groups may have a large impact on the data already
         // inserted to the form. Update the form state accordingly and see
         // if it is breaking change.
-        const selectedDaemons = this.formGroup.get('selectedDaemons').value ?? []
-        if (selectedDaemons.length === 0) {
+        const selectedGroups = this.formGroup.get('selectedGroups').value ?? []
+        if (selectedGroups.length === 0) {
             // The breaking change puts us at risk of having irrelevant form contents.
             this.resetOptionsArray()
             this.resetParametersArray()
         } else {
             this.subnetSetFormService.adjustFormForSelectedDaemons(
                 this.formGroup,
-                toggledDaemonIndex,
+                toggleDaemonGroupIndex,
                 this.servers.length
             )
         }
-        // If the number of selected daemons has changed, we must update the selected servers list.
-        this.servers = selectedDaemons.map((sd) => this.selectableDaemons.find((d) => d.id === sd)?.label ?? 'unknown')
+        // If the number of selected daemon groups has changed, update selected servers list.
+        this.servers = selectedGroups.map(
+            (sg) => this.selectableGroups.find((group) => group.index === sg)?.label ?? 'unknown'
+        )
     }
 
     /**
-     * A callback invoked when selected DHCP servers have changed.
+     * A callback invoked when selected DHCP server groups have changed.
      *
-     * Adjusts the form state based on the selected daemons.
+     * Adjusts the form state based on the selected daemon groups.
      */
     onDaemonsChange(event): void {
         this.handleDaemonsChange(event.itemValue)
@@ -174,7 +175,11 @@ export class AddressPoolFormComponent implements OnInit {
         this.formGroup.setControl(
             'parameters',
             this.subnetSetFormService.createDefaultKeaPoolParametersForm(
-                getVersionRange(this.selectableDaemons.map((d) => d.version))
+                getVersionRange(
+                    this.selectableGroups
+                        ?.flatMap((group) => group.daemons.map((daemon) => daemon.version))
+                        .filter((version): version is string => !!version)
+                )
             )
         )
     }

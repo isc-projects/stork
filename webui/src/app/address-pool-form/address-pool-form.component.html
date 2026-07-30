@@ -30,11 +30,11 @@
         <div class="mt-4">
             <p-floatlabel class="block mt-4 mb-2">
                 <p-multiSelect
-                    [inputId]="uuids.selectedDaemons"
+                    [inputId]="uuids.selectedGroups"
                     optionLabel="label"
-                    optionValue="id"
-                    [options]="selectableDaemons"
-                    formControlName="selectedDaemons"
+                    optionValue="index"
+                    [options]="selectableGroups"
+                    formControlName="selectedGroups"
                     display="chip"
                     [showToggleAll]="false"
                     styleClass="adaptive-chips-background"
@@ -42,11 +42,11 @@
                     (onChange)="onDaemonsChange($event)"
                 >
                 </p-multiSelect>
-                <label [for]="uuids.selectedDaemons">DHCP Servers</label>
+                <label [for]="uuids.selectedGroups">DHCP Server Groups</label>
             </p-floatlabel>
             @if (
-                formGroup.get('selectedDaemons').invalid &&
-                (formGroup.get('selectedDaemons').dirty || formGroup.get('selectedDaemons').touched)
+                formGroup.get('selectedGroups').invalid &&
+                (formGroup.get('selectedGroups').dirty || formGroup.get('selectedGroups').touched)
             ) {
                 <small class="app-error block">At least one server must be selected. </small>
             }

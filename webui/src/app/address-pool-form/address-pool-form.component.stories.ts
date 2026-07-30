@@ -79,19 +79,17 @@ export const AddressPool4: Story = {
                     ]),
                 ]),
             }),
-            selectedDaemons: new FormControl<number[]>([1, 2]),
+            selectedGroups: new FormControl<number[]>([1, 2]),
         }),
-        selectableDaemons: [
+        selectableGroups: [
             {
-                id: 1,
-                name: 'dhcp4',
-                version: '2.7.0',
+                index: 1,
+                daemons: [],
                 label: 'first/dhcp4',
             },
             {
-                id: 2,
-                name: 'dhcp4',
-                version: '2.7.0',
+                index: 2,
+                daemons: [],
                 label: 'second/dhcp4',
             },
         ],
@@ -133,19 +131,17 @@ export const AddressPool6: Story = {
                 unlocked: new FormControl(false),
                 data: new UntypedFormArray([new UntypedFormArray([]), new UntypedFormArray([])]),
             }),
-            selectedDaemons: new FormControl<number[]>([1, 2]),
+            selectedGroups: new FormControl<number[]>([1, 2]),
         }),
-        selectableDaemons: [
+        selectableGroups: [
             {
-                id: 1,
-                name: 'dhcp6',
-                version: '2.7.0',
+                index: 1,
+                daemons: [],
                 label: 'first/dhcp6',
             },
             {
-                id: 2,
-                name: 'dhcp6',
-                version: '2.7.0',
+                index: 2,
+                daemons: [],
                 label: 'second/dhcp6',
             },
         ],

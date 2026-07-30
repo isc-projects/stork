@@ -274,7 +274,7 @@ describe('StorkValidators', () => {
                     unlocked: new FormControl(false),
                     data: new FormArray([]),
                 }),
-                selectedDaemons: new FormControl([]),
+                selectedGroups: new FormControl([]),
             }),
             new FormGroup<AddressPoolForm>({
                 range: new FormGroup<AddressRangeForm>({
@@ -286,7 +286,7 @@ describe('StorkValidators', () => {
                     unlocked: new FormControl(false),
                     data: new FormArray([]),
                 }),
-                selectedDaemons: new FormControl([]),
+                selectedGroups: new FormControl([]),
             }),
             new FormGroup<AddressPoolForm>({
                 range: new FormGroup<AddressRangeForm>({
@@ -298,7 +298,7 @@ describe('StorkValidators', () => {
                     unlocked: new FormControl(false),
                     data: new FormArray([]),
                 }),
-                selectedDaemons: new FormControl([]),
+                selectedGroups: new FormControl([]),
             }),
             new FormGroup<AddressPoolForm>({
                 range: new FormGroup<AddressRangeForm>({
@@ -310,7 +310,7 @@ describe('StorkValidators', () => {
                     unlocked: new FormControl(false),
                     data: new FormArray([]),
                 }),
-                selectedDaemons: new FormControl([]),
+                selectedGroups: new FormControl([]),
             }),
             new FormGroup<AddressPoolForm>({
                 range: new FormGroup<AddressRangeForm>({
@@ -322,7 +322,7 @@ describe('StorkValidators', () => {
                     unlocked: new FormControl(false),
                     data: new FormArray([]),
                 }),
-                selectedDaemons: new FormControl([]),
+                selectedGroups: new FormControl([]),
             }),
         ])
         expect(StorkValidators.ipRangeOverlaps(fa)).toBeTruthy()
@@ -357,7 +357,7 @@ describe('StorkValidators', () => {
                     unlocked: new FormControl(false),
                     data: new FormArray([]),
                 }),
-                selectedDaemons: new FormControl([]),
+                selectedGroups: new FormControl([]),
             }),
             new FormGroup<AddressPoolForm>({
                 range: new FormGroup<AddressRangeForm>({
@@ -369,7 +369,7 @@ describe('StorkValidators', () => {
                     unlocked: new FormControl(false),
                     data: new FormArray([]),
                 }),
-                selectedDaemons: new FormControl([]),
+                selectedGroups: new FormControl([]),
             }),
         ])
         expect(StorkValidators.ipRangeOverlaps(fa)).toBeTruthy()
@@ -395,7 +395,7 @@ describe('StorkValidators', () => {
                     unlocked: new FormControl(false),
                     data: new FormArray([]),
                 }),
-                selectedDaemons: new FormControl([]),
+                selectedGroups: new FormControl([]),
             }),
             new FormGroup<AddressPoolForm>({
                 range: new FormGroup<AddressRangeForm>({
@@ -407,7 +407,7 @@ describe('StorkValidators', () => {
                     unlocked: new FormControl(false),
                     data: new FormArray([]),
                 }),
-                selectedDaemons: new FormControl([]),
+                selectedGroups: new FormControl([]),
             }),
         ])
         expect(StorkValidators.ipRangeOverlaps(fa)).toBeTruthy()
@@ -433,7 +433,7 @@ describe('StorkValidators', () => {
                     unlocked: new FormControl(false),
                     data: new FormArray([]),
                 }),
-                selectedDaemons: new FormControl([]),
+                selectedGroups: new FormControl([]),
             }),
             new FormGroup<AddressPoolForm>({
                 range: new FormGroup<AddressRangeForm>({
@@ -445,7 +445,7 @@ describe('StorkValidators', () => {
                     unlocked: new FormControl(false),
                     data: new FormArray([]),
                 }),
-                selectedDaemons: new FormControl([]),
+                selectedGroups: new FormControl([]),
             }),
             new FormGroup<AddressPoolForm>({
                 range: new FormGroup<AddressRangeForm>({
@@ -457,7 +457,7 @@ describe('StorkValidators', () => {
                     unlocked: new FormControl(false),
                     data: new FormArray([]),
                 }),
-                selectedDaemons: new FormControl([]),
+                selectedGroups: new FormControl([]),
             }),
             new FormGroup<AddressPoolForm>({
                 range: new FormGroup<AddressRangeForm>({
@@ -469,7 +469,7 @@ describe('StorkValidators', () => {
                     unlocked: new FormControl(false),
                     data: new FormArray([]),
                 }),
-                selectedDaemons: new FormControl([]),
+                selectedGroups: new FormControl([]),
             }),
             new FormGroup<AddressPoolForm>({
                 range: new FormGroup<AddressRangeForm>({
@@ -481,7 +481,7 @@ describe('StorkValidators', () => {
                     unlocked: new FormControl(false),
                     data: new FormArray([]),
                 }),
-                selectedDaemons: new FormControl([]),
+                selectedGroups: new FormControl([]),
             }),
         ])
         expect(StorkValidators.ipRangeOverlaps(fa)).toBeTruthy()
@@ -517,7 +517,7 @@ describe('StorkValidators', () => {
                     unlocked: new FormControl(false),
                     data: new FormArray([]),
                 }),
-                selectedDaemons: new FormControl([]),
+                selectedGroups: new FormControl([]),
             }),
             new FormGroup<PrefixPoolForm>({
                 prefixes: new FormGroup<PrefixForm>({
@@ -530,7 +530,7 @@ describe('StorkValidators', () => {
                     unlocked: new FormControl(false),
                     data: new FormArray([]),
                 }),
-                selectedDaemons: new FormControl([]),
+                selectedGroups: new FormControl([]),
             }),
         ])
         expect(StorkValidators.ipv6PrefixOverlaps(fa)).toBeTruthy()
@@ -557,7 +557,7 @@ describe('StorkValidators', () => {
                     unlocked: new FormControl(false),
                     data: new FormArray([]),
                 }),
-                selectedDaemons: new FormControl([]),
+                selectedGroups: new FormControl([]),
             }),
             new FormGroup<PrefixPoolForm>({
                 prefixes: new FormGroup<PrefixForm>({
@@ -570,7 +570,7 @@ describe('StorkValidators', () => {
                     unlocked: new FormControl(false),
                     data: new FormArray([]),
                 }),
-                selectedDaemons: new FormControl([]),
+                selectedGroups: new FormControl([]),
             }),
         ])
         expect(StorkValidators.ipv6PrefixOverlaps(fa)).toBeTruthy()
@@ -597,7 +597,7 @@ describe('StorkValidators', () => {
                     unlocked: new FormControl(false),
                     data: new FormArray([]),
                 }),
-                selectedDaemons: new FormControl([]),
+                selectedGroups: new FormControl([]),
             }),
             new FormGroup<PrefixPoolForm>({
                 prefixes: new FormGroup<PrefixForm>({
@@ -610,7 +610,7 @@ describe('StorkValidators', () => {
                     unlocked: new FormControl(false),
                     data: new FormArray([]),
                 }),
-                selectedDaemons: new FormControl([]),
+                selectedGroups: new FormControl([]),
             }),
             new FormGroup<PrefixPoolForm>({
                 prefixes: new FormGroup<PrefixForm>({
@@ -623,7 +623,7 @@ describe('StorkValidators', () => {
                     unlocked: new FormControl(false),
                     data: new FormArray([]),
                 }),
-                selectedDaemons: new FormControl([]),
+                selectedGroups: new FormControl([]),
             }),
             new FormGroup<PrefixPoolForm>({
                 prefixes: new FormGroup<PrefixForm>({
@@ -636,7 +636,7 @@ describe('StorkValidators', () => {
                     unlocked: new FormControl(false),
                     data: new FormArray([]),
                 }),
-                selectedDaemons: new FormControl([]),
+                selectedGroups: new FormControl([]),
             }),
             new FormGroup<PrefixPoolForm>({
                 prefixes: new FormGroup<PrefixForm>({
@@ -649,7 +649,7 @@ describe('StorkValidators', () => {
                     unlocked: new FormControl(false),
                     data: new FormArray([]),
                 }),
-                selectedDaemons: new FormControl([]),
+                selectedGroups: new FormControl([]),
             }),
         ])
         expect(StorkValidators.ipv6PrefixOverlaps(fa)).toBeTruthy()
@@ -808,7 +808,7 @@ describe('StorkValidators', () => {
                     unlocked: new FormControl(false),
                     data: new FormArray([]),
                 }),
-                selectedDaemons: new FormControl([]),
+                selectedGroups: new FormControl([]),
             }),
             new FormGroup<AddressPoolForm>({
                 range: new FormGroup<AddressRangeForm>({
@@ -825,7 +825,7 @@ describe('StorkValidators', () => {
                     unlocked: new FormControl(false),
                     data: new FormArray([]),
                 }),
-                selectedDaemons: new FormControl([]),
+                selectedGroups: new FormControl([]),
             }),
             new FormGroup<AddressPoolForm>({
                 range: new FormGroup<AddressRangeForm>({
@@ -842,7 +842,7 @@ describe('StorkValidators', () => {
                     unlocked: new FormControl(false),
                     data: new FormArray([]),
                 }),
-                selectedDaemons: new FormControl([]),
+                selectedGroups: new FormControl([]),
             }),
             new FormGroup<AddressPoolForm>({
                 range: new FormGroup<AddressRangeForm>({
@@ -859,7 +859,7 @@ describe('StorkValidators', () => {
                     unlocked: new FormControl(false),
                     data: new FormArray([]),
                 }),
-                selectedDaemons: new FormControl([]),
+                selectedGroups: new FormControl([]),
             }),
             new FormGroup<AddressPoolForm>({
                 range: new FormGroup<AddressRangeForm>({
@@ -871,7 +871,7 @@ describe('StorkValidators', () => {
                     unlocked: new FormControl(false),
                     data: new FormArray([]),
                 }),
-                selectedDaemons: new FormControl([]),
+                selectedGroups: new FormControl([]),
             }),
         ])
         expect(StorkValidators.poolIDOverlaps(fa)).toBeTruthy()
@@ -907,7 +907,7 @@ describe('StorkValidators', () => {
                     unlocked: new FormControl(false),
                     data: new FormArray([]),
                 }),
-                selectedDaemons: new FormControl([]),
+                selectedGroups: new FormControl([]),
             }),
             new FormGroup<PrefixPoolForm>({
                 prefixes: new FormGroup<PrefixForm>({
@@ -925,7 +925,7 @@ describe('StorkValidators', () => {
                     unlocked: new FormControl(false),
                     data: new FormArray([]),
                 }),
-                selectedDaemons: new FormControl([]),
+                selectedGroups: new FormControl([]),
             }),
         ])
         expect(StorkValidators.poolIDOverlaps(fa)).toBeTruthy()

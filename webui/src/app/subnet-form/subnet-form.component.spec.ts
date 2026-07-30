@@ -421,11 +421,11 @@ describe('SubnetFormComponent', () => {
         expect(component.state.group.get('subnet').disabled).toBeTrue()
         expect(component.state.wizard).toBeFalse()
 
-        const selectedDaemons = [1, 2]
-        component.state.group.get('selectedDaemons').setValue(selectedDaemons)
-        selectedDaemons.forEach((id) => {
+        const selectedGroups = [0, 1]
+        component.state.group.get('selectedGroups').setValue(selectedGroups)
+        selectedGroups.forEach((index) => {
             component.onDaemonsChange({
-                itemValue: id,
+                itemValue: index,
             })
         })
         tick()
@@ -440,7 +440,7 @@ describe('SubnetFormComponent', () => {
             value: 3,
         })
         fixture.detectChanges()
-        expect(component.state.group.get('selectedDaemons')?.disabled).toBeTrue()
+        expect(component.state.group.get('selectedGroups')?.disabled).toBeTrue()
 
         // It should also display the helptip.
         expect(fixture.debugElement.query(By.css('[title="Help for disabled servers selection"]'))).toBeTruthy()
@@ -518,11 +518,11 @@ describe('SubnetFormComponent', () => {
         expect(component.state.group.get('subnet').disabled).toBeTrue()
         expect(component.state.wizard).toBeFalse()
 
-        const selectedDaemons = [3, 4]
-        component.state.group.get('selectedDaemons').setValue(selectedDaemons)
-        selectedDaemons.forEach((id) => {
+        const selectedGroups = [2, 3]
+        component.state.group.get('selectedGroups').setValue(selectedGroups)
+        selectedGroups.forEach((index) => {
             component.onDaemonsChange({
-                itemValue: id,
+                itemValue: index,
             })
         })
         tick()
@@ -535,7 +535,7 @@ describe('SubnetFormComponent', () => {
 
         // Since shared network is not selected, the daemons selection should
         // be enabled.
-        expect(component.state.group.get('selectedDaemons')?.disabled).toBeFalse()
+        expect(component.state.group.get('selectedGroups')?.disabled).toBeFalse()
 
         const okResp: any = {
             status: 200,
@@ -1045,16 +1045,16 @@ describe('SubnetFormComponent', () => {
         expect(component.addressPoolComponents.length).toBe(1)
         spyOn(component.addressPoolComponents.get(0), 'handleDaemonsChange').and.callThrough()
 
-        component.state.group.get('selectedDaemons').setValue([2])
+        component.state.group.get('selectedGroups').setValue([1])
         component.onDaemonsChange({
-            itemValue: 1,
+            itemValue: 0,
         })
         tick()
         fixture.detectChanges()
 
-        expect(component.addressPoolComponents.get(0).handleDaemonsChange).toHaveBeenCalledOnceWith(1)
-        expect(component.addressPoolComponents.get(0).selectableDaemons.length).toBe(1)
-        expect(component.addressPoolComponents.get(0).selectableDaemons[0].id).toBe(2)
+        expect(component.addressPoolComponents.get(0).handleDaemonsChange).toHaveBeenCalledOnceWith(0)
+        expect(component.addressPoolComponents.get(0).selectableGroups.length).toBe(1)
+        expect(component.addressPoolComponents.get(0).selectableGroups[0].index).toBe(1)
 
         const options = component.state.group.get('options.data') as UntypedFormArray
         expect(options).toBeTruthy()
@@ -1102,15 +1102,15 @@ describe('SubnetFormComponent', () => {
         expect(component.addressPoolComponents.length).toBe(1)
         spyOn(component.addressPoolComponents.get(0), 'handleDaemonsChange').and.callThrough()
 
-        component.state.group.get('selectedDaemons').setValue([3, 4, 5])
+        component.state.group.get('selectedGroups').setValue([2, 3, 4])
         component.onDaemonsChange({
-            itemValue: 5,
+            itemValue: 4,
         })
         tick()
         fixture.detectChanges()
 
-        expect(component.addressPoolComponents.get(0).handleDaemonsChange).toHaveBeenCalledOnceWith(5)
-        expect(component.addressPoolComponents.get(0).selectableDaemons.length).toBe(3)
+        expect(component.addressPoolComponents.get(0).handleDaemonsChange).toHaveBeenCalledOnceWith(4)
+        expect(component.addressPoolComponents.get(0).selectableGroups.length).toBe(3)
 
         const options = component.state.group.get('options.data') as UntypedFormArray
         expect(options.length).toBe(3)
@@ -1153,9 +1153,9 @@ describe('SubnetFormComponent', () => {
         tick()
         fixture.detectChanges()
 
-        component.state.group.get('selectedDaemons').setValue([2])
+        component.state.group.get('selectedGroups').setValue([1])
         component.onDaemonsChange({
-            itemValue: 1,
+            itemValue: 0,
         })
         tick()
         fixture.detectChanges()

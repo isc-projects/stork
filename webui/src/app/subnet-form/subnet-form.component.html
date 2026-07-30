@@ -6,9 +6,9 @@
                     <p-multiSelect
                         inputId="servers-select"
                         optionLabel="label"
-                        optionValue="id"
+                        optionValue="index"
                         [options]="state.filteredDaemons"
-                        formControlName="selectedDaemons"
+                        formControlName="selectedGroups"
                         display="chip"
                         [showToggleAll]="false"
                         styleClass="adaptive-chips-background"
@@ -17,7 +17,7 @@
                         (onChange)="onDaemonsChange($event)"
                     >
                     </p-multiSelect>
-                    <label for="servers-select">DHCP Servers</label>
+                    <label for="servers-select">DHCP Server Groups</label>
                     <span class="ml-2">
                         <app-help-tip subject="DHCP servers selection">
                             <p>
@@ -38,13 +38,13 @@
                 </p-floatlabel>
                 <small
                     *ngIf="
-                        state.group.get('selectedDaemons').invalid &&
-                        (state.group.get('selectedDaemons').dirty || state.group.get('selectedDaemons').touched)
+                        state.group.get('selectedGroups').invalid &&
+                        (state.group.get('selectedGroups').dirty || state.group.get('selectedGroups').touched)
                     "
                     class="app-error block"
                     >At least one server must be selected.
                 </small>
-                <div *ngIf="state.group.get('selectedDaemons')?.disabled" class="flex align-items-center">
+                <div *ngIf="state.group.get('selectedGroups')?.disabled" class="flex align-items-center">
                     <div>Server selection is disabled</div>
                     <div class="ml-2">
                         <app-help-tip subject="disabled servers selection">
@@ -145,7 +145,7 @@
                         <app-address-pool-form
                             [subnet]="subnet"
                             [formGroup]="pool"
-                            [selectableDaemons]="getSelectedDaemons()"
+                            [selectableGroups]="getSelectedDaemonGroups()"
                         >
                         </app-address-pool-form>
                         <div class="flex justify-content-start mt-4 mb-4">
@@ -197,7 +197,7 @@
                         <app-prefix-pool-form
                             [subnet]="subnet"
                             [formGroup]="pool"
-                            [selectableDaemons]="getSelectedDaemons()"
+                            [selectableGroups]="getSelectedDaemonGroups()"
                         >
                         </app-prefix-pool-form>
                         <div class="flex justify-content-start mt-4 mb-4">

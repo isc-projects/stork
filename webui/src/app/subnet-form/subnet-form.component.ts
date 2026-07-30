@@ -25,6 +25,7 @@ import {
     KeaSubnetParametersForm,
     PrefixPoolForm,
     SubnetSetFormService,
+    VersionedDaemon,
 } from '../forms/subnet-set-form.service'
 import { createDefaultDhcpOptionFormGroup } from '../forms/dhcp-option-form'
 import { IPType } from '../iptype'
@@ -216,22 +217,26 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
         // The server should return new transaction id and a current list of
         // daemons to select.
         this.state.transactionID = response.id
-        this.state.allDaemons = Object.values(response.daemons?.reduce((acc, d) => {
-            const configBackends = d.backends?.filter((b) => b.dataTypes?.includes('Config Backend'))
-            if (!configBackends?.length) {
-                // The daemon has no config backend. It is a single-item group.
-                return { ...acc, [d.id ?? 0]: d }
-            }
-            const configBackend = configBackends[0]
-            
-            const key = `${d.name}:${configBackend.backendType}:${configBackend.database}:${configBackend.host}:${configBackend.port}`
-            if (!acc[key]) {
-                acc[key] = []
-            }
-            acc[key].push(d)
-            return acc
-        }, {} as Record<string | number, KeaDaemon[]>) as Record<string | number, KeaDaemon[]>)
-        .map((g, idx) => new DaemonGroup(idx, g))
+        this.state.allDaemons = Object.values(
+            response.daemons?.reduce(
+                (acc, d) => {
+                    const configBackends = d.backends?.filter((b) => b.dataTypes?.includes('Config Backend'))
+                    if (!configBackends?.length) {
+                        // The daemon has no config backend. It is a single-item group.
+                        return { ...acc, [d.id ?? 0]: [d] }
+                    }
+                    const configBackend = configBackends[0]
+
+                    const key = `${d.name}:${configBackend.backendType}:${configBackend.database}:${configBackend.host}:${configBackend.port}`
+                    if (!acc[key]) {
+                        acc[key] = []
+                    }
+                    acc[key].push(d)
+                    return acc
+                },
+                {} as Record<string | number, KeaDaemon[]>
+            ) as Record<string | number, KeaDaemon[]>
+        ).map((g, idx) => new DaemonGroup(idx, g))
         // Initially, list all daemons.
         this.state.filteredDaemons = this.state.allDaemons
         this.state.allSharedNetworks4 = response.sharedNetworks4 || []
@@ -268,7 +273,8 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
         this.state.group = this.subnetSetFormService.convertSubnetToForm(
             this.state.dhcpv6 ? IPType.IPv6 : IPType.IPv4,
             getVersionRange(response.daemons.map((d) => d.version)),
-            response.subnet
+            response.subnet,
+            this.state.allDaemons
         )
     }
 
@@ -420,21 +426,20 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
      * @param toggledDaemonId optional id of the removed daemon in the controls.
      */
     handleDaemonsChange(toggledDaemonId?: number): void {
-        const toggledDaemonIndex = toggledDaemonId
-            ? this.state.filteredDaemons.findIndex((fd) => fd.id === toggledDaemonId)
-            : -1
+        const toggleDaemonGroupIndex =
+            toggledDaemonId != null ? this.state.filteredDaemons.findIndex((fd) => fd.index === toggledDaemonId) : -1
         this.subnetSetFormService.adjustFormForSelectedDaemons(
             this.state.group,
-            toggledDaemonIndex,
+            toggleDaemonGroupIndex,
             this.state.servers.length
         )
         this.addressPoolComponents.forEach((apc) => {
             apc.handleDaemonsChange(toggledDaemonId)
-            apc.selectableDaemons = this.getSelectedDaemons()
+            apc.selectableGroups = this.getSelectedDaemonGroups()
         })
         this.prefixPoolComponents.forEach((ppc) => {
             ppc.handleDaemonsChange(toggledDaemonId)
-            ppc.selectableDaemons = this.getSelectedDaemons()
+            ppc.selectableGroups = this.getSelectedDaemonGroups()
         })
 
         // Selecting new daemons may have a large impact on the data already
@@ -450,7 +455,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
             return
         }
         // If the number of selected daemons has changed we must update selected servers list.
-        this.state.servers = this.getSelectedDaemonGroups().map(dg => dg.label)
+        this.state.servers = this.getSelectedDaemonGroups().map((dg) => dg.label)
     }
 
     /**
@@ -458,7 +463,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
      *
      * @param event an event carrying the selected shared network ID.
      */
-    onSharedNetworkChange(event): void {
+    onSharedNetworkChange(event: any): void {
         if (event.value) {
             this.state.group.get('selectedGroups')?.disable()
         } else {
@@ -471,7 +476,7 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
      *
      * Adjusts the form state based on the selected daemons.
      */
-    onDaemonsChange(event): void {
+    onDaemonsChange(event: any): void {
         this.handleDaemonsChange(event.itemValue)
     }
 
@@ -578,8 +583,18 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
     onSubmit(): void {
         let subnet: Subnet
         try {
-            const filteredDaemons = this.getSelectedDaemonGroups().flatMap((dg) => dg.daemons)
-            subnet = this.subnetSetFormService.convertFormToSubnet(filteredDaemons, this.state.group)
+            const filteredDaemons: VersionedDaemon[] = this.getSelectedDaemonGroups()
+                .flatMap((daemonGroup) => daemonGroup.daemons)
+                .filter((daemon) => daemon.id != null)
+                .map((daemon) => ({
+                    id: daemon.id as number,
+                    version: daemon.version ?? '',
+                }))
+            subnet = this.subnetSetFormService.convertFormToSubnet(
+                filteredDaemons,
+                this.state.group,
+                this.state.allDaemons
+            )
             if (subnet.sharedNetworkId) {
                 subnet.sharedNetwork = this.state.selectableSharedNetworks?.find(
                     (sn) => subnet.sharedNetworkId === sn.id

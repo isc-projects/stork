@@ -62,25 +62,22 @@ describe('AddressPoolFormComponent', () => {
                     ]),
                 ]),
             }),
-            selectedDaemons: new FormControl<number[]>([1, 2]),
+            selectedGroups: new FormControl<number[]>([1, 2]),
         })
-        component.selectableDaemons = [
+        component.selectableGroups = [
             {
-                id: 1,
-                name: 'dhcp4',
-                version: '3.0.0',
+                index: 1,
+                daemons: [],
                 label: 'first/dhcp4',
             },
             {
-                id: 2,
-                name: 'dhcp4',
-                version: '3.0.0',
+                index: 2,
+                daemons: [],
                 label: 'second/dhcp4',
             },
             {
-                id: 3,
-                name: 'dhcp4',
-                version: '3.0.0',
+                index: 3,
+                daemons: [],
                 label: 'third/dhcp4',
             },
         ]
@@ -99,7 +96,7 @@ describe('AddressPoolFormComponent', () => {
     })
 
     it('should reduce the form for unselected server', () => {
-        component.formGroup.get('selectedDaemons').setValue([2])
+        component.formGroup.get('selectedGroups').setValue([2])
         component.onDaemonsChange({
             itemValue: 1,
         })
@@ -129,7 +126,7 @@ describe('AddressPoolFormComponent', () => {
     })
 
     it('should extend the form for newly selected server', () => {
-        component.formGroup.get('selectedDaemons').setValue([1, 2, 3])
+        component.formGroup.get('selectedGroups').setValue([1, 2, 3])
         component.onDaemonsChange({
             itemValue: 3,
         })
@@ -167,7 +164,7 @@ describe('AddressPoolFormComponent', () => {
     })
 
     it('should reset a form when all servers are unselected', () => {
-        component.formGroup.get('selectedDaemons').setValue([])
+        component.formGroup.get('selectedGroups').setValue([])
         component.onDaemonsChange({
             itemValue: 2,
         })
