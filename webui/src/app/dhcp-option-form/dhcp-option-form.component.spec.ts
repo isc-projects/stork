@@ -21,7 +21,8 @@ describe('DhcpOptionFormComponent', () => {
         fixture = TestBed.createComponent(DhcpOptionFormComponent)
         component = fixture.componentInstance
         // Our component needs a form group instance to be initialized.
-        component.formGroup = createDefaultDhcpOptionFormGroup(IPType.IPv4)
+        // By default, run without version check.
+        component.formGroup = createDefaultDhcpOptionFormGroup(null, IPType.IPv4)
         fixture.detectChanges()
     })
 
@@ -242,7 +243,7 @@ describe('DhcpOptionFormComponent', () => {
 
     it('should require a valid DHCPv6 option code', () => {
         component.v6 = true
-        component.formGroup = createDefaultDhcpOptionFormGroup(IPType.IPv6)
+        component.formGroup = createDefaultDhcpOptionFormGroup(null, IPType.IPv6)
         fixture.detectChanges()
 
         component.formGroup.get('optionCode').setValue(7)
@@ -407,7 +408,7 @@ describe('DhcpOptionFormComponent', () => {
     })
 
     it('should set the corresponding form layout for simple option type ', () => {
-        component.formGroup = createDefaultDhcpOptionFormGroup(IPType.IPv4)
+        component.formGroup = createDefaultDhcpOptionFormGroup(null, IPType.IPv4)
         component.formGroup.get('optionCode').setValue(3)
         fixture.detectChanges()
 
@@ -434,7 +435,7 @@ describe('DhcpOptionFormComponent', () => {
         component.v6 = true
         component.nestLevel = 1
         component.optionSpace = 's46-cont-mape-options'
-        component.formGroup = createDefaultDhcpOptionFormGroup(IPType.IPv6)
+        component.formGroup = createDefaultDhcpOptionFormGroup(null, IPType.IPv6)
         component.formGroup.get('optionCode').setValue(89)
         fixture.detectChanges()
 
@@ -459,7 +460,7 @@ describe('DhcpOptionFormComponent', () => {
     })
 
     it('should set the default form layout for an option without definition', () => {
-        component.formGroup = createDefaultDhcpOptionFormGroup(IPType.IPv4)
+        component.formGroup = createDefaultDhcpOptionFormGroup(null, IPType.IPv4)
         component.formGroup.get('optionCode').setValue(254)
         fixture.detectChanges()
 
@@ -471,7 +472,7 @@ describe('DhcpOptionFormComponent', () => {
     })
 
     it('should display help tip for an option with the definition', () => {
-        component.formGroup = createDefaultDhcpOptionFormGroup(IPType.IPv4)
+        component.formGroup = createDefaultDhcpOptionFormGroup(null, IPType.IPv4)
         let helptip = fixture.debugElement.query(By.css('app-help-tip'))
         expect(helptip).toBeFalsy()
 

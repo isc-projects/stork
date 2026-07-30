@@ -1206,6 +1206,7 @@ export class SubnetSetFormService {
                         data: new UntypedFormArray(
                             localPools.map((localPool) =>
                                 this.optionService.convertOptionsToForm(
+                                    keaVersionRange,
                                     subnet.subnet?.includes('.') ? IPType.IPv4 : IPType.IPv6,
                                     localPool.keaConfigPoolParameters?.options
                                 )
@@ -1337,6 +1338,7 @@ export class SubnetSetFormService {
                         data: new UntypedFormArray(
                             localPools.map((localPool) =>
                                 this.optionService.convertOptionsToForm(
+                                    keaVersionRange,
                                     subnet.subnet?.includes('.') ? IPType.IPv4 : IPType.IPv6,
                                     localPool.keaConfigPoolParameters?.options
                                 )
@@ -1443,6 +1445,7 @@ export class SubnetSetFormService {
                 data: new UntypedFormArray(
                     localSubnets.map((localSubnet) =>
                         this.optionService.convertOptionsToForm(
+                            keaVersionRange,
                             ipType,
                             localSubnet.keaConfigSubnetParameters.subnetLevelParameters.options
                         )
@@ -1504,6 +1507,7 @@ export class SubnetSetFormService {
                 data: new UntypedFormArray(
                     sharedNetwork.localSharedNetworks?.map((lsn) =>
                         this.optionService.convertOptionsToForm(
+                            keaVersionRange,
                             sharedNetwork.universe,
                             lsn.keaConfigSharedNetworkParameters.sharedNetworkLevelParameters.options
                         )
@@ -2038,6 +2042,7 @@ export class SubnetSetFormService {
                 data: new UntypedFormArray(
                     configs.map((c) =>
                         this.optionService.convertOptionsToForm(
+                            keaVersionRange,
                             topLevelKeys[0] === 'Dhcp4' ? IPType.IPv4 : IPType.IPv6,
                             c.options?.options
                         )

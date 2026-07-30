@@ -34,7 +34,7 @@ describe('DhcpOptionSetFormComponent', () => {
         expect(addBtn).toBeTruthy()
 
         spyOn(component.optionAdd, 'emit').and.callFake(() => {
-            component.formArray.push(createDefaultDhcpOptionFormGroup(IPType.IPv4))
+            component.formArray.push(createDefaultDhcpOptionFormGroup(null, IPType.IPv4))
         })
 
         addBtn.nativeElement.dispatchEvent(new Event('click'))

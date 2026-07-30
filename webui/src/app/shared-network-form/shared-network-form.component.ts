@@ -242,7 +242,7 @@ export class SharedNetworkFormComponent implements OnInit, OnDestroy {
      * @param index server index in the {@link servers} array.
      */
     onOptionAdd(index: number): void {
-        this.getOptionsData(index).push(createDefaultDhcpOptionFormGroup(this.state.ipType))
+        this.getOptionsData(index).push(createDefaultDhcpOptionFormGroup(this.keaVersionRange, this.state.ipType))
     }
 
     /**
@@ -465,5 +465,13 @@ export class SharedNetworkFormComponent implements OnInit, OnDestroy {
             // Send POST to /shared-networks/new/transaction.
             this.createSharedNetworkBegin()
         }
+    }
+
+    /**
+     * Returns a tuple with the earliest and the latest Kea version
+     * for the configured daemons.
+     */
+    private get keaVersionRange(): [string, string] | null {
+        return getVersionRange(this.state.filteredDaemons.map((d) => d.version))
     }
 }

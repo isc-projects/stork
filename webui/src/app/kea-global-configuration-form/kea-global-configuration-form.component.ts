@@ -177,7 +177,7 @@ export class KeaGlobalConfigurationFormComponent implements OnInit {
      */
     onOptionAdd(index: number): void {
         const ipType = this.isIPv6 ? IPType.IPv6 : IPType.IPv4
-        this.getOptionsData(index).push(createDefaultDhcpOptionFormGroup(ipType))
+        this.getOptionsData(index).push(createDefaultDhcpOptionFormGroup(this.keaVersionRange, ipType))
     }
 
     /**
@@ -206,7 +206,7 @@ export class KeaGlobalConfigurationFormComponent implements OnInit {
             .then((data: UpdateKeaDaemonsGlobalParametersBeginResponse) => {
                 this.response = data
                 this.formGroup = this.subnetSetFormService.convertKeaGlobalConfigurationToForm(
-                    getVersionRange(data.configs.map((c) => c.daemonVersion)),
+                    this.keaVersionRange,
                     this.response.configs
                 )
                 this.initError = null
@@ -250,5 +250,13 @@ export class KeaGlobalConfigurationFormComponent implements OnInit {
      */
     get isIPv6(): boolean {
         return this.response?.configs?.[0]?.daemonName === 'dhcp6'
+    }
+
+    /**
+     * Returns a tuple with the earliest and the latest Kea version
+     * for the configured daemons.
+     */
+    private get keaVersionRange(): [string, string] | null {
+        return getVersionRange(this.response?.configs?.map((c) => c.daemonVersion) ?? [])
     }
 }

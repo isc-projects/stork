@@ -7,6 +7,7 @@ import {
     UntypedFormGroup,
     Validators,
 } from '@angular/forms'
+import { gte } from 'semver'
 import { createDefaultDhcpOptionFormGroup } from './dhcp-option-form'
 import { DhcpOptionFieldFormGroup, DhcpOptionFieldType } from './dhcp-option-field'
 import { IPType } from '../iptype'
@@ -201,6 +202,8 @@ export class DhcpOptionSetFormService extends FormProcessor {
     /**
      * Implements conversion of the DHCP options from the REST API format to a reactive form.
      *
+     * @param keaVersionRange a tuple with the earliest and the latest Kea version
+     *        for the configured daemons.
      * @param universe options universe (i.e., IPv4 or IPv6).
      * @param nestingLevel nesting level of the currently processed options.
      * @param options a set of DHCP options at certain nesting level.
@@ -210,6 +213,7 @@ export class DhcpOptionSetFormService extends FormProcessor {
      * when they are IPv6 prefixes or PSIDs.
      */
     private _convertOptionsToForm(
+        keaVersionRange: [string, string] | null,
         universe: IPType,
         nestingLevel: number,
         options: Array<DHCPOption>
@@ -223,14 +227,14 @@ export class DhcpOptionSetFormService extends FormProcessor {
             return formArray
         }
         for (let option of options) {
-            let optionFormGroup = createDefaultDhcpOptionFormGroup(universe)
+            let optionFormGroup = createDefaultDhcpOptionFormGroup(keaVersionRange, universe)
             if (!isNaN(option.code)) {
                 optionFormGroup.get('optionCode').setValue(option.code)
             }
             if (option.alwaysSend) {
                 optionFormGroup.get('alwaysSend').setValue(option.alwaysSend)
             }
-            if (option.clientClasses?.length > 0) {
+            if (option.clientClasses?.length > 0 && (!keaVersionRange || gte(keaVersionRange[1], '2.7.4'))) {
                 optionFormGroup.get('clientClasses').setValue(option.clientClasses)
             }
             for (let field of option.fields ?? []) {
@@ -306,7 +310,7 @@ export class DhcpOptionSetFormService extends FormProcessor {
             if (option.options?.length > 0) {
                 optionFormGroup.setControl(
                     'suboptions',
-                    this._convertOptionsToForm(universe, nestingLevel + 1, option.options)
+                    this._convertOptionsToForm(keaVersionRange, universe, nestingLevel + 1, option.options)
                 )
             }
             formArray.push(optionFormGroup)
@@ -321,8 +325,12 @@ export class DhcpOptionSetFormService extends FormProcessor {
      * @param options a set of DHCP options at certain nesting level.
      * @returns form array comprising converted options.
      */
-    public convertOptionsToForm(universe: IPType, options: Array<DHCPOption>): UntypedFormArray {
-        return this._convertOptionsToForm(universe, 0, options)
+    public convertOptionsToForm(
+        keaVersionRange: [string, string] | null,
+        universe: IPType,
+        options: Array<DHCPOption>
+    ): UntypedFormArray {
+        return this._convertOptionsToForm(keaVersionRange, universe, 0, options)
     }
 
     /**

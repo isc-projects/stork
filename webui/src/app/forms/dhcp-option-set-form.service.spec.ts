@@ -5,6 +5,7 @@ import { DhcpOptionSetFormService } from './dhcp-option-set-form.service'
 import { DhcpOptionFieldFormGroup, DhcpOptionFieldType } from './dhcp-option-field'
 import { IPType } from '../iptype'
 import { StorkValidators } from '../validators'
+import { getVersionRange } from '../utils'
 
 describe('DhcpOptionSetFormService', () => {
     let service: DhcpOptionSetFormService
@@ -18,6 +19,7 @@ describe('DhcpOptionSetFormService', () => {
         formArray = formBuilder.array([
             formBuilder.group({
                 alwaysSend: formBuilder.control(true),
+                clientClasses: formBuilder.control(['FOOBAR']),
                 optionCode: formBuilder.control(1024),
                 optionFields: formBuilder.array([
                     new DhcpOptionFieldFormGroup(DhcpOptionFieldType.IPv6Prefix, {
@@ -42,6 +44,7 @@ describe('DhcpOptionSetFormService', () => {
             }),
             formBuilder.group({
                 alwaysSend: formBuilder.control(false),
+                clientClasses: formBuilder.control(['FOO', 'BAR']),
                 optionCode: formBuilder.control(2024),
                 optionFields: formBuilder.array([
                     new DhcpOptionFieldFormGroup(DhcpOptionFieldType.Uint8, {
@@ -54,6 +57,7 @@ describe('DhcpOptionSetFormService', () => {
             }),
             formBuilder.group({
                 alwaysSend: formBuilder.control(true),
+                clientClasses: formBuilder.control(['FOO', 'BAR', 'BAZ']),
                 optionCode: formBuilder.control(3087),
                 suboptions: formBuilder.array([
                     formBuilder.group({
@@ -67,6 +71,7 @@ describe('DhcpOptionSetFormService', () => {
                     }),
                     formBuilder.group({
                         alwaysSend: formBuilder.control(false),
+                        clientClasses: formBuilder.control([]),
                         optionCode: formBuilder.control(0),
                         optionFields: formBuilder.array([
                             new DhcpOptionFieldFormGroup(DhcpOptionFieldType.Uint32, {
@@ -102,10 +107,12 @@ describe('DhcpOptionSetFormService', () => {
 
         // Option 1024.
         expect(clonedArray.at(0).get('alwaysSend')).toBeTruthy()
+        expect(clonedArray.at(0).get('clientClasses')).toBeTruthy()
         expect(clonedArray.at(0).get('optionCode')).toBeTruthy()
         expect(clonedArray.at(0).get('optionFields')).toBeTruthy()
 
         expect(clonedArray.at(0).get('alwaysSend').value).toBeTrue()
+        expect(clonedArray.at(0).get('clientClasses').value).toEqual(['FOOBAR'])
         expect(clonedArray.at(0).get('optionCode').value).toBe(1024)
 
         // Option 1024 fields.
@@ -149,10 +156,12 @@ describe('DhcpOptionSetFormService', () => {
 
         // Option 2024.
         expect(clonedArray.at(1).get('alwaysSend')).toBeTruthy()
+        expect(clonedArray.at(1).get('clientClasses')).toBeTruthy()
         expect(clonedArray.at(1).get('optionCode')).toBeTruthy()
         expect(clonedArray.at(1).get('optionFields')).toBeTruthy()
 
         expect(clonedArray.at(1).get('alwaysSend').value).toBeFalse()
+        expect(clonedArray.at(1).get('clientClasses').value).toEqual(['FOO', 'BAR'])
         expect(clonedArray.at(1).get('optionCode').value).toBe(2024)
 
         // Option 2024 fields.
@@ -174,10 +183,12 @@ describe('DhcpOptionSetFormService', () => {
 
         // Option 3087.
         expect(clonedArray.at(2).get('alwaysSend')).toBeTruthy()
+        expect(clonedArray.at(2).get('clientClasses')).toBeTruthy()
         expect(clonedArray.at(2).get('optionCode')).toBeTruthy()
         expect(clonedArray.at(2).get('suboptions')).toBeTruthy()
 
         expect(clonedArray.at(2).get('alwaysSend').value).toBeTrue()
+        expect(clonedArray.at(2).get('clientClasses').value).toEqual(['FOO', 'BAR', 'BAZ'])
         expect(clonedArray.at(2).get('optionCode').value).toBe(3087)
 
         // Option 3087 suboptions.
@@ -199,10 +210,12 @@ describe('DhcpOptionSetFormService', () => {
 
         // Option 3087.0.
         expect(clonedArray.at(2).get('suboptions.1.alwaysSend')).toBeTruthy()
+        expect(clonedArray.at(2).get('suboptions.1.clientClasses')).toBeTruthy()
         expect(clonedArray.at(2).get('suboptions.1.optionCode')).toBeTruthy()
         expect(clonedArray.at(2).get('suboptions.1.optionFields')).toBeTruthy()
 
         expect(clonedArray.at(2).get('suboptions.1.alwaysSend').value).toBeFalse()
+        expect(clonedArray.at(2).get('suboptions.1.clientClasses').value).toEqual([])
         expect(clonedArray.at(2).get('suboptions.1.optionCode').value).toBe(0)
 
         // Option 3087.0 field 0.
@@ -221,6 +234,7 @@ describe('DhcpOptionSetFormService', () => {
         expect(serialized.length).toBe(3)
 
         expect(serialized[0].hasOwnProperty('alwaysSend')).toBeTrue()
+        expect(serialized[0].hasOwnProperty('clientClasses')).toBeTrue()
         expect(serialized[0].hasOwnProperty('code')).toBeTrue()
         expect(serialized[0].hasOwnProperty('encapsulate')).toBeTrue()
         expect(serialized[0].hasOwnProperty('fields')).toBeTrue()
@@ -246,6 +260,7 @@ describe('DhcpOptionSetFormService', () => {
         expect(serialized[0].fields[3].values[0]).toBe('foobar')
 
         expect(serialized[1].hasOwnProperty('alwaysSend')).toBeTrue()
+        expect(serialized[1].hasOwnProperty('clientClasses')).toBeTrue()
         expect(serialized[1].hasOwnProperty('code')).toBeTrue()
         expect(serialized[1].hasOwnProperty('encapsulate')).toBeTrue()
         expect(serialized[1].hasOwnProperty('fields')).toBeTrue()
@@ -261,6 +276,7 @@ describe('DhcpOptionSetFormService', () => {
         expect(serialized[1].hasOwnProperty('options')).toBeTrue()
 
         expect(serialized[2].hasOwnProperty('alwaysSend')).toBeTrue()
+        expect(serialized[2].hasOwnProperty('clientClasses')).toBeTrue()
         expect(serialized[2].hasOwnProperty('code')).toBeTrue()
         expect(serialized[2].hasOwnProperty('encapsulate')).toBeTrue()
         expect(serialized[2].hasOwnProperty('fields')).toBeTrue()
@@ -494,174 +510,241 @@ describe('DhcpOptionSetFormService', () => {
                 ],
             },
         ]
-        let formArray = service.convertOptionsToForm(IPType.IPv4, options)
-        expect(formArray).toBeTruthy()
-        expect(formArray.length).toBe(3)
+        for (let keaVersion of [null, '2.7.3', '2.7.4', '2.7.5']) {
+            const keaVersionRange = keaVersion != null ? getVersionRange([keaVersion]) : null
+            let formArray = service.convertOptionsToForm(keaVersionRange, IPType.IPv4, options)
+            expect(formArray).toBeTruthy()
+            expect(formArray.length).toBe(3)
 
-        // Option 1024.
-        expect(formArray.at(0).get('alwaysSend')).toBeTruthy()
-        expect(formArray.at(0).get('optionCode')).toBeTruthy()
-        expect(formArray.at(0).get('optionFields')).toBeTruthy()
-        expect(formArray.at(0).get('suboptions')).toBeTruthy()
+            // Option 1024.
+            expect(formArray.at(0).get('alwaysSend')).toBeTruthy()
+            if (keaVersion === '2.7.3') {
+                expect(formArray.at(0).get('clientClasses')).toBeNull()
+            } else {
+                expect(formArray.at(0).get('clientClasses')).toBeTruthy()
+            }
+            expect(formArray.at(0).get('optionCode')).toBeTruthy()
+            expect(formArray.at(0).get('optionFields')).toBeTruthy()
+            expect(formArray.at(0).get('suboptions')).toBeTruthy()
 
-        expect(formArray.at(0).get('alwaysSend').value).toBeTrue()
-        expect(formArray.at(0).get('optionCode').value).toBe(1024)
+            expect(formArray.at(0).get('alwaysSend').value).toBeTrue()
+            if (keaVersion === '2.7.3') {
+                expect(formArray.at(0).get('clientClasses')).toBeNull()
+            } else {
+                expect(formArray.at(0).get('clientClasses').value).toEqual(['KNOWN'])
+            }
+            expect(formArray.at(0).get('optionCode').value).toBe(1024)
 
-        // Option 1024 fields.
-        expect(formArray.at(0).get('optionFields')).toBeInstanceOf(UntypedFormArray)
-        let fields = formArray.at(0).get('optionFields') as UntypedFormArray
-        expect(fields.controls.length).toBe(4)
+            // Option 1024 fields.
+            expect(formArray.at(0).get('optionFields')).toBeInstanceOf(UntypedFormArray)
+            let fields = formArray.at(0).get('optionFields') as UntypedFormArray
+            expect(fields.controls.length).toBe(4)
 
-        // Option 1024 field 0.
-        expect(fields.at(0)).toBeInstanceOf(DhcpOptionFieldFormGroup)
-        expect((fields.at(0) as DhcpOptionFieldFormGroup).data.fieldType).toBe(DhcpOptionFieldType.IPv6Prefix)
-        expect(fields.at(0).get('prefix')).toBeTruthy()
-        expect(fields.at(0).get('prefixLength')).toBeTruthy()
-        expect(fields.at(0).get('prefix').value).toBe('3000::')
-        expect(fields.at(0).get('prefixLength').value).toBe('64')
+            // Option 1024 field 0.
+            expect(fields.at(0)).toBeInstanceOf(DhcpOptionFieldFormGroup)
+            expect((fields.at(0) as DhcpOptionFieldFormGroup).data.fieldType).toBe(DhcpOptionFieldType.IPv6Prefix)
+            expect(fields.at(0).get('prefix')).toBeTruthy()
+            expect(fields.at(0).get('prefixLength')).toBeTruthy()
+            expect(fields.at(0).get('prefix').value).toBe('3000::')
+            expect(fields.at(0).get('prefixLength').value).toBe('64')
 
-        // Option 1024 field 1.
-        expect(fields.at(1)).toBeInstanceOf(DhcpOptionFieldFormGroup)
-        expect((fields.at(1) as DhcpOptionFieldFormGroup).data.fieldType).toBe(DhcpOptionFieldType.Psid)
-        expect(fields.at(1).get('psid')).toBeTruthy()
-        expect(fields.at(1).get('psidLength')).toBeTruthy()
-        expect(fields.at(1).get('psid').value).toBe('12')
-        expect(fields.at(1).get('psidLength').value).toBe('8')
+            // Option 1024 field 1.
+            expect(fields.at(1)).toBeInstanceOf(DhcpOptionFieldFormGroup)
+            expect((fields.at(1) as DhcpOptionFieldFormGroup).data.fieldType).toBe(DhcpOptionFieldType.Psid)
+            expect(fields.at(1).get('psid')).toBeTruthy()
+            expect(fields.at(1).get('psidLength')).toBeTruthy()
+            expect(fields.at(1).get('psid').value).toBe('12')
+            expect(fields.at(1).get('psidLength').value).toBe('8')
 
-        // Option 1024 field 2.
-        expect(fields.at(2)).toBeInstanceOf(DhcpOptionFieldFormGroup)
-        expect((fields.at(2) as DhcpOptionFieldFormGroup).data.fieldType).toBe(DhcpOptionFieldType.Binary)
-        expect(fields.at(2).get('control')).toBeTruthy()
-        expect(fields.at(2).get('control').value).toBe('01:02:03')
+            // Option 1024 field 2.
+            expect(fields.at(2)).toBeInstanceOf(DhcpOptionFieldFormGroup)
+            expect((fields.at(2) as DhcpOptionFieldFormGroup).data.fieldType).toBe(DhcpOptionFieldType.Binary)
+            expect(fields.at(2).get('control')).toBeTruthy()
+            expect(fields.at(2).get('control').value).toBe('01:02:03')
 
-        // Option 1024 field 3.
-        expect(fields.at(3)).toBeInstanceOf(DhcpOptionFieldFormGroup)
-        expect((fields.at(3) as DhcpOptionFieldFormGroup).data.fieldType).toBe(DhcpOptionFieldType.String)
-        expect(fields.at(3).get('control')).toBeTruthy()
-        expect(fields.at(3).get('control').value).toBe('foobar')
+            // Option 1024 field 3.
+            expect(fields.at(3)).toBeInstanceOf(DhcpOptionFieldFormGroup)
+            expect((fields.at(3) as DhcpOptionFieldFormGroup).data.fieldType).toBe(DhcpOptionFieldType.String)
+            expect(fields.at(3).get('control')).toBeTruthy()
+            expect(fields.at(3).get('control').value).toBe('foobar')
 
-        // Option 1024 unknown parameters.
-        console.info(formArray.at(0))
-        expect(formArray.at(0).get('unknown')).toBeTruthy()
-        expect(formArray.at(0).get('unknown').value).toEqual({
-            'never-send': true,
-        })
-        expect(formArray.at(0).get('clientClasses')).toBeTruthy()
-        expect(formArray.at(0).get('clientClasses').value).toEqual(['KNOWN'])
+            // Option 1024 unknown parameters.
+            console.info(formArray.at(0))
+            expect(formArray.at(0).get('unknown')).toBeTruthy()
+            expect(formArray.at(0).get('unknown').value).toEqual({
+                'never-send': true,
+            })
+            if (keaVersion === '2.7.3') {
+                expect(formArray.at(0).get('clientClasses')).toBeFalsy()
+            } else {
+                expect(formArray.at(0).get('clientClasses')).toBeTruthy()
+                expect(formArray.at(0).get('clientClasses').value).toEqual(['KNOWN'])
+            }
 
-        // Option 1024 suboptions.
-        expect(formArray.at(0).get('suboptions')).toBeInstanceOf(UntypedFormArray)
-        expect((formArray.at(0).get('suboptions') as UntypedFormArray).controls.length).toBe(0)
+            // Option 1024 suboptions.
+            expect(formArray.at(0).get('suboptions')).toBeInstanceOf(UntypedFormArray)
+            expect((formArray.at(0).get('suboptions') as UntypedFormArray).controls.length).toBe(0)
 
-        // Option 2024.
-        expect(formArray.at(1).get('alwaysSend')).toBeTruthy()
-        expect(formArray.at(1).get('optionCode')).toBeTruthy()
-        expect(formArray.at(1).get('optionFields')).toBeTruthy()
-        expect(formArray.at(1).get('suboptions')).toBeTruthy()
+            // Option 2024.
+            expect(formArray.at(1).get('alwaysSend')).toBeTruthy()
+            if (keaVersion === '2.7.3') {
+                expect(formArray.at(1).get('clientClasses')).toBeNull()
+            } else {
+                expect(formArray.at(1).get('clientClasses')).toBeTruthy()
+            }
+            expect(formArray.at(1).get('optionCode')).toBeTruthy()
+            expect(formArray.at(1).get('optionFields')).toBeTruthy()
+            expect(formArray.at(1).get('suboptions')).toBeTruthy()
 
-        expect(formArray.at(1).get('alwaysSend').value).toBeFalse()
-        expect(formArray.at(1).get('optionCode').value).toBe(2024)
+            expect(formArray.at(1).get('alwaysSend').value).toBeFalse()
+            if (keaVersion === '2.7.3') {
+                expect(formArray.at(1).get('clientClasses')).toBeNull()
+            } else {
+                expect(formArray.at(1).get('clientClasses').value).toEqual([])
+            }
+            expect(formArray.at(1).get('optionCode').value).toBe(2024)
 
-        // Option 2024 fields.
-        expect(formArray.at(1).get('optionFields')).toBeInstanceOf(UntypedFormArray)
-        fields = formArray.at(1).get('optionFields') as UntypedFormArray
-        expect(fields.controls.length).toBe(2)
+            // Option 2024 fields.
+            expect(formArray.at(1).get('optionFields')).toBeInstanceOf(UntypedFormArray)
+            fields = formArray.at(1).get('optionFields') as UntypedFormArray
+            expect(fields.controls.length).toBe(2)
 
-        // Option 2024 field 0.
-        expect(fields.at(0)).toBeInstanceOf(DhcpOptionFieldFormGroup)
-        expect((fields.at(0) as DhcpOptionFieldFormGroup).data.fieldType).toBe(DhcpOptionFieldType.Uint8)
-        expect(fields.at(0).get('control')).toBeTruthy()
-        expect(fields.at(0).get('control').value).toBe('101')
+            // Option 2024 field 0.
+            expect(fields.at(0)).toBeInstanceOf(DhcpOptionFieldFormGroup)
+            expect((fields.at(0) as DhcpOptionFieldFormGroup).data.fieldType).toBe(DhcpOptionFieldType.Uint8)
+            expect(fields.at(0).get('control')).toBeTruthy()
+            expect(fields.at(0).get('control').value).toBe('101')
 
-        // Option 2024 field 1.
-        expect(fields.at(1)).toBeInstanceOf(DhcpOptionFieldFormGroup)
-        expect((fields.at(1) as DhcpOptionFieldFormGroup).data.fieldType).toBe(DhcpOptionFieldType.Uint16)
-        expect(fields.at(1).get('control')).toBeTruthy()
-        expect(fields.at(1).get('control').value).toBe('16523')
+            // Option 2024 field 1.
+            expect(fields.at(1)).toBeInstanceOf(DhcpOptionFieldFormGroup)
+            expect((fields.at(1) as DhcpOptionFieldFormGroup).data.fieldType).toBe(DhcpOptionFieldType.Uint16)
+            expect(fields.at(1).get('control')).toBeTruthy()
+            expect(fields.at(1).get('control').value).toBe('16523')
 
-        // Option 3087.
-        expect(formArray.at(2).get('alwaysSend')).toBeTruthy()
-        expect(formArray.at(2).get('optionCode')).toBeTruthy()
-        expect(formArray.at(2).get('optionFields')).toBeTruthy()
-        expect(formArray.at(2).get('suboptions')).toBeTruthy()
+            // Option 3087.
+            expect(formArray.at(2).get('alwaysSend')).toBeTruthy()
+            if (keaVersion === '2.7.3') {
+                expect(formArray.at(2).get('clientClasses')).toBeNull()
+            } else {
+                expect(formArray.at(2).get('clientClasses')).toBeTruthy()
+            }
+            expect(formArray.at(2).get('optionCode')).toBeTruthy()
+            expect(formArray.at(2).get('optionFields')).toBeTruthy()
+            expect(formArray.at(2).get('suboptions')).toBeTruthy()
 
-        expect(formArray.at(2).get('alwaysSend').value).toBeTrue()
-        expect(formArray.at(2).get('optionCode').value).toBe(3087)
+            expect(formArray.at(2).get('alwaysSend').value).toBeTrue()
+            if (keaVersion === '2.7.3') {
+                expect(formArray.at(2).get('clientClasses')).toBeNull()
+            } else {
+                expect(formArray.at(2).get('clientClasses').value).toEqual([])
+            }
+            expect(formArray.at(2).get('optionCode').value).toBe(3087)
 
-        // Option 3087 fields.
-        expect(formArray.at(2).get('optionFields')).toBeInstanceOf(UntypedFormArray)
-        fields = formArray.at(2).get('optionFields') as UntypedFormArray
-        expect(fields.controls.length).toBe(0)
+            // Option 3087 fields.
+            expect(formArray.at(2).get('optionFields')).toBeInstanceOf(UntypedFormArray)
+            fields = formArray.at(2).get('optionFields') as UntypedFormArray
+            expect(fields.controls.length).toBe(0)
 
-        // Option 3087 suboptions.
-        expect(formArray.at(2).get('suboptions')).toBeInstanceOf(UntypedFormArray)
-        expect((formArray.at(2).get('suboptions') as UntypedFormArray).controls.length).toBe(2)
+            // Option 3087 suboptions.
+            expect(formArray.at(2).get('suboptions')).toBeInstanceOf(UntypedFormArray)
+            expect((formArray.at(2).get('suboptions') as UntypedFormArray).controls.length).toBe(2)
 
-        // Option 3087.1.
-        expect(formArray.at(2).get('suboptions.0.alwaysSend')).toBeTruthy()
-        expect(formArray.at(2).get('suboptions.0.optionCode')).toBeTruthy()
-        expect(formArray.at(2).get('suboptions.0.optionFields')).toBeTruthy()
-        expect(formArray.at(2).get('suboptions.0.suboptions')).toBeTruthy()
+            // Option 3087.1.
+            expect(formArray.at(2).get('suboptions.0.alwaysSend')).toBeTruthy()
+            if (keaVersion === '2.7.3') {
+                expect(formArray.at(2).get('suboptions.0.clientClasses')).toBeNull()
+            } else {
+                expect(formArray.at(2).get('suboptions.0.clientClasses')).toBeTruthy()
+            }
+            expect(formArray.at(2).get('suboptions.0.optionCode')).toBeTruthy()
+            expect(formArray.at(2).get('suboptions.0.optionFields')).toBeTruthy()
+            expect(formArray.at(2).get('suboptions.0.suboptions')).toBeTruthy()
 
-        expect(formArray.at(2).get('suboptions.0.alwaysSend').value).toBeFalse()
-        expect(formArray.at(2).get('suboptions.0.optionCode').value).toBe(1)
+            expect(formArray.at(2).get('suboptions.0.alwaysSend').value).toBeFalse()
+            if (keaVersion === '2.7.3') {
+                expect(formArray.at(2).get('suboptions.0.clientClasses')).toBeNull()
+            } else {
+                expect(formArray.at(2).get('suboptions.0.clientClasses').value).toEqual([])
+            }
+            expect(formArray.at(2).get('suboptions.0.optionCode').value).toBe(1)
 
-        // Option 3087.1 field 0.
-        fields = formArray.at(2).get('suboptions.0.optionFields') as UntypedFormArray
-        expect(fields.controls.length).toBe(1)
-        expect(fields.at(0)).toBeInstanceOf(DhcpOptionFieldFormGroup)
-        expect((fields.at(0) as DhcpOptionFieldFormGroup).data.fieldType).toBe(DhcpOptionFieldType.Int16)
-        expect(fields.at(0).get('control')).toBeTruthy()
-        expect(fields.at(0).get('control').value).toBe('-1111')
+            // Option 3087.1 field 0.
+            fields = formArray.at(2).get('suboptions.0.optionFields') as UntypedFormArray
+            expect(fields.controls.length).toBe(1)
+            expect(fields.at(0)).toBeInstanceOf(DhcpOptionFieldFormGroup)
+            expect((fields.at(0) as DhcpOptionFieldFormGroup).data.fieldType).toBe(DhcpOptionFieldType.Int16)
+            expect(fields.at(0).get('control')).toBeTruthy()
+            expect(fields.at(0).get('control').value).toBe('-1111')
 
-        // Option 3087.1.2
-        expect((formArray.at(2).get('suboptions.0.suboptions') as UntypedFormArray).controls.length).toBe(1)
-        expect(formArray.at(2).get('suboptions.0.suboptions.0.alwaysSend')).toBeTruthy()
-        expect(formArray.at(2).get('suboptions.0.suboptions.0.optionCode')).toBeTruthy()
-        expect(formArray.at(2).get('suboptions.0.suboptions.0.optionFields')).toBeTruthy()
-        expect(formArray.at(2).get('suboptions.0.suboptions.0.suboptions')).toBeTruthy()
+            // Option 3087.1.2
+            expect((formArray.at(2).get('suboptions.0.suboptions') as UntypedFormArray).controls.length).toBe(1)
+            expect(formArray.at(2).get('suboptions.0.suboptions.0.alwaysSend')).toBeTruthy()
+            if (keaVersion === '2.7.3') {
+                expect(formArray.at(2).get('suboptions.0.suboptions.0.clientClasses')).toBeNull()
+            } else {
+                expect(formArray.at(2).get('suboptions.0.suboptions.0.clientClasses')).toBeTruthy()
+            }
+            expect(formArray.at(2).get('suboptions.0.suboptions.0.optionCode')).toBeTruthy()
+            expect(formArray.at(2).get('suboptions.0.suboptions.0.optionFields')).toBeTruthy()
+            expect(formArray.at(2).get('suboptions.0.suboptions.0.suboptions')).toBeTruthy()
 
-        expect(formArray.at(2).get('suboptions.0.suboptions.0.alwaysSend').value).toBeFalse()
-        expect(formArray.at(2).get('suboptions.0.suboptions.0.optionCode').value).toBe(2)
-        expect(
-            (formArray.at(2).get('suboptions.0.suboptions.0.optionFields') as UntypedFormArray).controls.length
-        ).toBe(1)
-        expect((formArray.at(2).get('suboptions.0.suboptions.0.suboptions') as UntypedFormArray).controls.length).toBe(
-            0
-        )
+            expect(formArray.at(2).get('suboptions.0.suboptions.0.alwaysSend').value).toBeFalse()
+            if (keaVersion === '2.7.3') {
+                expect(formArray.at(2).get('suboptions.0.suboptions.0.clientClasses')).toBeNull()
+            } else {
+                expect(formArray.at(2).get('suboptions.0.suboptions.0.clientClasses').value).toEqual([])
+            }
+            expect(formArray.at(2).get('suboptions.0.suboptions.0.optionCode').value).toBe(2)
+            expect(
+                (formArray.at(2).get('suboptions.0.suboptions.0.optionFields') as UntypedFormArray).controls.length
+            ).toBe(1)
+            expect(
+                (formArray.at(2).get('suboptions.0.suboptions.0.suboptions') as UntypedFormArray).controls.length
+            ).toBe(0)
 
-        // Option 3087.0.
-        expect(formArray.at(2).get('suboptions.1.alwaysSend')).toBeTruthy()
-        expect(formArray.at(2).get('suboptions.1.optionCode')).toBeTruthy()
-        expect(formArray.at(2).get('suboptions.1.optionFields')).toBeTruthy()
-        expect(formArray.at(2).get('suboptions.1.suboptions')).toBeTruthy()
+            // Option 3087.0.
+            expect(formArray.at(2).get('suboptions.1.alwaysSend')).toBeTruthy()
+            if (keaVersion === '2.7.3') {
+                expect(formArray.at(2).get('suboptions.1.clientClasses')).toBeNull()
+            } else {
+                expect(formArray.at(2).get('suboptions.1.clientClasses')).toBeTruthy()
+            }
+            expect(formArray.at(2).get('suboptions.1.optionCode')).toBeTruthy()
+            expect(formArray.at(2).get('suboptions.1.optionFields')).toBeTruthy()
+            expect(formArray.at(2).get('suboptions.1.suboptions')).toBeTruthy()
 
-        expect(formArray.at(2).get('suboptions.1.alwaysSend').value).toBeFalse()
-        expect(formArray.at(2).get('suboptions.1.optionCode').value).toBe(0)
+            expect(formArray.at(2).get('suboptions.1.alwaysSend').value).toBeFalse()
+            if (keaVersion === '2.7.3') {
+                expect(formArray.at(2).get('suboptions.1.clientClasses')).toBeNull()
+            } else {
+                expect(formArray.at(2).get('suboptions.1.clientClasses').value).toEqual([])
+            }
+            expect(formArray.at(2).get('suboptions.1.optionCode').value).toBe(0)
 
-        // Option 3087.0 field 0.
-        fields = formArray.at(2).get('suboptions.1.optionFields') as UntypedFormArray
-        expect(fields.controls.length).toBe(3)
-        expect(fields.at(0)).toBeInstanceOf(DhcpOptionFieldFormGroup)
-        expect((fields.at(0) as DhcpOptionFieldFormGroup).data.fieldType).toBe(DhcpOptionFieldType.Uint32)
-        expect(fields.at(0).get('control')).toBeTruthy()
-        expect(fields.at(0).get('control').value).toBe('2222')
+            // Option 3087.0 field 0.
+            fields = formArray.at(2).get('suboptions.1.optionFields') as UntypedFormArray
+            expect(fields.controls.length).toBe(3)
+            expect(fields.at(0)).toBeInstanceOf(DhcpOptionFieldFormGroup)
+            expect((fields.at(0) as DhcpOptionFieldFormGroup).data.fieldType).toBe(DhcpOptionFieldType.Uint32)
+            expect(fields.at(0).get('control')).toBeTruthy()
+            expect(fields.at(0).get('control').value).toBe('2222')
 
-        // Option 3087.0 field 1
-        expect(fields.at(1)).toBeInstanceOf(DhcpOptionFieldFormGroup)
-        expect((fields.at(1) as DhcpOptionFieldFormGroup).data.fieldType).toBe(DhcpOptionFieldType.Int8)
-        expect(fields.at(1).get('control')).toBeTruthy()
-        expect(fields.at(1).get('control').value).toBe('-127')
+            // Option 3087.0 field 1
+            expect(fields.at(1)).toBeInstanceOf(DhcpOptionFieldFormGroup)
+            expect((fields.at(1) as DhcpOptionFieldFormGroup).data.fieldType).toBe(DhcpOptionFieldType.Int8)
+            expect(fields.at(1).get('control')).toBeTruthy()
+            expect(fields.at(1).get('control').value).toBe('-127')
 
-        // Option 3087.0 field 2
-        expect(fields.at(2)).toBeInstanceOf(DhcpOptionFieldFormGroup)
-        expect((fields.at(2) as DhcpOptionFieldFormGroup).data.fieldType).toBe(DhcpOptionFieldType.Int32)
-        expect(fields.at(2).get('control')).toBeTruthy()
-        expect(fields.at(2).get('control').value).toBe('-1000')
+            // Option 3087.0 field 2
+            expect(fields.at(2)).toBeInstanceOf(DhcpOptionFieldFormGroup)
+            expect((fields.at(2) as DhcpOptionFieldFormGroup).data.fieldType).toBe(DhcpOptionFieldType.Int32)
+            expect(fields.at(2).get('control')).toBeTruthy()
+            expect(fields.at(2).get('control').value).toBe('-1000')
+        }
     })
 
     it('returns empty array for null options', () => {
-        let formArray = service.convertOptionsToForm(IPType.IPv4, null)
+        let formArray = service.convertOptionsToForm(null, IPType.IPv4, null)
         expect(formArray).toBeTruthy()
         expect(formArray.length).toBe(0)
     })
@@ -693,7 +776,7 @@ describe('DhcpOptionSetFormService', () => {
                 ],
             },
         ]
-        expect(() => service.convertOptionsToForm(IPType.IPv4, options)).toThrow()
+        expect(() => service.convertOptionsToForm(null, IPType.IPv4, options)).toThrow()
     })
 
     it('throws when IPv6 prefix field has only one value', () => {
@@ -709,7 +792,7 @@ describe('DhcpOptionSetFormService', () => {
                 options: [],
             },
         ]
-        expect(() => service.convertOptionsToForm(IPType.IPv4, options)).toThrow()
+        expect(() => service.convertOptionsToForm(null, IPType.IPv4, options)).toThrow()
     })
 
     it('throws when IPv6 prefix field has three values', () => {
@@ -725,7 +808,7 @@ describe('DhcpOptionSetFormService', () => {
                 options: [],
             },
         ]
-        expect(() => service.convertOptionsToForm(IPType.IPv4, options)).toThrow()
+        expect(() => service.convertOptionsToForm(null, IPType.IPv4, options)).toThrow()
     })
 
     it('throws when PSID field has only one value', () => {
@@ -741,7 +824,7 @@ describe('DhcpOptionSetFormService', () => {
                 options: [],
             },
         ]
-        expect(() => service.convertOptionsToForm(IPType.IPv4, options)).toThrow()
+        expect(() => service.convertOptionsToForm(null, IPType.IPv4, options)).toThrow()
     })
 
     it('throws when PSID field has three values', () => {
@@ -757,7 +840,7 @@ describe('DhcpOptionSetFormService', () => {
                 options: [],
             },
         ]
-        expect(() => service.convertOptionsToForm(IPType.IPv4, options)).toThrow()
+        expect(() => service.convertOptionsToForm(null, IPType.IPv4, options)).toThrow()
     })
 
     it('throws when string field has two values', () => {
@@ -773,7 +856,7 @@ describe('DhcpOptionSetFormService', () => {
                 options: [],
             },
         ]
-        expect(() => service.convertOptionsToForm(IPType.IPv4, options)).toThrow()
+        expect(() => service.convertOptionsToForm(null, IPType.IPv4, options)).toThrow()
     })
 
     it('creates binary field', () => {

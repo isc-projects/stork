@@ -222,7 +222,18 @@ export class PrefixPoolFormComponent implements OnInit {
      */
     onOptionAdd(index: number): void {
         this.getOptionsData(index).push(
-            createDefaultDhcpOptionFormGroup(this.subnet.includes(':') ? IPType.IPv6 : IPType.IPv4)
+            createDefaultDhcpOptionFormGroup(
+                this.keaVersionRange,
+                this.subnet.includes(':') ? IPType.IPv6 : IPType.IPv4
+            )
         )
+    }
+
+    /**
+     * Returns a tuple with the earliest and the latest Kea version
+     * for the configured daemons.
+     */
+    private get keaVersionRange(): [string, string] | null {
+        return getVersionRange(this.selectableDaemons.map((d) => d.version))
     }
 }

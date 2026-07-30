@@ -28,7 +28,7 @@ import { createDefaultDhcpOptionFormGroup } from '../forms/dhcp-option-form'
 import { DhcpOptionSetFormService } from '../forms/dhcp-option-set-form.service'
 
 import { IPType } from '../iptype'
-import { getErrorMessage, stringToHex } from '../utils'
+import { getErrorMessage, getVersionRange, stringToHex } from '../utils'
 import { SelectableClientClass } from '../forms/selectable-client-class'
 import { hasDifferentLocalHostData } from '../hosts'
 import { GenericFormService } from '../forms/generic-form.service'
@@ -638,6 +638,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
                 i,
                 this.optionsArray,
                 this._optionSetFormService.convertOptionsToForm(
+                    this.keaVersionRange,
                     this.form.dhcpv4 ? IPType.IPv4 : IPType.IPv6,
                     localHosts[i].options
                 )
@@ -654,6 +655,13 @@ export class HostFormComponent implements OnInit, OnDestroy {
             this._genericFormService.setFormGroupValues(bootFields, localHosts[i])
             this._genericFormService.setArrayControl(i, this.bootFieldsArray, bootFields)
         }
+    }
+
+    /**
+     * Returns a range of Kea version for the form daemons.
+     */
+    private get keaVersionRange(): [string, string] | null {
+        return getVersionRange(this.form.allDaemons.map((d) => d.version))
     }
 
     /**
@@ -1119,7 +1127,7 @@ export class HostFormComponent implements OnInit, OnDestroy {
      */
     onOptionAdd(index: number): void {
         this.getOptionSetArray(index).push(
-            createDefaultDhcpOptionFormGroup(this.form.dhcpv6 ? IPType.IPv6 : IPType.IPv4)
+            createDefaultDhcpOptionFormGroup(this.keaVersionRange, this.form.dhcpv6 ? IPType.IPv6 : IPType.IPv4)
         )
     }
 

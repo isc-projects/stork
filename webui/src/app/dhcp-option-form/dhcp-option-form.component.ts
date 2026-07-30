@@ -103,6 +103,12 @@ export class DhcpOptionFormComponent implements OnInit {
     @Input() clientClasses: SelectableClientClass[] = []
 
     /**
+     * A tuple with the earliest and the latest Kea version for the configured
+     * daemons.
+     */
+    @Input() keaVersionRange: [string, string] | null = null
+
+    /**
      * An empty form group instance created by the parent component.
      */
     @Input() formGroup: UntypedFormGroup
@@ -521,7 +527,9 @@ export class DhcpOptionFormComponent implements OnInit {
      * Initializes a new sub-option in the current option.
      */
     addSuboption(): void {
-        this.suboptions.push(createDefaultDhcpOptionFormGroup(this.v6 ? IPType.IPv6 : IPType.IPv4))
+        this.suboptions.push(
+            createDefaultDhcpOptionFormGroup(this.keaVersionRange, this.v6 ? IPType.IPv6 : IPType.IPv4)
+        )
     }
 
     /**

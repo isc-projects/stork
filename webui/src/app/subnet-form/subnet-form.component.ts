@@ -399,7 +399,9 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
      * @param index server index in the {@link servers} array.
      */
     onOptionAdd(index: number): void {
-        this.getOptionsData(index).push(createDefaultDhcpOptionFormGroup(this.state.dhcpv6 ? IPType.IPv6 : IPType.IPv4))
+        this.getOptionsData(index).push(
+            createDefaultDhcpOptionFormGroup(this.keaVersionRange, this.state.dhcpv6 ? IPType.IPv6 : IPType.IPv4)
+        )
     }
 
     /**
@@ -811,5 +813,13 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
         return index === undefined
             ? (this.state.group.get('options.data') as UntypedFormArray)
             : (this.getOptionsData().at(index) as UntypedFormArray)
+    }
+
+    /**
+     * Returns a tuple with the earliest and the latest Kea version
+     * for the configured daemons.
+     */
+    private get keaVersionRange(): [string, string] | null {
+        return getVersionRange(this.state.filteredDaemons.map((d) => d.version))
     }
 }
