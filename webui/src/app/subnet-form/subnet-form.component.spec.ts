@@ -586,9 +586,9 @@ describe('SubnetFormComponent', () => {
         expect(component.state.group.get('subnet').disabled).toBeTrue()
         expect(component.state.wizard).toBeFalse()
 
-        const selectedGroups = [0, 1]
-        component.state.group.get('selectedGroups').setValue(selectedGroups)
-        selectedGroups.forEach((index) => {
+        const selectedDaemonGroups = [0, 1]
+        component.state.group.get('selectedDaemonGroups').setValue(selectedDaemonGroups)
+        selectedDaemonGroups.forEach((index) => {
             component.onDaemonsChange({
                 itemValue: index,
             })
@@ -605,7 +605,7 @@ describe('SubnetFormComponent', () => {
             value: 3,
         })
         fixture.detectChanges()
-        expect(component.state.group.get('selectedGroups')?.disabled).toBeTrue()
+        expect(component.state.group.get('selectedDaemonGroups')?.disabled).toBeTrue()
 
         // It should also display the helptip.
         expect(fixture.debugElement.query(By.css('[title="Help for disabled servers selection"]'))).toBeTruthy()
@@ -697,9 +697,9 @@ describe('SubnetFormComponent', () => {
         expect(component.state.group.get('subnet').disabled).toBeTrue()
         expect(component.state.wizard).toBeFalse()
 
-        const selectedGroups = [2, 3]
-        component.state.group.get('selectedGroups').setValue(selectedGroups)
-        selectedGroups.forEach((index) => {
+        const selectedDaemonGroups = [2, 3]
+        component.state.group.get('selectedDaemonGroups').setValue(selectedDaemonGroups)
+        selectedDaemonGroups.forEach((index) => {
             component.onDaemonsChange({
                 itemValue: index,
             })
@@ -714,7 +714,7 @@ describe('SubnetFormComponent', () => {
 
         // Since shared network is not selected, the daemons selection should
         // be enabled.
-        expect(component.state.group.get('selectedGroups')?.disabled).toBeFalse()
+        expect(component.state.group.get('selectedDaemonGroups')?.disabled).toBeFalse()
 
         const okResp: any = {
             status: 200,
@@ -773,11 +773,11 @@ describe('SubnetFormComponent', () => {
         )?.index
         expect(daemon1GroupIndex).not.toBeUndefined()
         expect(daemon4GroupIndex).not.toBeUndefined()
-        const selectedGroups = [daemon1GroupIndex, daemon4GroupIndex].filter(
+        const selectedDaemonGroups = [daemon1GroupIndex, daemon4GroupIndex].filter(
             (groupIndex): groupIndex is number => groupIndex != null
         )
 
-        component.state.group.get('selectedGroups')?.setValue(selectedGroups)
+        component.state.group.get('selectedDaemonGroups')?.setValue(selectedDaemonGroups)
         component.onDaemonsChange({
             itemValue: daemon4GroupIndex,
         })
@@ -818,11 +818,11 @@ describe('SubnetFormComponent', () => {
         expect(daemon1GroupIndex).not.toBeUndefined()
         expect(daemon2GroupIndex).not.toBeUndefined()
         expect(daemon3GroupIndex).not.toBeUndefined()
-        const selectedGroups = [daemon1GroupIndex, daemon2GroupIndex, daemon3GroupIndex].filter(
+        const selectedDaemonGroups = [daemon1GroupIndex, daemon2GroupIndex, daemon3GroupIndex].filter(
             (groupIndex): groupIndex is number => groupIndex != null
         )
 
-        component.state.group.get('selectedGroups')?.setValue(selectedGroups)
+        component.state.group.get('selectedDaemonGroups')?.setValue(selectedDaemonGroups)
         component.onDaemonsChange({
             itemValue: daemon3GroupIndex,
         })
@@ -1308,7 +1308,7 @@ describe('SubnetFormComponent', () => {
         expect(component.addressPoolComponents.length).toBe(1)
         spyOn(component.addressPoolComponents.get(0), 'handleDaemonsChange').and.callThrough()
 
-        component.state.group.get('selectedGroups').setValue([1])
+        component.state.group.get('selectedDaemonGroups').setValue([1])
         component.onDaemonsChange({
             itemValue: 0,
         })
@@ -1365,7 +1365,7 @@ describe('SubnetFormComponent', () => {
         expect(component.addressPoolComponents.length).toBe(1)
         spyOn(component.addressPoolComponents.get(0), 'handleDaemonsChange').and.callThrough()
 
-        component.state.group.get('selectedGroups').setValue([2, 3, 4])
+        component.state.group.get('selectedDaemonGroups').setValue([2, 3, 4])
         component.onDaemonsChange({
             itemValue: 4,
         })
@@ -1416,7 +1416,7 @@ describe('SubnetFormComponent', () => {
         tick()
         fixture.detectChanges()
 
-        component.state.group.get('selectedGroups').setValue([1])
+        component.state.group.get('selectedDaemonGroups').setValue([1])
         component.onDaemonsChange({
             itemValue: 0,
         })

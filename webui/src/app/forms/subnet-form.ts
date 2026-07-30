@@ -191,19 +191,19 @@ export class SubnetFormState implements FormState {
      * must be removed from the form because they may be in conflict with the
      * new daemons selection.
      *
-     * @param selectedGroups new set of selected daemon groups' indexes.
+     * @param selectedDaemonGroups new set of selected daemon groups' indexes.
      * @param subnet subnet prefix.
      * @returns true if the update results in a breaking change, false otherwise.
      */
-    updateFormForSelectedDaemonGroups(selectedGroups: number[], subnet?: string): boolean {
-        const selectedDaemonIDs = selectedGroups.flatMap((g) => this.allDaemons[g].daemons.map((d) => d.id))
+    updateFormForSelectedDaemonGroups(selectedDaemonGroups: number[], subnet?: string): boolean {
+        const selectedDaemonIDs = selectedDaemonGroups.flatMap((g) => this.allDaemons[g].daemons.map((d) => d.id))
         let dhcpv6 = false
-        let dhcpv4 = selectedGroups.some((g) => {
+        let dhcpv4 = selectedDaemonGroups.some((g) => {
             return this.allDaemons[g].daemons[0].name === 'dhcp4'
         })
         if (!dhcpv4) {
             // If user selected no DHCPv4 server, perhaps selected a DHCPv6 server?
-            dhcpv6 = selectedGroups.some((g) => {
+            dhcpv6 = selectedDaemonGroups.some((g) => {
                 return this.allDaemons[g].daemons[0].name === 'dhcp6'
             })
         }

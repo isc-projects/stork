@@ -390,8 +390,8 @@ describe('SubnetSetFormService', () => {
         })
         expect((options.get('1') as UntypedFormArray).length).toBe(0)
 
-        let selectedGroups = formArray.get('0.selectedGroups') as FormControl<number[]>
-        expect(selectedGroups?.value).toEqual([1, 2])
+        let selectedDaemonGroups = formArray.get('0.selectedDaemonGroups') as FormControl<number[]>
+        expect(selectedDaemonGroups?.value).toEqual([1, 2])
 
         expect(formArray.get('1.range.start')?.value).toBe('192.0.2.20')
         expect(formArray.get('1.range.end')?.value).toBe('192.0.2.30')
@@ -421,8 +421,8 @@ describe('SubnetSetFormService', () => {
         expect(options.get('0.0.optionFields.0.control')?.value).toBe('192.0.2.2')
         expect(options.get('1.0.optionFields.0.control')?.value).toBe('192.0.2.2')
 
-        selectedGroups = formArray.get('1.selectedGroups') as FormControl<number[]>
-        expect(selectedGroups?.value).toEqual([1, 2])
+        selectedDaemonGroups = formArray.get('1.selectedDaemonGroups') as FormControl<number[]>
+        expect(selectedDaemonGroups?.value).toEqual([1, 2])
 
         expect(formArray.get('2.range.start')?.value).toBe('192.0.2.40')
         expect(formArray.get('2.range.end')?.value).toBe('192.0.2.50')
@@ -447,8 +447,8 @@ describe('SubnetSetFormService', () => {
         expect(options.length).toBe(1)
         expect(options.get('0.0.optionFields.0.control')?.value).toBe('192.0.2.3')
 
-        selectedGroups = formArray.get('2.selectedGroups') as FormControl<number[]>
-        expect(selectedGroups?.value).toEqual([1])
+        selectedDaemonGroups = formArray.get('2.selectedDaemonGroups') as FormControl<number[]>
+        expect(selectedDaemonGroups?.value).toEqual([1])
     })
 
     it('should convert form to address pool data', () => {
@@ -877,8 +877,8 @@ describe('SubnetSetFormService', () => {
         expect(options.get('0.0.optionFields.0.control')?.value).toBe('2001:db8:1::1')
         expect((options.get('1') as UntypedFormArray).length).toBe(0)
 
-        let selectedGroups = formArray.get('0.selectedGroups') as FormControl<number[]>
-        expect(selectedGroups?.value).toEqual([1, 2])
+        let selectedDaemonGroups = formArray.get('0.selectedDaemonGroups') as FormControl<number[]>
+        expect(selectedDaemonGroups?.value).toEqual([1, 2])
 
         expect(formArray.get('1.prefixes.prefix')?.value).toBe('3001::/16')
         expect(formArray.get('1.prefixes.delegatedLength')?.value).toBe(112)
@@ -910,8 +910,8 @@ describe('SubnetSetFormService', () => {
         expect(options.get('0.0.optionFields.0.control')?.value).toBe('2001:db8:1::2')
         expect(options.get('1.0.optionFields.0.control')?.value).toBe('2001:db8:1::2')
 
-        selectedGroups = formArray.get('1.selectedGroups') as FormControl<number[]>
-        expect(selectedGroups?.value).toEqual([1, 2])
+        selectedDaemonGroups = formArray.get('1.selectedDaemonGroups') as FormControl<number[]>
+        expect(selectedDaemonGroups?.value).toEqual([1, 2])
 
         expect(formArray.get('2.prefixes.prefix')?.value).toBe('3002::/16')
         expect(formArray.get('2.prefixes.delegatedLength')?.value).toBe(112)
@@ -937,8 +937,8 @@ describe('SubnetSetFormService', () => {
         expect(options.length).toBe(1)
         expect(options.get('0.0.optionFields.0.control')?.value).toBe('2001:db8:1::3')
 
-        selectedGroups = formArray.get('2.selectedGroups') as FormControl<number[]>
-        expect(selectedGroups?.value).toEqual([1])
+        selectedDaemonGroups = formArray.get('2.selectedDaemonGroups') as FormControl<number[]>
+        expect(selectedDaemonGroups?.value).toEqual([1])
 
         // Make sure that the evaluateAdditionalClasses is not set for the Kea versions
         // prior to 2.7.4.
@@ -2188,8 +2188,8 @@ describe('SubnetSetFormService', () => {
         expect(form.get('userContexts.names.0').value).toBeNull()
         expect((form.get('userContexts.contexts') as UntypedFormArray)?.length).toBe(1)
         expect(form.get('userContexts.contexts.0').value).toEqual({})
-        expect(form.get('selectedGroups')).toBeTruthy()
-        expect(form.get('selectedGroups').value.length).toBe(0)
+        expect(form.get('selectedDaemonGroups')).toBeTruthy()
+        expect(form.get('selectedDaemonGroups').value.length).toBe(0)
     })
 
     it('should create a default subnet form for specific subnet', () => {
@@ -2208,8 +2208,8 @@ describe('SubnetSetFormService', () => {
         expect(form.get('options.unlocked').value).toBeFalse()
         expect(form.get('options.data')).toBeTruthy()
         expect((form.get('options.data') as UntypedFormArray)?.length).toBe(1)
-        expect(form.get('selectedGroups')).toBeTruthy()
-        expect(form.get('selectedGroups').value.length).toBe(0)
+        expect(form.get('selectedDaemonGroups')).toBeTruthy()
+        expect(form.get('selectedDaemonGroups').value.length).toBe(0)
     })
 
     it('should keep pool assignments for daemon group index zero during synchronization', () => {
@@ -2218,14 +2218,14 @@ describe('SubnetSetFormService', () => {
         const pool = service.createDefaultAddressPoolForm(null, '192.0.2.0/24')
         pools.push(pool)
 
-        form.get('selectedGroups')?.setValue([0, 1])
-        pool.get('selectedGroups')?.setValue([0, 1])
+        form.get('selectedDaemonGroups')?.setValue([0, 1])
+        pool.get('selectedDaemonGroups')?.setValue([0, 1])
 
         // Simulate initialization path where selected groups and pool assignments
         // are synchronized while the number of selected groups remains unchanged.
         service.adjustFormForSelectedDaemons(form as unknown as UntypedFormGroup, -1, 2)
 
-        expect(pool.get('selectedGroups')?.value).toEqual([0, 1])
+        expect(pool.get('selectedDaemonGroups')?.value).toEqual([0, 1])
     })
 
     it('should not auto-assign pool groups when assignments do not overlap', () => {
@@ -2234,12 +2234,12 @@ describe('SubnetSetFormService', () => {
         const pool = service.createDefaultAddressPoolForm(null, '192.0.2.0/24')
         pools.push(pool)
 
-        form.get('selectedGroups')?.setValue([2])
-        pool.get('selectedGroups')?.setValue([1])
+        form.get('selectedDaemonGroups')?.setValue([2])
+        pool.get('selectedDaemonGroups')?.setValue([1])
 
         service.adjustFormForSelectedDaemons(form as unknown as UntypedFormGroup, -1, 1)
 
-        expect(pool.get('selectedGroups')?.value).toEqual([])
+        expect(pool.get('selectedDaemonGroups')?.value).toEqual([])
     })
 
     it('should convert IPv4 subnet data to a form', () => {
@@ -2341,9 +2341,9 @@ describe('SubnetSetFormService', () => {
         expect((parameters.get('allocator.values') as UntypedFormArray).length).toBe(1)
         expect(parameters.get('allocator.values.0')?.value).toBe('random')
 
-        const selectedGroups = formGroup.get('selectedGroups') as FormControl<number[]>
-        expect(selectedGroups?.value).toEqual([1])
-        expect(selectedGroups?.disabled).toBeTrue()
+        const selectedDaemonGroups = formGroup.get('selectedDaemonGroups') as FormControl<number[]>
+        expect(selectedDaemonGroups?.value).toEqual([1])
+        expect(selectedDaemonGroups?.disabled).toBeTrue()
 
         const userContextGroup = formGroup.get('userContexts') as FormGroup<UserContextsForm>
         expect(userContextGroup.get('unlocked')?.value).toBeFalse()
@@ -2653,9 +2653,9 @@ describe('SubnetSetFormService', () => {
         expect((parameters.get('pdAllocator.values') as UntypedFormArray).length).toBe(2)
         expect(parameters.get('pdAllocator.values.0')?.value).toBe('random')
 
-        const selectedGroups = formGroup.get('selectedGroups') as FormControl<number[]>
-        expect(selectedGroups?.value).toEqual([1, 2])
-        expect(selectedGroups?.disabled).toBeFalse()
+        const selectedDaemonGroups = formGroup.get('selectedDaemonGroups') as FormControl<number[]>
+        expect(selectedDaemonGroups?.value).toEqual([1, 2])
+        expect(selectedDaemonGroups?.disabled).toBeFalse()
     })
 
     it('should convert a subnet with no local subnets to a form', () => {
@@ -2672,8 +2672,8 @@ describe('SubnetSetFormService', () => {
         expect(parameters.get('allocator.unlocked')?.value).toBeFalse()
         expect((parameters.get('allocator.values') as UntypedFormArray).length).toBe(0)
 
-        const selectedGroups = formGroup.get('selectedGroups') as FormControl<number[]>
-        expect(selectedGroups?.value.length).toBe(0)
+        const selectedDaemonGroups = formGroup.get('selectedDaemonGroups') as FormControl<number[]>
+        expect(selectedDaemonGroups?.value.length).toBe(0)
     })
 
     it('should convert a form to Kea parameters', () => {

@@ -62,7 +62,7 @@ describe('AddressPoolFormComponent', () => {
                     ]),
                 ]),
             }),
-            selectedGroups: new FormControl<number[]>([1, 2]),
+            selectedDaemonGroups: new FormControl<number[]>([1, 2]),
         })
         component.selectableGroups = [
             {
@@ -96,7 +96,7 @@ describe('AddressPoolFormComponent', () => {
     })
 
     it('should reduce the form for unselected server', () => {
-        component.formGroup.get('selectedGroups').setValue([2])
+        component.formGroup.get('selectedDaemonGroups').setValue([2])
         component.onDaemonsChange({
             itemValue: 1,
         })
@@ -126,7 +126,7 @@ describe('AddressPoolFormComponent', () => {
     })
 
     it('should extend the form for newly selected server', () => {
-        component.formGroup.get('selectedGroups').setValue([1, 2, 3])
+        component.formGroup.get('selectedDaemonGroups').setValue([1, 2, 3])
         component.onDaemonsChange({
             itemValue: 3,
         })
@@ -164,7 +164,7 @@ describe('AddressPoolFormComponent', () => {
     })
 
     it('should reset a form when all servers are unselected', () => {
-        component.formGroup.get('selectedGroups').setValue([])
+        component.formGroup.get('selectedDaemonGroups').setValue([])
         component.onDaemonsChange({
             itemValue: 2,
         })

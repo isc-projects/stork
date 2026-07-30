@@ -64,7 +64,7 @@ export const PrefixPool: Story = {
                 unlocked: new FormControl(false),
                 data: new UntypedFormArray([new UntypedFormArray([]), new UntypedFormArray([])]),
             }),
-            selectedGroups: new FormControl<number[]>([1, 2]),
+            selectedDaemonGroups: new FormControl<number[]>([1, 2]),
         }),
         selectableGroups: [
             {

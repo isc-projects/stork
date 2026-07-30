@@ -8,7 +8,7 @@
                         optionLabel="label"
                         optionValue="index"
                         [options]="state.filteredDaemons"
-                        formControlName="selectedGroups"
+                        formControlName="selectedDaemonGroups"
                         display="chip"
                         [showToggleAll]="false"
                         styleClass="adaptive-chips-background"
@@ -38,13 +38,13 @@
                 </p-floatlabel>
                 <small
                     *ngIf="
-                        state.group.get('selectedGroups').invalid &&
-                        (state.group.get('selectedGroups').dirty || state.group.get('selectedGroups').touched)
+                        state.group.get('selectedDaemonGroups').invalid &&
+                        (state.group.get('selectedDaemonGroups').dirty || state.group.get('selectedDaemonGroups').touched)
                     "
                     class="app-error block"
                     >At least one server must be selected.
                 </small>
-                <div *ngIf="state.group.get('selectedGroups')?.disabled" class="flex align-items-center">
+                <div *ngIf="state.group.get('selectedDaemonGroups')?.disabled" class="flex align-items-center">
                     <div>Server selection is disabled</div>
                     <div class="ml-2">
                         <app-help-tip subject="disabled servers selection">
