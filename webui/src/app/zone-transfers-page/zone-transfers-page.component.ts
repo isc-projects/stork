@@ -284,7 +284,7 @@ export class ZoneTransfersPageComponent implements OnInit {
                 event?.first ?? 0,
                 event?.rows ?? 10,
                 (event?.filters?.zoneTransferStatus as FilterMetadata)?.value ?? [],
-                (event?.filters?.text as FilterMetadata)?.value ?? undefined,
+                (event?.filters?.text as FilterMetadata)?.value || undefined,
                 (event?.filters?.serverMachineId as FilterMetadata)?.value ?? undefined,
                 (event?.filters?.clientMachineId as FilterMetadata)?.value ?? undefined,
                 (event?.filters?.zoneSerial as FilterMetadata)?.value ?? undefined,
