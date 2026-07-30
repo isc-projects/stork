@@ -336,6 +336,15 @@
                                         />
                                         <label for="include-local">Include local transfers</label>
                                     </div>
+                                    <ng-container
+                                        *ngTemplateOutlet="
+                                            clearFilterBtn;
+                                            context: {
+                                                $implicit: value,
+                                                filterConstraint: filterConstraint,
+                                            }
+                                        "
+                                    ></ng-container>
                                 </div>
                             </ng-template>
                         </p-columnFilter>
