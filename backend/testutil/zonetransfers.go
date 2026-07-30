@@ -9,11 +9,18 @@ import (
 
 // Generates test zone transfer states used in different unit tests.
 func GetTestZoneTransfers() []*bind9xfr.State {
+	// Cannot use storkutil.Ptr() as it would cause import cycle.
+	serial1 := int64(2026041600)
+	serial2 := int64(2026041601)
+	serial3 := int64(2026041602)
+	serial4 := int64(2026041603)
+	serial5 := int64(2026041604)
+	serial6 := int64(0)
 	return []*bind9xfr.State{
 		{
 			ViewName:       "_default",
 			ZoneName:       "good.example.org",
-			Serial:         2026041600,
+			Serial:         &serial1,
 			Client:         "127.0.0.1",
 			Server:         "192.5.5.241",
 			MessagesCount:  79,
@@ -27,7 +34,7 @@ func GetTestZoneTransfers() []*bind9xfr.State {
 		{
 			ViewName:       "_default",
 			ZoneName:       "isc.example.org",
-			Serial:         2026041601,
+			Serial:         &serial2,
 			Client:         "127.0.0.1",
 			Server:         "192.5.5.241",
 			MessagesCount:  179,
@@ -41,7 +48,7 @@ func GetTestZoneTransfers() []*bind9xfr.State {
 		{
 			ViewName:       "private",
 			ZoneName:       "internal.example.org",
-			Serial:         2026041602,
+			Serial:         &serial3,
 			Client:         "192.168.1.1",
 			Server:         "192.168.1.2",
 			MessagesCount:  1,
@@ -55,7 +62,7 @@ func GetTestZoneTransfers() []*bind9xfr.State {
 		{
 			ViewName:  "public",
 			ZoneName:  "public.example.org",
-			Serial:    2026041603,
+			Serial:    &serial4,
 			Client:    "192.168.1.1",
 			Server:    "192.168.1.2",
 			Status:    bind9xfr.StatusStarted,
@@ -64,7 +71,7 @@ func GetTestZoneTransfers() []*bind9xfr.State {
 		{
 			ViewName:  "_default",
 			ZoneName:  "bad.example.org",
-			Serial:    2026041604,
+			Serial:    &serial5,
 			Client:    "192.168.1.1",
 			Server:    "192.168.1.2",
 			Status:    bind9xfr.StatusMessage,
@@ -79,7 +86,7 @@ func GetTestZoneTransfers() []*bind9xfr.State {
 		{
 			ZoneName:       ".",
 			Status:         bind9xfr.StatusCompleted,
-			Serial:         0,
+			Serial:         &serial6,
 			Client:         "2001:db8::1",
 			Server:         "2001:db8::2",
 			StartTime:      time.Date(2026, 4, 26, 1, 2, 0, 13000000, time.UTC),

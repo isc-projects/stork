@@ -734,17 +734,19 @@ func parseClient(iterator *storkutil.PeekingIterator[string], s *bind9xfr.State)
 // Parses the zone serial number.
 func parseSerial(iterator *storkutil.PeekingIterator[string], s *bind9xfr.State) (err error) {
 	token, ok := iterator.Next()
-	if s.Serial != 0 || !ok {
+	if s.Serial != nil || !ok {
 		// If the serial number is already set or there are no more tokens to process,
 		// there is nothing to parse.
 		return
 	}
 	// Make sure that the token has no junk like parentheses.
 	token = sanitizeToken(token)
-	if s.Serial, err = strconv.ParseInt(token, 10, 64); err != nil {
+	serial, err := strconv.ParseInt(token, 10, 64)
+	if err != nil {
 		// It is not a valid number.
 		err = errors.WithStack(err)
 	}
+	s.Serial = &serial
 	return
 }
 

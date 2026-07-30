@@ -366,7 +366,8 @@ func TestGetZoneTransferStatesWithFiltering(t *testing.T) {
 		okResp := rsp.(*dns.GetZoneTransferStatesOK)
 		require.Len(t, okResp.Payload.Items, 1)
 		require.EqualValues(t, okResp.Payload.Total, 1)
-		require.EqualValues(t, 2026041601, okResp.Payload.Items[0].Serial)
+		require.NotNil(t, okResp.Payload.Items[0].Serial)
+		require.EqualValues(t, 2026041601, *okResp.Payload.Items[0].Serial)
 	})
 
 	t.Run("filter by multiple statuses", func(t *testing.T) {

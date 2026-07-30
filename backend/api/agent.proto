@@ -437,7 +437,7 @@ message ZoneTransfer {
   // Name of the zone being transferred.
   string zoneName = 2;
   // Zone serial number.
-  int64 serial = 3;
+  optional int64 serial = 3;
   // Secondary server address.
   string client = 4;
   // Primary server address.

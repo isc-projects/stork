@@ -18,6 +18,7 @@ import (
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
 	"isc.org/stork/testutil"
+	storkutil "isc.org/stork/util"
 )
 
 // Test that the collect function of the xfrCollector receives the zone transfer
@@ -453,7 +454,7 @@ func TestXFRCollectorConvertXFRStateToDBModelPrimarySecondary(t *testing.T) {
 		xfr := &bind9xfr.State{
 			ViewName: "view",
 			ZoneName: "zone",
-			Serial:   1234567890,
+			Serial:   storkutil.Ptr(int64(1234567890)),
 		}
 		dbState := xfrCollector.convertXFRStateToDBModel(xfr)
 		require.Equal(t, daemons[0].ID, dbState.DaemonID)
@@ -474,7 +475,7 @@ func TestXFRCollectorConvertXFRStateToDBModelPrimarySecondary(t *testing.T) {
 		xfr := &bind9xfr.State{
 			ViewName: "view",
 			ZoneName: "zone",
-			Serial:   1234567890,
+			Serial:   storkutil.Ptr(int64(1234567890)),
 			Client:   "2001:db8::1",
 		}
 		dbState := xfrCollector2.convertXFRStateToDBModel(xfr)
@@ -495,7 +496,7 @@ func TestXFRCollectorConvertXFRStateToDBModelPrimarySecondary(t *testing.T) {
 		xfr := &bind9xfr.State{
 			ViewName: "view",
 			ZoneName: "zone",
-			Serial:   1234567890,
+			Serial:   storkutil.Ptr(int64(1234567890)),
 			Server:   "2001:db8::2",
 		}
 		dbState := xfrCollector.convertXFRStateToDBModel(xfr)
@@ -513,7 +514,7 @@ func TestXFRCollectorConvertXFRStateToDBModelPrimarySecondary(t *testing.T) {
 		xfr := &bind9xfr.State{
 			ViewName: "view",
 			ZoneName: "zone",
-			Serial:   1234567890,
+			Serial:   storkutil.Ptr(int64(1234567890)),
 			Client:   "2001:db8::1",
 			Server:   "2001:db8::2",
 		}
@@ -532,7 +533,7 @@ func TestXFRCollectorConvertXFRStateToDBModelPrimarySecondary(t *testing.T) {
 		xfr := &bind9xfr.State{
 			ViewName: "view",
 			ZoneName: "zone",
-			Serial:   1234567890,
+			Serial:   storkutil.Ptr(int64(1234567890)),
 			Client:   "2001:db8::3",
 		}
 		dbState := xfrCollector2.convertXFRStateToDBModel(xfr)
@@ -551,7 +552,7 @@ func TestXFRCollectorConvertXFRStateToDBModelPrimarySecondary(t *testing.T) {
 		xfr := &bind9xfr.State{
 			ViewName: "view",
 			ZoneName: "zone",
-			Serial:   1234567890,
+			Serial:   storkutil.Ptr(int64(1234567890)),
 			Server:   "2001:db8::3",
 		}
 		dbState := xfrCollector.convertXFRStateToDBModel(xfr)
@@ -569,7 +570,7 @@ func TestXFRCollectorConvertXFRStateToDBModelPrimarySecondary(t *testing.T) {
 		xfr := &bind9xfr.State{
 			ViewName: "view",
 			ZoneName: "zone",
-			Serial:   1234567890,
+			Serial:   storkutil.Ptr(int64(1234567890)),
 			Client:   "127.0.0.1",
 		}
 		dbState := xfrCollector.convertXFRStateToDBModel(xfr)
@@ -581,7 +582,7 @@ func TestXFRCollectorConvertXFRStateToDBModelPrimarySecondary(t *testing.T) {
 		xfr := &bind9xfr.State{
 			ViewName: "view",
 			ZoneName: "zone",
-			Serial:   1234567890,
+			Serial:   storkutil.Ptr(int64(1234567890)),
 			Server:   "127.0.0.1",
 		}
 		dbState := xfrCollector2.convertXFRStateToDBModel(xfr)

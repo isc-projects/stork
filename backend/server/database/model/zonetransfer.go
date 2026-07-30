@@ -36,7 +36,7 @@ type ZoneTransferState struct {
 	CreatedAt         time.Time
 	ViewName          string `pg:",use_zero"`
 	ZoneName          string
-	Serial            int64
+	Serial            *int64 `pg:",use_zero"`
 	Client            string `pg:",use_zero"`
 	Server            string
 	MessagesCount     int64

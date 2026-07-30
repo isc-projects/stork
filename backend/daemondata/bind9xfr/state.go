@@ -51,7 +51,7 @@ const (
 type State struct {
 	ViewName       string
 	ZoneName       string
-	Serial         int64
+	Serial         *int64
 	Client         string
 	Server         string
 	MessagesCount  int64

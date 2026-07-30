@@ -3843,7 +3843,7 @@ func TestReceiveZoneTransferDataConversion(t *testing.T) {
 	state := bind9xfr.State{
 		ViewName:       "_default",
 		ZoneName:       "zone.example.org",
-		Serial:         1234567890,
+		Serial:         storkutil.Ptr(int64(1234567890)),
 		Client:         "127.0.0.1",
 		Server:         "127.0.0.2",
 		MessagesCount:  100,
@@ -3858,7 +3858,8 @@ func TestReceiveZoneTransferDataConversion(t *testing.T) {
 	converted := convertZoneTransferStateToAPI(state)
 	require.Equal(t, "_default", converted.ViewName)
 	require.Equal(t, "zone.example.org", converted.ZoneName)
-	require.EqualValues(t, 1234567890, converted.Serial)
+	require.NotNil(t, converted.Serial)
+	require.EqualValues(t, 1234567890, *converted.Serial)
 	require.Equal(t, "127.0.0.1", converted.Client)
 	require.Equal(t, "127.0.0.2", converted.Server)
 	require.EqualValues(t, 100, converted.MessagesCount)

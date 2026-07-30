@@ -277,7 +277,7 @@ func TestAddOrUpdateZoneTransfersOverrideStartedByCompleted(t *testing.T) {
 		CreatedAt:       time.Date(2026, 4, 16, 10, 42, 3, 71000, time.UTC),
 		ViewName:        "_default",
 		ZoneName:        "good.example.org",
-		Serial:          2026041600,
+		Serial:          storkutil.Ptr(int64(2026041600)),
 		Client:          "127.0.0.1",
 		Status:          bind9xfr.StatusCompleted,
 		StartedAt:       time.Date(2026, 4, 16, 10, 41, 27, 71000, time.UTC),
@@ -531,8 +531,26 @@ func TestGetZoneTransferStatesByPageWithFiltering(t *testing.T) {
 		require.EqualValues(t, 1, total)
 		require.Len(t, zoneTransfers, 1)
 		for _, zoneTransfer := range zoneTransfers {
-			require.EqualValues(t, 2026041601, zoneTransfer.Serial)
+			require.NotNil(t, zoneTransfer.Serial)
+			require.EqualValues(t, 2026041601, *zoneTransfer.Serial)
 		}
+	})
+
+	t.Run("filter by zero serial", func(t *testing.T) {
+		filter := &GetZoneTransferStatesFilter{
+			Serial: storkutil.Ptr("0"),
+		}
+		zoneTransfers, total, err := GetZoneTransferStatesByPage(db, filter, "", SortDirAny)
+		require.NoError(t, err)
+		require.EqualValues(t, 6, total)
+		require.Len(t, zoneTransfers, 6)
+		var zeroSerialIncluded bool
+		for _, zoneTransfer := range zoneTransfers {
+			if zoneTransfer.Serial != nil && *zoneTransfer.Serial == 0 {
+				zeroSerialIncluded = true
+			}
+		}
+		require.True(t, zeroSerialIncluded)
 	})
 
 	t.Run("filter by single status", func(t *testing.T) {
