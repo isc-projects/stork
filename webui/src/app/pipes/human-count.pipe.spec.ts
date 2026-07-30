@@ -54,4 +54,12 @@ describe('HumanCountPipe', () => {
         expect(strInt).toBe('12.3M')
         expect(strBigInt).toBe('1234567890.0Y')
     })
+
+    it('should include the base unit in the output', () => {
+        const pipe = new HumanCountPipe()
+        const humanCount = pipe.transform
+
+        expect(humanCount(2, 'B/s')).toBe('2B/s')
+        expect(humanCount(2323, 'm')).toBe('2.3km')
+    })
 })
