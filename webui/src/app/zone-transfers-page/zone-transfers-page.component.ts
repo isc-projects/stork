@@ -192,7 +192,7 @@ export class ZoneTransfersPageComponent implements OnInit {
     protected readonly tableHasFilter = tableHasFilter
 
     /**
-     * Object containing supported zone filters which values are provided via URL deep-link.
+     * Object containing supported zone transfers filters which values are provided via URL deep-link.
      * The properties of this object correspond to queryParam keys.
      * Values of this object describe:
      * - filter type (numeric, enum, string or boolean)
