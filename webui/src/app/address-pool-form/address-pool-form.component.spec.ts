@@ -90,9 +90,9 @@ describe('AddressPoolFormComponent', () => {
     })
 
     it('should initialize the servers selector', () => {
-        expect(component.servers.length).toBe(2)
-        expect(component.servers[0]).toBe('first/dhcp4')
-        expect(component.servers[1]).toBe('second/dhcp4')
+        expect(component.daemonGroupLabels.length).toBe(2)
+        expect(component.daemonGroupLabels[0]).toBe('first/dhcp4')
+        expect(component.daemonGroupLabels[1]).toBe('second/dhcp4')
     })
 
     it('should reduce the form for unselected server', () => {
@@ -102,8 +102,8 @@ describe('AddressPoolFormComponent', () => {
         })
         fixture.detectChanges()
 
-        expect(component.servers.length).toBe(1)
-        expect(component.servers[0]).toBe('second/dhcp4')
+        expect(component.daemonGroupLabels.length).toBe(1)
+        expect(component.daemonGroupLabels[0]).toBe('second/dhcp4')
 
         expect(component.formGroup.get('range.start')?.value).toBe('192.0.2.10')
         expect(component.formGroup.get('range.end')?.value).toBe('192.0.2.100')
@@ -132,10 +132,10 @@ describe('AddressPoolFormComponent', () => {
         })
         fixture.detectChanges()
 
-        expect(component.servers.length).toBe(3)
-        expect(component.servers[0]).toBe('first/dhcp4')
-        expect(component.servers[1]).toBe('second/dhcp4')
-        expect(component.servers[2]).toBe('third/dhcp4')
+        expect(component.daemonGroupLabels.length).toBe(3)
+        expect(component.daemonGroupLabels[0]).toBe('first/dhcp4')
+        expect(component.daemonGroupLabels[1]).toBe('second/dhcp4')
+        expect(component.daemonGroupLabels[2]).toBe('third/dhcp4')
 
         expect(component.formGroup.get('range.start')?.value).toBe('192.0.2.10')
         expect(component.formGroup.get('range.end')?.value).toBe('192.0.2.100')
@@ -170,7 +170,7 @@ describe('AddressPoolFormComponent', () => {
         })
         fixture.detectChanges()
 
-        expect(component.servers.length).toBe(0)
+        expect(component.daemonGroupLabels.length).toBe(0)
 
         expect(component.formGroup.get('range.start')?.value).toBe('192.0.2.10')
         expect(component.formGroup.get('range.end')?.value).toBe('192.0.2.100')

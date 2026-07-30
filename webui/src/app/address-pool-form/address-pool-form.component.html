@@ -78,7 +78,7 @@
         </div>
     </p-fieldset>
     <p-fieldset legend="Pool DHCP Parameters" styleClass="mt-4">
-        <app-shared-parameters-form [servers]="servers" [formGroup]="formGroup.get('parameters')">
+        <app-shared-parameters-form [servers]="daemonGroupLabels" [formGroup]="formGroup.get('parameters')">
         </app-shared-parameters-form>
     </p-fieldset>
     <p-fieldset [formGroup]="formGroup.get('options')" legend="Pool DHCP Options" styleClass="mt-4">
@@ -94,7 +94,7 @@
                             @if (formGroup.get('options.data')?.length > 1) {
                                 <p-divider align="center">
                                     <p-tag [severity]="getServerTagSeverity(i)">
-                                        {{ servers[i] }}
+                                        {{ daemonGroupLabels[i] }}
                                     </p-tag>
                                 </p-divider>
                             }

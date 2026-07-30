@@ -98,9 +98,9 @@ describe('PrefixPoolFormComponent', () => {
     })
 
     it('should initialize the servers selector', () => {
-        expect(component.servers.length).toBe(2)
-        expect(component.servers[0]).toBe('first/dhcp6')
-        expect(component.servers[1]).toBe('second/dhcp6')
+        expect(component.daemonGroupLabels.length).toBe(2)
+        expect(component.daemonGroupLabels[0]).toBe('first/dhcp6')
+        expect(component.daemonGroupLabels[1]).toBe('second/dhcp6')
     })
 
     it('should reduce the form for unselected server', () => {
@@ -110,8 +110,8 @@ describe('PrefixPoolFormComponent', () => {
         })
         fixture.detectChanges()
 
-        expect(component.servers.length).toBe(1)
-        expect(component.servers[0]).toBe('second/dhcp6')
+        expect(component.daemonGroupLabels.length).toBe(1)
+        expect(component.daemonGroupLabels[0]).toBe('second/dhcp6')
 
         expect(component.formGroup.get('prefixes.prefix')?.value).toBe('2001:db8:1::/64')
         expect(component.formGroup.get('prefixes.delegatedLength')?.value).toBe(80)
@@ -141,10 +141,10 @@ describe('PrefixPoolFormComponent', () => {
         })
         fixture.detectChanges()
 
-        expect(component.servers.length).toBe(3)
-        expect(component.servers[0]).toBe('first/dhcp6')
-        expect(component.servers[1]).toBe('second/dhcp6')
-        expect(component.servers[2]).toBe('third/dhcp6')
+        expect(component.daemonGroupLabels.length).toBe(3)
+        expect(component.daemonGroupLabels[0]).toBe('first/dhcp6')
+        expect(component.daemonGroupLabels[1]).toBe('second/dhcp6')
+        expect(component.daemonGroupLabels[2]).toBe('third/dhcp6')
 
         expect(component.formGroup.get('prefixes.prefix')?.value).toBe('2001:db8:1::/64')
         expect(component.formGroup.get('prefixes.delegatedLength')?.value).toBe(80)
@@ -180,7 +180,7 @@ describe('PrefixPoolFormComponent', () => {
         })
         fixture.detectChanges()
 
-        expect(component.servers.length).toBe(0)
+        expect(component.daemonGroupLabels.length).toBe(0)
 
         expect(component.formGroup.get('prefixes.prefix')?.value).toBe('2001:db8:1::/64')
         expect(component.formGroup.get('prefixes.delegatedLength')?.value).toBe(80)

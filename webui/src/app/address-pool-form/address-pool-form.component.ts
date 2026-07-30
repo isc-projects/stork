@@ -63,9 +63,9 @@ export class AddressPoolFormComponent implements OnInit {
     @Input() formGroup: FormGroup<AddressPoolForm>
 
     /**
-     * An array of server names associated with the address pool.
+     * An array of daemon group labels associated with the address pool.
      */
-    servers: string[] = []
+    daemonGroupLabels: string[] = []
 
     /**
      * UUIDS used as unique element identifiers.
@@ -84,7 +84,7 @@ export class AddressPoolFormComponent implements OnInit {
     ngOnInit(): void {
         const selectedDaemonGroups = this.formGroup.get('selectedDaemonGroups').value ?? []
         if (selectedDaemonGroups.length > 0) {
-            this.servers = selectedDaemonGroups.map(
+            this.daemonGroupLabels = selectedDaemonGroups.map(
                 (sg) => this.selectableGroups.find((group) => group.index === sg)?.label ?? 'unknown'
             )
         }
@@ -102,7 +102,7 @@ export class AddressPoolFormComponent implements OnInit {
     /**
      * Returns severity of a tag associating a form control with a server.
      *
-     * @param index server index in the {@link servers} array.
+     * @param index server index in the {@link daemonGroupLabels} array.
      * @returns `success` for the first server, `warning` for the second
      * server, `danger` for the third server, and 'info' for any other
      * server.
@@ -140,11 +140,12 @@ export class AddressPoolFormComponent implements OnInit {
             this.subnetSetFormService.adjustFormForSelectedDaemons(
                 this.formGroup,
                 toggleDaemonGroupIndex,
-                this.servers.length
+                this.daemonGroupLabels.length
             )
         }
-        // If the number of selected daemon groups has changed, update selected servers list.
-        this.servers = selectedDaemonGroups.map(
+        // If the number of selected daemon groups has changed, update selected
+        // daemon group labels list.
+        this.daemonGroupLabels = selectedDaemonGroups.map(
             (sg) => this.selectableGroups.find((group) => group.index === sg)?.label ?? 'unknown'
         )
     }
@@ -217,7 +218,7 @@ export class AddressPoolFormComponent implements OnInit {
      *
      * It creates a new default form group for the option.
      *
-     * @param index server index in the {@link servers} array.
+     * @param index server index in the {@link daemonGroupLabels} array.
      */
     onOptionAdd(index: number): void {
         this.getOptionsData(index).push(createDefaultDhcpOptionFormGroup(this.v6 ? IPType.IPv6 : IPType.IPv4))
