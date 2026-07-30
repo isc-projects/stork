@@ -85,7 +85,7 @@
         type: array
         items:
           type: string
-          enum: &DAEMONNAME
+          enum:
             - dhcp4
             - dhcp6
             - ca
