@@ -536,7 +536,7 @@ func TestCreateMachine(t *testing.T) {
 	require.IsType(t, &services.CreateMachineDefault{}, rsp)
 	defaultRsp = rsp.(*services.CreateMachineDefault)
 	require.Equal(t, http.StatusInternalServerError, getStatusCode(*defaultRsp))
-	require.Equal(t, "Problem calculating fingerprint of server cert", *defaultRsp.Payload.Message)
+	require.Equal(t, "Problem loading server certs", *defaultRsp.Payload.Message)
 
 	// add server cert to db
 	caCertPEM1, serverCertPEM1, serverKeyPEM1, err := certs.SetupServerCerts(db)

@@ -548,25 +548,19 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 		return rsp
 	}
 
-	rootCertPEM, err := dbmodel.GetSecret(r.DB, dbmodel.SecretCACert)
+	secrets, err := dbmodel.GetSecrets(r.DB, dbmodel.SecretCACert, dbmodel.SecretServerCert, dbmodel.SecretCAKey)
 	if err != nil {
-		msg := "Problem loading server CA cert"
+		msg := "Problem loading server certs"
 		log.WithError(err).Error(msg)
 		rsp := services.NewCreateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
 		})
 		return rsp
 	}
+	rootCertPEM := secrets[0]
+	serverCertPEM := secrets[1]
+	rootKeyPEM := secrets[2]
 
-	serverCertPEM, err := dbmodel.GetSecret(r.DB, dbmodel.SecretServerCert)
-	if err != nil {
-		msg := "Problem loading server cert"
-		log.WithError(err).Error(msg)
-		rsp := services.NewCreateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
-			Message: &msg,
-		})
-		return rsp
-	}
 	serverCertFingerprint, err := pki.CalculateFingerprintFromPEM(serverCertPEM)
 	if err != nil {
 		msg := "Problem calculating fingerprint of server cert"
@@ -647,17 +641,6 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 	certSerialNumber, err := dbmodel.GetNewCertSerialNumber(r.DB)
 	if err != nil {
 		msg := "Problem generating serial number for cert"
-		log.WithError(err).Error(msg)
-		rsp := services.NewCreateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
-			Message: &msg,
-		})
-		return rsp
-	}
-	// TODO: consider providing a database query which returns multiple
-	// secrets to avoid multiple database roundtrips.
-	rootKeyPEM, err := dbmodel.GetSecret(r.DB, dbmodel.SecretCAKey)
-	if err != nil {
-		msg := "Problem loading server CA private key"
 		log.WithError(err).Error(msg)
 		rsp := services.NewCreateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,

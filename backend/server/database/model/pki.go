@@ -29,7 +29,7 @@ func GetNewCertSerialNumber(db *pg.DB) (int64, error) {
 	return certSerialNumber, err
 }
 
-// Get named secret from database.
+// Get a secret from database.
 func GetSecret(db *pg.DB, name string) ([]byte, error) {
 	secret := Secret{}
 	q := db.Model(&secret)
@@ -41,6 +41,34 @@ func GetSecret(db *pg.DB, name string) ([]byte, error) {
 		return nil, pkgerrors.Wrapf(err, "problem getting secret by name: %s", name)
 	}
 	return []byte(secret.Content), nil
+}
+
+// Get multiple secrets from database.
+func GetSecrets(db *pg.DB, names ...string) ([][]byte, error) {
+	if len(names) == 0 {
+		return nil, nil
+	}
+
+	secrets := []Secret{}
+	err := db.Model(&secrets).
+		Where("secret.name IN (?)", pg.In(names)).
+		OrderExpr("array_position(?, secret.name)", pg.Array(names)).
+		Select()
+
+	switch {
+	case errors.Is(err, pg.ErrNoRows):
+		return nil, nil
+	case err != nil:
+		return nil, pkgerrors.Wrapf(err, "problem getting secrets by names '%v'", names)
+	case len(secrets) != len(names):
+		return nil, pkgerrors.Errorf("expected %d secrets, got %d results", len(names), len(secrets))
+	}
+
+	result := make([][]byte, len(secrets))
+	for i, s := range secrets {
+		result[i] = []byte(s.Content)
+	}
+	return result, nil
 }
 
 // Set secret in database under given name.
