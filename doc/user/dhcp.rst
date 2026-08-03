@@ -69,17 +69,31 @@ subnets in the network is presented in the figure below.
 .. figure:: ./static/kea-subnets-list.png
    :alt: List of all subnets in the network
 
-Stork provides filtering capabilities; it is possible to
-choose to see IPv4 only, IPv6 only, or both. There is also an
-omnisearch box available where users can type a search string.
-For strings of four characters or more, the filtering takes place
-automatically, while shorter strings require the user to hit
-Enter. In the above example, it is possible to show only
-the first (192.0.2.0/24) subnet by searching for the *0.2* string. One
-can also search for specific pools, and easily filter the subnet with
-a specific pool, by searching for part of the pool range,
-e.g. *3.200*. The input box accepts a text string that can be a part of the
-subnet or shared network name.
+Stork provides filtering capabilities. It is possible to choose to see
+IPv4 only, IPv6 only, or both. There is also an omnisearch box where
+users can type a search string, and the filtering takes place while
+typing. The input box accepts text matching subnet prefixes, pool
+ranges, shared network names, and subnet names. In the above example,
+it is possible to show only the first (192.0.2.0/24) subnet by
+searching for the *0.2* string. One can also search for specific pools,
+and easily filter the subnet with a specific pool, by searching for
+part of the pool range, e.g. *3.200*.
+
+Subnets can also be filtered using explicit filters. It is possible to
+filter by daemon, Kea subnet ID, and DHCP version, and combine these
+filters with text search.
+
+The Kea subnet ID filter applies only to subnet IDs assigned in the
+Kea configuration.
+
+The daemon filter is provided as a dropdown input listing all daemons.
+Each daemon is represented with a label in form of
+``[daemon name]@[machine address or hostname]``. For example, a DHCPv4 daemon
+running on a machine with the address ``192.0.2.1`` would have the label
+``DHCPv4@192.0.2.1``.
+
+When multiple filters are specified, they are combined using a logical
+AND.
 
 Stork displays pool utilization for each subnet, with
 the absolute number of addresses allocated and usage percentage.
