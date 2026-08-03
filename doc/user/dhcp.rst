@@ -412,13 +412,29 @@ whether the host reservation for the given server has been specified
 in its configuration file or a host database (via the Host Commands
 hook library).
 
-The ``Filter Hosts`` input box is located above the ``Hosts`` table. It
-allows hosts to be filtered by identifier types, identifier values, IP
-reservations, and hostnames, and by globality, i.e., ``is:global`` and ``not:global``.
-When filtering by DHCP identifier values, it is not necessary to use
-colons between the pairs of hexadecimal digits. For example, the
-reservation ``hw-address=0a:1b:bd:43:5f:99`` will be found
-whether the filtering text is ``1b:bd:43`` or ``1bbd43``.
+The ``Filter Hosts`` input box and additional filters are located above
+the ``Hosts`` table. Text entered in the input box can be used to filter
+hosts by identifier type, identifier value, IP reservation, and
+hostname. When filtering by DHCP identifier values, it is not necessary
+to use colons between the pairs of hexadecimal digits. For example, the
+reservation ``hw-address=0a:1b:bd:43:5f:99`` is found whether the
+filtering text is ``1b:bd:43`` or ``1bbd43``.
+
+The ``Global`` filter selects global hosts only,
+subnet-associated hosts only, or both. The ``Conflict`` filter selects
+hosts with conflicting DHCP data, hosts without conflicts, or both.
+
+Additional filters allow selecting hosts by machine ID, daemon, subnet
+ID, and Kea subnet ID.
+
+The daemon filter is provided as a dropdown input listing all daemons.
+Each daemon is represented with a label in form of
+``[daemon name]@[machine address or hostname]``. For example, a DHCPv4 daemon
+running on a machine with the address ``192.0.2.1`` would have the label
+``DHCPv4@192.0.2.1``.
+
+When multiple filters are specified, they are combined using a logical
+AND.
 
 
 Host Reservation Usage Status
