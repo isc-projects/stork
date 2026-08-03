@@ -215,7 +215,7 @@ export class ZoneTransfersPageComponent implements OnInit {
             arrayType: true,
         },
         text: { type: 'string', matchMode: 'contains' },
-        includeLocal: { type: 'boolean', matchMode: 'equals' },
+        includeLocal: { type: 'boolean', matchMode: 'contains' },
         serverMachineId: { type: 'numeric', matchMode: 'equals' },
         clientMachineId: { type: 'numeric', matchMode: 'equals' },
         zoneSerial: { type: 'string', matchMode: 'contains' },
