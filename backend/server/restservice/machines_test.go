@@ -3,7 +3,6 @@ package restservice
 import (
 	"context"
 	"fmt"
-	"net"
 	"net/http"
 	"net/http/httptest"
 	"path"
@@ -486,7 +485,7 @@ func TestCreateMachine(t *testing.T) {
 	agentToken := "agentToken"
 	privKeyPEM, err := pki.GenKey()
 	require.NoError(t, err)
-	csrPEM, _, err := pki.GenCSRUsingKey("agent", []string{"name"}, []net.IP{net.ParseIP("192.0.2.1")}, privKeyPEM)
+	csrPEM, _, err := pki.GenCSRUsingKey("agent", "common", privKeyPEM)
 	require.NoError(t, err)
 	agentCSR := string(csrPEM)
 
@@ -628,6 +627,14 @@ func TestCreateMachine(t *testing.T) {
 	require.Equal(t, expectedServerCertFingerprintHex, okRsp.Payload.ServerCertFingerprint)
 
 	require.NotEmpty(t, okRsp.Payload.AgentCert)
+	agentCert, err := pki.ParseCert([]byte(okRsp.Payload.AgentCert))
+	require.NoError(t, err)
+	require.Equal(t, "common", agentCert.Subject.CommonName)
+	require.Equal(t, "agent", agentCert.Subject.OrganizationalUnit[0])
+	require.Nil(t, agentCert.DNSNames)
+	require.Len(t, agentCert.IPAddresses, 1)
+	require.Equal(t, addr, agentCert.IPAddresses[0].String())
+
 	machines, err := dbmodel.GetAllMachines(db, nil)
 	require.NoError(t, err)
 	require.Len(t, machines, 1)
@@ -808,7 +815,7 @@ func TestCreateMachineForbidden(t *testing.T) {
 
 	privKeyPEM, err := pki.GenKey()
 	require.NoError(t, err)
-	csrPEM, _, err := pki.GenCSRUsingKey("agent", []string{"name"}, []net.IP{net.ParseIP("192.0.2.1")}, privKeyPEM)
+	csrPEM, _, err := pki.GenCSRUsingKey("agent", "common", privKeyPEM)
 	require.NoError(t, err)
 	agentCSR := string(csrPEM)
 
@@ -854,7 +861,7 @@ func TestReregisterCreatedMachineNotForbidden(t *testing.T) {
 
 	privKeyPEM, err := pki.GenKey()
 	require.NoError(t, err)
-	csrPEM, _, err := pki.GenCSRUsingKey("agent", []string{"name"}, []net.IP{net.ParseIP("192.0.2.1")}, privKeyPEM)
+	csrPEM, _, err := pki.GenCSRUsingKey("agent", "common", privKeyPEM)
 	require.NoError(t, err)
 	agentCSR := string(csrPEM)
 

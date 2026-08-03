@@ -136,9 +136,8 @@ func TestGenKeyCert(t *testing.T) {
 // returned CSR looks reasonably.
 func TestGenCSRUsingKey(t *testing.T) {
 	// prepare arguments
-	name := "name"
-	dnsNames := []string{"name"}
-	ipAddresses := []net.IP{net.ParseIP("192.0.2.1")}
+	unitName := "unit"
+	commonName := "common"
 	parentKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	require.NoError(t, err)
 	privBytes, err := x509.MarshalPKCS8PrivateKey(parentKey)
@@ -146,16 +145,20 @@ func TestGenCSRUsingKey(t *testing.T) {
 	b := pem.Block{Type: "PRIVATE KEY", Bytes: privBytes}
 	privKeyPEM := pem.EncodeToMemory(&b)
 
-	// empty DNS names and IP addresses
-	_, _, err = GenCSRUsingKey(name, nil, nil, privKeyPEM)
-	require.EqualError(t, err, "both DNS names and IP addresses cannot be empty")
+	// empty unit name
+	_, _, err = GenCSRUsingKey("", commonName, privKeyPEM)
+	require.EqualError(t, err, "unit name cannot be empty")
+
+	// empty common name
+	_, _, err = GenCSRUsingKey(unitName, "", privKeyPEM)
+	require.EqualError(t, err, "common name cannot be empty")
 
 	// empty private key
-	_, _, err = GenCSRUsingKey(name, dnsNames, ipAddresses, nil)
+	_, _, err = GenCSRUsingKey(unitName, commonName, nil)
 	require.EqualError(t, err, "private key cannot be empty")
 
 	// it should be ok
-	csrPEM, fingerprint, err := GenCSRUsingKey(name, dnsNames, ipAddresses, privKeyPEM)
+	csrPEM, fingerprint, err := GenCSRUsingKey(unitName, commonName, privKeyPEM)
 	require.NoError(t, err)
 	require.NotEmpty(t, csrPEM)
 	require.NotEmpty(t, fingerprint)
@@ -164,8 +167,10 @@ func TestGenCSRUsingKey(t *testing.T) {
 	pemBlock, _ := pem.Decode(csrPEM)
 	csr, err := x509.ParseCertificateRequest(pemBlock.Bytes)
 	require.NoError(t, err)
-	require.EqualValues(t, dnsNames[0], csr.DNSNames[0])
-	require.True(t, ipAddresses[0].Equal(csr.IPAddresses[0]))
+	require.Nil(t, csr.DNSNames)
+	require.Nil(t, csr.IPAddresses)
+	require.Equal(t, unitName, csr.Subject.OrganizationalUnit[0])
+	require.Equal(t, commonName, csr.Subject.CommonName)
 }
 
 func TestGenKey(t *testing.T) {
@@ -245,34 +250,35 @@ func TestSignCert(t *testing.T) {
 	require.NoError(t, err)
 
 	// prepare CSR
-	name := "name"
-	dnsNames := []string{"name"}
+	unitName := "unit"
+	commonName := "common"
+	dnsNames := []string{"foobar"}
 	ipAddresses := []net.IP{net.ParseIP("192.0.2.1")}
 	privKeyPEM, err := GenKey()
 	require.NoError(t, err)
-	csrPEM, _, err := GenCSRUsingKey(name, dnsNames, ipAddresses, privKeyPEM)
+	csrPEM, _, err := GenCSRUsingKey(unitName, commonName, privKeyPEM)
 	require.NoError(t, err)
 
 	t.Run("empty CSR", func(t *testing.T) {
-		_, _, paramsErr, innerErr := SignCert(nil, serialNumber, parentCertPEM, parentKeyPEM)
+		_, _, paramsErr, innerErr := SignCert(nil, serialNumber, parentCertPEM, parentKeyPEM, ipAddresses, dnsNames)
 		require.EqualError(t, paramsErr, "CSR PEM cannot be empty")
 		require.NoError(t, innerErr)
 	})
 
 	t.Run("empty parentKeyPEM", func(t *testing.T) {
-		_, _, paramsErr, innerErr := SignCert(csrPEM, serialNumber, parentCertPEM, nil)
+		_, _, paramsErr, innerErr := SignCert(csrPEM, serialNumber, parentCertPEM, nil, ipAddresses, dnsNames)
 		require.EqualError(t, paramsErr, "parent key PEM cannot be empty")
 		require.NoError(t, innerErr)
 	})
 
 	t.Run("empty parentCertPEM", func(t *testing.T) {
-		_, _, paramsErr, innerErr := SignCert(csrPEM, serialNumber, nil, parentKeyPEM)
+		_, _, paramsErr, innerErr := SignCert(csrPEM, serialNumber, nil, parentKeyPEM, ipAddresses, dnsNames)
 		require.EqualError(t, paramsErr, "parent cert PEM cannot be empty")
 		require.NoError(t, innerErr)
 	})
 
 	t.Run("it should be ok", func(t *testing.T) {
-		certPEM, fingerprint, paramsErr, innerErr := SignCert(csrPEM, serialNumber, parentCertPEM, parentKeyPEM)
+		certPEM, fingerprint, paramsErr, innerErr := SignCert(csrPEM, serialNumber, parentCertPEM, parentKeyPEM, ipAddresses, dnsNames)
 		require.NoError(t, paramsErr)
 		require.NoError(t, innerErr)
 		require.NotEmpty(t, certPEM)
@@ -283,8 +289,12 @@ func TestSignCert(t *testing.T) {
 		cert, err := x509.ParseCertificate(pemBlock.Bytes)
 		require.NoError(t, err)
 		require.False(t, cert.IsCA)
-		require.EqualValues(t, dnsNames[0], cert.DNSNames[0])
-		require.True(t, ipAddresses[0].Equal(cert.IPAddresses[0]))
+		require.Len(t, cert.DNSNames, 1)
+		require.EqualValues(t, "foobar", cert.DNSNames[0])
+		require.Len(t, cert.IPAddresses, 1)
+		require.Equal(t, "192.0.2.1", cert.IPAddresses[0].String())
+		require.Equal(t, "common", cert.Subject.CommonName)
+		require.Equal(t, "unit", cert.Subject.OrganizationalUnit[0])
 	})
 
 	t.Run("unknown public key type - it cannot panic", func(t *testing.T) {
@@ -300,7 +310,7 @@ func TestSignCert(t *testing.T) {
 		require.NoError(t, err)
 		csrPEM = toPEM("CERTIFICATE REQUEST", csrBytes)
 
-		certPEM, fingerprint, paramsErr, innerErr := SignCert(csrPEM, serialNumber, parentCertPEM, parentKeyPEM)
+		certPEM, fingerprint, paramsErr, innerErr := SignCert(csrPEM, serialNumber, parentCertPEM, parentKeyPEM, ipAddresses, dnsNames)
 		require.NoError(t, paramsErr)
 		require.ErrorContains(t, innerErr, "unrecognized public key type")
 		require.Empty(t, certPEM)

@@ -82,6 +82,8 @@ func runPingGRPCServer(host string, port int, certStore *CertStore) (func(), err
 // Request). They are generated when they do not exist. They are
 // regenerated only if regenCerts is true. If they exist and
 // regenCerts is false then they are used.
+// The provided agent address is used as the common name in the CSR. It isn't
+// specified in the CSR SAN (Subject Alternative Name) field.
 func generateCSR(certStore *CertStore, agentAddr string, regenKey bool) ([]byte, error) {
 	empty, err := certStore.IsEmpty()
 	if err != nil {

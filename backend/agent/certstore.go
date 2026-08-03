@@ -3,7 +3,6 @@ package agent
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"net"
 	"os"
 	"path/filepath"
 
@@ -239,18 +238,6 @@ func (s *CertStore) createDirectoryTree(path string) error {
 	return nil
 }
 
-// Parses provided address and returns either an IP address as a one
-// element list or a DNS name as one element list. The arrays are
-// returned as then it is easy to pass these returned elements to the
-// functions that generates CSR (Certificate Signing Request).
-func (*CertStore) resolveAddress(address string) ([]net.IP, []string) {
-	ipAddress := net.ParseIP(address)
-	if ipAddress != nil {
-		return []net.IP{ipAddress}, []string{}
-	}
-	return []net.IP{}, []string{address}
-}
-
 // Reads the content of the agent token file.
 // Returns an error if the file is not available or the content is invalid.
 func (s *CertStore) ReadToken() (string, error) {
@@ -333,20 +320,18 @@ func (s *CertStore) CreateKey() error {
 	return nil
 }
 
-// Generates the CSR (Certificate Signing Request) for a given IP address or
-// hostname. Returns CSR serialized to the PEM format, fingerprint of CSR or
-// error.
-func (s *CertStore) GenerateCSR(agentAddress string) (csrPEM []byte, fingerprint [32]byte, err error) {
-	agentIPs, agentNames := s.resolveAddress(agentAddress)
+// Generates the CSR (Certificate Signing Request) for a given common name.
+// Returns CSR serialized to the PEM format, fingerprint of CSR or error.
+func (s *CertStore) GenerateCSR(commonName string) (csrPEM []byte, fingerprint [32]byte, err error) {
 	keyPEM, err := s.readPrivateKey()
 	if err != nil {
 		err = errors.WithMessage(err, "could not read the private key")
 		return
 	}
 
-	csrPEM, fingerprint, err = pki.GenCSRUsingKey("agent", agentNames, agentIPs, keyPEM)
+	csrPEM, fingerprint, err = pki.GenCSRUsingKey("agent", commonName, keyPEM)
 	if err != nil {
-		err = errors.WithMessagef(err, "could not generate CSR and private key for '%s' address", agentAddress)
+		err = errors.WithMessagef(err, "could not generate CSR and private key for '%s' common name", commonName)
 		return
 	}
 

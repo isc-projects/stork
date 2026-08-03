@@ -77,7 +77,10 @@ func TestRegisterBasic(t *testing.T) {
 			agentCSR := []byte(req["agentCSR"].(string))
 			require.NotEmpty(t, agentCSR)
 
-			agentCertPEM, _, paramsErr, innerErr := pki.SignCert(agentCSR, 2, rootCertPEM, rootKeyPEM)
+			agentIP := net.ParseIP(agentAddr)
+			require.NotNil(t, agentIP)
+
+			agentCertPEM, _, paramsErr, innerErr := pki.SignCert(agentCSR, 2, rootCertPEM, rootKeyPEM, []net.IP{agentIP}, nil)
 			require.NoError(t, paramsErr)
 			require.NoError(t, innerErr)
 
@@ -218,8 +221,10 @@ func TestRegisterBusyPort(t *testing.T) {
 
 			agentCSR := []byte(req["agentCSR"].(string))
 			require.NotEmpty(t, agentCSR)
+			agentIP := net.ParseIP(agentAddr)
+			require.NotNil(t, agentIP)
 
-			agentCertPEM, _, paramsErr, innerErr := pki.SignCert(agentCSR, 2, rootCertPEM, rootKeyPEM)
+			agentCertPEM, _, paramsErr, innerErr := pki.SignCert(agentCSR, 2, rootCertPEM, rootKeyPEM, []net.IP{agentIP}, nil)
 			require.NoError(t, paramsErr)
 			require.NoError(t, innerErr)
 
@@ -328,7 +333,9 @@ func TestRegisterBadServer(t *testing.T) {
 
 			_, rootKeyPEM, _, rootCertPEM, err := pki.GenCAKeyCert(1)
 			require.NoError(t, err)
-			agentCertPEM, _, paramsErr, innerErr := pki.SignCert(agentCSR, 2, rootCertPEM, rootKeyPEM)
+			agentIP := net.ParseIP(agentAddr)
+			require.NotNil(t, agentIP)
+			agentCertPEM, _, paramsErr, innerErr := pki.SignCert(agentCSR, 2, rootCertPEM, rootKeyPEM, []net.IP{agentIP}, nil)
 			require.NoError(t, paramsErr)
 			require.NoError(t, innerErr)
 			initialFingerprint := [32]byte{42}
@@ -510,7 +517,10 @@ func TestGenerateCSRHelper(t *testing.T) {
 	evaluateCSR := func(csr []byte) {
 		_, parentPrivateKeyPEM, _, rootCAPEM, err := pki.GenCAKeyCert(42)
 		require.NoError(t, err)
-		childCertPEM, _, paramErr, execErr := pki.SignCert(csr, 42, rootCAPEM, parentPrivateKeyPEM)
+		childCertPEM, _, paramErr, execErr := pki.SignCert(
+			csr, 42, rootCAPEM, parentPrivateKeyPEM,
+			[]net.IP{net.ParseIP("192.0.2.42")}, []string{"foobar"},
+		)
 		require.NoError(t, paramErr)
 		require.NoError(t, execErr)
 
@@ -632,7 +642,10 @@ func TestWriteAgentTokenFileDuringRegistration(t *testing.T) {
 
 			_, rootKeyPEM, _, rootCertPEM, err := pki.GenCAKeyCert(1)
 			require.NoError(t, err)
-			agentCertPEM, _, paramsErr, innerErr := pki.SignCert(agentCSR, 2, rootCertPEM, rootKeyPEM)
+			agentCertPEM, _, paramsErr, innerErr := pki.SignCert(
+				agentCSR, 2, rootCertPEM, rootKeyPEM,
+				[]net.IP{net.ParseIP("192.0.2.42")}, []string{"foobar"},
+			)
 			require.NoError(t, paramsErr)
 			require.NoError(t, innerErr)
 
@@ -746,7 +759,10 @@ func TestRepeatRegister(t *testing.T) {
 
 			_, rootKeyPEM, _, rootCertPEM, err := pki.GenCAKeyCert(1)
 			require.NoError(t, err)
-			agentCertPEM, _, paramsErr, innerErr := pki.SignCert(agentCSR, 2, rootCertPEM, rootKeyPEM)
+			agentCertPEM, _, paramsErr, innerErr := pki.SignCert(
+				agentCSR, 2, rootCertPEM, rootKeyPEM,
+				[]net.IP{net.ParseIP("192.0.2.42")}, []string{"foobar"},
+			)
 			require.NoError(t, paramsErr)
 			require.NoError(t, innerErr)
 

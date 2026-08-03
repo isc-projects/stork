@@ -184,28 +184,27 @@ func GenKeyCert(name string, dnsNames []string, ipAddresses []net.IP, serialNumb
 }
 
 // Generate a CSR (Certificate Signing Request) for provided private
-// key, DNS names and IP addresses.  An agent generates CSR with its
+// key and common name.  An agent generates CSR with its
 // own parameter that will be sent for the server to sign. This
 // function is public and is used locally by GenKeyAndCSR function and
 // by an agent in register module by generateCerts function to
 // generate CSR (using existing agent key) that is sent to server for
 // signing.
-func GenCSRUsingKey(name string, dnsNames []string, ipAddresses []net.IP, privKeyPEM []byte) ([]byte, [sha256.Size]byte, error) {
+func GenCSRUsingKey(unitName string, commonName string, privKeyPEM []byte) ([]byte, [sha256.Size]byte, error) {
 	var fingerprint [sha256.Size]byte
 
 	if privKeyPEM == nil {
 		return nil, fingerprint, errors.New("private key cannot be empty")
 	}
 
-	var commonName string
-	switch {
-	case len(dnsNames) > 0:
-		commonName = dnsNames[0]
-	case len(ipAddresses) > 0:
-		commonName = ipAddresses[0].String()
-	default:
-		return nil, fingerprint, errors.New("both DNS names and IP addresses cannot be empty")
+	if unitName == "" {
+		return nil, fingerprint, errors.New("unit name cannot be empty")
 	}
+
+	if commonName == "" {
+		return nil, fingerprint, errors.New("common name cannot be empty")
+	}
+
 	// parse priv key
 	privKey, err := ParsePrivateKey(privKeyPEM)
 	if err != nil {
@@ -217,11 +216,9 @@ func GenCSRUsingKey(name string, dnsNames []string, ipAddresses []net.IP, privKe
 		Subject: pkix.Name{
 			Country:            []string{CertCountry},
 			Organization:       []string{CertOrganization},
-			OrganizationalUnit: []string{name},
+			OrganizationalUnit: []string{unitName},
 			CommonName:         commonName,
 		},
-		IPAddresses: ipAddresses,
-		DNSNames:    dnsNames,
 	}
 	// generate the CSR request
 	csrBytes, err := x509.CreateCertificateRequest(rand.Reader, &csrTemplate, privKey)
@@ -280,7 +277,9 @@ func ParsePrivateKey(privKeyPEM []byte) (*ecdsa.PrivateKey, error) {
 // execution error. This is public function that will be used by the
 // server in restservice module by CreateMachine function to sign a
 // CSR received from an agent.
-func SignCert(csrPEM []byte, serialNumber int64, parentCertPEM []byte, parentKeyPEM []byte) ([]byte, [sha256.Size]byte, error, error) {
+// Accepts IP addresses and DNS names to be included in the signed certificate.
+// It ignores the IP addresses and DNS names in the CSR, as they are not trusted.
+func SignCert(csrPEM []byte, serialNumber int64, parentCertPEM []byte, parentKeyPEM []byte, ipAddresses []net.IP, dnsNames []string) ([]byte, [sha256.Size]byte, error, error) {
 	var fingerprint [sha256.Size]byte
 	// check args
 	if parentKeyPEM == nil {
@@ -291,6 +290,9 @@ func SignCert(csrPEM []byte, serialNumber int64, parentCertPEM []byte, parentKey
 	}
 	if csrPEM == nil {
 		return nil, fingerprint, errors.New("CSR PEM cannot be empty"), nil
+	}
+	if len(ipAddresses) == 0 && len(dnsNames) == 0 {
+		return nil, fingerprint, errors.New("both IP addresses and DNS names cannot be empty"), nil
 	}
 
 	// parse and check CSR
@@ -332,8 +334,8 @@ func SignCert(csrPEM []byte, serialNumber int64, parentCertPEM []byte, parentKey
 		Subject:      csr.Subject,
 		NotBefore:    time.Now(),
 		NotAfter:     time.Now().AddDate(CertValidityYears, 0, 0), // 30 years of cert validity
-		IPAddresses:  csr.IPAddresses,
-		DNSNames:     csr.DNSNames,
+		IPAddresses:  ipAddresses,
+		DNSNames:     dnsNames,
 	}
 
 	publicKey, ok := csr.PublicKey.(*ecdsa.PublicKey)

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -502,9 +503,9 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 		})
 		return rsp
 	}
-	addr := *params.Machine.Address
+	machineAddress := *params.Machine.Address
 	if !govalidator.IsHost(*params.Machine.Address) {
-		log.Warnf("Problem parsing address %s", addr)
+		log.Warnf("Problem parsing address %s", machineAddress)
 		msg := "Cannot parse address"
 		rsp := services.NewCreateMachineDefault(http.StatusBadRequest).WithPayload(&models.APIError{
 			Message: &msg,
@@ -537,9 +538,9 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 		return rsp
 	}
 
-	dbMachine, err := dbmodel.GetMachineByAddressAndAgentPort(r.DB, addr, params.Machine.AgentPort)
+	dbMachine, err := dbmodel.GetMachineByAddressAndAgentPort(r.DB, machineAddress, params.Machine.AgentPort)
 	if err != nil {
-		msg := fmt.Sprintf("Problem finding machine %s:%d in database", addr, params.Machine.AgentPort)
+		msg := fmt.Sprintf("Problem finding machine %s:%d in database", machineAddress, params.Machine.AgentPort)
 		log.Warn(msg)
 		rsp := services.NewCreateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 			Message: &msg,
@@ -664,7 +665,15 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 		return rsp
 	}
 
-	agentCertPEM, agentCertFingerprint, paramsErr, innerErr := pki.SignCert(agentCSR, certSerialNumber, rootCertPEM, rootKeyPEM)
+	var machineIPAddresses []net.IP
+	var machineHostnames []string
+	if ip := net.ParseIP(machineAddress); ip != nil {
+		machineIPAddresses = append(machineIPAddresses, ip)
+	} else {
+		machineHostnames = append(machineHostnames, machineAddress)
+	}
+
+	agentCertPEM, agentCertFingerprint, paramsErr, innerErr := pki.SignCert(agentCSR, certSerialNumber, rootCertPEM, rootKeyPEM, machineIPAddresses, machineHostnames)
 	if paramsErr != nil {
 		msg := "Problem with agent CSR"
 		log.WithError(paramsErr).Error(msg)
@@ -700,7 +709,7 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 		}
 
 		dbMachine = &dbmodel.Machine{
-			Address:         addr,
+			Address:         machineAddress,
 			AgentPort:       params.Machine.AgentPort,
 			AgentToken:      *params.Machine.AgentToken,
 			CertFingerprint: agentCertFingerprint,
@@ -708,7 +717,7 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 		}
 		err = dbmodel.AddMachine(r.DB, dbMachine)
 		if err != nil {
-			msg := fmt.Sprintf("Cannot store machine %s", addr)
+			msg := fmt.Sprintf("Cannot store machine %s", machineAddress)
 			log.WithError(err).Error(msg)
 			rsp := services.NewCreateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 				Message: &msg,
@@ -722,7 +731,7 @@ func (r *RestAPI) CreateMachine(ctx context.Context, params services.CreateMachi
 		dbMachine.Authorized = machineAuthorized
 		err = dbmodel.UpdateMachine(r.DB, dbMachine)
 		if err != nil {
-			msg := fmt.Sprintf("Cannot update machine %s in database", addr)
+			msg := fmt.Sprintf("Cannot update machine %s in database", machineAddress)
 			log.WithError(err).Error(msg)
 			rsp := services.NewCreateMachineDefault(http.StatusInternalServerError).WithPayload(&models.APIError{
 				Message: &msg,
