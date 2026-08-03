@@ -4,6 +4,11 @@ import { SortDir } from './backend'
 
 /**
  * Checks if given PrimeNG table filters contain any non-blank value.
+ * Blank/non-blank evaluation is based on the matchMode property of the FilterMetadata interface.
+ * For matchMode=='contains' any falsy filter value (e.g. boolean false, empty string, null) is considered blank.
+ * It works well with text input filters and checkbox filters in binary mode (true/false only).
+ * For other matchModes (usually we use 'equals'), the filter is considered blank only if its value is null.
+ * It works well e.g. for checkbox filters in tri-state mode where 'false' value is considered non-blank filter.
  * @param filters PrimeNG table filters object
  * @param continueWhen callable that evaluates to boolean value; when evaluated to true, the filter for given filterKey is considered blank even if it has meaningful value
  * @return true if any non-blank filter was found; false otherwise
