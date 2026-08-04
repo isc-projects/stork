@@ -126,7 +126,7 @@ func (*gzipMatcher) String() string {
 //go:generate mockgen -package=agentcomm -destination=agentcommmock_test.go -source=agentcomm.go -mock_names=agentConnector=MockAgentConnector agentConnector
 //go:generate mockgen -package=agentcomm -destination=serverstreamingclientmock_test.go google.golang.org/grpc ServerStreamingClient
 
-// Check if Pingit stash --in	g works.
+// Check if Ping works.
 func TestPing(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockAgentClient, agents := setupGrpcliTestCase(ctrl)
