@@ -924,6 +924,7 @@ namespace :lint do
                 indentation = 4 + '(Gitlab'.length + 1
                 if !gitlab_line.start_with?(' ' * indentation)
                     puts "ERROR: Changelog entry '#{filename}' has line '#{gitlab_line}' that is not indented with #{indentation} spaces."
+                    exit_code = 1
                 end
                 gitlab_line_index -= 1
                 gitlab_line = lines[gitlab_line_index].delete_suffix("\n") + ' ' + gitlab_line.lstrip
