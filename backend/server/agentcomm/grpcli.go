@@ -1087,28 +1087,12 @@ func (agents *connectedAgentsImpl) ReceiveZones(ctx context.Context, daemon Cont
 				request.Limit = int64(*filter.Limit)
 			}
 		}
-		// This is the same pattern we're using in the manager.go. The connection is
-		// cached so it is possible that it gets terminated or broken at some point.
-		// By trying the actual operation and retrying on failure we should be able
-		// to recover. There may be other ways to achieve recovery (e.g., getting
-		// the connection state before attempting the call). However, it is hard to
-		// say how reliable they are. This approach worked well for several years so
-		// it should be fine to continue using it.
-		var stream grpc.ServerStreamingClient[agentapi.Zone]
-		client, err := agent.connector.createClient()
-		if err == nil {
-			stream, err = client.ReceiveZones(ctx, request)
-		}
 
-		if err != nil {
-			if err = agent.connector.connect(); err == nil {
-				client, err = agent.connector.createClient()
-				if err == nil {
-					stream, err = client.ReceiveZones(ctx, request)
-					err = errors.WithStack(err)
-				}
-			}
-		}
+		var stream grpc.ServerStreamingClient[agentapi.Zone]
+		err = callAgentClientWithRetry(agent, func(client agentapi.AgentClient) (err error) {
+			stream, err = client.ReceiveZones(ctx, request)
+			return errors.WithStack(err)
+		})
 		if err != nil {
 			// Cannot open the stream.
 			err = errors.WithMessage(err, "failed to open a gRPC connection for receiving zones from the agent")
@@ -1203,27 +1187,11 @@ func (agents *connectedAgentsImpl) ReceiveZoneRRs(ctx context.Context, daemon Co
 			return
 		}
 
-		// This is the same pattern we're using in the manager.go. The connection is
-		// cached so it is possible that it gets terminated or broken at some point.
-		// By trying the actual operation and retrying on failure we should be able
-		// to recover. There may be other ways to achieve recovery (e.g., getting
-		// the connection state before attempting the call). However, it is hard to
-		// say how reliable they are. This approach worked well for several years so
-		// it should be fine to continue using it.
 		var stream grpc.ServerStreamingClient[agentapi.ReceiveZoneRRsRsp]
-		client, err := agent.connector.createClient()
-		if err == nil {
+		err = callAgentClientWithRetry(agent, func(client agentapi.AgentClient) (err error) {
 			stream, err = client.ReceiveZoneRRs(ctx, request)
-		}
-		if err != nil {
-			if err = agent.connector.connect(); err == nil {
-				client, err = agent.connector.createClient()
-				if err == nil {
-					stream, err = client.ReceiveZoneRRs(ctx, request)
-					err = errors.WithStack(err)
-				}
-			}
-		}
+			return errors.WithStack(err)
+		})
 		if err != nil {
 			// Cannot open the stream.
 			err = errors.WithMessage(err, "failed to open gRPC connection for receiving zone RRs from the agent")
@@ -1313,27 +1281,11 @@ func (agents *connectedAgentsImpl) ReceiveBind9FormattedConfig(ctx context.Conte
 			return
 		}
 
-		// This is the same pattern we're using in the manager.go. The connection is
-		// cached so it is possible that it gets terminated or broken at some point.
-		// By trying the actual operation and retrying on failure we should be able
-		// to recover. There may be other ways to achieve recovery (e.g., getting
-		// the connection state before attempting the call). However, it is hard to
-		// say how reliable they are. This approach worked well for several years so
-		// it should be fine to continue using it.
 		var stream grpc.ServerStreamingClient[agentapi.ReceiveBind9ConfigRsp]
-		client, err := agent.connector.createClient()
-		if err == nil {
+		err = callAgentClientWithRetry(agent, func(client agentapi.AgentClient) (err error) {
 			stream, err = client.ReceiveBind9Config(ctx, request)
-		}
-		if err != nil {
-			if err = agent.connector.connect(); err == nil {
-				client, err = agent.connector.createClient()
-				if err == nil {
-					stream, err = client.ReceiveBind9Config(ctx, request)
-					err = errors.WithStack(err)
-				}
-			}
-		}
+			return errors.WithStack(err)
+		})
 		if err != nil {
 			_ = yield(nil, errors.WithMessage(err, "failed to open gRPC connection for receiving BIND 9 configuration from the agent"))
 			return
@@ -1386,19 +1338,10 @@ func (agents *connectedAgentsImpl) ReceiveKeaLeases(ctx context.Context, daemon 
 		}
 
 		var stream grpc.ServerStreamingClient[agentapi.ReceiveKeaLeasesRsp]
-		client, err := agent.connector.createClient()
-		if err == nil {
+		err = callAgentClientWithRetry(agent, func(client agentapi.AgentClient) (err error) {
 			stream, err = client.ReceiveKeaLeases(ctx, request)
-		}
-		if err != nil {
-			if err = agent.connector.connect(); err == nil {
-				client, err = agent.connector.createClient()
-				if err == nil {
-					stream, err = client.ReceiveKeaLeases(ctx, request)
-					err = errors.WithStack(err)
-				}
-			}
-		}
+			return errors.WithStack(err)
+		})
 		if err != nil {
 			_ = yield(nil, errors.WithMessage(err, "failed to open gRPC connection for receiving Kea leases from the agent"))
 			return
@@ -1450,27 +1393,11 @@ func (agents *connectedAgentsImpl) ReceiveZoneTransfers(ctx context.Context, dae
 			return
 		}
 
-		// This is the same pattern we're using in the manager.go. The connection is
-		// cached so it is possible that it gets terminated or broken at some point.
-		// By trying the actual operation and retrying on failure we should be able
-		// to recover. There may be other ways to achieve recovery (e.g., getting
-		// the connection state before attempting the call). However, it is hard to
-		// say how reliable they are. This approach worked well for several years so
-		// it should be fine to continue using it.
 		var stream grpc.ServerStreamingClient[agentapi.ReceiveZoneTransfersRsp]
-		client, err := agent.connector.createClient()
-		if err == nil {
+		err = callAgentClientWithRetry(agent, func(client agentapi.AgentClient) (err error) {
 			stream, err = client.ReceiveZoneTransfers(ctx, request)
-		}
-		if err != nil {
-			if err = agent.connector.connect(); err == nil {
-				client, err = agent.connector.createClient()
-				if err == nil {
-					stream, err = client.ReceiveZoneTransfers(ctx, request)
-					err = errors.WithStack(err)
-				}
-			}
-		}
+			return errors.WithStack(err)
+		})
 		if err != nil {
 			// Cannot open the stream.
 			err = errors.WithMessage(err, "failed to open gRPC connection for receiving zone transfers from the agent")
@@ -1518,4 +1445,28 @@ func (agents *connectedAgentsImpl) ReceiveZoneTransfers(ctx context.Context, dae
 			}
 		}
 	}
+}
+
+// This is the same pattern we're using in the manager.go. The connection is
+// cached so it is possible that it gets terminated or broken at some point.
+// By trying the actual operation and retrying on failure we should be able
+// to recover. There may be other ways to achieve recovery (e.g., getting
+// the connection state before attempting the call). However, it is hard to
+// say how reliable they are. This approach worked well for several years so
+// it should be fine to continue using it.
+func callAgentClientWithRetry(agent *agentState, fn func(client agentapi.AgentClient) error) error {
+	client, err := agent.connector.createClient()
+	if err == nil {
+		err = fn(client)
+	}
+
+	if err != nil {
+		if err = agent.connector.connect(); err == nil {
+			client, err = agent.connector.createClient()
+			if err == nil {
+				err = fn(client)
+			}
+		}
+	}
+	return err
 }
