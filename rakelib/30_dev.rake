@@ -917,7 +917,19 @@ namespace :lint do
                 puts "ERROR: Changelog entry '#{filename}' does not have a newline at end of file. Empty newline at EOF expected."
                 exit_code = 1
             end
-            gitlab_line = gitlab_line.delete('\n')
+
+            if !gitlab_line.lstrip.start_with?('(Gitlab')
+                # Sometimes, the Gitlab line contains so many ticket numbers that it is split into two lines. In this
+                # case, we need to merge the two lines and check the regex against the merged line.
+                indentation = 4 + '(Gitlab'.length + 1
+                if !gitlab_line.start_with?(' ' * indentation)
+                    puts "ERROR: Changelog entry '#{filename}' has line '#{gitlab_line}' that is not indented with #{indentation} spaces."
+                end
+                gitlab_line_index -= 1
+                gitlab_line = lines[gitlab_line_index].delete_suffix("\n") + ' ' + gitlab_line.lstrip
+            end
+
+            gitlab_line = gitlab_line.delete_suffix("\n")
             regex = '^    \(Gitlab ((#[0-9]+)(|, ))*#[0-9]+\)$'
             if not gitlab_line.match(/#{regex}/)
                 puts "ERROR: Changelog entry '#{filename}' has line '#{gitlab_line}' not matched with regex '#{regex}'."
