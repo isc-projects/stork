@@ -1454,6 +1454,13 @@ func (agents *connectedAgentsImpl) ReceiveZoneTransfers(ctx context.Context, dae
 // the connection state before attempting the call). However, it is hard to
 // say how reliable they are. This approach worked well for several years so
 // it should be fine to continue using it.
+//
+// Callers of this function should provide a callback which saves the
+// grpc.ServerStreamingClient to a variable in *the caller's scope* and
+// returns nil, or returns an error. Callers should then check for an error
+// before attempting to use the ServerStreamingClient. This function
+// guarantees that as long as the preconditions are met, there will either
+// be an error XOR a valid stream after it returns.
 func callAgentClientWithRetry(agent *agentState, fn func(client agentapi.AgentClient) error) error {
 	client, err := agent.connector.createClient()
 	if err == nil {
