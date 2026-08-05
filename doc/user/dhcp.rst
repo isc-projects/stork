@@ -74,8 +74,8 @@ IPv4 only, IPv6 only, or both. There is also an omnisearch box where
 users can type a search string, and the filtering takes place while
 typing. The input box accepts text matching subnet prefixes, pool
 ranges, shared network names, and subnet names. In the above example,
-it is possible to show only the first (192.0.2.0/24) subnet by
-searching for the *0.2* string. One can also search for specific pools,
+it is possible to show only the 192.0.20.0/24 subnet by
+searching for the *0.20* string. One can also search for specific pools,
 and easily filter the subnet with a specific pool, by searching for
 part of the pool range, e.g. *3.200*.
 
@@ -88,9 +88,9 @@ Kea configuration.
 
 The daemon filter is provided as a dropdown input listing all daemons.
 Each daemon is represented with a label in the form of
-``[daemon name]@[machine address or hostname]``. For example, a DHCPv4 daemon
-running on a machine with the address ``192.0.2.1`` would have the label
-``DHCPv4@192.0.2.1``.
+``[{daemon ID}] {daemon name}@{machine address or hostname}``. For example, a
+DHCPv4 daemon with ID 42 running on a machine with the address ``192.0.20.1``
+would have the label ``[42] DHCPv4@192.0.20.1``.
 
 When multiple filters are specified, they are combined using a logical
 AND.
