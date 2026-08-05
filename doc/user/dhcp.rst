@@ -87,7 +87,7 @@ The Kea subnet ID filter applies only to subnet IDs assigned in the
 Kea configuration.
 
 The daemon filter is provided as a dropdown input listing all daemons.
-Each daemon is represented with a label in form of
+Each daemon is represented with a label in the form of
 ``[daemon name]@[machine address or hostname]``. For example, a DHCPv4 daemon
 running on a machine with the address ``192.0.2.1`` would have the label
 ``DHCPv4@192.0.2.1``.
