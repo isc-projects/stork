@@ -8,18 +8,18 @@
                             <p-multiSelect
                                 inputId="servers-select"
                                 optionLabel="label"
-                                optionValue="id"
-                                [options]="state.filteredDaemons"
-                                formControlName="selectedDaemons"
+                                optionValue="index"
+                                [options]="state.filteredDaemonGroups"
+                                formControlName="selectedDaemonGroups"
                                 display="chip"
                                 [showToggleAll]="false"
                                 styleClass="adaptive-chips-background"
                                 class="max-w-form"
                                 autofocus="true"
-                                (onChange)="onDaemonsChange($event)"
+                                (onChange)="onDaemonGroupsChange($event)"
                             >
                             </p-multiSelect>
-                            <label for="servers-select">DHCP Servers</label>
+                            <label for="servers-select">DHCP Servers and/or Server Tags</label>
                             <span class="ml-2">
                                 <app-help-tip subject="DHCP servers selection">
                                     <p>
@@ -37,16 +37,25 @@
                                         configuration specified in the Config Backend over the configuration sourced
                                         from the JSON file.
                                     </p>
+                                    <p>
+                                        If some daemons have the <span class="monospace">libdhcp_cb_cmds</span> hook
+                                        loaded, they are connected to the same Config Backend database, and share the
+                                        same server tag, then they cannot be configured individually. In this case, they
+                                        are grouped into a single position in the server selection list. Such a group is
+                                        labeled with the server tag and the number of daemons in the group. The
+                                        configuration changes are applied to all daemons in the group.
+                                    </p>
                                 </app-help-tip>
                             </span>
                         </p-floatlabel>
                         @if (
-                            state.group.get('selectedDaemons').invalid &&
-                            (state.group.get('selectedDaemons').dirty || state.group.get('selectedDaemons').touched)
+                            state.group.get('selectedDaemonGroups').invalid &&
+                            (state.group.get('selectedDaemonGroups').dirty ||
+                                state.group.get('selectedDaemonGroups').touched)
                         ) {
                             <small class="app-error block">At least one server must be selected.</small>
                         }
-                        @if (state.group.get('selectedDaemons')?.disabled) {
+                        @if (state.group.get('selectedDaemonGroups')?.disabled) {
                             <div class="flex align-items-center">
                                 <div>Server selection is disabled</div>
                                 <div class="ml-2">
@@ -164,7 +173,7 @@
                                     <app-address-pool-form
                                         [subnet]="subnet"
                                         [formGroup]="pool"
-                                        [selectableDaemons]="getSelectedDaemons()"
+                                        [selectableGroups]="getSelectedDaemonGroups()"
                                     >
                                     </app-address-pool-form>
                                     <div class="flex justify-content-start mt-4 mb-4">
@@ -219,7 +228,7 @@
                                         <app-prefix-pool-form
                                             [subnet]="subnet"
                                             [formGroup]="pool"
-                                            [selectableDaemons]="getSelectedDaemons()"
+                                            [selectableGroups]="getSelectedDaemonGroups()"
                                         >
                                         </app-prefix-pool-form>
                                         <div class="flex justify-content-start mt-4 mb-4">
