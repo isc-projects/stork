@@ -922,8 +922,8 @@ namespace :lint do
                 # Sometimes, the Gitlab line contains so many ticket numbers that it is split into two lines. In this
                 # case, we need to merge the two lines and check the regex against the merged line.
                 indentation = 4 + '(Gitlab'.length + 1
-                if !gitlab_line.start_with?(' ' * indentation) || gitlab_line.start_with?(' ' * (indentation + 1))
-                    puts "ERROR: Changelog entry '#{filename}' has line '#{gitlab_line}' that is not indented with #{indentation} spaces."
+                if !gitlab_line.start_with?(' ' * indentation + '#')
+                    puts "ERROR: Changelog entry '#{filename}' has line '#{gitlab_line}' that is not indented with #{indentation} spaces or doesn't start with a ticket number."
                     exit_code = 1
                 end
                 gitlab_line_index -= 1
