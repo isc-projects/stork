@@ -406,7 +406,7 @@ when Kea servers operate in the High Availability setup. In this case,
 each of the HA peers uses the same configuration and may allocate IP
 addresses and delegated prefixes to the same set of clients, including
 static assignments via host reservations. If HA peers are configured
-correctly, the reservations they share will have two links in the
+correctly, the reservations they share will have two or more links in the
 ``Daemon`` column. Next to each link there is a label indicating
 whether the host reservation for the given server has been specified
 in its configuration file or a host database (via the Host Commands
@@ -428,7 +428,7 @@ Additional filters allow selecting hosts by machine ID, daemon, subnet
 ID, and Kea subnet ID.
 
 The daemon filter is provided as a dropdown input listing all daemons.
-Each daemon is represented with a label in form of
+Each daemon is represented with a label in the form of
 ``[daemon name]@[machine address or hostname]``. For example, a DHCPv4 daemon
 running on a machine with the address ``192.0.2.1`` would have the label
 ``DHCPv4@192.0.2.1``.
