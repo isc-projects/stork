@@ -47,7 +47,6 @@ contents:
   dst: /usr/share/man/man8/stork-tool.8
 - src: dist/server/usr/share/stork
   dst: /usr/share/stork
-  type: dir
 - src: dist/server/etc/stork/isc-stork-server.initd
   dst: /etc/init.d/isc-stork-server
   packager: apk
