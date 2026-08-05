@@ -101,7 +101,7 @@ func (p Pool) GetBoundaries() (net.IP, net.IP, error) {
 	return lb, ub, err
 }
 
-// Returns a pointer to the pool parameters.
+// Returns the pool parameters.
 func (p Pool) GetPoolParameters() PoolParameters {
 	return PoolParameters{
 		ClientClassParameters: p.ClientClassParameters,

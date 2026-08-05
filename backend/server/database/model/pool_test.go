@@ -193,8 +193,9 @@ func TestPrefixPoolGetKeaParameters(t *testing.T) {
 	require.Equal(t, pool.GetKeaParameters(), pool.KeaParameters)
 }
 
-// Test retrieving Kea parameters from a prefix pool when the parameters are nil.
-func TestPrefixPoolGetNilKeaParameters(t *testing.T) {
+// Test retrieving Kea parameters from a prefix pool when the parameters are
+// not set explicitly.
+func TestPrefixPoolGetZeroKeaParameters(t *testing.T) {
 	pool := PrefixPool{
 		Prefix: "3001::/80",
 	}

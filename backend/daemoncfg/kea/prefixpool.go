@@ -72,7 +72,7 @@ func (p PDPool) GetCanonicalExcludedPrefix() string {
 	return ""
 }
 
-// Returns a pointer to the pool parameters.
+// Returns the pool parameters.
 func (p PDPool) GetPoolParameters() PoolParameters {
 	return PoolParameters{
 		PoolID:                p.PoolID,
