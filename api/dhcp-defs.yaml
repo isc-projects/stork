@@ -60,9 +60,9 @@
       state:
         type: integer
         format: uint32
-      subnetId:
+      localSubnetId:
         type: integer
-      storkSubnetId:
+      subnetId:
         type: integer
       subnetPrefix:
         type: string

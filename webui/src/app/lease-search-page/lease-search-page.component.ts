@@ -14,6 +14,7 @@ import { InputText } from 'primeng/inputtext'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 import { TableModule } from 'primeng/table'
 import { Message } from 'primeng/message'
+import { ButtonModule } from 'primeng/button'
 import { ProgressSpinner } from 'primeng/progressspinner'
 import { Lease, LeasesSearchErredDaemon } from '../backend'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
@@ -62,6 +63,7 @@ enum LeasesSearchStatus {
         InputText,
         HelpTipComponent,
         TableModule,
+        ButtonModule,
         Message,
         ProgressSpinner,
         EntityLinkComponent,

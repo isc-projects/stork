@@ -106,9 +106,15 @@ func (r *RestAPI) GetLeases(ctx context.Context, params dhcp.GetLeasesParams) mi
 			PreferredLifetime: int64(l.PreferredLifetime),
 			PrefixLength:      int64(l.PrefixLength),
 			State:             &l.State,
-			SubnetID:          &localSubnetID,
-			ValidLifetime:     &validLifetime,
-			UserContext:       l.UserContext,
+			LocalSubnetID:     localSubnetID,
+			// SubnetID is not set here because this page is meant to query Kea for
+			// information directly, not to look things up in the Stork database. The Kea
+			// API response does not include the Stork subnet ID (since Kea has no knowledge
+			// of Stork's subnet IDs). This code could potentially be enhanced to perform
+			// that lookup in the future, but that was out of scope for the change when
+			// this code was last modified.
+			ValidLifetime: &validLifetime,
+			UserContext:   l.UserContext,
 		}
 		leases.Items = append(leases.Items, &lease)
 	}

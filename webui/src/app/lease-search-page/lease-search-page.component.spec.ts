@@ -151,7 +151,7 @@ describe('LeaseSearchPageComponent', () => {
         // Expand button existence.
         expect(cols[0].children.length).toBe(1)
         const expandButton = cols[0].children[0].nativeElement
-        expect(expandButton.nodeName).toBe('BUTTON')
+        expect(expandButton.nodeName).toBe('P-BUTTON')
 
         // Lease properties.
         expect(cols[1].nativeElement.innerText).toBe('192.0.2.3')
@@ -201,7 +201,7 @@ describe('LeaseSearchPageComponent', () => {
         // Expand button existence.
         expect(cols[0].children.length).toBe(1)
         const expandButton = cols[0].children[0].nativeElement
-        expect(expandButton.nodeName).toBe('BUTTON')
+        expect(expandButton.nodeName).toBe('P-BUTTON')
 
         // Lease properties.
         expect(cols[1].nativeElement.innerText).toBe('192.0.2.3')
@@ -278,7 +278,7 @@ describe('LeaseSearchPageComponent', () => {
         // Expand button existence.
         expect(cols[0].children.length).toBe(1)
         const expandButton1 = cols[0].children[0].nativeElement
-        expect(expandButton1.nodeName).toBe('BUTTON')
+        expect(expandButton1.nodeName).toBe('P-BUTTON')
 
         // Lease properties.
         expect(cols[1].nativeElement.innerText).toBe('2001:db8:1::1')
@@ -296,7 +296,7 @@ describe('LeaseSearchPageComponent', () => {
         // Expand button existence.
         expect(cols[5].children.length).toBe(1)
         const expandButton2 = cols[5].children[0].nativeElement
-        expect(expandButton2.nodeName).toBe('BUTTON')
+        expect(expandButton2.nodeName).toBe('P-BUTTON')
 
         // Lease properties.
         expect(cols[6].nativeElement.innerText).toBe('3000::/64')

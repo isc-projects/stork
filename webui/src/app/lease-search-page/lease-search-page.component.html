@@ -124,13 +124,23 @@
         <tr>
             <td>
                 @if (expanded) {
-                    <button [pRowToggler]="lease" aria-label="Hide Details">
-                        <i class="pi pi-chevron-down"></i>
-                    </button>
+                    <p-button
+                        icon="pi pi-chevron-down"
+                        [text]="true"
+                        severity="info"
+                        rounded="true"
+                        [pRowToggler]="lease"
+                        aria-label="Hide Details"
+                    />
                 } @else {
-                    <button [pRowToggler]="lease" aria-label="Show Details">
-                        <i class="pi pi-chevron-right"></i>
-                    </button>
+                    <p-button
+                        icon="pi pi-chevron-right"
+                        [text]="true"
+                        severity="info"
+                        rounded="true"
+                        [pRowToggler]="lease"
+                        aria-label="Show Details"
+                    />
                 }
             </td>
             <td>
