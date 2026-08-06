@@ -2,53 +2,47 @@
   "bind9": {
     "currentStable": [
       {
-        "version": "9.20.23",
-        "releaseDate": "2026-05-20",
+        "version": "9.20.26",
+        "releaseDate": "2026-07-22",
         "eolDate": "2028-07-01",
-        "ESV": "true"
-      },
-      {
-        "version": "9.18.49",
-        "releaseDate": "2026-05-20",
-        "eolDate": "2026-07-01",
         "ESV": "true"
       }
     ],
     "latestDev": {
-      "version": "9.21.22",
-      "releaseDate": "2026-05-20"
+      "version": "9.21.24",
+      "releaseDate": "2026-07-22"
     },
     "latestSecure": [
       {
-        "version": "9.20.23",
-        "releaseDate": "2026-05-20"
+        "version": "9.20.26",
+        "releaseDate": "2026-07-22"
       },
       {
         "version": "9.18.49",
         "releaseDate": "2026-05-20"
       },
       {
-        "version": "9.21.22",
-        "releaseDate": "2026-05-20"
+        "version": "9.21.24",
+        "releaseDate": "2026-07-22"
       }
     ]
   },
   "kea": {
     "currentStable": [
       {
-        "version": "3.0.3",
-        "releaseDate": "2026-03-25",
-        "eolDate": "2028-06-01"
+        "version": "3.2.0",
+        "releaseDate": "2026-06-24",
+        "eolDate": "2027-07-01"
       },
       {
-        "version": "2.6.5",
-        "releaseDate": "2026-03-25",
-        "eolDate": "2026-07-01"
+        "version": "3.0.4",
+        "releaseDate": "2026-07-29",
+        "eolDate": "2028-06-01"
       }
     ],
     "latestDev": {
-      "version": "3.1.9",
-      "releaseDate": "2026-05-27"
+      "version": "3.3.0",
+      "releaseDate": "2026-07-29"
     },
     "latestSecure": [
       {
@@ -78,8 +72,8 @@
       }
     ],
     "latestDev": {
-      "version": "2.5.0",
-      "releaseDate": "2026-06-03"
+      "version": "2.5.1",
+      "releaseDate": "2026-08-12"
     },
     "latestSecure": [
       {
@@ -92,5 +86,5 @@
       }
     ]
   },
-  "date": "2026-05-29"
+  "date": "2026-08-06"
 }

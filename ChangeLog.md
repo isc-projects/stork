@@ -1,3 +1,225 @@
+Stork 2.5.1 released on 2026-08-12.
+
+* 683 [ui] william
+
+    Collect and show all lease memfile columns, not just a basic subset.
+    (Gitlab #2447)
+
+* 682 [build] rootwyrm, slawek
+
+    The Stork Alpine package can now preserve externally managed users
+    during uninstall.
+    (Gitlab #2486)
+
+* 681 [sec] slawek
+
+    Improved the security of the agent's GRPC certificate generation.
+    The server now ignores IP addresses and DNS names provided in the
+    Subject Alternative Name (SAN) fields of the Certificate Signing
+    Request (CSR). Instead, they are assigned on the server side
+    based on the agent's address. It blocks the attacker from requesting
+    a certificate for any IP address or DNS names under the guise of
+    registering a legitimate agent.
+    (Gitlab #2564)
+
+* 680 [build] slawek
+
+    Fixing the removal of directories when the Stork server package is
+    uninstalled.
+    (Gitlab #2484)
+
+* 679 [doc] slawek
+
+    Updated ARM section of subnet filtering.
+    (Gitlab #2362)
+
+* 678 [bug] slawek
+
+    Fixed a server crash when a subnet was created via API without any
+    specific parameters.
+    (Gitlab #2580)
+
+* 677 [doc] slawek
+
+    Updated ARM sections of host reservation filtering descriptions.
+    (Gitlab #2363)
+
+* 676 [build] tomek, piotrek
+
+    Updated to Angular 21, PrimeNG 21 and several dependencies.
+    (Gitlab #2488)
+
+* 675 [build] andrei, piotrek, slawek, william
+
+    Updated Go to 1.26.5 and dependencies for frontend, backend,
+    Python, Ruby.
+    (Gitlab #2495, #2525, #2543, #2554, #2567, #2581, #2595, #2609,
+    #2614)
+
+* 674 [bug] slawek
+
+    Fixed a crash that happened when the gRPC connection to a daemon was
+    closed while it was still monitored. Skip lease fetching for
+    inactive and not monitored daemons.
+    (Gitlab #2447)
+
+* 673 [func] marcin
+
+    Improved tracking zone transfers in the BIND 9 logs. Two new
+    transfer states are determined: up-to-date and failed. The former
+    marks the zone transfers for which the secondary found that it
+    already has a current copy of the zone. The latter marks the
+    transfers for which the status was neither success nor up to date.
+    In both cases, the tracker also captures subsequent log messages
+    containing the transfer statistics, so they can be displayed in
+    the UI.
+    (Gitlab #2579)
+
+* 672 [ui] marcin
+
+    Added a new view listing the DNS zone transfers. It contains
+    controls for filtering and sorting the zone transfers.
+    (Gitlab #2557)
+
+* 671 [func] slawek
+
+    The subnet form groups the daemons that share the same Config
+    Backend database and server tag, preventing them from being
+    configured individually.
+    (Gitlab #2552)
+
+* 670 [func] tomek, slawek
+
+    The build system no longer downloads specific NodeJS and Go compiler
+    and uses the version available in the OS instead. This makes it
+    possible to build Stork with different NodeJS and Go versions. Also,
+    the compilation should be a bit faster and smaller as there is a
+    couple less items to download.
+    (Gitlab #2470, #2600)
+
+* 669 [func] marcin
+
+    Created REST API call returning the list of DNS zone transfers.
+    (Gitlab #2398)
+
+* 668 [func] sebastien.degroof
+
+    The Prometheus Kea Exporter now collects Kea's lease allocation
+    and lease allocation failure statistics, consistent with how
+    address statistics are exposed. Both global and per-subnet samples
+    are supported.
+    (Gitlab #2551)
+
+* 667 [bug] william
+
+    Correct a bug which prevented the Leases List from updating. Due
+    to improper error handling, the entire leasefile update from the
+    agent would be ignored if any lease in the update had been seen
+    before.
+    (Gitlab #2523)
+
+* 666 [func] marcin
+
+    Stork server connects to the monitored BIND 9 instances and
+    receives zone transfer events over the streaming connection.
+    The zone transfer events are stored in the Stork server's
+    database.
+    (Gitlab #2396)
+
+* 665 [bug] william
+
+    Correct an oversight which prevented Stork from activating Lease
+    Tracking when used with Kea versions older than 3.1.0, even when
+    Kea is configured with an absolute lease memfile path.
+    (Gitlab #2498)
+
+* 664 [func] piotrek
+
+    Improved displaying system groups that Stork user belongs to.
+    In case user belongs to more than one group, all group names will
+    be displayed.
+    (Gitlab #1957)
+
+* 663 [func] piotrek
+
+    Added new settings to configure OpenID Connect authentication.
+    Now it is possible to set a unique OpenID Provider identifier. It is
+    also possible to manually set OpenID Provider endpoints if the
+    Provider doesn't support OIDC Discovery.
+    (Gitlab #2538, #2536)
+
+* 662 [doc] slawek
+
+    Extended the subnet help tips to explain whether the JSON
+    configuration or the Config Backend database is altered
+    when the subnet is updated from the Stork UI.
+    (Gitlab #2476)
+
+* 661 [func] piotrek
+
+    Improved the User account edit form. Group assignment is no longer
+    possible for external users when the external authentication
+    service is managing the group assignment.
+    (Gitlab #2339)
+
+* 660 [func] slawek
+
+    Allow creating, editing, and deleting subnets from the Config
+    Backend database for Kea with both cb_cmds and subnet_cmds hooks
+    loaded.
+    (Gitlab #2527)
+
+* 659 [func] marcin
+
+    Stork agent exposes API to establish the streaming connection to
+    receive zone transfer events over gRPC.
+    (Gitlab #2395)
+
+* 658 [build] tsawka
+
+    Move system tests to stork-tests repository
+    (Gitlab #1910)
+
+* 657 [func] slawek
+
+    Support for deleting subnets in the Config Backend database.
+    (Gitlab #2475)
+
+* 656 [func] slawek
+
+    Support for modifying subnets in the Config Backend database.
+    (Gitlab #2474)
+
+* 655 [func] marcin
+
+    Stork server gathers network interfaces and IP addresses assigned
+    to the interfaces on the monitored machines, and stores them in
+    the database. The IP addresses are not displayed anywhere yet.
+    It is a building block of the DNS zone transfer monitoring to be
+    implemented in the future GL issues.
+    (Gitlab #2394)
+
+* 654 [bug] slawek
+
+    Added clipping the utilization value when it exceeds the smallint
+    (2 bytes) range to avoid interrupting statistics fetching. Such a
+    value indicates duplication daemons in the Stork database or
+    overlapping subnet pools for Kea daemons that are not combined into
+    an HA pair.
+    (Gitlab #2425)
+
+* 653 [ui] slawek
+
+    Extended the Kea daemon Data Storage view to display database user
+    and port details, and indicate whether TLS client certificates are
+    configured for each database backend entry.
+    (Gitlab #2418)
+
+* 652 [func] slawek
+
+    Display all Kea control sockets in UI.
+    (Gitlab #2273)
+
 Stork 2.5.0 released on 2026-06-03.
 
 * 651 [doc] piotrek

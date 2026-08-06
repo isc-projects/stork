@@ -5,6 +5,8 @@ System Family,System Version,Architecture,Unit Tests,System Tests,Build Binaries
        Alpine,          3.22,       amd64,         X,            ,              ,              ,                              ,                                                    X
        Alpine,          3.23,     aarch64,         X,            ,              ,              ,                              ,                                                    X
        Alpine,          3.23,       amd64,         X,            ,              ,              ,                              ,                                                    X
+       Alpine,          3.24,     aarch64,         X,            ,              ,              ,                              ,                                                    X
+       Alpine,          3.24,       amd64,         X,            ,              ,              ,                              ,                                                    X
        Debian,     12.1-slim,     aarch64,          ,            ,             X,             X,                             X,
        Debian,     12.1-slim,       amd64,         X,           X,             X,             X,                             X,
        Debian,            11,     aarch64,         X,            ,              ,              ,                              ,                                                    X
