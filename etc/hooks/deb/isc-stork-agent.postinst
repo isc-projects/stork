@@ -22,12 +22,8 @@ setup_user () {
         usermod -aG _kea stork-agent
     fi
 
-    # Directly retrieve uid and gid in case the user is self-managed.
-    stork_agent_uid=$(getent passwd stork-agent | cut -d: -f3)
-    stork_agent_gid=$(getent group stork-agent | cut -d: -f3)
-
     # Change ownership of all folders and files in home dir to stork-agent user.
-    chown -R "${stork_agent_uid}:${stork_agent_gid}" "${home_dir}"
+    chown -R stork-agent "${home_dir}"
 }
 
 after_install () {
