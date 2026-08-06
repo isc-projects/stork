@@ -53,12 +53,17 @@ end
 
 # Retrieves the name of the package manager after asserting that it is the only one available on the
 # system.
-def get_package_manager_type()
+# If the allow_unknown parameter is true, the function returns nil if the package manager is unknown or ambiguous
+# instead of failing.
+def get_package_manager_type(allow_unknown = false)
     # Read environment variable.
     if !ENV["PKG_TYPE"].nil?
         pkg_type = ENV["PKG_TYPE"].downcase
         allowed_types = ["deb", "rpm", "apk"]
         if !allowed_types.include?(pkg_type)
+            if allow_unknown
+                return nil
+            end
             fail "Invalid PKG_TYPE value: #{ENV["PKG_TYPE"]}. Must be one of: #{allowed_types.join(", ")}"
         end
 
@@ -68,8 +73,14 @@ def get_package_manager_type()
     supported_types = get_package_manager_types()
 
     if supported_types.empty?
+        if allow_unknown
+            return nil
+        end
         fail "Unknown package type for current OS."
     elsif supported_types.length != 1
+        if allow_unknown
+            return nil
+        end
         fail "Ambiguous package type for current OS: #{supported_types}. Use PKG_TYPE to specify one of them"
     end
 
@@ -133,7 +144,7 @@ file agent_dist_system_service_file => [SED, agent_dist_system_dir, "etc/isc-sto
 end
 
 agent_etc_files = FileList["etc/agent.env"]
-if get_package_manager_type() == "apk"
+if get_package_manager_type(allow_unknown = true) == "apk"
     agent_etc_files.append("etc/isc-stork-agent.initd")
 end
 agent_dist_etc_dir = "dist/agent/etc/stork"
@@ -211,7 +222,7 @@ file server_dist_system_service_file => [SED, server_dist_system_dir, "etc/isc-s
 end
 
 server_etc_files = FileList["etc/server.env", "etc/versions.json"]
-if get_package_manager_type() == "apk"
+if get_package_manager_type(allow_unknown = true) == "apk"
     server_etc_files.append("etc/isc-stork-server.initd")
 end
 server_dist_etc_dir = "dist/server/etc/stork"
