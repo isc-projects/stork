@@ -48,5 +48,7 @@ We have received the following contributions:
    - 2025-11: Fix for editing host reservation with an IPv6 prefix.
  - Lucas Petrino
    - 2025-11: Fix for monitor Kea listening on IPv6 address.
+ - Phillip Jaenke
+   - 2026-05: Fix the management of a Stork system user in the Alpine package.
  - Sebastien De Groof
    - 2026-07: Add support for allocation statistics.
