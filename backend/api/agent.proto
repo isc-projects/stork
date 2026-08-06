@@ -436,8 +436,8 @@ message Lease {
   bool fqdnRev = 18;
   // The hardware type of the client (this is not documented in doxygen so
   // I don't know what it means)
-  string hwType = 19;
-  // THe hostname of the client.
+  optional uint32 hwType = 19;
+  // The hostname of the client.
   string hostname = 20;
 }
 

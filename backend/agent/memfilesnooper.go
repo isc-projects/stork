@@ -164,6 +164,15 @@ func newLease6(record []string, cltt uint64, lifetime uint32) (*keadata.Lease, e
 	if err != nil {
 		return nil, err
 	}
+	hwtypeStr := record[v6HWType]
+	var hwtype *uint32
+	if hwtypeStr != "" {
+		hwtypeUint, err := checkUint32(hwtypeStr, "HWType")
+		if err != nil {
+			return nil, err
+		}
+		hwtype = &hwtypeUint
+	}
 	userCtxStr := record[v6UserCtx]
 	var userCtx map[string]any
 	if userCtxStr != "" {
@@ -189,7 +198,7 @@ func newLease6(record []string, cltt uint64, lifetime uint32) (*keadata.Lease, e
 		record[v6HWAddr],
 		state,
 		userCtx,
-		record[v6HWType],
+		hwtype,
 		record[v6HWAddrSource],
 	)
 	return &lease, nil

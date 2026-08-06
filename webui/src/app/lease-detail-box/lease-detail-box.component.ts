@@ -12,8 +12,8 @@ import { LocaltimePipe } from '../pipes/localtime.pipe'
     styleUrl: './lease-detail-box.component.sass',
 })
 export class LeaseDetailBoxComponent {
-    // The lease for which to display details.
+    /**
+     * The lease for which to display details.
+     */
     lease = input<Lease>()
-    // The number of columns which the lease details box should span in its containing table.
-    colspan = input<number>()
 }

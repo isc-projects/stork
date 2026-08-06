@@ -660,6 +660,8 @@ func TestParseRowAsLease4(t *testing.T) {
 func TestParseRowAsLease6(t *testing.T) {
 	// Arrange
 	exampleDUID := "01:00:00:00:00:00"
+	exampleHWAddr := "01:02:03:04:05:06"
+	hwtype := uint32(7)
 	testCases := []struct {
 		desc        string
 		row         []string
@@ -735,11 +737,11 @@ func TestParseRowAsLease6(t *testing.T) {
 				"0",
 				"0",
 				"",
-				"",
+				exampleHWAddr,
 				"2",
 				"{\"potato\":\"fried\"}",
-				"",
-				"",
+				"7",
+				"DOCSIS CMTS",
 				"0",
 			},
 			0,
@@ -748,6 +750,7 @@ func TestParseRowAsLease6(t *testing.T) {
 				Family:            storkutil.IPv6,
 				IPAddress:         "51a4:14ec:1::",
 				DUID:              keadata.NewColonSepHexStr(&exampleDUID),
+				HWAddress:         exampleHWAddr,
 				CLTT:              1761669049,
 				ValidLifetime:     3600,
 				LocalSubnetID:     123,
@@ -755,6 +758,8 @@ func TestParseRowAsLease6(t *testing.T) {
 				PrefixLength:      128,
 				IAID:              1,
 				PreferredLifetime: 2250,
+				HWType:            &hwtype,
+				HWAddressSource:   "DOCSIS CMTS",
 				UserContext:       map[string]any{"potato": "fried"},
 			},
 			"",

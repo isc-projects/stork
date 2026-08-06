@@ -41,6 +41,12 @@
         type: string
       hwAddress:
         type: string
+      hwAddressSource:
+        type: string
+      hwType:
+        type: integer
+        format: uint32
+        x-nullable: true
       iaid:
         type: integer
       ipAddress:

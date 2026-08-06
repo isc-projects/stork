@@ -27,25 +27,28 @@ const (
 
 // Represents a DHCP lease fetched from Kea.
 type Lease struct {
-	Family            storkutil.IPType `json:"-"`
-	ClientID          *ColonSepHexStr  `json:"client-id,omitempty"`
-	Hostname          string           `json:"hostname,omitempty"`
-	HWAddress         string           `json:"hw-address,omitempty"`
-	HWAddressSource   string           `json:"hw-address-source,omitempty"`
-	HWType            string           `json:"hw-type,omitempty"`
-	DUID              *ColonSepHexStr  `json:"duid,omitempty"`
-	IPAddress         string           `json:"ip-address,omitempty"`
-	Type              string           `json:"type,omitempty"`
-	CLTT              uint64           `json:"cltt,omitempty"`
-	State             uint32           `json:"state,omitempty" pg:",use_zero"`
-	UserContext       map[string]any   `json:"user-context,omitempty"`
-	ValidLifetime     uint32           `json:"valid-lft,omitempty"`
-	IAID              uint32           `json:"iaid,omitempty"`
-	PreferredLifetime uint32           `json:"preferred-lft,omitempty"`
-	LocalSubnetID     uint32           `json:"subnet-id,omitempty"`
-	FqdnFwd           bool             `json:"fqdn-fwd,omitempty"`
-	FqdnRev           bool             `json:"fqdn-rev,omitempty"`
-	PrefixLength      uint8            `json:"prefix-len,omitempty"`
+	Family          storkutil.IPType `json:"-"`
+	ClientID        *ColonSepHexStr  `json:"client-id,omitempty"`
+	Hostname        string           `json:"hostname,omitempty"`
+	HWAddress       string           `json:"hw-address,omitempty"`
+	HWAddressSource string           `json:"hw-address-source,omitempty"`
+	// HWType is a uint16 in Kea, but the smallest unsigned integer type which Protobuf
+	// supports is uint32, so rather than waste a bunch of CPU cycles converting it
+	// back and forth half a dozen times, this expands it once and leaves it that way.
+	HWType            *uint32         `json:"hw-type,omitempty"`
+	DUID              *ColonSepHexStr `json:"duid,omitempty"`
+	IPAddress         string          `json:"ip-address,omitempty"`
+	Type              string          `json:"type,omitempty"`
+	CLTT              uint64          `json:"cltt,omitempty"`
+	State             uint32          `json:"state,omitempty" pg:",use_zero"`
+	UserContext       map[string]any  `json:"user-context,omitempty"`
+	ValidLifetime     uint32          `json:"valid-lft,omitempty"`
+	IAID              uint32          `json:"iaid,omitempty"`
+	PreferredLifetime uint32          `json:"preferred-lft,omitempty"`
+	LocalSubnetID     uint32          `json:"subnet-id,omitempty"`
+	FqdnFwd           bool            `json:"fqdn-fwd,omitempty"`
+	FqdnRev           bool            `json:"fqdn-rev,omitempty"`
+	PrefixLength      uint8           `json:"prefix-len,omitempty"`
 }
 
 // Create a new Lease, filling in all the fields which are appropriate for a
@@ -97,7 +100,7 @@ func NewLease6(
 	hwaddr string,
 	state uint32,
 	userCtx map[string]any,
-	hwtype,
+	hwtype *uint32,
 	hwaddrSource string,
 ) Lease {
 	return Lease{

@@ -62,6 +62,7 @@ func TestNewLease4(t *testing.T) {
 
 func TestNewLease6(t *testing.T) {
 	// Act
+	hwtype := uint32(4)
 	lease := NewLease6(
 		"::1",
 		"00:00:00:00:00:00:00:00",
@@ -78,10 +79,8 @@ func TestNewLease6(t *testing.T) {
 		"00:11:22:33:44:55",
 		2,
 		map[string]any{"potato": "boiled"},
-		// I don't actually know what goes here because I haven't seen any example data
-		// where it exists. Might as well have fun with it!
-		"Tornado",
-		"Radar Indicated",
+		&hwtype,
+		"DOCSIS MODEM",
 	)
 
 	// Assert
@@ -98,14 +97,15 @@ func TestNewLease6(t *testing.T) {
 	require.Equal(t, "host3.example", lease.Hostname)
 	require.Equal(t, "00:11:22:33:44:55", lease.HWAddress)
 	require.Equal(t, map[string]any{"potato": "boiled"}, lease.UserContext)
-	require.Equal(t, "Tornado", lease.HWType)
-	require.Equal(t, "Radar Indicated", lease.HWAddressSource)
+	require.EqualValues(t, 4, *lease.HWType)
+	require.Equal(t, "DOCSIS MODEM", lease.HWAddressSource)
 }
 
 func TestToGRPC(t *testing.T) {
 	// Arrange
 	duid := "00:01:02:03:04:05:06:07"
 	clientID := "09:08:07:06:05:04:03"
+	hwtype := uint32(6)
 	input := Lease{
 		Type:            "IA_PD",
 		Family:          storkutil.IPv6,
@@ -122,8 +122,8 @@ func TestToGRPC(t *testing.T) {
 		FqdnRev:         true,
 		IAID:            5,
 		Hostname:        "host4.example",
-		HWType:          "Tornado",
-		HWAddressSource: "Radar Indicated",
+		HWType:          &hwtype,
+		HWAddressSource: "Subscriber ID",
 		UserContext:     map[string]any{"potato": "fried"},
 	}
 
@@ -144,7 +144,7 @@ func TestToGRPC(t *testing.T) {
 	require.Equal(t, true, result.FqdnRev)
 	require.Equal(t, uint32(5), result.Iaid)
 	require.Equal(t, "host4.example", result.Hostname)
-	require.Equal(t, "Tornado", result.HwType)
-	require.Equal(t, "Radar Indicated", result.HwAddressSource)
+	require.EqualValues(t, 6, *result.HwType)
+	require.Equal(t, "Subscriber ID", result.HwAddressSource)
 	require.Equal(t, "{\"potato\":\"fried\"}", result.UserContext)
 }
