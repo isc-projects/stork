@@ -702,6 +702,8 @@ install_debs_amd64:
   variables:
     ARCH: amd64
   script:
+    - "groupadd _kea"
+    - "groupadd bind"
     - "dpkg -i isc-stork-*${ARCH}.deb"
     - "stork-agent --version"
     - "stork-server --version"
@@ -727,6 +729,8 @@ install_debs_amd64_ubuntu_lts:
   variables:
     ARCH: amd64
   script:
+    - "groupadd _kea"
+    - "groupadd bind"
     - "dpkg -i isc-stork-*${ARCH}.deb"
     - "stork-agent --version"
     - "stork-server --version"
@@ -760,6 +764,8 @@ install_rpms_amd64:
   variables:
     ARCH: x86_64
   script:
+    - "groupadd kea"
+    - "groupadd bind"
     - "rpm -i isc-stork-*${ARCH}.rpm"
     - "stork-agent --version"
     - "stork-server --version"
@@ -790,6 +796,8 @@ install_apks_amd64:
   variables:
     ARCH: x86_64
   script:
+    - addgroup kea
+    - addgroup bind
     - "apk add --no-cache --allow-untrusted isc-stork-*${ARCH}.apk"
     - "stork-agent --version"
     - "stork-server --version"
