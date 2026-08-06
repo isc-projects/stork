@@ -415,30 +415,30 @@ message Lease {
   uint32 prefixLen = 10;
   // The Client ID of the lessee (if used).
   string clientID = 11;
-	// The source of the hardware address (for DHCPv6, which does not require it be sent)
-	string hwAddressSource = 12;
-	// The type of lease, one of:
-	// - IA_NA = 0 (normal)
-	// - IA_TA = 1 (temporary)
-	// - IA_PD = 2 (delegated prefix)
-	// - IPv4 = 3
-	string type = 13;
-	// Any user context provided for that client, encoded as a JSON string.
-	string userContext = 14;
-	// The address ID from the DHCPv6 request, used to distinguish between addresses
-	// when multiple are included in the request.
-	uint32 iaid = 15;
-	// The preferred lifetime length for the lease, as requested by the client.
-	uint32 preferredLifetime = 16;
-	// Whether a forward DNS update was made as a result of this lease.
-	bool fqdnFwd = 17;
-	// Whether a reverse DNS update was made as a result of this lease.
-	bool fqdnRev = 18;
-	// The hardware type of the client (this is not documented in doxygen so
-	// I don't know what it means)
-	string hwType = 19;
-	// THe hostname of the client.
-	string hostname = 20;
+  // The source of the hardware address (for DHCPv6, which does not require it be sent)
+  string hwAddressSource = 12;
+  // The type of lease, one of:
+  // - IA_NA = 0 (normal)
+  // - IA_TA = 1 (temporary)
+  // - IA_PD = 2 (delegated prefix)
+  // - IPv4 = 3
+  string type = 13;
+  // Any user context provided for that client, encoded as a JSON string.
+  string userContext = 14;
+  // The address ID from the DHCPv6 request, used to distinguish between addresses
+  // when multiple are included in the request.
+  uint32 iaid = 15;
+  // The preferred lifetime length for the lease, as requested by the client.
+  uint32 preferredLifetime = 16;
+  // Whether a forward DNS update was made as a result of this lease.
+  bool fqdnFwd = 17;
+  // Whether a reverse DNS update was made as a result of this lease.
+  bool fqdnRev = 18;
+  // The hardware type of the client (this is not documented in doxygen so
+  // I don't know what it means)
+  string hwType = 19;
+  // THe hostname of the client.
+  string hostname = 20;
 }
 
 // Request to retrieve the zone transfers from the agent with optional

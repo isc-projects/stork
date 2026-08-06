@@ -222,6 +222,7 @@ describe('LeasesListTableComponent', () => {
             },
         })
     }))
+
     it('should be filtered by state', fakeAsync(() => {
         component.dataCollection = [exampleV4Lease, exampleV6Lease]
         fixture.detectChanges()
