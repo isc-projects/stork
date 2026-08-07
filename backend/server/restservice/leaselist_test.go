@@ -103,8 +103,8 @@ func TestConvertLeaseFromRestAPIWithValidLease(t *testing.T) {
 	require.Nil(t, err)
 	require.NotNil(t, result)
 	require.EqualValues(t, lease.CLTT, *result.Cltt)
-	require.EqualValues(t, lease.LocalSubnetID, result.LocalSubnetID)
-	require.EqualValues(t, lease.SubnetID, *result.SubnetID)
+	require.EqualValues(t, lease.LocalSubnetID, *result.LocalSubnetID)
+	require.EqualValues(t, lease.SubnetID, result.SubnetID)
 }
 
 // Verify that [convertSortFieldToColumnName] converts all of the supported sort

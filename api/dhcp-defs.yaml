@@ -17,6 +17,7 @@
       - cltt
       - ipAddress
       - state
+      - localSubnetId
       - validLifetime
     properties:
       id:
@@ -63,7 +64,6 @@
         type: integer
       subnetId:
         type: integer
-        x-nullable: true
       subnetPrefix:
         type: string
       userContext:

@@ -19,7 +19,7 @@ const exampleV6Lease = {
     cltt: 10,
     ipAddress: 'fe80::10',
     state: 1,
-    subnetId: 24,
+    localSubnetId: 24,
     validLifetime: 3600,
 }
 const exampleV4Lease = {
@@ -29,7 +29,7 @@ const exampleV4Lease = {
     cltt: 11,
     ipAddress: '10.168.1.67',
     state: 3,
-    subnetId: 27,
+    localSubnetId: 27,
     validLifetime: 3600,
 }
 
