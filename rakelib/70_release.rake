@@ -181,33 +181,16 @@ namespace :release do
     desc 'Prepare release notes'
     task :notes => [WGET, SED, PERL, FOLD] do
         release_notes_filename = "Stork-#{STORK_VERSION}-ReleaseNotes.txt"
-        release_notes_filename_in = release_notes_filename + ".in"
-        release_notes_file = File.new(release_notes_filename, 'w' )
 
+        sanitize_script = File.expand_path("sanitize-release-notes.sh")
         at_exit {
-          sh 'rm', '-f', release_notes_filename_in
+          sh 'rm', '-f', sanitize_script
         }
 
-        fetch_file("https://gitlab.isc.org/isc-projects/stork/-/wikis/Releases/Release-notes-#{STORK_VERSION}.md", release_notes_filename_in)
-
-        Open3.pipeline [
-            "cat", release_notes_filename_in
-        ], [
-            # Removes the triple backticks.
-            SED, '/^```/d'
-        ], [
-            # Removes backslashes prepending square brackets.
-            SED, 's/\\\[/[/g;s/\\\]/]/g'
-        ], [
-            # Replaces square brackets with round brackets for hyperlinks.
-            PERL, '-pe', 's|\[(http.*?)\]\(http.*\)|\1|',
-        ], [
-            # Wrap rows to width 73 == 72 + newline. Historically, number 72 has something to do with punch cards.
-            FOLD, '-sw', '73'
-        ], [
-            # Remove trailing blank spaces.
-            SED, 's/ *$//g'
-        ], :out => release_notes_file
+        fetch_file("https://gitlab.isc.org/isc-projects/stork/-/wikis/Releases/sanitize-release-notes.sh", sanitize_script)
+        fetch_file("https://gitlab.isc.org/isc-projects/stork/-/wikis/Releases/Release-notes-#{STORK_VERSION}.md", release_notes_filename)
+        sh "chmod", "+x", sanitize_script
+        sh sanitize_script, release_notes_filename
 
     end
 
