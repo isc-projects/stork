@@ -641,6 +641,27 @@ func TestParseRowAsLease4(t *testing.T) {
 			nil,
 			"lease state",
 		},
+		{
+			"Missing column, which it should refuse to parse.",
+			[]string{
+				"192.110.111.2",
+				"03:00:00:00:00:00",
+				"01:03:00:00:00:00:00",
+				"3600",
+				"1761257849",
+				"123",
+				"0",
+				"0",
+				"",
+				"CA55E11E",
+				// Omit user context.
+				// "",
+				"0",
+			},
+			0,
+			nil,
+			"column",
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
@@ -919,6 +940,33 @@ func TestParseRowAsLease6(t *testing.T) {
 			0,
 			nil,
 			"prefix length",
+		},
+		{
+			"Missing a column, which it should refuse to parse.",
+			[]string{
+				"51a4:14ec:1::",
+				"01:00:00:00:00:00",
+				"3600",
+				"1761672649",
+				"123",
+				"2250",
+				"0",
+				"1",
+				"CA55E11E",
+				"0",
+				"0",
+				"",
+				"",
+				"2",
+				"",
+				// Missing hwtype and hwaddr_source, which were added in Kea 2.1.2.
+				// "",
+				// "",
+				"0",
+			},
+			0,
+			nil,
+			"column",
 		},
 	}
 	for _, tc := range testCases {

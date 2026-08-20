@@ -33,6 +33,7 @@ const (
 	v4State         = 9
 	v4UserCtx       = 10
 	v4PoolID        = 11
+	v4ColCount      = 12 // Update this if a new column is added.
 	// IPv6 Lease Memfile Column Indices below.
 	v6IPAddr        = 0
 	v6DUID          = 1
@@ -52,6 +53,7 @@ const (
 	v6HWType        = 15
 	v6HWAddrSource  = 16
 	v6PoolID        = 17
+	v6ColCount      = 18 // Update this if a new column is added.
 )
 
 // The maximum number of lease updates that a MemfileSnooper will store. As
@@ -85,6 +87,11 @@ func checkUint32(input string, fieldName string) (uint32, error) {
 
 // Create a new Lease4 from a CSV row, and the already-parsed values.
 func newLease4(record []string, cltt uint64, lifetime uint32) (*keadata.Lease, error) {
+	// #2630: Check expected column count before accessing out of array bounds.
+	colCount := len(record)
+	if colCount != v4ColCount {
+		return nil, errors.Errorf("expected %d columns, got %d", v4ColCount, colCount)
+	}
 	subnet, err := checkUint32(record[v4Subnet], "subnet ID")
 	if err != nil {
 		return nil, err
@@ -132,6 +139,11 @@ func newLease4(record []string, cltt uint64, lifetime uint32) (*keadata.Lease, e
 
 // Create a new Lease6 from a CSV row, and the already-parsed values.
 func newLease6(record []string, cltt uint64, lifetime uint32) (*keadata.Lease, error) {
+	// #2630: Check expected column count before accessing out of array bounds.
+	colCount := len(record)
+	if colCount != v6ColCount {
+		return nil, errors.Errorf("expected %d columns, got %d", v4ColCount, colCount)
+	}
 	subnet, err := checkUint32(record[v6Subnet], "subnet ID")
 	if err != nil {
 		return nil, err
