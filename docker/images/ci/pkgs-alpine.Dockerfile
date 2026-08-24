@@ -6,7 +6,7 @@ RUN apk add --no-cache \
     ruby-dev~3.4 \
     openjdk17-jre-headless~17 \
     python3~3.12 \
-    nodejs~24.17 \
+    nodejs~24.18 \
     npm~11.11 \
     protoc~31.1 \
     make~4.4 \
