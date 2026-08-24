@@ -89,7 +89,7 @@ func checkUint32(input string, fieldName string) (uint32, error) {
 func newLease4(record []string, cltt uint64, lifetime uint32) (*keadata.Lease, error) {
 	// #2630: Check expected column count before accessing out of array bounds.
 	colCount := len(record)
-	if colCount != v4ColCount {
+	if colCount < v4ColCount {
 		return nil, errors.Errorf("expected %d columns, got %d", v4ColCount, colCount)
 	}
 	subnet, err := checkUint32(record[v4Subnet], "subnet ID")
@@ -141,7 +141,7 @@ func newLease4(record []string, cltt uint64, lifetime uint32) (*keadata.Lease, e
 func newLease6(record []string, cltt uint64, lifetime uint32) (*keadata.Lease, error) {
 	// #2630: Check expected column count before accessing out of array bounds.
 	colCount := len(record)
-	if colCount != v6ColCount {
+	if colCount < v6ColCount {
 		return nil, errors.Errorf("expected %d columns, got %d", v4ColCount, colCount)
 	}
 	subnet, err := checkUint32(record[v6Subnet], "subnet ID")
