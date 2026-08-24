@@ -1,4 +1,4 @@
-image: registry.gitlab.isc.org/isc-projects/stork/ci-base:19
+image: registry.gitlab.isc.org/isc-projects/stork/ci-base:20
 
 # Only create pipelines for merge requests and pushes/merges to the main branch
 workflow:
@@ -90,7 +90,7 @@ stages:
 
 # template with alpine image
 .image_alpine: &image_alpine
-  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-alpine:18
+  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-alpine:19
   variables:
     # CGO is disabled by default in official images from Go 1.23.
     CGO_ENABLED: 1
@@ -101,7 +101,7 @@ stages:
 
 # template with debian image
 .image_debian: &image_debian
-  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-debian-old-glibc:19
+  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-debian-old-glibc:20
 
 # rule to run the job only when it is manually triggered; to be used in "rules"
 .rule_manual_allow_failure: &rule_manual_allow_failure
