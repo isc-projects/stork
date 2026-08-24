@@ -3,9 +3,9 @@ FROM redhat/ubi10:10.0
 # To update the Go version, go to https://go.dev/dl/, find suitable
 # version, also get the linux-amd64 and linux-arm64 SHA256 sums.
 # In the future, we could semi automate it using https://go.dev/dl/?mode=json
-ARG GO_VERSION=1.26.5
-ARG GO_SHA256_AMD64=5c2c3b16caefa1d968a94c1daca04a7ca301a496d9b086e17ad77bb81393f053
-ARG GO_SHA256_ARM64=fe4789e92b1f33358680864bbe8704289e7bb5fc207d80623c308935bd696d49
+ARG GO_VERSION=1.26.7
+ARG GO_SHA256_AMD64=ffb5f8de10c62550dfddab66b36b57030721e0a44a3218e9e1181d7b59f121ca
+ARG GO_SHA256_ARM64=5a4ec883379d51ee9ce1040d5e87f8d35e20387574dd8c947feb01eabc3c1b37
 
 ENV PATH="/root/go/bin:/usr/local/go/bin:${PATH}"
 
