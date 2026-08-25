@@ -327,14 +327,20 @@ func readFileWithIncludes(path string, parentPaths map[string]bool) ([]byte, err
 		return nil, err
 	}
 
+	// Normalize the JSON to remove comments.
+	raw, err = NormalizeJSON(raw)
+	if err != nil {
+		err = errors.Wrap(err, "cannot normalize the configuration file")
+		return nil, err
+	}
+
 	// Include pattern definition:
 	// - Must start with prefix: <?include
 	// - Must end with suffix: ?>
-	// - Path may be relative to parent file or absolute
 	// - Path must be escaped with double quotes
 	// - May to contains spacing before and after the path quotes
 	// Produce two groups: first for the whole statement and second for path.
-	includePattern := regexp.MustCompile(`<\?include\s*\"([^"]+\..*)\"\s*\?>`)
+	includePattern := regexp.MustCompile(`<\?include\s*\"(.*?)\"\s*\?>`)
 	matchesGroupIndices := includePattern.FindAllSubmatchIndex(raw, -1)
 	matchesGroups := includePattern.FindAllSubmatch(raw, -1)
 

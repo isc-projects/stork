@@ -294,6 +294,54 @@ func TestReadConfigurationWithMultipleTheSameIncludes(t *testing.T) {
 	}
 }
 
+// Test read a configuration with multiple the same inline import statements.
+func TestReadConfigurationWithMultipleTheSameIncludesInline(t *testing.T) {
+	path := "testdata/configs/config-with-multiple-the-same-includes-inline.json"
+	raw, err := ReadFileWithIncludes(path)
+	require.NoError(t, err)
+
+	var content interface{}
+	err = json.Unmarshal(raw, &content)
+	require.NoError(t, err)
+	data := content.(map[string]interface{})
+	require.Contains(t, data, "biz", "buz", "boz")
+
+	for _, key := range []string{"biz", "buz", "boz"} {
+		nested := data[key].(map[string]interface{})
+		require.Contains(t, nested, "foo", "bar", "baz")
+		foo := int(nested["foo"].(float64))
+		require.EqualValues(t, foo, 42)
+		bar := nested["bar"].(string)
+		require.EqualValues(t, bar, "24")
+		baz := nested["baz"].(bool)
+		require.EqualValues(t, baz, true)
+	}
+}
+
+// Test read a configuration with some commented out import statements.
+func TestReadConfigurationWithCommentedOutIncludes(t *testing.T) {
+	path := "testdata/configs/config-with-commented-includes.json"
+	raw, err := ReadFileWithIncludes(path)
+	require.NoError(t, err)
+
+	var content interface{}
+	err = json.Unmarshal(raw, &content)
+	require.NoError(t, err)
+	data := content.(map[string]interface{})
+	require.Contains(t, data, "boo", "bus")
+
+	for _, key := range []string{"boo", "bus"} {
+		nested := data[key].(map[string]interface{})
+		require.Contains(t, nested, "foo", "bar", "baz")
+		foo := int(nested["foo"].(float64))
+		require.EqualValues(t, foo, 42)
+		bar := nested["bar"].(string)
+		require.EqualValues(t, bar, "24")
+		baz := nested["baz"].(bool)
+		require.EqualValues(t, baz, true)
+	}
+}
+
 // Test read a configuration with an import statement related to a non-existing file.
 func TestReadConfigurationWithNonExistingIncludes(t *testing.T) {
 	path := "testdata/configs/config-with-non-existing-includes.json"
