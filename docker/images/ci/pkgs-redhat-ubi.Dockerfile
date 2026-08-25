@@ -13,7 +13,7 @@ WORKDIR /repo
 RUN dnf install -y \
     git-2.52.* \
     java-21-openjdk-headless-21.0.* \
-    tzdata-java-2026b \
+    tzdata-java-2026c \
     man-db-2.12.* \
     make-4.* \
     nodejs-22.23.* \
