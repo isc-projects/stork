@@ -172,6 +172,24 @@ Changelog
 
 Below is the list of changes of CI images for particular tags.
 
+**Tag: 20**
+
+    - ``ci-base``:
+
+        Introduced in the #2632 ticket. Upgrades Golang to 1.26.7.
+
+    - ``pkgs-alpine``:
+
+        Introduced in the #2632 ticket. Upgrades Golang to 1.26.7 and Node.js to 24.18.
+
+    - ``pkgs-debian-old-glibc``:
+
+        Introduced in the #2632 ticket. Upgrades Golang to 1.26.7.
+
+    - ``pkgs-redhat-ubi``:
+
+        Introduced in the #2632 ticket. Upgrades Golang to 1.26.7 and tzdata-java to 2026c.
+
 **Tag: 19**
 
     - ``ci-base``:
