@@ -767,7 +767,10 @@ namespace :lint do
     desc 'Check backend source code
         FIX - fix linting issues - default: false'
     task :backend => [GOLANGCILINT, "gen:backend:mocks"] + go_codebase do
-        opts = []
+        # #2466: limit analysis to new code. This lets us tighten linter settings
+        # without needing to massively change the codebase all at once.
+        mr_target_branch = ENV["CI_MERGE_REQUEST_TARGET_BRANCH_NAME"] || "master"
+        opts = [ "--new-from-merge-base", mr_target_branch ]
         if ENV["FIX"] == "true"
             opts += ["--fix"]
         end
