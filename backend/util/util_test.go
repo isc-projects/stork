@@ -747,3 +747,23 @@ func TestSplitByComma(t *testing.T) {
 		require.EqualValues(t, expected[i], vals)
 	}
 }
+
+// Benchmark measures the performance of reading a configuration with nested
+// import statements.
+//
+// The implementation that didn't take into account the comments in the JSON
+// file has the following performance:
+//
+// goos: darwin goarch: arm64 pkg: isc.org/stork/util cpu: Apple M4 Pro
+// BenchmarkReadConfigurationWithNestedIncludes-12    	   31063	     36983 ns/op	   21232 B/op	     173 allocs/op
+//
+// The implementation with a support for comments in the JSON file has the following performance:
+//
+// goos: darwin goarch: arm64 pkg: isc.org/stork/util cpu: Apple M4 Pro
+// BenchmarkReadConfigurationWithNestedIncludes-12    	   32073	     36623 ns/op	   19913 B/op	     156 allocs/op
+func BenchmarkReadConfigurationWithNestedIncludes(b *testing.B) {
+	path := "testdata/configs/config-with-nested-includes.json"
+	for b.Loop() {
+		_, _ = ReadFileWithIncludes(path)
+	}
+}
