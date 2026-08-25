@@ -761,6 +761,10 @@ func TestSplitByComma(t *testing.T) {
 //
 // goos: darwin goarch: arm64 pkg: isc.org/stork/util cpu: Apple M4 Pro
 // BenchmarkReadConfigurationWithNestedIncludes-12    	   32073	     36623 ns/op	   19913 B/op	     156 allocs/op
+//
+// It's unsure why the performance is better with the support for comments as it
+// executes more code. But we may assume that the performance is not
+// significantly degraded now.
 func BenchmarkReadConfigurationWithNestedIncludes(b *testing.B) {
 	path := "testdata/configs/config-with-nested-includes.json"
 	for b.Loop() {
