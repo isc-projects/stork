@@ -22,11 +22,11 @@ mccabe==0.7.0
     #   pylint
 mypy-extensions==1.1.0
     # via black
-packaging==26.2
+packaging==26.3
     # via black
 pathspec==1.1.1
     # via black
-platformdirs==4.11.0
+platformdirs==4.11.4
     # via
     #   black
     #   pylint
@@ -36,7 +36,7 @@ pycodestyle==2.14.0
     #   flake8
 pyflakes==3.4.0
     # via flake8
-pylint==4.0.6
+pylint==4.0.7
     # via -r rakelib/init_deps/pylinters.in
 pytokens==0.4.1
     # via black

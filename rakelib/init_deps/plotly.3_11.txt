@@ -4,9 +4,9 @@
 #
 #    pip-compile --output-file=rakelib/init_deps/plotly.3_11.txt --strip-extras rakelib/init_deps/plotly.in
 #
-narwhals==2.24.0
+narwhals==2.25.0
     # via plotly
-packaging==26.2
+packaging==26.3
     # via plotly
 plotly==6.9.0
     # via -r rakelib/init_deps/plotly.in
