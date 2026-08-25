@@ -5,7 +5,6 @@ import { MessageService } from '@openng/optimus-ui/api'
 import { Bind9Daemon, DaemonsStats, DHCPService, DNSService, PdnsDaemon, ServicesService } from '../backend'
 import {
     datetimeToLocal,
-    durationToString,
     getGrafanaUrl,
     daemonStatusIconClass,
     daemonStatusIconTooltip,
@@ -34,6 +33,7 @@ import { Tag } from '@openng/optimus-ui/tag'
 import { EventsPanelComponent } from '../events-panel/events-panel.component'
 import { HumanCountPipe } from '../pipes/human-count.pipe'
 import { SurroundPipe } from '../pipes/surround.pipe'
+import { DurationPipe } from '../pipes/duration.pipe'
 
 type DhcpOverviewParsed = ModifyDeep<
     DhcpOverview,
@@ -105,6 +105,7 @@ type DhcpOverviewParsed = ModifyDeep<
         TitleCasePipe,
         HumanCountPipe,
         SurroundPipe,
+        DurationPipe,
     ],
 })
 export class DashboardComponent implements OnInit, OnDestroy {
@@ -386,13 +387,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
         const percent = (100 * numerator) / denominator
         return Math.floor(percent)
-    }
-
-    /**
-     * Make duration human readable.
-     */
-    showDuration(duration) {
-        return durationToString(duration, true)
     }
 
     /**

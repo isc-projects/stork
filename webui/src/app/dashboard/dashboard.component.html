@@ -422,7 +422,7 @@
                                             {{ showHAFailureTime(d) }}
                                         </span>
                                     </td>
-                                    <td>{{ showDuration(d.uptime) }}</td>
+                                    <td>{{ d.uptime | duration }}</td>
                                 </tr>
                             </ng-template>
                         </p-table>
@@ -588,7 +588,7 @@
                                         >
                                         </ng-container>
                                     </td>
-                                    <td>{{ showDuration(d)?.uptime ?? 0 }}</td>
+                                    <td>{{ d.uptime | duration }}</td>
                                 </tr>
                             </ng-template>
                         </p-table>

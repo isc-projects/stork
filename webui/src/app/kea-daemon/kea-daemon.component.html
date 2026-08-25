@@ -137,7 +137,7 @@
                                     {{ daemon().extendedVersion }}
                                 </div>
                                 <div class="col-12 sm:col-3 pb-0 font-medium">Uptime</div>
-                                <div class="col-12 sm:col-9">{{ showDuration(daemon().uptime) }}</div>
+                                <div class="col-12 sm:col-9">{{ daemon().uptime | duration }}</div>
                                 <div class="col-12 sm:col-3 pb-0 font-medium">Last Reloaded At</div>
                                 <div class="col-12 sm:col-9">
                                     {{ daemon().reloadedAt | localtime | placeholder: 'never' }}

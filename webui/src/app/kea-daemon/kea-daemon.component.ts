@@ -6,7 +6,7 @@ import { MessageService } from '@openng/optimus-ui/api'
 
 import { ServicesService } from '../backend'
 
-import { durationToString, daemonStatusIconTooltip } from '../utils'
+import { daemonStatusIconTooltip } from '../utils'
 import { KeaDaemon, KeaDaemonDatabase, ModelFile } from '../backend'
 import { ManagedAccessDirective } from '../managed-access.directive'
 import { NgClass } from '@angular/common'
@@ -25,6 +25,7 @@ import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { EventsPanelComponent } from '../events-panel/events-panel.component'
 import { AccessPointsComponent } from '../access-points/access-points.component'
+import { DurationPipe } from '../pipes/duration.pipe'
 
 @Component({
     selector: 'app-kea-daemon',
@@ -50,6 +51,7 @@ import { AccessPointsComponent } from '../access-points/access-points.component'
         EventsPanelComponent,
         AccessPointsComponent,
         PlaceholderPipe,
+        DurationPipe,
     ],
 })
 export class KeaDaemonComponent {
@@ -91,17 +93,6 @@ export class KeaDaemonComponent {
         'libdhcp_stat_cmds.so': 'stat-cmds-statistics-commands-for-supplemental-lease-statistics',
         'libdhcp_subnet_cmds.so': 'subnet-cmds-subnet-commands-to-manage-subnets-and-shared-networks',
         'libdhcp_user_chk.so': 'user-chk-user-check',
-    }
-
-    /**
-     * Converts duration to pretty string.
-     *
-     * @param duration duration value to be converted.
-     *
-     * @returns duration as text
-     */
-    showDuration(duration: number) {
-        return durationToString(duration)
     }
 
     /**

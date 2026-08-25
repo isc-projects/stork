@@ -48,40 +48,104 @@ export function epochToLocal(epochTime) {
 }
 
 /**
- * Return formatted time duration.
+ * Map of Golang-style duration units to human-readable units.
+ */
+const durationUnits: Record<string, string> = {
+    s: 'second',
+    m: 'minute',
+    h: 'hour',
+    d: 'day',
+    ms: 'millisecond',
+    µs: 'microsecond',
+    ns: 'nanosecond',
+}
+
+/**
+ * Formats the duration into a human-readable string.
  *
- * @param duration input duration.
+ * @param value Either a number (seconds) or a string in the format of "1h2m3.4567s".
  * @param short boolean flag indicating if the duration should be output
  *              using short (if true) or long format (if false).
- * @returns Duration in the format of "Y years M months D days H hours
- *            M minutes S seconds or "Y y M m D d H h M min S sec".
+ * @param fractionalDigits Maximum number of fractional digits to display.
+ * @returns formatted string in the format of "1 hour 2 minutes 3.4 seconds"
  */
-export function durationToString(duration: number, short = false) {
-    if (duration > 0) {
-        const d = moment.duration(duration, 'seconds')
-        let txt = ''
-        if (d.years() > 0) {
-            txt += ' ' + d.years() + (short ? ' y' : ' years')
+export function durationToString(value: number | string, short = false, fractionalDigits = 1) {
+    if (value == null) {
+        return value
+    }
+
+    let durationStr: string
+    // If value is a number, convert it to seconds
+    if (typeof value === 'number') {
+        const hours = Math.floor(value / 3600)
+        const minutes = Math.floor((value % 3600) / 60)
+        const seconds = value % 60
+        const parts = []
+
+        if (hours > 0) {
+            parts.push(`${hours}h`)
         }
-        if (d.months() > 0) {
-            txt += ' ' + d.months() + (short ? ' m' : ' months')
+        if (minutes > 0) {
+            parts.push(`${minutes}m`)
         }
-        if (d.days() > 0) {
-            txt += ' ' + d.days() + (short ? ' d' : ' days')
+        if (seconds > 0 || parts.length === 0) {
+            parts.push(`${seconds}s`)
         }
-        if (d.hours() > 0) {
-            txt += ' ' + d.hours() + (short ? ' h' : ' hours')
+        durationStr = parts.join('')
+    } else {
+        durationStr = value
+    }
+
+    const numbers: number[] = []
+    const units: string[] = []
+
+    const digits = []
+    for (let i = 0; i < durationStr.length; i++) {
+        const c = durationStr[i]
+        if ((c >= '0' && c <= '9') || c === '.') {
+            digits.push(c)
+        } else {
+            let unit = c
+            const nextChar = durationStr[i + 1]
+            if (nextChar === 's') {
+                unit += nextChar
+                i++
+            }
+
+            if (digits.length > 0) {
+                numbers.push(parseFloat(digits.join('')))
+                digits.length = 0
+            }
+            units.push(unit)
         }
-        if (d.minutes() > 0) {
-            txt += ' ' + d.minutes() + (short ? ' min' : ' minutes')
-        }
-        if (d.seconds() > 0) {
-            txt += ' ' + d.seconds() + (short ? ' s' : ' seconds')
+    }
+
+    const strings = []
+    for (let i = 0; i < numbers.length; i++) {
+        const number = numbers[i]
+        const unit = units[i]
+
+        if (number === 0) {
+            continue
         }
 
-        return txt.trim()
+        let unitString = unit
+        if (!short) {
+            unitString = durationUnits[unit] || unit
+            if (number !== 1) {
+                unitString += 's'
+            }
+        }
+
+        const numberString = !Number.isInteger(number) ? number.toFixed(fractionalDigits) : number.toString()
+        strings.push(`${numberString} ${unitString}`)
     }
-    return ''
+
+    if (strings.length === 0) {
+        return short ? '0s' : '0 seconds'
+    }
+
+    return strings.join(' ')
 }
 
 /**
