@@ -90,14 +90,14 @@ stages:
 
 # template with alpine image
 .image_alpine: &image_alpine
-  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-alpine:19
+  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-alpine:20
   variables:
     # CGO is disabled by default in official images from Go 1.23.
     CGO_ENABLED: 1
 
 # template with redhat image
 .image_redhat: &image_redhat
-  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-redhat-ubi:19
+  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-redhat-ubi:20
 
 # template with debian image
 .image_debian: &image_debian
