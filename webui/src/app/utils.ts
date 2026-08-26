@@ -55,6 +55,7 @@ const durationUnits: Record<string, string> = {
     m: 'minute',
     h: 'hour',
     d: 'day',
+    y: 'year',
     ms: 'millisecond',
     µs: 'microsecond',
     ns: 'nanosecond',
@@ -77,15 +78,20 @@ export function durationToString(value: number | string, short = false, fraction
     let durationStr: string
     // If value is a number, convert it to seconds
     if (typeof value === 'number') {
-        const days = Math.floor(value / 86400)
-        value %= 86400
-        const hours = Math.floor(value / 3600)
-        value %= 3600
+        const years = Math.floor(value / (365 * 24 * 60 * 60))
+        value %= 365 * 24 * 60 * 60
+        const days = Math.floor(value / (24 * 60 * 60))
+        value %= 24 * 60 * 60
+        const hours = Math.floor(value / (60 * 60))
+        value %= 60 * 60
         const minutes = Math.floor(value / 60)
         value %= 60
         const seconds = value
         const parts = []
 
+        if (years > 0) {
+            parts.push(`${years}y`)
+        }
         if (days > 0) {
             parts.push(`${days}d`)
         }
