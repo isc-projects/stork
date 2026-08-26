@@ -86,6 +86,9 @@ export function durationToString(value: number | string, short = false, fraction
         const seconds = value
         const parts = []
 
+        if (days > 0) {
+            parts.push(`${days}d`)
+        }
         if (hours > 0) {
             parts.push(`${hours}h`)
         }

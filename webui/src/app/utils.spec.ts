@@ -211,6 +211,7 @@ describe('utils', () => {
         expect(durationToString(243.243, false, 0)).toBe('4 minutes 3 seconds')
         expect(durationToString(100)).toBe('1 minute 40 seconds')
         expect(durationToString(3723)).toBe('1 hour 2 minutes 3 seconds')
+        expect(durationToString(93784)).toBe('1 day 2 hours 3 minutes 4 seconds')
     })
 
     it('should not crash if the value is invalid', () => {
