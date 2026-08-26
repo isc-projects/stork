@@ -14,7 +14,6 @@ variables:
   STORK_DATABASE_MAINTENANCE_NAME: "postgres"
   STORK_DATABASE_MAINTENANCE_USER_NAME: "storktest"
   STORK_DATABASE_MAINTENANCE_PASSWORD: "storktest"
-  GOPATH: $CI_PROJECT_DIR/.go
 
   # this is used to build docker images of stork (using DIND)
   DOCKER_DRIVER: overlay2
@@ -36,6 +35,9 @@ variables:
 
   # Download Python packages to cached location.
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/tools/python/pip_cache"
+
+  GOPATH: $CI_PROJECT_DIR/.go
+  NPM_CACHE_DIR: $CI_PROJECT_DIR/.npm
 
   # Only pull the cache by default in all the jobs.
   CACHE_POLICY: pull
@@ -82,6 +84,7 @@ stages:
     - amd64
   before_script:
     - mkdir -p .go
+    - export PATH="$PATH:$GOPATH/bin"
 
 # template setting appropriate tags for ARM (aarch64) architecture jobs
 .job_template_arm: &job_template_arm
@@ -92,6 +95,7 @@ stages:
     - aarch64
   before_script:
     - mkdir -p .go
+    - export PATH="$PATH:$GOPATH/bin"
 
 # template with alpine image
 .image_alpine: &image_alpine
@@ -322,8 +326,6 @@ rebuild_cache_amd64:
     - *python_cache
     - *nodejs_cache
     - *playwright_browsers_cache
-  before_script:
-    - pwd
   script:
     - rake prepare
     - rake prepare:dev
