@@ -77,9 +77,13 @@ export function durationToString(value: number | string, short = false, fraction
     let durationStr: string
     // If value is a number, convert it to seconds
     if (typeof value === 'number') {
+        const days = Math.floor(value / 86400)
+        value %= 86400
         const hours = Math.floor(value / 3600)
-        const minutes = Math.floor((value % 3600) / 60)
-        const seconds = value % 60
+        value %= 3600
+        const minutes = Math.floor(value / 60)
+        value %= 60
+        const seconds = value
         const parts = []
 
         if (hours > 0) {
@@ -129,16 +133,17 @@ export function durationToString(value: number | string, short = false, fraction
             continue
         }
 
-        let unitString = unit
-        if (!short) {
-            unitString = durationUnits[unit] || unit
-            if (number !== 1) {
+        const numberString = !Number.isInteger(number) ? number.toFixed(fractionalDigits) : number.toString()
+
+        if (short) {
+            strings.push(`${numberString}${unit}`)
+        } else {
+            let unitString = durationUnits[unit] || unit
+            if (!!durationUnits[unit] && number !== 1) {
                 unitString += 's'
             }
+            strings.push(`${numberString} ${unitString}`)
         }
-
-        const numberString = !Number.isInteger(number) ? number.toFixed(fractionalDigits) : number.toString()
-        strings.push(`${numberString} ${unitString}`)
     }
 
     if (strings.length === 0) {

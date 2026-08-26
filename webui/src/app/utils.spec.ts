@@ -16,6 +16,7 @@ import {
     unhyphen,
     getVersionRange,
     deepEqual,
+    durationToString,
 } from './utils'
 
 describe('utils', () => {
@@ -161,6 +162,60 @@ describe('utils', () => {
         expect(stringToHex('MY OH MY', '-')).toBe('4d-59-20-4f-48-20-4d-59')
         // Empty string.
         expect(stringToHex('')).toBe('')
+    })
+
+    it('should format duration correctly', () => {
+        expect(durationToString(null)).toBe(null)
+        expect(durationToString(undefined)).toBe(undefined)
+        expect(durationToString('7d6h5m4s3ms2µs1ns')).toBe(
+            '7 days 6 hours 5 minutes 4 seconds 3 milliseconds 2 microseconds 1 nanosecond'
+        )
+        expect(durationToString('1h2m3.4567s')).toBe('1 hour 2 minutes 3.5 seconds')
+        expect(durationToString('1h2m3.1s')).toBe('1 hour 2 minutes 3.1 seconds')
+        expect(durationToString('0s')).toBe('0 seconds')
+        expect(durationToString('1m')).toBe('1 minute')
+        expect(durationToString('2h3m4s')).toBe('2 hours 3 minutes 4 seconds')
+        expect(durationToString('1h2m3.4567s')).toBe('1 hour 2 minutes 3.5 seconds')
+        expect(durationToString('3d')).toBe('3 days')
+        expect(durationToString('0d')).toBe('0 seconds')
+        expect(durationToString('')).toBe('0 seconds')
+        expect(durationToString('1w')).toBe('1 w')
+        expect(durationToString('42ms')).toBe('42 milliseconds')
+        expect(durationToString('42µs')).toBe('42 microseconds')
+        expect(durationToString('42ns')).toBe('42 nanoseconds')
+    })
+
+    it('should format short duration correctly', () => {
+        expect(durationToString(null)).toBe(null)
+        expect(durationToString(undefined)).toBe(undefined)
+        expect(durationToString('7d6h5m4s3ms2µs1ns', true)).toBe('7d 6h 5m 4s 3ms 2µs 1ns')
+        expect(durationToString('1h2m3.4567s', true)).toBe('1h 2m 3.5s')
+        expect(durationToString('1h2m3.1s', true)).toBe('1h 2m 3.1s')
+        expect(durationToString('0s', true)).toBe('0s')
+        expect(durationToString('1m', true)).toBe('1m')
+        expect(durationToString('2h3m4s', true)).toBe('2h 3m 4s')
+        expect(durationToString('1h2m3.4567s', true)).toBe('1h 2m 3.5s')
+        expect(durationToString('3d', true)).toBe('3d')
+        expect(durationToString('0d', true)).toBe('0s')
+        expect(durationToString('', true)).toBe('0s')
+        expect(durationToString('1w', true)).toBe('1w')
+        expect(durationToString('42ms', true)).toBe('42ms')
+        expect(durationToString('42µs', true)).toBe('42µs')
+        expect(durationToString('42ns', true)).toBe('42ns')
+    })
+
+    it('should format duration specified as a number correctly', () => {
+        expect(durationToString(42)).toBe('42 seconds')
+        expect(durationToString(42.1)).toBe('42.1 seconds')
+        expect(durationToString(67.123, false, 2)).toBe('1 minute 7.12 seconds')
+        expect(durationToString(243.243, false, 0)).toBe('4 minutes 3 seconds')
+        expect(durationToString(100)).toBe('1 minute 40 seconds')
+        expect(durationToString(3723)).toBe('1 hour 2 minutes 3 seconds')
+    })
+
+    it('should not crash if the value is invalid', () => {
+        expect(durationToString('invalid')).toBe('0 seconds')
+        expect(durationToString('0')).toBe('0 seconds')
     })
 
     it('retrieves the error message properly', () => {

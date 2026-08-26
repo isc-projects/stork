@@ -628,7 +628,7 @@ describe('HostTabComponent', () => {
         }
         summary = component.getLeaseSummary(leaseInfo)
         expect(summary).toMatch(
-            /Found 1 lease for this reservation that expired at \d{4}-\d{2}-\d{2}\s\d{2}\:\d{2}\:\d{2} \(\d{2} s ago\)/
+            /Found 1 lease for this reservation that expired at \d{4}-\d{2}-\d{2}\s\d{2}\:\d{2}\:\d{2} \(\d{2}s ago\)/
         )
 
         // Two expired leases.
