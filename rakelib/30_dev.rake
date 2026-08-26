@@ -767,10 +767,19 @@ namespace :lint do
     desc 'Check backend source code
         FIX - fix linting issues - default: false'
     task :backend => [GOLANGCILINT, "gen:backend:mocks"] + go_codebase do
+        opts = []
         # #2466: limit analysis to new code. This lets us tighten linter settings
         # without needing to massively change the codebase all at once.
-        mr_target_branch = ENV["CI_MERGE_REQUEST_TARGET_BRANCH_NAME"] || "master"
-        opts = [ "--new-from-merge-base", mr_target_branch ]
+        # Set "ALL=1" or "ALL=true" to lint all of the code.
+        if ENV["ALL"] != "1" && ENV["ALL"] != "true"
+            local_master_sha = sh "git", "show-ref", "-s", "refs/heads/master"
+            origin_master_sha = sh "git", "show-ref", "-s", "refs/remotes/origin/master"
+            if local_master_sha != origin_master_sha
+                puts "WARNING: Your local `master` branch is not the same as the `master` branch at the `origin` remote. golangci-lint may find lint warnings in unexpected code. Pull your `master` branch up to date by running `git fetch origin master:master` (updates the ref without changing your working tree)."
+            end
+            mr_target_branch = ENV["CI_MERGE_REQUEST_TARGET_BRANCH_NAME"] || "master"
+            opts += [ "--new-from-merge-base", mr_target_branch ]
+        end
         if ENV["FIX"] == "true"
             opts += ["--fix"]
         end
