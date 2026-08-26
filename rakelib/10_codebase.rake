@@ -400,7 +400,7 @@ CLEAN.append open_api_generator_webui_dir
 
 NODE_MODULES = "webui/node_modules"
 file NODE_MODULES => [CLANGPLUSPLUS, NPM, "webui/package.json", "webui/package-lock.json"] do
-    ci_opts = []
+    ci_opts = ["--verbose"]
     if ENV["CI"] == "true"
         ci_opts += ["--no-audit", "--no-progress"]
     end
