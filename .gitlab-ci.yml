@@ -117,7 +117,7 @@ stages:
 .golang_cache_paths: &golang_cache_paths
   paths:
     - tools/golang
-    - .go/pkg/mod/
+    - .go
   policy: $CACHE_POLICY
 
 .python_cache_paths: &python_cache_paths
@@ -127,7 +127,7 @@ stages:
 
 .nodejs_cache_paths: &nodejs_cache_paths
   paths:
-    - tools/nodejs
+    - .npm
   policy: $CACHE_POLICY
 
 # For all below cache templates, the default cache key is using MR branch name as suffix.
