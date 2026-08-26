@@ -417,7 +417,7 @@
                     <td>{{ zoneTransfer.zoneName | unroot }}</td>
                     <td>{{ zoneTransfer.viewName | placeholder: 'N/A' }}</td>
                     <td>{{ zoneTransfer.serial | placeholder: 'N/A' }}</td>
-                    <td>{{ zoneTransfer.duration ? (zoneTransfer.duration | duration: 3) : 'N/A' }}</td>
+                    <td>{{ zoneTransfer.duration ? (zoneTransfer.duration | duration: false : 3) : 'N/A' }}</td>
                     <td>{{ zoneTransfer.bytesPerSecond | placeholder: 'N/A' | humanCount: 'B/s' }}</td>
                     <td>
                         <div
