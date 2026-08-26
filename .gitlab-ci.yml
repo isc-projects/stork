@@ -112,6 +112,7 @@ stages:
 .golang_cache_paths: &golang_cache_paths
   paths:
     - tools/golang
+    - /root/go/bin
   policy: $CACHE_POLICY
 
 .python_cache_paths: &python_cache_paths
@@ -316,6 +317,8 @@ rebuild_cache_amd64:
     - *python_cache
     - *nodejs_cache
     - *playwright_browsers_cache
+  before_script:
+    - pwd
   script:
     - rake prepare
     - rake prepare:dev
