@@ -14,6 +14,7 @@ variables:
   STORK_DATABASE_MAINTENANCE_NAME: "postgres"
   STORK_DATABASE_MAINTENANCE_USER_NAME: "storktest"
   STORK_DATABASE_MAINTENANCE_PASSWORD: "storktest"
+  GOPATH: $CI_PROJECT_DIR/.go
 
   # this is used to build docker images of stork (using DIND)
   DOCKER_DRIVER: overlay2
@@ -79,6 +80,8 @@ stages:
     - aws
     - runner-manager
     - amd64
+  before_script:
+    - mkdir -p .go
 
 # template setting appropriate tags for ARM (aarch64) architecture jobs
 .job_template_arm: &job_template_arm
@@ -87,6 +90,8 @@ stages:
     - aws
     - runner-manager
     - aarch64
+  before_script:
+    - mkdir -p .go
 
 # template with alpine image
 .image_alpine: &image_alpine
@@ -112,7 +117,7 @@ stages:
 .golang_cache_paths: &golang_cache_paths
   paths:
     - tools/golang
-    - /root/go/bin
+    - .go/pkg/mod/
   policy: $CACHE_POLICY
 
 .python_cache_paths: &python_cache_paths
