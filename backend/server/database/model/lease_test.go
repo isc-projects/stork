@@ -620,6 +620,29 @@ func TestGetLeasesByPageFilteredByText(t *testing.T) {
 	}
 }
 
+// Verify that [GetLeasesByPage] correctly sorts the leases by state when requested to.
+func TestGetLeasesByPageSortedByState(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	daemons, subnets := addTestLeaseDaemons(t, db)
+	_ = testHelperAddMockLeases(t, db, daemons, subnets)
+
+	filters := LeasesByPageFilters{}
+	returned, total, err := GetLeasesByPage(db, 0, 10, filters, "state", SortDirAsc)
+
+	require.NoError(t, err)
+	require.EqualValues(t, total, 6)
+	require.Len(t, returned, 6)
+	for idx, lease := range returned {
+		if idx == 0 {
+			continue
+		}
+		// The previous row's state must be less than or equal to this row's state,
+		// otherwise it isn't sorted.
+		require.LessOrEqual(t, returned[idx-1].State, lease.State)
+	}
+}
+
 // Verify that [GetLeasesByPage] returns ([], 0, nil) when there are no rows.
 func TestGetLeasesByPageReturns0WhenNoRows(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
