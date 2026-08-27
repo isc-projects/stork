@@ -771,7 +771,7 @@ namespace :lint do
         # #2466: limit analysis to new code. This lets us tighten linter settings
         # without needing to massively change the codebase all at once.
         # Set "ALL=1" or "ALL=true" to lint all of the code.
-        if ENV["ALL"] != "1" && ENV["ALL"] != "true"
+        if ENV["ALL"] != "true"
             local_master_sha = sh "git", "show-ref", "-s", "refs/heads/master"
             origin_master_sha = sh "git", "show-ref", "-s", "refs/remotes/origin/master"
             if local_master_sha != origin_master_sha
