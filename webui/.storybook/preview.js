@@ -1,6 +1,6 @@
 import { applicationConfig, moduleMetadata } from '@storybook/angular'
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async'
-import { providePrimeNG } from '@openng/optimus-ui/config'
+import { provideOptimus } from '@openng/optimus-ui/config'
 import { ToastModule } from '@openng/optimus-ui/toast'
 import AuraBluePreset from '../src/app/app.config'
 import { withThemeByClassName } from '@storybook/addon-themes'
@@ -31,14 +31,14 @@ const preview = {
         applicationConfig({
             providers: [
                 provideAnimationsAsync(),
-                providePrimeNG({
+                provideOptimus({
                     theme: {
                         preset: AuraBluePreset,
                         options: {
                             darkModeSelector: '.dark',
                             cssLayer: {
-                                name: 'primeng',
-                                order: 'low, primeng, high',
+                                name: 'optimus',
+                                order: 'low, optimus, high',
                             },
                         },
                     },
