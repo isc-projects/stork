@@ -55,7 +55,7 @@ export class ConfigMigrationTableComponent {
     @Output() cancelMigration = new EventEmitter<number>()
 
     /**
-     * PrimeNG table instance.
+     * OptimusUI table instance.
      */
     @ViewChild('configMigrationTable') table: Table
 

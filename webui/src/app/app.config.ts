@@ -29,10 +29,10 @@ const AuraBluePreset = definePreset(Aura, {
             950: '{blue.950}',
         },
         colorScheme: {
-            // Adding custom 'inverted' color scheme which mimics old PrimeNG 'surface' color scheme,
+            // Adding custom 'inverted' color scheme which mimics old PrimeNG/OptimusUI 'surface' color scheme,
             // which for light scheme was changing from white to dark colors, and for
             // dark scheme it was changing from dark colors to white.
-            // In new PrimeNG (v18 and following), the 'surface' color scheme behaves similarly for both light and dark mode,
+            // In new PrimeNG/OptimusUI (v18 and following), the 'surface' color scheme behaves similarly for both light and dark mode,
             // i.e. it changes from white to darker colors.
             dark: {
                 inverted: {

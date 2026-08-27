@@ -96,7 +96,7 @@ export class VersionStatusComponent implements OnInit, OnDestroy {
     feedbackMessages: string[] = []
 
     /**
-     * Holds PrimeNG Message value for the block message.
+     * Holds OptimusUI Message value for the block message.
      */
     messages: ToastMessageOptions[] | undefined
 

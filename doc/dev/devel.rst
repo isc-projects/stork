@@ -780,7 +780,7 @@ The declaration of the ``moduleMetadata`` decorator is the key part of the file.
 It contains all related modules, components, and services. It should have similar
 content to the dictionary passed to the ``TestBed.configureTestingModule`` in a
 ``.spec.ts`` file.
-The ``imports`` list should contain all used PrimeNG modules (including these
+The ``imports`` list should contain all used OptimusUI modules (including these
 from the sub-components) and Angular modules. Unlike in unit tests, you can
 use the standard Angular modules instead of the testing modules. Especially:
 

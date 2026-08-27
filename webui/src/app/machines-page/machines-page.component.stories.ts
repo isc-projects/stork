@@ -895,7 +895,7 @@ export const TestUnauthorizedShown: Story = {
     parameters: ListMachines.parameters,
     play: async ({ canvas }) => {
         // Arrange
-        const selectButtonGroup = await canvas.findByRole('group') // PrimeNG p-selectButton has role=group
+        const selectButtonGroup = await canvas.findByRole('group') // OptimusUI p-selectButton has role=group
         const clearFiltersBtn = await canvas.findByRole('button', { name: 'Clear' })
 
         // Act
@@ -929,7 +929,7 @@ export const TestUnauthorizedShown: Story = {
         await userEvent.click(menuButtons[0])
         await canvas.findByRole('menu')
         await expect(await canvas.findAllByRole('menuitem')).toHaveLength(2)
-        // PrimeNG menuitem role is a <LI> element, so we determine its disabled/enabled state by aria-disabled attribute.
+        // OptimusUI menuitem role is a <LI> element, so we determine its disabled/enabled state by aria-disabled attribute.
         await expect(await canvas.findByRole('menuitem', { name: 'Authorize' })).not.toHaveAttribute(
             'aria-disabled',
             'true'
@@ -950,10 +950,10 @@ export const TestAuthorizedShown: Story = {
         // Arrange
         const canvas = within(canvasElement)
         const body = within(canvasElement.parentElement)
-        const selectButtonGroup = await canvas.findByRole('group') // PrimeNG p-selectButton has role=group
+        const selectButtonGroup = await canvas.findByRole('group') // OptimusUI p-selectButton has role=group
         const authorizedButton = await within(selectButtonGroup).findByText('Authorized')
         const clearFiltersBtn = await canvas.findByRole('button', { name: 'Clear' })
-        // Configure delay between consecutive user events to be more human-like and to give more time for PrimeNG animations when automatically testing.
+        // Configure delay between consecutive user events to be more human-like and to give more time for animations when automatically testing.
         const user = userEvent.setup({ delay: 50 })
 
         // Act
@@ -983,7 +983,7 @@ export const TestAuthorizedShown: Story = {
         await user.click(menuButtons[0].parentElement)
         await waitFor(() => body.findByRole('menu'))
         await expect(await canvas.findAllByRole('menuitem')).toHaveLength(3)
-        // PrimeNG menuitem role is a <LI> element, so we determine its disabled/enabled state by aria-disabled attribute.
+        // OptimusUI menuitem role is a <LI> element, so we determine its disabled/enabled state by aria-disabled attribute.
         await expect(
             await canvas.findByRole('menuitem', { name: 'Refresh machine state information' })
         ).not.toHaveAttribute('aria-disabled', 'true')

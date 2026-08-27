@@ -25,7 +25,7 @@ import { catchError, concatMap, share } from 'rxjs/operators'
 type SimpleDaemonListItem = SimpleDaemon & { listItemLabel: string }
 
 /**
- * This component provides PrimeNG Autocomplete form element with a list
+ * This component provides OptimusUI Autocomplete form element with a list
  * of all DHCP and DNS daemons known to Stork server.
  * It supports either selecting the daemon from a dropdown list or
  * searching the daemon by name, ID, machines hostname, machines address.

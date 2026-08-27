@@ -171,7 +171,7 @@ export class TriStateCheckboxComponent implements ControlValueAccessor {
     }
 
     /**
-     * Checks if the component is disabled. Apart from checking disabled input flag, it also checks internal PrimeNG
+     * Checks if the component is disabled. Apart from checking disabled input flag, it also checks internal OptimusUI
      * checkbox component p-disabled class.
      */
     isDisabled(): boolean {

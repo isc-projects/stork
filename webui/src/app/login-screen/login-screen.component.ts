@@ -90,7 +90,7 @@ export class LoginScreenComponent implements OnInit {
     welcomeMessage: string = null
 
     /**
-     * Custom style of the PrimeNG FloatLabel component.
+     * Custom style of the OptimusUI FloatLabel component.
      */
     whiteFloatLabel = {
         // Overwrite default FloatLabel color with white to be better visible on blue background.

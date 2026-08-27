@@ -3,13 +3,13 @@ import { FilterMetadata } from '@openng/optimus-ui/api'
 import { SortDir } from './backend'
 
 /**
- * Checks if given PrimeNG table filters contain any non-blank value.
+ * Checks if given OptimusUI table filters contain any non-blank value.
  * Blank/non-blank evaluation is based on the matchMode property of the FilterMetadata interface.
  * For matchMode=='contains' any falsy filter value (e.g. boolean false, empty string, null) is considered blank.
  * It works well with text input filters and checkbox filters in binary mode (true/false only).
  * For other matchModes (usually we use 'equals'), the filter is considered blank only if its value is null.
  * It works well e.g. for checkbox filters in tri-state mode where 'false' value is considered non-blank filter.
- * @param filters PrimeNG table filters object
+ * @param filters OptimusUI table filters object
  * @param continueWhen callable that evaluates to boolean value; when evaluated to true, the filter for given filterKey is considered blank even if it has meaningful value
  * @return true if any non-blank filter was found; false otherwise
  */
@@ -45,8 +45,8 @@ export function hasFilter(
 }
 
 /**
- * Checks if given PrimeNG table has filters that contain any non-blank value.
- * @param table PrimeNG table
+ * Checks if given OptimusUI table has filters that contain any non-blank value.
+ * @param table OptimusUI table
  * @param continueWhen callable that evaluates to boolean value; when evaluated to true, the filter for given filterKey is considered blank even if it has meaningful value
  * @return true if any non-blank filter was found; false otherwise
  */
@@ -63,8 +63,8 @@ export function parseBoolean(val: string): boolean | null {
 }
 
 /**
- * Returns PrimeNG table filters as queryParam object, which may be used for router navigation.
- * @param table PrimeNG table with filters
+ * Returns OptimusUI table filters as queryParam object, which may be used for router navigation.
+ * @param table OptimusUI table with filters
  * @return filters as queryParam object
  */
 export function tableFiltersToQueryParams(table: Table) {
@@ -73,7 +73,7 @@ export function tableFiltersToQueryParams(table: Table) {
 }
 
 /**
- * Function converting PrimeNG table sorting related metadata to REST API
+ * Function converting OptimusUI table sorting related metadata to REST API
  * sorting fields format.
  * @template TSortField type of possible sorting field values
  * @param event table lazy load event

@@ -307,7 +307,7 @@ export class MachinesPageComponent implements OnInit, OnDestroy {
 
     /**
      * Component lifecycle hook called upon initialization.
-     * It configures initial state of PrimeNG Menu tabs and fetches global settings.
+     * It configures initial state of OptimusUI Menu tabs and fetches global settings.
      */
     ngOnInit() {
         this.machineMenuItems = this.machineMenuItemsAuthorized

@@ -169,7 +169,7 @@ export class TabViewComponent<TEntity, TForm extends FormState> implements OnIni
 
     /**
      * Returns a collection of entities for which the tabs are created and displayed.
-     * If PrimeNG table was given as entitiesTable component input, the table data collection is returned; otherwise
+     * If OptimusUI table was given as entitiesTable component input, the table data collection is returned; otherwise
      * entities input array is returned (or undefined is returned in case there is no table and entities input was not set).
      */
     entitiesCollection(): TEntity[] | undefined {
@@ -245,7 +245,7 @@ export class TabViewComponent<TEntity, TForm extends FormState> implements OnIni
     formTabTemplate = contentChild<TemplateRef<any> | undefined>('formTab')
 
     /**
-     * PrimeNG table used as a table of entities, usually displayed in the first tab.
+     * OptimusUI table used as a table of entities, usually displayed in the first tab.
      * It is explicitly provided as component input.
      */
     entitiesTable = input<Table>()
@@ -887,7 +887,7 @@ export class TabViewComponent<TEntity, TForm extends FormState> implements OnIni
     }
 
     /**
-     * Converts queryParamMap to PrimeNG table filters.
+     * Converts queryParamMap to OptimusUI table filters.
      * @param queryParamMap queryParams map to be converted
      * @private
      */
@@ -997,8 +997,8 @@ export class TabViewComponent<TEntity, TForm extends FormState> implements OnIni
     }
 
     /**
-     * Filters PrimeNG table by applying all given filters at once.
-     * @param filters PrimeNG table filters
+     * Filters OptimusUI table by applying all given filters at once.
+     * @param filters OptimusUI table filters
      * @private
      */
     private filterTableUsingMultipleFilters(filters: { [x: string]: FilterMetadata | FilterMetadata[] }): void {

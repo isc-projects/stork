@@ -10,7 +10,7 @@ import { FormsModule } from '@angular/forms'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 
 /**
- * This is a component that is supposed to be used in a Caption template of a PrimeNG table component.
+ * This is a component that is supposed to be used in a Caption template of a OptimusUI table component.
  * It is meant to organize the table filters toolbar and buttons that usually are displayed above the table.
  * Very often it is a 'Refresh List' button or more.
  * The purpose of having this separate component, is to have the same filtering toolbar look and feel
@@ -24,7 +24,7 @@ import { HelpTipComponent } from '../help-tip/help-tip.component'
 })
 export class TableCaptionComponent implements OnInit {
     /**
-     * Input PrimeNG table where this component is to be applied.
+     * Input OptimusUI table where this component is to be applied.
      */
     tableElement = input.required<Table>()
 
@@ -72,7 +72,7 @@ export class TableCaptionComponent implements OnInit {
     buttons = contentChild<TemplateRef<any> | undefined>('buttons', { descendants: false })
 
     /**
-     * Defines the template for the PrimeNG splitButton that should be displayed for narrower viewports instead of all buttons provided in "buttons" template.
+     * Defines the template for the OptimusUI splitButton that should be displayed for narrower viewports instead of all buttons provided in "buttons" template.
      */
     splitButton = contentChild<TemplateRef<any> | undefined>('splitbutton', { descendants: false })
 
@@ -96,7 +96,7 @@ export class TableCaptionComponent implements OnInit {
     protected readonly tableHasFilter = tableHasFilter
 
     /**
-     * Clears the PrimeNG table filtering. As a result, table pagination is also reset.
+     * Clears the OptimusUI table filtering. As a result, table pagination is also reset.
      * It doesn't reset the table sorting, if any was applied.
      */
     clearTableFiltering() {

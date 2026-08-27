@@ -363,7 +363,7 @@ export const TestDisplaySharedNetwork4Minimal: Story = {
         await expect(canvas.getByText('No subnets configured.')).toBeVisible()
         await expect(canvas.getByText('No pools configured.')).toBeVisible()
 
-        // Toggle PrimeNG fieldsets.
+        // Toggle OptimusUI fieldsets.
         const dhcpParamsBtn = await canvas.findByRole('button', { name: 'DHCP Parameters' })
         await userEvent.click(dhcpParamsBtn)
         const dhcpOptionsBtn = await canvas.findByRole('button', { name: /DHCP Options/ })
@@ -432,7 +432,7 @@ export const TestDisplaySharedNetwork6: Story = {
         await expect(imgs).toBeTruthy()
         await expect(imgs.length).toEqual(2)
 
-        // Toggle PrimeNG fieldsets.
+        // Toggle OptimusUI fieldsets.
         const dhcpParamsBtn = await canvas.findByRole('button', { name: 'DHCP Parameters' })
         await userEvent.click(dhcpParamsBtn)
         const dhcpOptionsBtn = await canvas.findByRole('button', { name: /DHCP Options/ })

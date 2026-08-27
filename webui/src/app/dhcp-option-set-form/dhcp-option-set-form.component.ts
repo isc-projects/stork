@@ -67,7 +67,7 @@ export class DhcpOptionSetFormComponent {
         // has changed after it was checked". Marking it as touched
         // guarantees that the touched state won't change during the component
         // redraw. We have no other control over it because it stems from
-        // the primeng implementation.
+        // the OptimusUI implementation.
         this.formArray.markAsTouched()
         this.formArray.removeAt(index)
     }

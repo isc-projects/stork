@@ -337,7 +337,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     /**
      * Get or refresh DNS overview data from the server
-     * @param event PrimeNG TableLazyLoadEvent with metadata about table pagination.
+     * @param event OptimusUI TableLazyLoadEvent with metadata about table pagination.
      */
     refreshDnsOverview(event: TableLazyLoadEvent) {
         this.dnsServiceStatusLoading = true

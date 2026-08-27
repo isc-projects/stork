@@ -79,7 +79,7 @@ export class ZoneViewerComponent implements OnInit {
     private destroyRef = inject(DestroyRef)
 
     /**
-     * Provides direct access to the PrimeNG table component.
+     * Provides direct access to the OptimusUI table component.
      */
     @ViewChild('table') table: Table
 
@@ -184,7 +184,7 @@ export class ZoneViewerComponent implements OnInit {
                 takeUntilDestroyed(this.destroyRef)
             )
             .subscribe((f) => {
-                // f.filterConstraint is passed as a reference to PrimeNG table filter FilterMetadata,
+                // f.filterConstraint is passed as a reference to OptimusUI table filter FilterMetadata,
                 // so it's value must be set according to UI columnFilter value.
                 f.filterConstraint.value = f.value
                 this.table.first = 0

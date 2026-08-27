@@ -203,7 +203,9 @@ export const TestAuthMethodIsStoredInLocalStorage: Story = {
         // Arrange
         const canvas = within(canvasElement)
         const combobox = await canvas.findByRole('combobox')
-        // Configure delay between consecutive user events to be more human-like and to give more time for PrimeNG animations when automatically testing.
+        // Configure delay between consecutive user events to be more
+        // human-like and to give more time for animations when automatically
+        // testing.
         const user = userEvent.setup({ delay: 50 })
 
         // Act

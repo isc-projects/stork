@@ -5,7 +5,7 @@ import { AuthService } from './auth.service'
 export type StorybookCanvas = ReturnType<typeof within>
 
 /**
- * Wraps the component with the PrimeNG toast handler.
+ * Wraps the component with the OptimusUI toast handler.
  * The module metadata decorator of the story must import ToastModule.
  */
 export const toastDecorator = componentWrapperDecorator(

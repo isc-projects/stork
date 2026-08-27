@@ -87,7 +87,7 @@ export class DaemonsPageComponent implements OnInit, OnDestroy {
     private authService = inject(AuthService)
 
     /**
-     * PrimeNG Table with daemons list.
+     * OptimusUI Table with daemons list.
      */
     @ViewChild('table') daemonsTable: Table
 
@@ -150,7 +150,7 @@ export class DaemonsPageComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Clears the PrimeNG table filtering. As a result, table pagination is also reset.
+     * Clears the OptimusUI table filtering. As a result, table pagination is also reset.
      * It doesn't reset the table sorting, if any was applied.
      */
     clearTableFiltering() {
@@ -228,7 +228,7 @@ export class DaemonsPageComponent implements OnInit, OnDestroy {
                 distinctUntilChanged()
             )
             .subscribe((f) => {
-                // f.filterConstraint is passed as a reference to PrimeNG table filter FilterMetadata,
+                // f.filterConstraint is passed as a reference to OptimusUI table filter FilterMetadata,
                 // so it's value must be set according to UI columnFilter value.
                 f.filterConstraint.value = f.value
                 this.router.navigate([], { queryParams: tableFiltersToQueryParams(this.daemonsTable) })
@@ -360,7 +360,7 @@ export class DaemonsPageComponent implements OnInit, OnDestroy {
     protected readonly tableHasFilter = tableHasFilter
 
     /**
-     * Clears single filter of the PrimeNG table.
+     * Clears single filter of the OptimusUI table.
      * @param filterConstraint filter metadata to be cleared
      */
     clearFilter(filterConstraint: any) {

@@ -145,13 +145,13 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
     private dnsService = inject(DNSService)
 
     /**
-     * PrimeNG message service used to display feedback messages in UI.
+     * OptimusUI message service used to display feedback messages in UI.
      * @private
      */
     private messageService = inject(MessageService)
 
     /**
-     * PrimeNG confirmation service used to display confirmation dialog.
+     * OptimusUI confirmation service used to display confirmation dialog.
      * @private
      */
     private confirmationService = inject(ConfirmationService)
@@ -211,7 +211,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
     zonesExpandedRows = {}
 
     /**
-     * PrimeNG table component containing list of all zones.
+     * OptimusUI table component containing list of all zones.
      */
     @ViewChild('zonesTable') zonesTable: Table
 
@@ -428,7 +428,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
      * The properties of this object correspond to queryParam keys.
      * Values of this object describe:
      * - filter type (numeric, enum, string or boolean)
-     * - filter matchMode (contains, equals) which corresponds to PrimeNG table filter metadata
+     * - filter matchMode (contains, equals) which corresponds to OptimusUI table filter metadata
      * - accepted enum values for enum type of filters
      * - array type; when set to true it means that the filter may use more than one value.
      */
@@ -499,7 +499,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
                 distinctUntilChanged()
             )
             .subscribe((f) => {
-                // f.filterConstraint is passed as a reference to PrimeNG table filter FilterMetadata,
+                // f.filterConstraint is passed as a reference to OptimusUI table filter FilterMetadata,
                 // so it's value must be set according to UI columnFilter value.
                 f.filterConstraint.value = f.value
                 this.zone.run(() =>
@@ -711,7 +711,7 @@ export class ZonesPageComponent implements OnInit, OnDestroy {
 
     /**
      * Lazily loads paged zones data from backend.
-     * @param event PrimeNG TableLazyLoadEvent with metadata about table pagination.
+     * @param event OptimusUI TableLazyLoadEvent with metadata about table pagination.
      * @param showLoadingState when set to false, zones table will not show loading state when data is lazily loaded from backend.
      *                         It is useful when zones fetch is in progress and table data is refreshed every polling interval - it
      *                         prevents table UI from flickering.

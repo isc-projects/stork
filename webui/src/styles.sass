@@ -1,7 +1,7 @@
 /* You can add global styles to this file, and also import other style files */
 
 // "low" is lower priority CSS layer.
-// Put here all rules that shouldn't overwrite PrimeNG styling.
+// Put here all rules that shouldn't overwrite OptimusUI styling.
 @layer low
   // Overwrite default browser underlined anchors.
   a
@@ -23,7 +23,7 @@
     color: var(--p-form-field-invalid-placeholder-color)
 
 // "high" is higher priority CSS layer.
-// Put here all rules that overwrite PrimeNG styling.
+// Put here all rules that overwrite OptimusUI styling.
 @layer high
   // When the table header has p-panel or p-toolbar inside, do not add extra horizontal padding,
   // because the internal element has it's own padding.
@@ -33,15 +33,15 @@
       padding-right: 0
 
   // p-panel with .p-panel-icons-hidden class applied has custom toggle show/hide panel button on the left side of the panel,
-  // so hide the default PrimeNG toggle button.
+  // so hide the default OptimusUI toggle button.
   .p-panel-icons-hidden .p-panel-icons
     display: none
 
-  // Apply minimal width to all PrimeNG Fieldset components so that they may shrink for smaller viewports.
+  // Apply minimal width to all OptimusUI Fieldset components so that they may shrink for smaller viewports.
   .p-fieldset
     min-width: 0
 
-    // Apply bold font for custom legend in PrimeNG Fieldset components.
+    // Apply bold font for custom legend in OptimusUI Fieldset components.
     .stork-fieldset-legend-text
       font-weight: var(--p-fieldset-legend-font-weight)
 
@@ -50,8 +50,8 @@
       font-size: 1rem
 
     // Prevent horizontal overflow by enabling scrollbars.
-    // Do not apply this style when there is PrimeNG form input wrapper inside,
-    // because it messes up PrimeNG overlays.
+    // Do not apply this style when there is OptimusUI form input wrapper inside,
+    // because it messes up OptimusUI overlays.
     .p-fieldset-content:not(:has(.p-inputwrapper))
       overflow-x: auto
 
@@ -70,7 +70,7 @@
   button.app-disabled.p-disabled
     pointer-events: auto !important
 
-  // In case PrimeNG input element is an flex item, apply min-width value zero to allow flex shrinking.
+  // In case OptimusUI input element is an flex item, apply min-width value zero to allow flex shrinking.
   .p-inputwrapper > .p-component
     min-width: 0
 
@@ -80,11 +80,11 @@
     max-width: var(--max-form-width)
     width: 100%
 
-    // Propagate full width inside of PrimeNG form components.
+    // Propagate full width inside of OptimusUI form components.
     input, .p-inputwrapper, .p-inputtext, .p-inputnumber
       width: 100%
 
-    // Reapply max-width to PrimeNG wrapper containers that are direct children of components having .max-w-form applied.
+    // Reapply max-width to OptimusUI wrapper containers that are direct children of components having .max-w-form applied.
     & > .p-inputwrapper
       max-width: var(--max-form-width)
 
@@ -92,12 +92,12 @@
   .p-message-icon
     margin-right: 0.5rem
 
-  // Apply by default small vertical margin for PrimeNG Message component.
+  // Apply by default small vertical margin for OptimusUI Message component.
   .p-message
     margin-bottom: 0.5rem
     margin-top: 0.5rem
 
-  // Custom style of PrimeNG message component.
+  // Custom style of OptimusUI message component.
   // When two text spans are injected to the component (first using "text" input; second using <ng-content></ng-content>
   // content projection), make the first span bold to act as a message summary.
   .custom-message
@@ -136,9 +136,9 @@
 
   @media screen and (max-width: 575px)
     :root
-      // Apply smaller padding to PrimeNG Fieldset component for smaller viewports to save horizontal space.
+      // Apply smaller padding to OptimusUI Fieldset component for smaller viewports to save horizontal space.
       --p-fieldset-padding: 0 0.5rem 0.5rem 0.5rem
-      // Apply smaller padding to PrimeNG Dialog to save more vertical space for dialog content.
+      // Apply smaller padding to OptimusUI Dialog to save more vertical space for dialog content.
       --p-dialog-header-padding: 0.75rem
       --p-dialog-content-padding: 0 0.75rem 0.75rem 0.75rem
 
@@ -149,11 +149,11 @@
       padding-right: 0.5rem
       padding-left: 0.5rem
 
-  // For more narrow screens decrease paddings inside of the PrimeNG p-table.
+  // For more narrow screens decrease paddings inside of the OptimusUI p-table.
   // This makes the table more condensed and more readable on smaller screens.
   .p-datatable
     @mixin smaller-table-padding
-      // Override PrimeNG variables.
+      // Override OptimusUI variables.
       --p-datatable-header-padding: 0.375rem 0.5rem
       --p-datatable-footer-padding: 0.375rem 0.5rem
       --p-datatable-header-cell-padding: 0.375rem 0.5rem
@@ -195,19 +195,19 @@
       stroke: #fff
 
   .gray-spinner .p-progressspinner-circle
-    // Overwrite PrimeNG default colorful spinner with gray-colored spinner.
+    // Overwrite OptimusUI default colorful spinner with gray-colored spinner.
     animation-name: p-progressspinner-dash, progress-spinner-color-gray
 
   .white-spinner .p-progressspinner-circle
-    // Overwrite PrimeNG default colorful spinner with white-colored spinner.
+    // Overwrite OptimusUI default colorful spinner with white-colored spinner.
     animation-name: p-progressspinner-dash, progress-spinner-color-white
 
   .p-multiselect-display-chip .p-multiselect-label
-    // There is a bug in calculating this gap in PrimeNG, so provide it here.
+    // There is a bug in calculating this gap in OptimusUI, so provide it here.
     gap: 0.25rem
 
 // No css @layer - global styles, that have the highest priority.
-// These rules overwrite low, primeng and high layers if necessary.
+// These rules overwrite low, OptimusUI and high layers if necessary.
 
 // console-like font style.
 .monospace
@@ -285,7 +285,7 @@ body
 :root
   // Max width of form. Apply max-width to prevent the form from becoming too wide.
   --max-form-width: 35rem
-  // Missing css variables that were used before PrimeNG v18. They differ in the dark mode.
+  // Missing css variables that were used before OptimusUI v18. They differ in the dark mode.
   --surface-ground: var(--p-surface-50)
   --surface-hover: var(--p-surface-100)
   &.dark

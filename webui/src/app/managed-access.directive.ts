@@ -41,8 +41,8 @@ export class ManagedAccessDirective implements AfterViewInit {
     /**
      * Optional input boolean flag which simplifies the directive usage. Defaults to false.
      * When set to true, it means that the component will not be displayed at all in case of lack of privileges.
-     * When set to false (default), it means that the component will be rendered as disabled (if the component is a PrimeNG element),
-     * or warning message will be displayed informing of lack of privileges.
+     * When set to false (default), it means that the component will be rendered as disabled (if the component is an
+     * OptimusUI element), or warning message will be displayed informing of lack of privileges.
      */
     @Input() appHideIfNoAccess: boolean = false
 
@@ -68,7 +68,7 @@ export class ManagedAccessDirective implements AfterViewInit {
                 return
             }
 
-            // If this is a PrimeNG component...
+            // If this is a OptimusUI component...
             const pComponent =
                 this.htmlElement.querySelector('.p-component') ||
                 this.elementRef.nativeElement.classList.contains('p-component')

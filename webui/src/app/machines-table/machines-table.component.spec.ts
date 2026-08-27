@@ -360,7 +360,7 @@ describe('MachinesTableComponent', () => {
         selectAllCheckbox.nativeElement.dispatchEvent(new Event('change'))
         await fixture.whenStable()
         fixture.detectChanges()
-        fixture.detectChanges() // PrimeNG TableHeaderCheckbox has complicated chain of change detection, so call detectChanges additionally.
+        fixture.detectChanges() // OptimusUI TableHeaderCheckbox has complicated chain of change detection, so call detectChanges additionally.
 
         const authorizeBtnDe = fixture.debugElement.query(By.css('#authorize-selected-button button'))
         expect(authorizeBtnDe).toBeTruthy()

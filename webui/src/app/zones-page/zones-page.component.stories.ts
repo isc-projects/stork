@@ -1034,12 +1034,12 @@ export const TestZonesFiltering: Story = {
         // Arrange
         const canvas = within(canvasElement)
         const body = within(canvasElement.parentElement)
-        // Configure delay between consecutive user events to be more human-like and to give more time for PrimeNG animations when automatically testing.
+        // Configure delay between consecutive user events to be more human-like and to give more time for animations when automatically testing.
         const user = userEvent.setup({ delay: 50 })
         const clearFiltersBtn = await canvas.findByRole('button', { name: 'Clear' })
         const table = await canvas.findByRole('table')
         let elementID = canvas.getByText('Daemon Name').getAttribute('for')
-        const comboboxes = canvas.getAllByRole('combobox') // PrimeNG p-select component has combobox role.
+        const comboboxes = canvas.getAllByRole('combobox') // OptimusUI p-select component has combobox role.
         let selectSpan = comboboxes.find((el) => el.getAttribute('id') == elementID)
         await expect(selectSpan).toBeTruthy()
 
@@ -1350,7 +1350,7 @@ export const TestFiltersToolbar: Story = {
 
         const refreshButton = await canvas.findByRole('button', { name: 'Refresh List' })
         const internalButtonElements = await within(refreshButton.parentElement).findAllByRole('button')
-        await expect(internalButtonElements).toHaveLength(1) // This verifies that normal buttons are displayed instead of PrimeNG splitButton. SplitButton would have two or more buttons inside.
+        await expect(internalButtonElements).toHaveLength(1) // This verifies that normal buttons are displayed instead of OptimusUI splitButton. SplitButton would have two or more buttons inside.
 
         const fetchButton = await canvas.findByRole('button', { name: 'Fetch Zones' })
         await expect(fetchButton).toBeEnabled()
@@ -1407,7 +1407,7 @@ export const TestFiltersToolbarResponsive: Story = {
         const dropdownOptions = await body.findAllByRole('menuitem')
         await expect(dropdownOptions).toHaveLength(2)
 
-        // PrimeNG menuitem role is a <LI> element, so we determine its disabled/enabled state by aria-disabled attribute.
+        // OptimusUI menuitem role is a <LI> element, so we determine its disabled/enabled state by aria-disabled attribute.
         await expect(dropdownOptions[0]).not.toHaveAttribute('aria-disabled', 'true')
         await expect(dropdownOptions[1]).toHaveAttribute('aria-disabled', 'true')
     },

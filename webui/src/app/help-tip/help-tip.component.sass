@@ -8,14 +8,14 @@
     text-align: left
 
   ::ng-deep .help-tip-inserted.p-popover
-    // help-tip component is using PrimeNG p-popover.
+    // help-tip component is using OptimusUI p-popover.
     // Sometimes, for specific viewport sizes, the popover is displayed above the target, instead of below the target.
-    // In this case PrimeNG adds class .p-popover-flipped to the panel and custom margin-top is applied, which
+    // In this case OptimusUI adds class .p-popover-flipped to the panel and custom margin-top is applied, which
     // in our case makes the header of the help-tip invisible. Overwrite this rule below to make it always look ok.
     &.p-popover-flipped
       margin-top: 10px
 
-    // PrimeNG p-popover displays by default chevron pointing to the target.
+    // OptimusUI p-popover displays by default chevron pointing to the target.
     // In many cases the chevron does not point correctly (e.g. due to small viewport or
     // the target being close to viewport edge).
     // To prevent this, do not display the chevron in the help-tip component.

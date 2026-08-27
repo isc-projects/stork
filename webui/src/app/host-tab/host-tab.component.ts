@@ -96,7 +96,7 @@ export class HostTabComponent {
     private dhcpApi = inject(DHCPService)
 
     /**
-     * PrimeNG confirmation service
+     * OptimusUI confirmation service
      * @private
      */
     private confirmService = inject(ConfirmationService)

@@ -22,9 +22,9 @@ export function getTooltip(status: StatusEnum) {
 }
 
 /**
- * Returns PrimeNG severity for given ZoneInventoryState status.
+ * Returns OptimusUI severity for given ZoneInventoryState status.
  * @param status ZoneInventoryState status
- * @return PrimeNG severity
+ * @return OptimusUI severity
  */
 export function getSeverity(status: StatusEnum) {
     switch (status) {

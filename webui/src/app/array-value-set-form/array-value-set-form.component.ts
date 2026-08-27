@@ -26,7 +26,7 @@ export class ArrayValueSetFormComponent<T> {
     suggestions: string[] = []
 
     /**
-     * Prepares a list of suggested options to be displayed in PrimeNG AutoComplete input component.
+     * Prepares a list of suggested options to be displayed in OptimusUI AutoComplete input component.
      * @param event AutoComplete event received
      */
     prepareSuggestions(event: AutoCompleteCompleteEvent) {

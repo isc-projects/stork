@@ -331,7 +331,7 @@ describe('MachinesPageComponent', () => {
         fixture.detectChanges()
 
         // Check the dump button.
-        // The menu items don't render the IDs in PrimeNG >= 16.
+        // The menu items don't render the IDs in PrimeNG/OptimusUI >= 16.
         const dumpButton = fixture.debugElement.query(By.css('#dump-single-machine a'))
         expect(dumpButton).not.toBeNull()
 

@@ -87,7 +87,9 @@ export const TestSuperAdminPrivileges: Story = {
         const toggleValue = await canvas.findByLabelText('toggle-value')
         await expect(toggleValue).toHaveValue('false')
 
-        // Configure delay between consecutive user events to be more human-like and to give more time for PrimeNG animations when automatically testing.
+        // Configure delay between consecutive user events to be more
+        // human-like and to give more time for animations when automatically
+        // testing.
         const user = userEvent.setup({ delay: 50 })
 
         // Act
@@ -129,7 +131,9 @@ export const TestAdminPrivileges: Story = {
         const toggleValue = await canvas.findByLabelText('toggle-value')
         await expect(toggleValue).toHaveValue('false')
 
-        // Configure delay between consecutive user events to be more human-like and to give more time for PrimeNG animations when automatically testing.
+        // Configure delay between consecutive user events to be more
+        // human-like and to give more time for animations when automatically
+        // testing.
         const user = userEvent.setup({ delay: 50 })
 
         // Act
@@ -173,7 +177,9 @@ export const TestReadOnlyPrivileges: Story = {
         const toggleValue = await canvas.findByLabelText('toggle-value')
         await expect(toggleValue).toHaveValue('false')
 
-        // Configure delay between consecutive user events to be more human-like and to give more time for PrimeNG animations when automatically testing.
+        // Configure delay between consecutive user events to be more
+        // human-like and to give more time for animations when automatically
+        // testing.
         const user = userEvent.setup({ delay: 50 })
 
         // Act

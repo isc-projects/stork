@@ -4,8 +4,8 @@ import { Paginator } from '@openng/optimus-ui/paginator'
 import { InputText } from '@openng/optimus-ui/inputtext'
 
 /**
- * Typing for page changed event of PrimeNG navigation.
- * PrimeNG doesn't contain specific type, but returns any.
+ * Typing for page changed event of OptimusUI navigation.
+ * OptimusUI doesn't contain specific type, but returns any.
  */
 interface PageChangedEvent {
     /** Index of first record */
@@ -263,7 +263,7 @@ export class JsonTreeComponent {
      * Valid only for complex type of @_value (object or array). Otherwise 0.
      *
      * This variable is accessible directly (without property) due recommendation
-     * of PrimeNG pagination authors.
+     * of OptimusUI pagination authors.
      */
     totalChildrenCount = 0
 
@@ -293,7 +293,7 @@ export class JsonTreeComponent {
     }
 
     /**
-     * Handle change page event of PrimeNG paginator.
+     * Handle change page event of OptimusUI paginator.
      * It is used for paginate subnodes.
      * @param ev PageChangedEvent
      */
@@ -302,7 +302,7 @@ export class JsonTreeComponent {
     }
 
     /**
-     * Handle change page of number input (extra addon to PrimeNG paginator).
+     * Handle change page of number input (extra addon to OptimusUI paginator).
      * @page parameter may be raw user input then it needs to be parse.
      * This handler sets loading state of subnode elements and calculate
      * child limits to display.
@@ -310,7 +310,7 @@ export class JsonTreeComponent {
      * @param page number Requested page to display
      */
     onEnterJumpToPage(page: number) {
-        // "Rows" is word used by PrimeNG.
+        // "Rows" is word used by OptimusUI.
         const rows = this._childStep
         const childCount = this.totalChildrenCount
 

@@ -43,7 +43,7 @@ export class DhcpClientClassSetFormComponent implements OnInit {
     sortedClientClasses: SelectableClientClass[] = []
 
     /**
-     * A list of classes to be displayed as suggested options in PrimeNG AutoComplete input component.
+     * A list of classes to be displayed as suggested options in OptimusUI AutoComplete input component.
      */
     classesSuggestions: any[] | undefined
 
@@ -79,7 +79,7 @@ export class DhcpClientClassSetFormComponent implements OnInit {
     }
 
     /**
-     * Prepares a list of classes to be displayed as suggested options in PrimeNG AutoComplete input component.
+     * Prepares a list of classes to be displayed as suggested options in OptimusUI AutoComplete input component.
      * @param event AutoComplete event received
      */
     prepareClasses(event: AutoCompleteCompleteEvent) {

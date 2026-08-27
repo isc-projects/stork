@@ -378,7 +378,7 @@ describe('TabViewTestComponent', () => {
         expect(component.openTabs.length).toEqual(2)
 
         // Check displayed tab content.
-        const activePanel = fixture.debugElement.query(By.css('.p-tabpanel-active')) // PrimeNG selector used!! might change in the future!
+        const activePanel = fixture.debugElement.query(By.css('.p-tabpanel-active')) // OptimusUI selector used!! might change in the future!
         const id = activePanel.query(By.css('.entity-id'))
         expect(id).toBeTruthy()
         expect(id.nativeElement.innerText).toEqual('3')
@@ -388,7 +388,7 @@ describe('TabViewTestComponent', () => {
         expect(subnet.nativeElement.innerText).toEqual('10.0.0.0/32')
 
         // Check active tab title.
-        const title = fixture.debugElement.query(By.css('.p-tab-active')) // PrimeNG selector used!! might change in the future!
+        const title = fixture.debugElement.query(By.css('.p-tab-active')) // OptimusUI selector used!! might change in the future!
         expect(title).toBeTruthy()
         expect(title.nativeElement.innerText).toContain('10.0.0.0/32')
 
@@ -402,7 +402,7 @@ describe('TabViewTestComponent', () => {
         expect(updatedSubnet.nativeElement.innerText).toEqual('10.0.0.0/31')
 
         // Check if active tab title was updated.
-        const updatedTitle = fixture.debugElement.query(By.css('.p-tab-active')) // PrimeNG selector used!! might change in the future!
+        const updatedTitle = fixture.debugElement.query(By.css('.p-tab-active')) // OptimusUI selector used!! might change in the future!
         expect(updatedTitle).toBeTruthy()
         expect(updatedTitle.nativeElement.innerText).toContain('10.0.0.0/31')
 
@@ -432,7 +432,7 @@ describe('TabViewTestComponent', () => {
         expect(component.openTabs.length).toEqual(2)
 
         // Check displayed tab content.
-        const activePanel = fixture.debugElement.query(By.css('.p-tabpanel-active')) // PrimeNG selector used!! might change in the future!
+        const activePanel = fixture.debugElement.query(By.css('.p-tabpanel-active')) // OptimusUI selector used!! might change in the future!
         const id = activePanel.query(By.css('.entity-id'))
         expect(id).toBeTruthy()
         expect(id.nativeElement.innerText).toEqual('1')
@@ -442,7 +442,7 @@ describe('TabViewTestComponent', () => {
         expect(subnet.nativeElement.innerText).toEqual('1.0.0.0/32')
 
         // Check active tab title.
-        const title = fixture.debugElement.query(By.css('.p-tab-active')) // PrimeNG selector used!! might change in the future!
+        const title = fixture.debugElement.query(By.css('.p-tab-active')) // OptimusUI selector used!! might change in the future!
         expect(title).toBeTruthy()
         expect(title.nativeElement.innerText).toContain('1.0.0.0/32')
 
@@ -451,7 +451,7 @@ describe('TabViewTestComponent', () => {
         fixture.detectChanges()
 
         // Check if active tab title was updated.
-        const updatedTitle = fixture.debugElement.query(By.css('.p-tab-active')) // PrimeNG selector used!! might change in the future!
+        const updatedTitle = fixture.debugElement.query(By.css('.p-tab-active')) // OptimusUI selector used!! might change in the future!
         expect(updatedTitle).toBeTruthy()
         expect(updatedTitle.nativeElement.innerText).toContain('1.2.0.0/32')
 
@@ -485,7 +485,7 @@ describe('TabViewTestComponent', () => {
         expect(component.openTabs.length).toEqual(2)
 
         // Check displayed tab content.
-        const activePanel = fixture.debugElement.query(By.css('.p-tabpanel-active')) // PrimeNG selector used!! might change in the future!
+        const activePanel = fixture.debugElement.query(By.css('.p-tabpanel-active')) // OptimusUI selector used!! might change in the future!
         const id = activePanel.query(By.css('.entity-id'))
         expect(id).toBeTruthy()
         expect(id.nativeElement.innerText).toEqual('1')
@@ -495,7 +495,7 @@ describe('TabViewTestComponent', () => {
         expect(subnet.nativeElement.innerText).toEqual('1.0.0.0/32')
 
         // Check active tab title.
-        const title = fixture.debugElement.query(By.css('.p-tab-active')) // PrimeNG selector used!! might change in the future!
+        const title = fixture.debugElement.query(By.css('.p-tab-active')) // OptimusUI selector used!! might change in the future!
         expect(title).toBeTruthy()
         expect(title.nativeElement.innerText).toContain('Title 1.0.0.0/32')
 
@@ -504,7 +504,7 @@ describe('TabViewTestComponent', () => {
         fixture.detectChanges()
 
         // Check if active tab title was updated.
-        const updatedTitle = fixture.debugElement.query(By.css('.p-tab-active')) // PrimeNG selector used!! might change in the future!
+        const updatedTitle = fixture.debugElement.query(By.css('.p-tab-active')) // OptimusUI selector used!! might change in the future!
         expect(updatedTitle).toBeTruthy()
         expect(updatedTitle.nativeElement.innerText).withContext('').toContain('1.2.0.0/32')
 

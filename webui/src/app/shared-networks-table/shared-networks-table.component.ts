@@ -66,7 +66,7 @@ export class SharedNetworksTableComponent implements OnInit, OnDestroy {
     private messageService = inject(MessageService)
 
     /**
-     * PrimeNG table instance.
+     * OptimusUI table instance.
      */
     @ViewChild('networksTable') table: Table
 
@@ -210,7 +210,7 @@ export class SharedNetworksTableComponent implements OnInit, OnDestroy {
                     distinctUntilChanged()
                 )
                 .subscribe((f) => {
-                    // f.filterConstraint is passed as a reference to PrimeNG table filter FilterMetadata,
+                    // f.filterConstraint is passed as a reference to OptimusUI table filter FilterMetadata,
                     // so it's value must be set according to UI columnFilter value.
                     f.filterConstraint.value = f.value
                     this.router.navigate([], { queryParams: tableFiltersToQueryParams(this.table) })
@@ -278,7 +278,7 @@ export class SharedNetworksTableComponent implements OnInit, OnDestroy {
     protected readonly tableHasFilter = tableHasFilter
 
     /**
-     * Clears the PrimeNG table filtering. As a result, table pagination is also reset.
+     * Clears the OptimusUI table filtering. As a result, table pagination is also reset.
      * It doesn't reset the table sorting, if any was applied.
      */
     clearTableFiltering() {
@@ -295,7 +295,7 @@ export class SharedNetworksTableComponent implements OnInit, OnDestroy {
     /**
      * Filters table data based on single UI filtering form input.
      * @param value value of the filter to be applied
-     * @param filterConstraint PrimeNG table filter metadata to be set
+     * @param filterConstraint OptimusUI table filter metadata to be set
      * @param debounceMode if set to true, the filtering is applied by RxJS subject _tableFilter$, which has debounceTime operator applied.
      *                      If set to false, the filtering is done immediately. Defaults to true.
      */
@@ -310,7 +310,7 @@ export class SharedNetworksTableComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Clears single filter of the PrimeNG table.
+     * Clears single filter of the OptimusUI table.
      * @param filterConstraint filter metadata to be cleared
      */
     clearFilter(filterConstraint: any) {
