@@ -99,11 +99,8 @@ func (c *Config) unmarshalIntoAccessibleConfig(data []byte) error {
 	c.D2Config = nil
 	c.DHCPv4Config = nil
 	c.DHCPv6Config = nil
-	data, err := storkutil.NormalizeJSON(data)
-	if err != nil {
-		return errors.WithMessage(err, "problem normalizing Kea configuration")
-	}
-	err = json.Unmarshal(data, (*ct)(c))
+	data = storkutil.NormalizeJSON(data)
+	err := json.Unmarshal(data, (*ct)(c))
 	return errors.Wrapf(err, "cannot unmarshal the data into an accessible config")
 }
 
@@ -117,11 +114,8 @@ func (c *Config) UnmarshalJSON(data []byte) error {
 	}
 	// Second pass.
 	type rt map[string]any
-	data, err := storkutil.NormalizeJSON(data)
-	if err != nil {
-		return errors.WithMessage(err, "problem normalizing Kea configuration")
-	}
-	err = json.Unmarshal(data, (*rt)(&c.raw))
+	data = storkutil.NormalizeJSON(data)
+	err := json.Unmarshal(data, (*rt)(&c.raw))
 	return errors.Wrapf(err, "cannot unmarshal the data into a raw config")
 }
 

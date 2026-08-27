@@ -3,7 +3,6 @@ package storkutil
 import (
 	"bytes"
 	"encoding/json"
-	"io"
 	"unicode"
 
 	"github.com/pkg/errors"
@@ -153,14 +152,8 @@ func ExtractJSONInt64(container map[string]interface{}, key string) (int64, erro
 //
 // The output JSON trims all whitespace except for Unix line breaks.
 //
-// This function returns an error if it encounters any I/O issues while
-// reading or writing the data.
-// However, in the current Golang version (1.24.9), it never returns an error
-// because the only possible error is EOF, which is not considered an error
-// in this context.
-//
 // Inspired by https://github.com/muhammadmuzzammil1998/jsonc.
-func NormalizeJSON(input []byte) ([]byte, error) {
+func NormalizeJSON(input []byte) []byte {
 	// This function operates on the UTF-8 characters (runes). This object allows
 	// to write them to a byte buffer efficiently and handy.
 	var output bytes.Buffer
@@ -187,9 +180,9 @@ func NormalizeJSON(input []byte) ([]byte, error) {
 	var err error
 
 	// Wraps a writing error if it happens.
-	writeRune := func(r rune) error {
-		_, err := output.WriteRune(r)
-		return errors.Wrapf(err, "failed to write rune '%q' to output while normalizing JSON", r)
+	writeRune := func(r rune) {
+		// It is documented that this function never returns an error.
+		_, _ = output.WriteRune(r)
 	}
 
 	for {
@@ -198,11 +191,7 @@ func NormalizeJSON(input []byte) ([]byte, error) {
 		previousChar := currentChar
 		currentChar, _, err = inputReader.ReadRune()
 		if err != nil {
-			if !errors.Is(err, io.EOF) {
-				// The only possible error here is EOF, so it should not happen.
-				err = errors.Wrapf(err, "failed to read rune from input while normalizing JSON")
-				return nil, err
-			}
+			// The only possible error here is EOF.
 			// End of input.
 			break
 		}
@@ -227,9 +216,7 @@ func NormalizeJSON(input []byte) ([]byte, error) {
 			if currentChar == '"' && previousChar != '\\' {
 				isString = false
 			}
-			if err = writeRune(currentChar); err != nil {
-				return nil, err
-			}
+			writeRune(currentChar)
 			continue
 		}
 
@@ -247,9 +234,7 @@ func NormalizeJSON(input []byte) ([]byte, error) {
 				continue
 			}
 			// It was not a comment, write the slash we have seen before.
-			if err = writeRune('/'); err != nil {
-				return nil, err
-			}
+			writeRune('/')
 		}
 
 		// Detecting potential comment openings.
@@ -277,9 +262,7 @@ func NormalizeJSON(input []byte) ([]byte, error) {
 			remainingComma = false
 			if currentChar != '}' && currentChar != ']' {
 				// It wasn't a trailing comma, write it to the output.
-				if err = writeRune(','); err != nil {
-					return nil, err
-				}
+				writeRune(',')
 			}
 		}
 
@@ -292,17 +275,13 @@ func NormalizeJSON(input []byte) ([]byte, error) {
 		case '"':
 			// Entering into string mode.
 			isString = true
-			if err = writeRune(currentChar); err != nil {
-				return nil, err
-			}
+			writeRune(currentChar)
 			continue
 		}
 
 		// Normal character, just write it to the output.
-		if err = writeRune(currentChar); err != nil {
-			return nil, err
-		}
+		writeRune(currentChar)
 	}
 
-	return output.Bytes(), nil
+	return output.Bytes()
 }

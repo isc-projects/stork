@@ -328,11 +328,7 @@ func readFileWithIncludes(path string, parentPaths map[string]bool) ([]byte, err
 	}
 
 	// Normalize the JSON to remove comments.
-	raw, err = NormalizeJSON(raw)
-	if err != nil {
-		err = errors.Wrap(err, "cannot normalize the configuration file")
-		return nil, err
-	}
+	raw = NormalizeJSON(raw)
 
 	// Include pattern definition:
 	// - Must start with prefix: <?include
