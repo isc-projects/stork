@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed, fakeAsync, flush, tick } from '@angular/core
 import { HttpEvent, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { ConfigMigrationPageComponent } from './config-migration-page.component'
 import { DHCPService, MigrationStatus } from '../backend'
-import { ConfirmationService, MessageService } from 'primeng/api'
+import { ConfirmationService, MessageService } from '@openng/optimus-ui/api'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { By } from '@angular/platform-browser'
 import { provideNoopAnimations } from '@angular/platform-browser/animations'

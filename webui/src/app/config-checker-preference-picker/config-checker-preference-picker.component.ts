@@ -1,13 +1,13 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core'
 import { ConfigChecker, ConfigCheckerPreference } from '../backend'
-import { TableModule } from 'primeng/table'
+import { TableModule } from '@openng/optimus-ui/table'
 import { NgClass, NgTemplateOutlet } from '@angular/common'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { Chip } from 'primeng/chip'
-import { Button } from 'primeng/button'
+import { Chip } from '@openng/optimus-ui/chip'
+import { Button } from '@openng/optimus-ui/button'
 import { ManagedAccessDirective } from '../managed-access.directive'
 import { TriStateCheckboxComponent } from '../tri-state-checkbox/tri-state-checkbox.component'
-import { Tag } from 'primeng/tag'
+import { Tag } from '@openng/optimus-ui/tag'
 
 /**
  * Presentational component to display the config checker metadata

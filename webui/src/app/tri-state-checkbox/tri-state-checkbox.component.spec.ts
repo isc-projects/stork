@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { TriStateCheckboxComponent } from './tri-state-checkbox.component'
 import { By } from '@angular/platform-browser'
-import { Checkbox } from 'primeng/checkbox'
+import { Checkbox } from '@openng/optimus-ui/checkbox'
 
 describe('TriStateCheckboxComponent', () => {
     let component: TriStateCheckboxComponent

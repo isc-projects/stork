@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { SharedNetworkFormComponent } from './shared-network-form.component'
-import { MessageService } from 'primeng/api'
+import { MessageService } from '@openng/optimus-ui/api'
 import { Observable, of, throwError } from 'rxjs'
 import { DHCPService, UpdateSharedNetworkBeginResponse } from '../backend'
 import { IPType } from '../iptype'

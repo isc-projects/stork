@@ -3,7 +3,7 @@ import { AddressPoolFormComponent } from './address-pool-form.component'
 import { toastDecorator } from '../utils-stories'
 import { FormControl, FormGroup, UntypedFormArray } from '@angular/forms'
 import { SharedParameterFormGroup } from '../forms/shared-parameter-form-group'
-import { MessageService } from 'primeng/api'
+import { MessageService } from '@openng/optimus-ui/api'
 import { AddressPoolForm, AddressRangeForm, KeaPoolParametersForm } from '../forms/subnet-set-form.service'
 import { StorkValidators } from '../validators'
 

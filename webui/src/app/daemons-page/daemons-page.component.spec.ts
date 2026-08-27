@@ -3,11 +3,11 @@ import { ComponentFixture, TestBed, fakeAsync, tick, waitForAsync, flush } from 
 
 import { provideRouter } from '@angular/router'
 import { ServicesService } from '../backend'
-import { ConfirmationService, MessageService } from 'primeng/api'
+import { ConfirmationService, MessageService } from '@openng/optimus-ui/api'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { provideNoopAnimations } from '@angular/platform-browser/animations'
-import { ConfirmDialog } from 'primeng/confirmdialog'
+import { ConfirmDialog } from '@openng/optimus-ui/confirmdialog'
 import { of, throwError } from 'rxjs'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { DaemonsPageComponent } from './daemons-page.component'

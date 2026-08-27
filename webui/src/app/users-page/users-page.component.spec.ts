@@ -5,7 +5,7 @@ import { ActivatedRoute, convertToParamMap, ParamMap, provideRouter } from '@ang
 import { UntypedFormBuilder } from '@angular/forms'
 import { UsersService } from '../backend'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
-import { ConfirmationService, MessageService } from 'primeng/api'
+import { ConfirmationService, MessageService } from '@openng/optimus-ui/api'
 import { of, Subject } from 'rxjs'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { provideNoopAnimations } from '@angular/platform-browser/animations'

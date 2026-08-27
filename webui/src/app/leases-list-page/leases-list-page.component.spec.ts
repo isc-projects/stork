@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 
 import { LeasesListPageComponent } from './leases-list-page.component'
 import { UntypedFormBuilder } from '@angular/forms'
-import { ConfirmationService, MessageService } from 'primeng/api'
+import { ConfirmationService, MessageService } from '@openng/optimus-ui/api'
 import { DHCPService, ServicesService } from '../backend'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { provideRouter } from '@angular/router'

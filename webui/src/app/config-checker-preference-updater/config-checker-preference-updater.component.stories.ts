@@ -1,6 +1,6 @@
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { applicationConfig, Meta, StoryObj } from '@storybook/angular'
-import { MessageService } from 'primeng/api'
+import { MessageService } from '@openng/optimus-ui/api'
 import { ConfigChecker, ConfigCheckerPreferences, ConfigCheckers, ServicesService } from '../backend'
 import { ConfigCheckerPreferenceUpdaterComponent } from './config-checker-preference-updater.component'
 import { action } from 'storybook/actions'

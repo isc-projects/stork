@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing'
 
 import { CommunicationStatusPageComponent } from './communication-status-page.component'
-import { MessageService } from 'primeng/api'
+import { MessageService } from '@openng/optimus-ui/api'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { By } from '@angular/platform-browser'

@@ -1,7 +1,7 @@
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing'
 
 import { Bind9ConfigViewFeederComponent } from './bind9-config-view-feeder.component'
-import { MessageService } from 'primeng/api'
+import { MessageService } from '@openng/optimus-ui/api'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { Bind9FormattedConfig, ServicesService } from '../backend'
 import { of, throwError } from 'rxjs'

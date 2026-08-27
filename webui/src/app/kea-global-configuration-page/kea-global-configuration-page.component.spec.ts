@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testin
 import { KeaGlobalConfigurationPageComponent } from './kea-global-configuration-page.component'
 import { provideRouter } from '@angular/router'
 import { of, throwError } from 'rxjs'
-import { ConfirmationService, MessageService } from 'primeng/api'
+import { ConfirmationService, MessageService } from '@openng/optimus-ui/api'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { KeaDaemonConfig, ServicesService } from '../backend'

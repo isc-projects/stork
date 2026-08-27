@@ -1,6 +1,6 @@
 import { Component, Input } from '@angular/core'
 
-import { Tooltip } from 'primeng/tooltip'
+import { Tooltip } from '@openng/optimus-ui/tooltip'
 import { HumanCountPipe } from '../pipes/human-count.pipe'
 import { LocalNumberPipe } from '../pipes/local-number.pipe'
 

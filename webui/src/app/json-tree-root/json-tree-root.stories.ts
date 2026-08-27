@@ -1,7 +1,7 @@
 import { JsonTreeRootComponent } from './json-tree-root.component'
 
 import { StoryObj, Meta, applicationConfig } from '@storybook/angular'
-import { MessageService } from 'primeng/api'
+import { MessageService } from '@openng/optimus-ui/api'
 import { JsonTreeComponent } from '../json-tree/json-tree.component'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 

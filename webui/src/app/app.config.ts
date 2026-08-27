@@ -1,5 +1,5 @@
-import { definePreset } from '@primeuix/themes'
-import Aura from '@primeuix/themes/aura'
+import { definePreset } from '@openng/optimus-ui-themes'
+import Aura from '@openng/optimus-ui-themes/aura'
 
 // Generated API modules
 import { Configuration, ConfigurationParameters } from './backend'

@@ -3,7 +3,7 @@ import { Component, computed, input } from '@angular/core'
 import { daemonStatusIconClass, daemonStatusIconTooltip } from '../utils'
 import { AnyDaemon } from '../backend'
 import { RouterLink } from '@angular/router'
-import { Tooltip } from 'primeng/tooltip'
+import { Tooltip } from '@openng/optimus-ui/tooltip'
 import { DaemonNiceNamePipe } from '../pipes/daemon-name.pipe'
 
 @Component({

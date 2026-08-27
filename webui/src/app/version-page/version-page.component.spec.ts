@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { VersionPageComponent } from './version-page.component'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
-import { MessageService } from 'primeng/api'
+import { MessageService } from '@openng/optimus-ui/api'
 import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { provideRouter } from '@angular/router'
 import { Severity, VersionAlert, VersionService } from '../version.service'

@@ -1,7 +1,7 @@
 import { Meta, StoryObj, applicationConfig } from '@storybook/angular'
 import { HaStatusComponent } from './ha-status.component'
 import { ServicesService, ServicesStatus } from '../backend'
-import { MessageService } from 'primeng/api'
+import { MessageService } from '@openng/optimus-ui/api'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { toastDecorator } from '../utils-stories'
 import { provideRouter, withHashLocation } from '@angular/router'

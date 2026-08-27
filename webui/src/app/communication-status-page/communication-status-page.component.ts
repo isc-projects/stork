@@ -2,12 +2,12 @@ import { Component, OnInit, inject } from '@angular/core'
 import { AnyDaemon, ServicesService } from '../backend'
 import { lastValueFrom } from 'rxjs'
 import { getErrorMessage } from '../utils'
-import { MessageService } from 'primeng/api'
+import { MessageService } from '@openng/optimus-ui/api'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 
 import { CommunicationStatusTreeComponent } from '../communication-status-tree/communication-status-tree.component'
-import { Button } from 'primeng/button'
-import { ProgressSpinner } from 'primeng/progressspinner'
+import { Button } from '@openng/optimus-ui/button'
+import { ProgressSpinner } from '@openng/optimus-ui/progressspinner'
 
 /**
  * A component displaying a page showing the communication issues with

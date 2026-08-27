@@ -1,6 +1,6 @@
 import { Meta, StoryObj, applicationConfig } from '@storybook/angular'
 import { toastDecorator } from '../utils-stories'
-import { MessageService } from 'primeng/api'
+import { MessageService } from '@openng/optimus-ui/api'
 import { ZoneRRs } from '../backend'
 import { ZoneViewerComponent } from './zone-viewer.component'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'

@@ -1,6 +1,6 @@
 import { Component, Input } from '@angular/core'
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms'
-import { AutoCompleteCompleteEvent, AutoComplete } from 'primeng/autocomplete'
+import { AutoCompleteCompleteEvent, AutoComplete } from '@openng/optimus-ui/autocomplete'
 
 /**
  * A component providing a form control for specifying an array of values.

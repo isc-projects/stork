@@ -1,6 +1,6 @@
 import { Component, signal, viewChild, inject } from '@angular/core'
 import { lastValueFrom } from 'rxjs'
-import { MessageService } from 'primeng/api'
+import { MessageService } from '@openng/optimus-ui/api'
 import { DHCPService, MigrationStatus } from '../backend'
 import { getErrorMessage } from '../utils'
 import { ConfigMigrationTableComponent } from '../config-migration-table/config-migration-table.component'

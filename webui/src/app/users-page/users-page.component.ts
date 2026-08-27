@@ -1,6 +1,13 @@
 import { Component, effect, OnDestroy, OnInit, signal, viewChild, inject } from '@angular/core'
 import { FormsModule } from '@angular/forms'
-import { ConfirmationService, MessageService, TableState, PrimeTemplate, MenuItem, FilterMetadata } from 'primeng/api'
+import {
+    ConfirmationService,
+    MessageService,
+    TableState,
+    PrimeTemplate,
+    MenuItem,
+    FilterMetadata,
+} from '@openng/optimus-ui/api'
 
 import { AuthService, isInternalUser } from '../auth.service'
 import { ServerDataService } from '../server-data.service'
@@ -10,24 +17,24 @@ import { getErrorMessage } from '../utils'
 import { Group, User } from '../backend'
 import { TabViewComponent } from '../tab-view/tab-view.component'
 import { convertSortingFields, tableFiltersToQueryParams, tableHasFilter } from '../table'
-import { Table, TableModule } from 'primeng/table'
+import { Table, TableModule } from '@openng/optimus-ui/table'
 import { Router, RouterLink } from '@angular/router'
 import { distinctUntilChanged, map } from 'rxjs/operators'
 import { UserFormState } from '../forms/user-form'
-import { ConfirmDialog } from 'primeng/confirmdialog'
+import { ConfirmDialog } from '@openng/optimus-ui/confirmdialog'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
-import { Button } from 'primeng/button'
+import { Button } from '@openng/optimus-ui/button'
 import { ManagedAccessDirective } from '../managed-access.directive'
 
-import { Tag } from 'primeng/tag'
-import { IconField } from 'primeng/iconfield'
-import { InputIcon } from 'primeng/inputicon'
-import { InputText } from 'primeng/inputtext'
-import { Checkbox } from 'primeng/checkbox'
+import { Tag } from '@openng/optimus-ui/tag'
+import { IconField } from '@openng/optimus-ui/iconfield'
+import { InputIcon } from '@openng/optimus-ui/inputicon'
+import { InputText } from '@openng/optimus-ui/inputtext'
+import { Checkbox } from '@openng/optimus-ui/checkbox'
 import { UserFormComponent } from '../user-form/user-form.component'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { TableCaptionComponent } from '../table-caption/table-caption.component'
-import { SplitButton } from 'primeng/splitbutton'
+import { SplitButton } from '@openng/optimus-ui/splitbutton'
 
 /**
  * Component for managing system users.

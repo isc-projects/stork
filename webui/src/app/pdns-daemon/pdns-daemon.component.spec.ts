@@ -4,7 +4,7 @@ import { PdnsDaemonComponent } from './pdns-daemon.component'
 import { PdnsDaemon } from '../backend'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
-import { ConfirmationService, MessageService } from 'primeng/api'
+import { ConfirmationService, MessageService } from '@openng/optimus-ui/api'
 
 const daemon: PdnsDaemon = {
     name: 'pdns',

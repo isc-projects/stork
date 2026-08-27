@@ -1,7 +1,7 @@
 import { Component, input, model, signal, viewChild } from '@angular/core'
 import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms'
-import { Checkbox } from 'primeng/checkbox'
-import { CheckIcon, TimesIcon } from 'primeng/icons'
+import { Checkbox } from '@openng/optimus-ui/checkbox'
+import { CheckIcon, TimesIcon } from '@openng/optimus-ui/icons'
 
 /**
  * This component is an HTML input type=checkbox implementation which allows to hold and visualize 3 states:

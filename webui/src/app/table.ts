@@ -1,5 +1,5 @@
-import { Table, TableLazyLoadEvent } from 'primeng/table'
-import { FilterMetadata } from 'primeng/api'
+import { Table, TableLazyLoadEvent } from '@openng/optimus-ui/table'
+import { FilterMetadata } from '@openng/optimus-ui/api'
 import { SortDir } from './backend'
 
 /**

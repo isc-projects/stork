@@ -1,7 +1,7 @@
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { provideRouter, withHashLocation } from '@angular/router'
 import { applicationConfig, Meta, StoryObj } from '@storybook/angular'
-import { ConfirmationService, MessageService } from 'primeng/api'
+import { ConfirmationService, MessageService } from '@openng/optimus-ui/api'
 import { Events } from '../backend'
 import { toastDecorator } from '../utils-stories'
 import { EventsPanelComponent } from './events-panel.component'

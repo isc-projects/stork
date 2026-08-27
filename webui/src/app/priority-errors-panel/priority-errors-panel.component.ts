@@ -1,10 +1,10 @@
 import { Component, OnDestroy, OnInit, signal, inject } from '@angular/core'
 import { ServicesService } from '../backend'
-import { ToastMessageOptions, MessageService } from 'primeng/api'
+import { ToastMessageOptions, MessageService } from '@openng/optimus-ui/api'
 import { EventStream, ServerSentEventsService } from '../server-sent-events.service'
 import { Subscription, filter, lastValueFrom, map } from 'rxjs'
 import { formatNoun, getErrorMessage } from '../utils'
-import { Message } from 'primeng/message'
+import { Message } from '@openng/optimus-ui/message'
 import { RouterLink } from '@angular/router'
 
 /**

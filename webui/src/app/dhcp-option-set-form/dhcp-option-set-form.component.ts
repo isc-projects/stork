@@ -1,7 +1,7 @@
 import { Component, EventEmitter, forwardRef, Input, Output } from '@angular/core'
 import { UntypedFormArray, FormsModule, ReactiveFormsModule } from '@angular/forms'
 
-import { Button } from 'primeng/button'
+import { Button } from '@openng/optimus-ui/button'
 import { DhcpOptionFormComponent } from '../dhcp-option-form/dhcp-option-form.component'
 
 /**

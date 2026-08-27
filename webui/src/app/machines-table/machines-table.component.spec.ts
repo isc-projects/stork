@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing'
 import { MachinesTableComponent } from './machines-table.component'
 import { provideRouter } from '@angular/router'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
-import { MessageService, FilterMetadata } from 'primeng/api'
+import { MessageService, FilterMetadata } from '@openng/optimus-ui/api'
 import { provideAnimations } from '@angular/platform-browser/animations'
 import createSpyObj = jasmine.createSpyObj
 import { of, throwError } from 'rxjs'

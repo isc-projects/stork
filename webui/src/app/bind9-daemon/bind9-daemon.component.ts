@@ -3,7 +3,7 @@ import { Bind9Daemon, Bind9DaemonView } from '../backend'
 import { VersionStatusComponent } from '../version-status/version-status.component'
 import { RouterLink } from '@angular/router'
 
-import { Tooltip } from 'primeng/tooltip'
+import { Tooltip } from '@openng/optimus-ui/tooltip'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { DurationPipe } from '../pipes/duration.pipe'

@@ -2,7 +2,7 @@ import { Component, Input, OnInit } from '@angular/core'
 import { NgClass, NgTemplateOutlet } from '@angular/common'
 import { RouterLink } from '@angular/router'
 import { ByteCharacterComponent } from '../byte-character/byte-character.component'
-import { ToggleButton } from 'primeng/togglebutton'
+import { ToggleButton } from '@openng/optimus-ui/togglebutton'
 import { FormsModule } from '@angular/forms'
 
 /**

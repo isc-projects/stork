@@ -2,7 +2,7 @@ import { HttpEvent, provideHttpClient, withInterceptorsFromDi } from '@angular/c
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing'
 import { provideNoopAnimations } from '@angular/platform-browser/animations'
-import { MessageService } from 'primeng/api'
+import { MessageService } from '@openng/optimus-ui/api'
 import { of, throwError } from 'rxjs'
 import { ConfigChecker, ConfigCheckers, ServicesService } from '../backend'
 

@@ -2,7 +2,7 @@ import { applicationConfig, Meta, StoryObj } from '@storybook/angular'
 import { Bind9ConfigViewFeederComponent } from './bind9-config-view-feeder.component'
 import { toastDecorator } from '../utils-stories'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { MessageService } from 'primeng/api'
+import { MessageService } from '@openng/optimus-ui/api'
 
 const rndcKeyResponse = {
     files: [

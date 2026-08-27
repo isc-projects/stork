@@ -25,7 +25,7 @@
                         "tsConfig": "tsconfig.app.json",
                         "assets": ["src/favicon.ico", "src/assets"],
                         "styles": [
-                            "node_modules/primeicons/primeicons.css",
+                            "node_modules/@openng/icons/openng-icons.css",
                             "node_modules/primeflex/primeflex.css",
                             "node_modules/@fortawesome/fontawesome-free/css/all.css",
                             "node_modules/swagger-ui-dist/swagger-ui.css",

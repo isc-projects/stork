@@ -1,7 +1,7 @@
 import { applicationConfig, Meta, StoryObj } from '@storybook/angular'
 import { TextFileViewerComponent } from './text-file-viewer.component'
 import { toastDecorator } from '../utils-stories'
-import { MessageService } from 'primeng/api'
+import { MessageService } from '@openng/optimus-ui/api'
 
 export default {
     title: 'App/TextFileViewer',

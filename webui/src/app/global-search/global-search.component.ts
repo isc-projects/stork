@@ -1,10 +1,10 @@
 import { Component, OnInit, ViewChild, inject } from '@angular/core'
 
-import { Popover } from 'primeng/popover'
+import { Popover } from '@openng/optimus-ui/popover'
 
 import { SearchService } from '../backend/api/api'
 import { FormsModule } from '@angular/forms'
-import { InputText } from 'primeng/inputtext'
+import { InputText } from '@openng/optimus-ui/inputtext'
 
 import { RouterLink } from '@angular/router'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'

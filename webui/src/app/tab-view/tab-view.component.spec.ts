@@ -2,9 +2,9 @@ import { ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { TabViewComponent } from './tab-view.component'
 import { provideRouter } from '@angular/router'
-import { MessageService } from 'primeng/api'
+import { MessageService } from '@openng/optimus-ui/api'
 import { Component, viewChild } from '@angular/core'
-import { Table, TableModule } from 'primeng/table'
+import { Table, TableModule } from '@openng/optimus-ui/table'
 import { Subnet } from '../backend'
 import { By } from '@angular/platform-browser'
 

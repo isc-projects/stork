@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing'
 import { SettingService } from './setting.service'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { Router } from '@angular/router'
-import { MessageService } from 'primeng/api'
+import { MessageService } from '@openng/optimus-ui/api'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 describe('SettingService', () => {

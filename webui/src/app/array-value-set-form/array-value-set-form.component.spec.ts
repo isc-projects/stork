@@ -4,7 +4,7 @@ import { ArrayValueSetFormComponent } from './array-value-set-form.component'
 import { FormControl } from '@angular/forms'
 import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { By } from '@angular/platform-browser'
-import { AutoComplete } from 'primeng/autocomplete'
+import { AutoComplete } from '@openng/optimus-ui/autocomplete'
 
 describe('ArrayValueSetFormComponent', () => {
     let component: ArrayValueSetFormComponent<string>

@@ -3,7 +3,7 @@ import { TestBed, inject } from '@angular/core/testing'
 import { AuthGuard } from './auth.guard'
 import { Router, provideRouter } from '@angular/router'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
-import { MessageService } from 'primeng/api'
+import { MessageService } from '@openng/optimus-ui/api'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 describe('AuthGuard', () => {

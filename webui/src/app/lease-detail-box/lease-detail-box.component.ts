@@ -1,6 +1,6 @@
 import { Component, input } from '@angular/core'
 import { Lease } from '../backend'
-import { Fieldset } from 'primeng/fieldset'
+import { Fieldset } from '@openng/optimus-ui/fieldset'
 import { IdentifierComponent } from '../identifier/identifier.component'
 import { JsonTreeRootComponent } from '../json-tree-root/json-tree-root.component'
 import { LocaltimePipe } from '../pipes/localtime.pipe'

@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { SharedParametersFormComponent } from './shared-parameters-form.component'
 import { SharedParameterFormGroup } from '../forms/shared-parameter-form-group'
-import { AutoComplete } from 'primeng/autocomplete'
+import { AutoComplete } from '@openng/optimus-ui/autocomplete'
 import { FormControl, FormGroup, FormRecord, UntypedFormArray, UntypedFormControl } from '@angular/forms'
 import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { StorkValidators } from '../validators'

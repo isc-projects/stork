@@ -11,7 +11,7 @@ import {
     ZoneInventoryStates,
 } from '../backend'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
-import { ConfirmationService, MessageService } from 'primeng/api'
+import { ConfirmationService, MessageService } from '@openng/optimus-ui/api'
 import { LocationStrategy, PathLocationStrategy } from '@angular/common'
 import { of } from 'rxjs'
 import { By } from '@angular/platform-browser'

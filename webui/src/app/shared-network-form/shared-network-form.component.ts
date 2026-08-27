@@ -5,7 +5,7 @@ import {
     SharedNetwork,
     UpdateSharedNetworkBeginResponse,
 } from '../backend'
-import { MessageService } from 'primeng/api'
+import { MessageService } from '@openng/optimus-ui/api'
 import { deepCopy, getErrorMessage, getSeverityByIndex, getVersionRange } from '../utils'
 import { createDefaultDhcpOptionFormGroup } from '../forms/dhcp-option-form'
 import { FormsModule, ReactiveFormsModule, UntypedFormArray, Validators } from '@angular/forms'
@@ -14,18 +14,18 @@ import { SubnetSetFormService } from '../forms/subnet-set-form.service'
 import { lastValueFrom } from 'rxjs'
 import { StorkValidators } from '../validators'
 
-import { Fieldset } from 'primeng/fieldset'
-import { FloatLabel } from 'primeng/floatlabel'
-import { MultiSelect } from 'primeng/multiselect'
-import { InputText } from 'primeng/inputtext'
+import { Fieldset } from '@openng/optimus-ui/fieldset'
+import { FloatLabel } from '@openng/optimus-ui/floatlabel'
+import { MultiSelect } from '@openng/optimus-ui/multiselect'
+import { InputText } from '@openng/optimus-ui/inputtext'
 import { SharedParametersFormComponent } from '../shared-parameters-form/shared-parameters-form.component'
-import { Checkbox } from 'primeng/checkbox'
-import { Divider } from 'primeng/divider'
-import { Tag } from 'primeng/tag'
+import { Checkbox } from '@openng/optimus-ui/checkbox'
+import { Divider } from '@openng/optimus-ui/divider'
+import { Tag } from '@openng/optimus-ui/tag'
 import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
-import { Button } from 'primeng/button'
-import { ProgressSpinner } from 'primeng/progressspinner'
-import { Message } from 'primeng/message'
+import { Button } from '@openng/optimus-ui/button'
+import { ProgressSpinner } from '@openng/optimus-ui/progressspinner'
+import { Message } from '@openng/optimus-ui/message'
 
 @Component({
     selector: 'app-shared-network-form',

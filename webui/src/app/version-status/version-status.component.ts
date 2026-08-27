@@ -7,13 +7,13 @@ import {
     VersionFeedback,
     VersionService,
 } from '../version.service'
-import { ToastMessageOptions, MessageService } from 'primeng/api'
+import { ToastMessageOptions, MessageService } from '@openng/optimus-ui/api'
 import { first, Subscription } from 'rxjs'
 import { daemonNameToFriendlyName, getErrorMessage, getIconBySeverity } from '../utils'
 import { map } from 'rxjs/operators'
 import { RouterLink } from '@angular/router'
-import { Tooltip } from 'primeng/tooltip'
-import { Message } from 'primeng/message'
+import { Tooltip } from '@openng/optimus-ui/tooltip'
+import { Message } from '@openng/optimus-ui/message'
 
 /**
  * This component displays feedback information about the used version of either Kea, BIND 9, or Stork software.

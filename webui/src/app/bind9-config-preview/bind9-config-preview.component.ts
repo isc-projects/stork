@@ -1,11 +1,11 @@
 import { Component, EventEmitter, Input, Output, ViewChild } from '@angular/core'
 import { Bind9FormattedConfig } from '../backend'
-import { Checkbox, CheckboxChangeEvent } from 'primeng/checkbox'
+import { Checkbox, CheckboxChangeEvent } from '@openng/optimus-ui/checkbox'
 import { FormsModule } from '@angular/forms'
-import { Dialog } from 'primeng/dialog'
+import { Dialog } from '@openng/optimus-ui/dialog'
 import { Bind9ConfigViewFeederComponent } from '../bind9-config-view-feeder/bind9-config-view-feeder.component'
-import { Button } from 'primeng/button'
-import { Tooltip } from 'primeng/tooltip'
+import { Button } from '@openng/optimus-ui/button'
+import { Tooltip } from '@openng/optimus-ui/tooltip'
 
 /**
  * A component that displays BIND 9 configuration file in a dialog.

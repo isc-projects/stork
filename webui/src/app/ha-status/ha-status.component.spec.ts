@@ -2,11 +2,11 @@ import { ComponentFixture, TestBed, fakeAsync, waitForAsync, tick } from '@angul
 import { HaStatusComponent } from './ha-status.component'
 import { ServicesService, ServicesStatus } from '../backend'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
-import { ProgressSpinner } from 'primeng/progressspinner'
+import { ProgressSpinner } from '@openng/optimus-ui/progressspinner'
 import { of, throwError } from 'rxjs'
 import { HttpErrorResponse, HttpEvent, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { By } from '@angular/platform-browser'
-import { MessageService } from 'primeng/api'
+import { MessageService } from '@openng/optimus-ui/api'
 import { provideRouter } from '@angular/router'
 
 describe('HaStatusComponent', () => {

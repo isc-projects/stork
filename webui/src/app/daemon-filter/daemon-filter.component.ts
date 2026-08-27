@@ -1,6 +1,6 @@
 import { Component, effect, input, model, OnDestroy, OnInit, output, inject } from '@angular/core'
-import { AutoComplete, AutoCompleteCompleteEvent } from 'primeng/autocomplete'
-import { FloatLabel } from 'primeng/floatlabel'
+import { AutoComplete, AutoCompleteCompleteEvent } from '@openng/optimus-ui/autocomplete'
+import { FloatLabel } from '@openng/optimus-ui/floatlabel'
 import { FormsModule } from '@angular/forms'
 import {
     exhaustMap,

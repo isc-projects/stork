@@ -1,7 +1,7 @@
 import { Meta, StoryObj, applicationConfig } from '@storybook/angular'
 import { SubnetTabComponent } from './subnet-tab.component'
 import { IPType } from '../iptype'
-import { ConfirmationService, MessageService } from 'primeng/api'
+import { ConfirmationService, MessageService } from '@openng/optimus-ui/api'
 import { toastDecorator } from '../utils-stories'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { provideRouter, withHashLocation } from '@angular/router'

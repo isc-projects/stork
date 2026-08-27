@@ -1,10 +1,10 @@
 import { Component, Input, OnInit } from '@angular/core'
 import { AnyDaemon, Bind9Daemon } from '../backend'
-import { PrimeTemplate, TreeNode } from 'primeng/api'
-import { Tree } from 'primeng/tree'
+import { PrimeTemplate, TreeNode } from '@openng/optimus-ui/api'
+import { Tree } from '@openng/optimus-ui/tree'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
 
-import { Tooltip } from 'primeng/tooltip'
+import { Tooltip } from '@openng/optimus-ui/tooltip'
 
 /**
  * Metadata associated with a tree node presenting communication

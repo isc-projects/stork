@@ -2,7 +2,7 @@ import { ConfigCheckerPreferencePickerComponent } from './config-checker-prefere
 
 import { StoryObj, Meta, applicationConfig } from '@storybook/angular'
 import { ConfigChecker } from '../backend'
-import { MessageService } from 'primeng/api'
+import { MessageService } from '@openng/optimus-ui/api'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 export default {

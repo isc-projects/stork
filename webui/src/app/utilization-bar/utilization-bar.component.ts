@@ -1,7 +1,7 @@
 import { Component, Input } from '@angular/core'
 import { clamp, datetimeToLocal, uncamelCase, unhyphen } from '../utils'
 import { NgClass, NgStyle } from '@angular/common'
-import { Tooltip } from 'primeng/tooltip'
+import { Tooltip } from '@openng/optimus-ui/tooltip'
 
 /**
  * A component displaying a utilization bar.

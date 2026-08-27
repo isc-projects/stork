@@ -1,11 +1,11 @@
 import { applicationConfig, Meta, moduleMetadata, StoryObj } from '@storybook/angular'
 import { ManagedAccessDirective } from './managed-access.directive'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { MessageService } from 'primeng/api'
+import { MessageService } from '@openng/optimus-ui/api'
 import { toastDecorator } from './utils-stories'
-import { Button } from 'primeng/button'
+import { Button } from '@openng/optimus-ui/button'
 import { TriStateCheckboxComponent } from './tri-state-checkbox/tri-state-checkbox.component'
-import { ToggleSwitch } from 'primeng/toggleswitch'
+import { ToggleSwitch } from '@openng/optimus-ui/toggleswitch'
 import { userEvent, within, expect, waitFor } from 'storybook/test'
 
 const meta: Meta<ManagedAccessDirective> = {

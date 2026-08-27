@@ -1,22 +1,22 @@
 import { Component, OnInit, inject } from '@angular/core'
 import { FormControl, FormGroup, FormBuilder, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms'
 
-import { MessageService } from 'primeng/api'
+import { MessageService } from '@openng/optimus-ui/api'
 
 import { SettingsService } from '../backend'
 import { getErrorMessage } from '../utils'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { RouterLink } from '@angular/router'
-import { Divider } from 'primeng/divider'
+import { Divider } from '@openng/optimus-ui/divider'
 
-import { Fieldset } from 'primeng/fieldset'
-import { Checkbox } from 'primeng/checkbox'
+import { Fieldset } from '@openng/optimus-ui/fieldset'
+import { Checkbox } from '@openng/optimus-ui/checkbox'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { InputNumber } from 'primeng/inputnumber'
-import { InputText } from 'primeng/inputtext'
-import { Button } from 'primeng/button'
+import { InputNumber } from '@openng/optimus-ui/inputnumber'
+import { InputText } from '@openng/optimus-ui/inputtext'
+import { Button } from '@openng/optimus-ui/button'
 import { ManagedAccessDirective } from '../managed-access.directive'
-import { ProgressSpinner } from 'primeng/progressspinner'
+import { ProgressSpinner } from '@openng/optimus-ui/progressspinner'
 
 /**
  * An interface specifying the form controls for the server settings.

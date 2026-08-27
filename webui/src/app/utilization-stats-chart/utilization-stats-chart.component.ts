@@ -4,7 +4,7 @@ import { Subnet } from '../backend/model/subnet'
 import { SharedNetwork } from '../backend/model/sharedNetwork'
 import { clamp } from '../utils'
 import { LocalSubnet } from '../backend'
-import { UIChart } from 'primeng/chart'
+import { UIChart } from '@openng/optimus-ui/chart'
 import { HumanCountComponent } from '../human-count/human-count.component'
 import { PositivePipe } from '../pipes/positive.pipe'
 

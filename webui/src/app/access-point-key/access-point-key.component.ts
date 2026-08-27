@@ -1,7 +1,7 @@
 import { Component, Input, inject } from '@angular/core'
 import { ServicesService } from '../backend'
 
-import { Button } from 'primeng/button'
+import { Button } from '@openng/optimus-ui/button'
 
 /**
  * Control that allows to fetch the access point key on demand.

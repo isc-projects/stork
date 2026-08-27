@@ -1,7 +1,7 @@
 import { KeyValue, NgClass, NgTemplateOutlet, SlicePipe, KeyValuePipe } from '@angular/common'
 import { Component, Input, TemplateRef } from '@angular/core'
-import { Paginator } from 'primeng/paginator'
-import { InputText } from 'primeng/inputtext'
+import { Paginator } from '@openng/optimus-ui/paginator'
+import { InputText } from '@openng/optimus-ui/inputtext'
 
 /**
  * Typing for page changed event of PrimeNG navigation.

@@ -3,7 +3,7 @@ import { KeaGlobalConfigurationPageComponent } from './kea-global-configuration-
 import { ActivatedRoute, convertToParamMap } from '@angular/router'
 import { MockParamMap } from '../utils'
 import { of } from 'rxjs'
-import { MessageService } from 'primeng/api'
+import { MessageService } from '@openng/optimus-ui/api'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { toastDecorator } from '../utils-stories'
 import { KeaDaemonConfig } from '../backend'

@@ -1,7 +1,7 @@
 import { Component, OnInit, Input, inject } from '@angular/core'
 import { Title } from '@angular/platform-browser'
-import { MenuItem } from 'primeng/api'
-import { Breadcrumb } from 'primeng/breadcrumb'
+import { MenuItem } from '@openng/optimus-ui/api'
+import { Breadcrumb } from '@openng/optimus-ui/breadcrumb'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 
 @Component({

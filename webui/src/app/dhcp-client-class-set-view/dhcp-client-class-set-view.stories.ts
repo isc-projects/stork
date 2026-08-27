@@ -2,7 +2,7 @@ import { DhcpClientClassSetViewComponent } from './dhcp-client-class-set-view.co
 
 import { StoryObj, Meta, applicationConfig } from '@storybook/angular'
 import { toastDecorator } from '../utils-stories'
-import { MessageService } from 'primeng/api'
+import { MessageService } from '@openng/optimus-ui/api'
 
 export default {
     title: 'App/DhcpClientClassSetView',

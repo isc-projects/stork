@@ -1,17 +1,17 @@
 import { HttpErrorResponse } from '@angular/common/http'
 import { Component, OnDestroy, OnInit, inject } from '@angular/core'
 import { Router, ActivatedRoute } from '@angular/router'
-import { MenuItem, MessageService } from 'primeng/api'
+import { MenuItem, MessageService } from '@openng/optimus-ui/api'
 import { Subject, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { ServerDataService } from '../server-data.service'
 import { KeaDaemonConfig } from '../backend'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
-import { Panel } from 'primeng/panel'
+import { Panel } from '@openng/optimus-ui/panel'
 
-import { Button } from 'primeng/button'
+import { Button } from '@openng/optimus-ui/button'
 import { JsonTreeRootComponent } from '../json-tree-root/json-tree-root.component'
-import { Message } from 'primeng/message'
+import { Message } from '@openng/optimus-ui/message'
 
 /**
  * A component providing a dedicated page displaying Kea daemon configuration.

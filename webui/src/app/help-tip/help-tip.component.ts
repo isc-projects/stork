@@ -1,7 +1,7 @@
 import { Component, Input, ViewChild } from '@angular/core'
 
-import { Popover } from 'primeng/popover'
-import { Button } from 'primeng/button'
+import { Popover } from '@openng/optimus-ui/popover'
+import { Button } from '@openng/optimus-ui/button'
 import { NgStyle } from '@angular/common'
 
 /**

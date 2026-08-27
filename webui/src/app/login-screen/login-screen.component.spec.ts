@@ -3,7 +3,7 @@ import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angul
 import { LoginScreenComponent } from './login-screen.component'
 import { AuthenticationMethod } from '../backend'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
-import { MessageService } from 'primeng/api'
+import { MessageService } from '@openng/optimus-ui/api'
 import { of } from 'rxjs'
 import { By } from '@angular/platform-browser'
 import { provideRouter, Router } from '@angular/router'

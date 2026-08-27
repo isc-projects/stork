@@ -1,7 +1,7 @@
 import { StoryObj, Meta, applicationConfig } from '@storybook/angular'
 import { SubnetFormComponent } from './subnet-form.component'
 import { toastDecorator } from '../utils-stories'
-import { MessageService } from 'primeng/api'
+import { MessageService } from '@openng/optimus-ui/api'
 import { CreateSubnetBeginResponse, UpdateSubnetBeginResponse } from '../backend'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 

@@ -1,6 +1,6 @@
 import { Component, Input } from '@angular/core'
 
-import { Chip } from 'primeng/chip'
+import { Chip } from '@openng/optimus-ui/chip'
 
 @Component({
     selector: 'app-dhcp-client-class-set-view',

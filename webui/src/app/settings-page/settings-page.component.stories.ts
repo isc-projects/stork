@@ -1,6 +1,6 @@
 import { Meta, StoryObj, applicationConfig } from '@storybook/angular'
 import { SettingsPageComponent } from './settings-page.component'
-import { MessageService } from 'primeng/api'
+import { MessageService } from '@openng/optimus-ui/api'
 import { Settings } from '../backend'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { toastDecorator } from '../utils-stories'

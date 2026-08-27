@@ -1,5 +1,5 @@
 import { Component } from '@angular/core'
-import { Message } from 'primeng/message'
+import { Message } from '@openng/optimus-ui/message'
 import { RouterLink } from '@angular/router'
 
 /**

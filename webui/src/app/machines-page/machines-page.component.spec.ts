@@ -3,7 +3,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { By } from '@angular/platform-browser'
 import { BehaviorSubject, Observable, of, throwError } from 'rxjs'
 
-import { ConfirmationService, ToastMessageOptions, MessageService } from 'primeng/api'
+import { ConfirmationService, ToastMessageOptions, MessageService } from '@openng/optimus-ui/api'
 
 import { MachinesPageComponent } from './machines-page.component'
 import { AppsVersions, GetMachinesServerToken200Response, Machine, ServicesService, SettingsService } from '../backend'

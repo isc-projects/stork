@@ -5,7 +5,7 @@ import { SharedNetworkWithUniquePools, SubnetWithUniquePools } from '../subnets'
 import { OutOfPoolBarComponent } from '../out-of-pool-bar/out-of-pool-bar.component'
 import { NgTemplateOutlet } from '@angular/common'
 import { AddressPoolBarComponent } from '../address-pool-bar/address-pool-bar.component'
-import { Tooltip } from 'primeng/tooltip'
+import { Tooltip } from '@openng/optimus-ui/tooltip'
 import { DelegatedPrefixBarComponent } from '../delegated-prefix-bar/delegated-prefix-bar.component'
 
 /**

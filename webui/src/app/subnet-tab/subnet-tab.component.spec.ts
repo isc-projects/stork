@@ -3,7 +3,7 @@ import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testin
 import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { SubnetTabComponent } from './subnet-tab.component'
 import { By } from '@angular/platform-browser'
-import { ConfirmationService, MessageService } from 'primeng/api'
+import { ConfirmationService, MessageService } from '@openng/optimus-ui/api'
 import { DHCPService } from '../backend'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { of, throwError } from 'rxjs'

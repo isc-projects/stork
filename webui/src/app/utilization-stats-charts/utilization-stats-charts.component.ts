@@ -4,7 +4,7 @@ import { hasAddressPools, hasPrefixPools } from '../subnets'
 import { IPType } from '../iptype'
 import { DatePipe } from '@angular/common'
 import { UtilizationStatsChartComponent } from '../utilization-stats-chart/utilization-stats-chart.component'
-import { Divider } from 'primeng/divider'
+import { Divider } from '@openng/optimus-ui/divider'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 
 /**

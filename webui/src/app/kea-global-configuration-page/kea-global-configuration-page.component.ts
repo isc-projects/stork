@@ -1,7 +1,7 @@
 import { Component, OnDestroy, OnInit, ViewChild, inject } from '@angular/core'
 import { KeaDaemonConfig, ServicesService } from '../backend'
 import { Subscription, lastValueFrom } from 'rxjs'
-import { MenuItem, MessageService } from 'primeng/api'
+import { MenuItem, MessageService } from '@openng/optimus-ui/api'
 import { getErrorMessage } from '../utils'
 import { ActivatedRoute, RouterLink } from '@angular/router'
 import { NamedCascadedParameters } from '../cascaded-parameters-board/cascaded-parameters-board.component'
@@ -9,7 +9,7 @@ import { KeaGlobalConfigurationFormComponent } from '../kea-global-configuration
 import { DHCPOption } from '../backend'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { KeaGlobalConfigurationViewComponent } from '../kea-global-configuration-view/kea-global-configuration-view.component'
-import { ProgressSpinner } from 'primeng/progressspinner'
+import { ProgressSpinner } from '@openng/optimus-ui/progressspinner'
 
 /**
  * A component that displays global configuration parameter for Kea.

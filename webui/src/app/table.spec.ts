@@ -1,7 +1,7 @@
 import { convertSortingFields, hasFilter } from './table'
 import { SortDir, UserSortField } from './backend'
-import { TableLazyLoadEvent } from 'primeng/table'
-import { FilterMetadata } from 'primeng/api'
+import { TableLazyLoadEvent } from '@openng/optimus-ui/table'
+import { FilterMetadata } from '@openng/optimus-ui/api'
 
 describe('Table', () => {
     it('should convert sorting fields', () => {

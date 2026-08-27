@@ -4,7 +4,7 @@ import { ActivatedRoute, provideRouter, Router } from '@angular/router'
 import { By } from '@angular/platform-browser'
 import { of, throwError } from 'rxjs'
 
-import { MessageService } from 'primeng/api'
+import { MessageService } from '@openng/optimus-ui/api'
 
 import { LeaseSearchPageComponent } from './lease-search-page.component'
 import { DHCPService, Leases } from '../backend'

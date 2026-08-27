@@ -1,6 +1,6 @@
 import { Component, Input } from '@angular/core'
-import { ButtonModule } from 'primeng/button'
-import { DialogModule } from 'primeng/dialog'
+import { ButtonModule } from '@openng/optimus-ui/button'
+import { DialogModule } from '@openng/optimus-ui/dialog'
 import { Bind9ConfigPreviewComponent } from '../bind9-config-preview/bind9-config-preview.component'
 import { CommonModule } from '@angular/common'
 

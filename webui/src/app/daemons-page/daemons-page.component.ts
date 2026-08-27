@@ -1,7 +1,14 @@
 import { Component, effect, OnDestroy, OnInit, signal, viewChild, ViewChild, inject } from '@angular/core'
 import { debounceTime, lastValueFrom, Subject, Subscription } from 'rxjs'
 
-import { MessageService, MenuItem, ConfirmationService, TableState, PrimeTemplate, FilterMetadata } from 'primeng/api'
+import {
+    MessageService,
+    MenuItem,
+    ConfirmationService,
+    TableState,
+    PrimeTemplate,
+    FilterMetadata,
+} from '@openng/optimus-ui/api'
 
 import {
     daemonStatusErred,
@@ -10,29 +17,29 @@ import {
     getErrorMessage,
 } from '../utils'
 import { AnyDaemon, DaemonSortField, ServicesService } from '../backend'
-import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table'
-import { Menu } from 'primeng/menu'
+import { Table, TableLazyLoadEvent, TableModule } from '@openng/optimus-ui/table'
+import { Menu } from '@openng/optimus-ui/menu'
 import { distinctUntilChanged, finalize, last, map } from 'rxjs/operators'
 import { convertSortingFields, tableFiltersToQueryParams, tableHasFilter } from '../table'
 import { Router } from '@angular/router'
 import { TabViewComponent } from '../tab-view/tab-view.component'
-import { ConfirmDialog } from 'primeng/confirmdialog'
+import { ConfirmDialog } from '@openng/optimus-ui/confirmdialog'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
-import { Button } from 'primeng/button'
+import { Button } from '@openng/optimus-ui/button'
 import { ManagedAccessDirective } from '../managed-access.directive'
 
-import { FloatLabel } from 'primeng/floatlabel'
-import { MultiSelect } from 'primeng/multiselect'
+import { FloatLabel } from '@openng/optimus-ui/floatlabel'
+import { MultiSelect } from '@openng/optimus-ui/multiselect'
 import { FormsModule } from '@angular/forms'
-import { IconField } from 'primeng/iconfield'
-import { InputIcon } from 'primeng/inputicon'
-import { InputText } from 'primeng/inputtext'
+import { IconField } from '@openng/optimus-ui/iconfield'
+import { InputIcon } from '@openng/optimus-ui/inputicon'
+import { InputText } from '@openng/optimus-ui/inputtext'
 import { VersionStatusComponent } from '../version-status/version-status.component'
 import { DaemonTabComponent } from '../daemon-tab/daemon-tab.component'
-import { Tooltip } from 'primeng/tooltip'
+import { Tooltip } from '@openng/optimus-ui/tooltip'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { TableCaptionComponent } from '../table-caption/table-caption.component'
-import { SplitButton } from 'primeng/splitbutton'
+import { SplitButton } from '@openng/optimus-ui/splitbutton'
 import { AuthService } from '../auth.service'
 
 /**

@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed, fakeAsync, tick, waitForAsync } from '@angul
 
 import { PriorityErrorsPanelComponent } from './priority-errors-panel.component'
 import { Daemons, ServicesService } from '../backend'
-import { MessageService } from 'primeng/api'
+import { MessageService } from '@openng/optimus-ui/api'
 import {
     EventStream,
     SSEEvent,

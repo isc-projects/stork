@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed, fakeAsync, tick, waitForAsync, flush } from 
 import { By } from '@angular/platform-browser'
 
 import { provideNoopAnimations } from '@angular/platform-browser/animations'
-import { MessageService } from 'primeng/api'
+import { MessageService } from '@openng/optimus-ui/api'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { SettingsPageComponent } from './settings-page.component'
 import { SettingsService } from '../backend/api/api'

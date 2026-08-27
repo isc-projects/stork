@@ -1,8 +1,8 @@
 import { Component, DestroyRef, EventEmitter, Input, OnInit, Output, inject } from '@angular/core'
 import { Bind9FormattedConfig, ServicesService } from '../backend'
-import { MessageService } from 'primeng/api'
+import { MessageService } from '@openng/optimus-ui/api'
 import { TextFileViewerComponent } from '../text-file-viewer/text-file-viewer.component'
-import { ProgressSpinnerModule } from 'primeng/progressspinner'
+import { ProgressSpinnerModule } from '@openng/optimus-ui/progressspinner'
 
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { catchError, EMPTY, finalize, Subject, switchMap, takeUntil, tap } from 'rxjs'

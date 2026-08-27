@@ -1,6 +1,6 @@
 import { Meta, StoryObj, applicationConfig } from '@storybook/angular'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { ConfirmationService, MessageService } from 'primeng/api'
+import { ConfirmationService, MessageService } from '@openng/optimus-ui/api'
 import { HostTabComponent } from './host-tab.component'
 import { toastDecorator } from '../utils-stories'
 import { provideRouter, withHashLocation } from '@angular/router'

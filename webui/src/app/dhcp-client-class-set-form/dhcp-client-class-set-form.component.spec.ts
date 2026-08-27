@@ -3,7 +3,7 @@ import { FormBuilder } from '@angular/forms'
 import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { DhcpClientClassSetFormComponent } from './dhcp-client-class-set-form.component'
 import { By } from '@angular/platform-browser'
-import { AutoComplete } from 'primeng/autocomplete'
+import { AutoComplete } from '@openng/optimus-ui/autocomplete'
 
 describe('DhcpClientClassSetFormComponent', () => {
     let component: DhcpClientClassSetFormComponent

@@ -1,31 +1,38 @@
 import { Component, effect, OnDestroy, OnInit, signal, ViewChild, inject } from '@angular/core'
 import { tableHasFilter, tableFiltersToQueryParams, convertSortingFields } from '../table'
 import { DHCPService, Host, HostSortField, LocalHost } from '../backend'
-import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table'
+import { Table, TableLazyLoadEvent, TableModule } from '@openng/optimus-ui/table'
 import { Router, RouterLink } from '@angular/router'
-import { ConfirmationService, MenuItem, MessageService, PrimeTemplate, TableState, FilterMetadata } from 'primeng/api'
+import {
+    ConfirmationService,
+    MenuItem,
+    MessageService,
+    PrimeTemplate,
+    TableState,
+    FilterMetadata,
+} from '@openng/optimus-ui/api'
 import { getErrorMessage, uncamelCase } from '../utils'
 import { hasDifferentLocalHostData } from '../hosts'
 import { debounceTime, last, lastValueFrom, Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map } from 'rxjs/operators'
 import { ManagedAccessDirective } from '../managed-access.directive'
-import { ConfirmDialog } from 'primeng/confirmdialog'
-import { Button } from 'primeng/button'
+import { ConfirmDialog } from '@openng/optimus-ui/confirmdialog'
+import { Button } from '@openng/optimus-ui/button'
 import { FormsModule } from '@angular/forms'
-import { FloatLabel } from 'primeng/floatlabel'
-import { IconField } from 'primeng/iconfield'
-import { InputIcon } from 'primeng/inputicon'
-import { InputNumber } from 'primeng/inputnumber'
-import { InputText } from 'primeng/inputtext'
-import { Tag } from 'primeng/tag'
+import { FloatLabel } from '@openng/optimus-ui/floatlabel'
+import { IconField } from '@openng/optimus-ui/iconfield'
+import { InputIcon } from '@openng/optimus-ui/inputicon'
+import { InputNumber } from '@openng/optimus-ui/inputnumber'
+import { InputText } from '@openng/optimus-ui/inputtext'
+import { Tag } from '@openng/optimus-ui/tag'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
 import { HostDataSourceLabelComponent } from '../host-data-source-label/host-data-source-label.component'
 import { IdentifierComponent } from '../identifier/identifier.component'
 import { PluralizePipe } from '../pipes/pluralize.pipe'
 import { TriStateCheckboxComponent } from '../tri-state-checkbox/tri-state-checkbox.component'
-import { Tooltip } from 'primeng/tooltip'
+import { Tooltip } from '@openng/optimus-ui/tooltip'
 import { TableCaptionComponent } from '../table-caption/table-caption.component'
-import { SplitButton } from 'primeng/splitbutton'
+import { SplitButton } from '@openng/optimus-ui/splitbutton'
 import { DaemonFilterComponent } from '../daemon-filter/daemon-filter.component'
 
 /**

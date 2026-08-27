@@ -1,14 +1,14 @@
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 import { provideRouter } from '@angular/router'
-import { MessageService, ConfirmationService, Confirmation } from 'primeng/api'
+import { MessageService, ConfirmationService, Confirmation } from '@openng/optimus-ui/api'
 
 import { EventsService } from '../backend'
 import { EventsPanelComponent } from './events-panel.component'
 import { ServerSentEventsService, ServerSentEventsTestingService } from '../server-sent-events.service'
 import { of } from 'rxjs'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { SelectChangeEvent } from 'primeng/select'
+import { SelectChangeEvent } from '@openng/optimus-ui/select'
 
 /**
  * Fake event value.

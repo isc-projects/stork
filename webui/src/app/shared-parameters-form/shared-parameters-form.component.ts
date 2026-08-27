@@ -11,16 +11,16 @@ import {
 import { getSeverityByIndex, uncamelCase } from '../utils'
 import { SelectableClientClass } from '../forms/selectable-client-class'
 import { NgTemplateOutlet } from '@angular/common'
-import { Checkbox } from 'primeng/checkbox'
-import { Tag } from 'primeng/tag'
-import { MultiSelect } from 'primeng/multiselect'
-import { Select } from 'primeng/select'
+import { Checkbox } from '@openng/optimus-ui/checkbox'
+import { Tag } from '@openng/optimus-ui/tag'
+import { MultiSelect } from '@openng/optimus-ui/multiselect'
+import { Select } from '@openng/optimus-ui/select'
 import { ArrayValueSetFormComponent } from '../array-value-set-form/array-value-set-form.component'
-import { InputText } from 'primeng/inputtext'
+import { InputText } from '@openng/optimus-ui/inputtext'
 import { TriStateCheckboxComponent } from '../tri-state-checkbox/tri-state-checkbox.component'
-import { InputNumber } from 'primeng/inputnumber'
+import { InputNumber } from '@openng/optimus-ui/inputnumber'
 import { DhcpClientClassSetFormComponent } from '../dhcp-client-class-set-form/dhcp-client-class-set-form.component'
-import { Button } from 'primeng/button'
+import { Button } from '@openng/optimus-ui/button'
 
 /**
  * A component providing a form for editing configuration parameters.

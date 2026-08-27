@@ -11,17 +11,17 @@ import {
     signal,
     TemplateRef,
 } from '@angular/core'
-import { Tab, TabList, TabPanel, TabPanels, Tabs } from 'primeng/tabs'
+import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@openng/optimus-ui/tabs'
 import { ActivatedRoute, EventType, ParamMap, Params, Router, RouterLink } from '@angular/router'
 import { inject, input } from '@angular/core'
 import { of, Subscription } from 'rxjs'
-import { MessageService, FilterMetadata } from 'primeng/api'
+import { MessageService, FilterMetadata } from '@openng/optimus-ui/api'
 import { NgClass, NgTemplateOutlet } from '@angular/common'
 import { getErrorMessage } from '../utils'
 import { parseBoolean, tableFiltersToQueryParams, tableHasFilter } from '../table'
-import { Table } from 'primeng/table'
+import { Table } from '@openng/optimus-ui/table'
 import { filter, switchMap } from 'rxjs/operators'
-import { Button } from 'primeng/button'
+import { Button } from '@openng/optimus-ui/button'
 
 /**
  * Enumeration of different Tab types.

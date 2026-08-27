@@ -1,6 +1,6 @@
 import { Component, OnInit, OnChanges, Input, OnDestroy, inject } from '@angular/core'
 
-import { LazyLoadEvent, MessageService, ConfirmationService } from 'primeng/api'
+import { LazyLoadEvent, MessageService, ConfirmationService } from '@openng/optimus-ui/api'
 
 import { EventsService, UsersService, ServicesService } from '../backend/api/api'
 import { AuthService } from '../auth.service'
@@ -11,16 +11,16 @@ import { ServerSentEventsService, SSEFilter } from '../server-sent-events.servic
 import { convertSortingFields } from '../table'
 import { NgClass } from '@angular/common'
 import { FormsModule } from '@angular/forms'
-import { Button } from 'primeng/button'
-import { ConfirmDialog } from 'primeng/confirmdialog'
-import { Select } from 'primeng/select'
-import { SelectButton } from 'primeng/selectbutton'
-import { TableModule } from 'primeng/table'
+import { Button } from '@openng/optimus-ui/button'
+import { ConfirmDialog } from '@openng/optimus-ui/confirmdialog'
+import { Select } from '@openng/optimus-ui/select'
+import { SelectButton } from '@openng/optimus-ui/selectbutton'
+import { TableModule } from '@openng/optimus-ui/table'
 import { EventTextComponent } from '../event-text/event-text.component'
 import { ManagedAccessDirective } from '../managed-access.directive'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
-import { Tooltip } from 'primeng/tooltip'
-import { SelectChangeEvent } from 'primeng/select'
+import { Tooltip } from '@openng/optimus-ui/tooltip'
+import { SelectChangeEvent } from '@openng/optimus-ui/select'
 
 /**
  * Option for daemon name selection.

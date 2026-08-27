@@ -2,7 +2,7 @@ import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testin
 
 import { KeaGlobalConfigurationFormComponent } from './kea-global-configuration-form.component'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
-import { MessageService } from 'primeng/api'
+import { MessageService } from '@openng/optimus-ui/api'
 import {
     DHCPService,
     UpdateKeaDaemonsGlobalParametersBeginResponse,

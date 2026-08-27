@@ -6,7 +6,7 @@ import { SettingsMenuComponent } from './settings-menu.component'
 import { AuthService } from '../auth.service'
 import { User } from '../backend'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
-import { MessageService } from 'primeng/api'
+import { MessageService } from '@openng/optimus-ui/api'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 describe('SettingsMenuComponent', () => {

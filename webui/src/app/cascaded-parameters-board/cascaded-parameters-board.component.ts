@@ -1,10 +1,10 @@
 import { Component, Input, OnInit } from '@angular/core'
 import { uncamelCase, unhyphen } from '../utils'
 
-import { TableModule } from 'primeng/table'
-import { Button } from 'primeng/button'
+import { TableModule } from '@openng/optimus-ui/table'
+import { Button } from '@openng/optimus-ui/button'
 import { ParameterViewComponent } from '../parameter-view/parameter-view.component'
-import { Tooltip } from 'primeng/tooltip'
+import { Tooltip } from '@openng/optimus-ui/tooltip'
 
 /**
  * Allowed types of the parameters displayed in the table.

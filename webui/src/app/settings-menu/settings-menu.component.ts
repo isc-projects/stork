@@ -1,7 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core'
-import { MenuItem } from 'primeng/api'
+import { MenuItem } from '@openng/optimus-ui/api'
 import { AuthService } from '../auth.service'
-import { Menu } from 'primeng/menu'
+import { Menu } from '@openng/optimus-ui/menu'
 
 /**
  * This component provides a menu for navigating between different

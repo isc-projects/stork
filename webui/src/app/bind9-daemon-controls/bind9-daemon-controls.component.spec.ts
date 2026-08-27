@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { Bind9DaemonControlsComponent } from './bind9-daemon-controls.component'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { MessageService } from 'primeng/api'
+import { MessageService } from '@openng/optimus-ui/api'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 
 describe('Bind9DaemonControlsComponent', () => {

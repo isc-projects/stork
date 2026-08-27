@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing'
 import { By } from '@angular/platform-browser'
 
-import { MessageService } from 'primeng/api'
+import { MessageService } from '@openng/optimus-ui/api'
 
 import { datetimeToLocal } from '../utils'
 import { LeaseDetailBoxComponent } from './lease-detail-box.component'

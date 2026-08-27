@@ -3,7 +3,7 @@ import { PrefixPoolFormComponent } from './prefix-pool-form.component'
 import { toastDecorator } from '../utils-stories'
 import { FormControl, FormGroup, UntypedFormArray, Validators } from '@angular/forms'
 import { SharedParameterFormGroup } from '../forms/shared-parameter-form-group'
-import { MessageService } from 'primeng/api'
+import { MessageService } from '@openng/optimus-ui/api'
 import { KeaPoolParametersForm, PrefixForm, PrefixPoolForm } from '../forms/subnet-set-form.service'
 import { StorkValidators } from '../validators'
 

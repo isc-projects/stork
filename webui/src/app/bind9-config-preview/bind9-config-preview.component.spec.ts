@@ -1,9 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing'
 
 import { Bind9ConfigPreviewComponent } from './bind9-config-preview.component'
-import { MessageService } from 'primeng/api'
+import { MessageService } from '@openng/optimus-ui/api'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { CheckboxChangeEvent } from 'primeng/checkbox'
+import { CheckboxChangeEvent } from '@openng/optimus-ui/checkbox'
 import { Bind9FormattedConfig } from '../backend'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 

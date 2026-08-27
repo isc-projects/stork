@@ -4,7 +4,7 @@ import { AuthService, isInternalUser } from './auth.service'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { AuthenticationMethods, User, UsersService } from './backend'
 import { Router, provideRouter } from '@angular/router'
-import { MessageService } from 'primeng/api'
+import { MessageService } from '@openng/optimus-ui/api'
 import { from, of } from 'rxjs'
 import { HttpProgressEvent, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 

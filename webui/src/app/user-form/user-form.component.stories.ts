@@ -1,7 +1,7 @@
 import { applicationConfig, Meta, StoryObj } from '@storybook/angular'
 import { UserFormComponent } from './user-form.component'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
-import { MessageService } from 'primeng/api'
+import { MessageService } from '@openng/optimus-ui/api'
 import { UserFormState } from '../forms/user-form'
 import { Group, User } from '../backend'
 import { TabType } from '../tab-view/tab-view.component'

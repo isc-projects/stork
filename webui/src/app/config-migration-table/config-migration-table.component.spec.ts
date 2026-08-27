@@ -2,12 +2,12 @@ import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angul
 import { HttpResponse, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 
 import { ConfigMigrationTableComponent } from './config-migration-table.component'
-import { TableLazyLoadEvent } from 'primeng/table'
-import { ConfirmationService, MessageService } from 'primeng/api'
+import { TableLazyLoadEvent } from '@openng/optimus-ui/table'
+import { ConfirmationService, MessageService } from '@openng/optimus-ui/api'
 import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { DHCPService, MigrationStatuses } from '../backend'
 import { Observable, of } from 'rxjs'
-import { ConfirmDialog } from 'primeng/confirmdialog'
+import { ConfirmDialog } from '@openng/optimus-ui/confirmdialog'
 import { By } from '@angular/platform-browser'
 
 describe('ConfigMigrationTableComponent', () => {

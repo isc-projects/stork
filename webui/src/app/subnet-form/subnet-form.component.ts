@@ -11,7 +11,7 @@ import {
 } from '@angular/core'
 import { CreateSubnetBeginResponse, DHCPService, KeaDaemon, Subnet, UpdateSubnetBeginResponse } from '../backend'
 import { getErrorMessage, getSeverityByIndex, getVersionRange } from '../utils'
-import { MessageService } from 'primeng/api'
+import { MessageService } from '@openng/optimus-ui/api'
 import {
     FormArray,
     FormGroup,
@@ -34,22 +34,22 @@ import { AddressPoolFormComponent } from '../address-pool-form/address-pool-form
 
 import { PrefixPoolFormComponent } from '../prefix-pool-form/prefix-pool-form.component'
 import { lastValueFrom } from 'rxjs'
-import { Fieldset } from 'primeng/fieldset'
-import { FloatLabel } from 'primeng/floatlabel'
-import { MultiSelect } from 'primeng/multiselect'
+import { Fieldset } from '@openng/optimus-ui/fieldset'
+import { FloatLabel } from '@openng/optimus-ui/floatlabel'
+import { MultiSelect } from '@openng/optimus-ui/multiselect'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { InputText } from 'primeng/inputtext'
-import { Select } from 'primeng/select'
-import { Checkbox } from 'primeng/checkbox'
-import { Divider } from 'primeng/divider'
-import { Tag } from 'primeng/tag'
-import { Accordion, AccordionPanel, AccordionHeader, AccordionContent } from 'primeng/accordion'
-import { Ripple } from 'primeng/ripple'
-import { Button } from 'primeng/button'
+import { InputText } from '@openng/optimus-ui/inputtext'
+import { Select } from '@openng/optimus-ui/select'
+import { Checkbox } from '@openng/optimus-ui/checkbox'
+import { Divider } from '@openng/optimus-ui/divider'
+import { Tag } from '@openng/optimus-ui/tag'
+import { Accordion, AccordionPanel, AccordionHeader, AccordionContent } from '@openng/optimus-ui/accordion'
+import { Ripple } from '@openng/optimus-ui/ripple'
+import { Button } from '@openng/optimus-ui/button'
 import { SharedParametersFormComponent } from '../shared-parameters-form/shared-parameters-form.component'
 import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
-import { ProgressSpinner } from 'primeng/progressspinner'
-import { Message } from 'primeng/message'
+import { ProgressSpinner } from '@openng/optimus-ui/progressspinner'
+import { Message } from '@openng/optimus-ui/message'
 
 /**
  * A component providing a form for editing and adding a subnet.

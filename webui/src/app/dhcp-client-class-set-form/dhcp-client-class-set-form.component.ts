@@ -1,8 +1,8 @@
 import { Component, Input, OnInit } from '@angular/core'
 import { UntypedFormControl, FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { SelectableClientClass } from '../forms/selectable-client-class'
-import { AutoCompleteCompleteEvent, AutoComplete } from 'primeng/autocomplete'
-import { FloatLabel } from 'primeng/floatlabel'
+import { AutoCompleteCompleteEvent, AutoComplete } from '@openng/optimus-ui/autocomplete'
+import { FloatLabel } from '@openng/optimus-ui/floatlabel'
 import { NgTemplateOutlet } from '@angular/common'
 
 /**

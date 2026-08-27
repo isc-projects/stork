@@ -1,7 +1,7 @@
 import { Component, Input } from '@angular/core'
 
-import { Tag } from 'primeng/tag'
-import { Tooltip } from 'primeng/tooltip'
+import { Tag } from '@openng/optimus-ui/tag'
+import { Tooltip } from '@openng/optimus-ui/tooltip'
 
 /**
  * This component is used to display the label of the host data source.

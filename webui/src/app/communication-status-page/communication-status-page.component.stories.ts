@@ -2,7 +2,7 @@ import { Meta, StoryObj, applicationConfig } from '@storybook/angular'
 import { CommunicationStatusPageComponent } from './communication-status-page.component'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { toastDecorator } from '../utils-stories'
-import { MessageService } from 'primeng/api'
+import { MessageService } from '@openng/optimus-ui/api'
 import { provideRouter, withHashLocation } from '@angular/router'
 import { Daemons } from '../backend'
 

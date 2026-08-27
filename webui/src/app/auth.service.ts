@@ -3,7 +3,7 @@ import { Router } from '@angular/router'
 import { BehaviorSubject, defer, Observable, of, tap, timeout, timer } from 'rxjs'
 import { catchError, map, mergeMap, retry, share, shareReplay } from 'rxjs/operators'
 
-import { MessageService } from 'primeng/api'
+import { MessageService } from '@openng/optimus-ui/api'
 
 import { UsersService } from './backend'
 import { AuthenticationMethod } from './backend'

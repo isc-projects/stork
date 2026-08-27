@@ -1,6 +1,6 @@
 import { ZonesPageComponent } from './zones-page.component'
 import { applicationConfig, Meta, moduleMetadata, StoryObj } from '@storybook/angular'
-import { ConfirmationService, MessageService } from 'primeng/api'
+import { ConfirmationService, MessageService } from '@openng/optimus-ui/api'
 import { ActivatedRoute, convertToParamMap, provideRouter, withHashLocation } from '@angular/router'
 import { mockedFilterByText, toastDecorator } from '../utils-stories'
 import { Daemon, LocalZone, Zone } from '../backend'

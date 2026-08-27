@@ -9,7 +9,14 @@ import {
     ViewChild,
     inject,
 } from '@angular/core'
-import { ConfirmationService, MenuItem, MessageService, TableState, PrimeTemplate, FilterMetadata } from 'primeng/api'
+import {
+    ConfirmationService,
+    MenuItem,
+    MessageService,
+    TableState,
+    PrimeTemplate,
+    FilterMetadata,
+} from '@openng/optimus-ui/api'
 import {
     DNSClass,
     DNSDaemonName,
@@ -35,7 +42,7 @@ import {
     tap,
 } from 'rxjs/operators'
 import { debounceTime, EMPTY, interval, lastValueFrom, of, Subject, Subscription, timer } from 'rxjs'
-import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table'
+import { Table, TableLazyLoadEvent, TableModule } from '@openng/optimus-ui/table'
 import { daemonNameToFriendlyName, getErrorMessage, unrootZone } from '../utils'
 import { HttpResponse, HttpStatusCode } from '@angular/common/http'
 import { convertSortingFields, tableFiltersToQueryParams, tableHasFilter } from '../table'
@@ -43,33 +50,33 @@ import { Router, RouterLink } from '@angular/router'
 import { getTooltip, getSeverity } from '../zone-inventory-utils'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { NgTemplateOutlet, TitleCasePipe } from '@angular/common'
-import { Message } from 'primeng/message'
-import { ProgressBar } from 'primeng/progressbar'
-import { Skeleton } from 'primeng/skeleton'
-import { Button } from 'primeng/button'
+import { Message } from '@openng/optimus-ui/message'
+import { ProgressBar } from '@openng/optimus-ui/progressbar'
+import { Skeleton } from '@openng/optimus-ui/skeleton'
+import { Button } from '@openng/optimus-ui/button'
 import { ManagedAccessDirective } from '../managed-access.directive'
-import { Tag } from 'primeng/tag'
-import { Tooltip } from 'primeng/tooltip'
-import { Dialog } from 'primeng/dialog'
-import { ConfirmDialog } from 'primeng/confirmdialog'
+import { Tag } from '@openng/optimus-ui/tag'
+import { Tooltip } from '@openng/optimus-ui/tooltip'
+import { Dialog } from '@openng/optimus-ui/dialog'
+import { ConfirmDialog } from '@openng/optimus-ui/confirmdialog'
 import { TabViewComponent } from '../tab-view/tab-view.component'
-import { FloatLabel } from 'primeng/floatlabel'
-import { MultiSelect } from 'primeng/multiselect'
+import { FloatLabel } from '@openng/optimus-ui/floatlabel'
+import { MultiSelect } from '@openng/optimus-ui/multiselect'
 import { FormsModule } from '@angular/forms'
-import { Select } from 'primeng/select'
-import { InputText } from 'primeng/inputtext'
-import { IconField } from 'primeng/iconfield'
-import { InputIcon } from 'primeng/inputicon'
-import { Fieldset } from 'primeng/fieldset'
+import { Select } from '@openng/optimus-ui/select'
+import { InputText } from '@openng/optimus-ui/inputtext'
+import { IconField } from '@openng/optimus-ui/iconfield'
+import { InputIcon } from '@openng/optimus-ui/inputicon'
+import { Fieldset } from '@openng/optimus-ui/fieldset'
 import { LocaltimePipe } from '../pipes/localtime.pipe'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 import { PluralizePipe } from '../pipes/pluralize.pipe'
 import { UnrootPipe } from '../pipes/unroot.pipe'
 import { ZoneViewerComponent } from '../zone-viewer/zone-viewer.component'
 import { ZoneTypeAliasPipe } from '../pipes/zone-type-alias.pipe'
-import { Checkbox } from 'primeng/checkbox'
+import { Checkbox } from '@openng/optimus-ui/checkbox'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
-import { SplitButton } from 'primeng/splitbutton'
+import { SplitButton } from '@openng/optimus-ui/splitbutton'
 import { TableCaptionComponent } from '../table-caption/table-caption.component'
 import { AuthService } from '../auth.service'
 import { DaemonFilterComponent } from '../daemon-filter/daemon-filter.component'

@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing'
 import { By } from '@angular/platform-browser'
 import { provideNoopAnimations } from '@angular/platform-browser/animations'
-import { TreeNode } from 'primeng/api'
+import { TreeNode } from '@openng/optimus-ui/api'
 import { DhcpOptionSetViewComponent, OptionFieldNode, OptionNode } from './dhcp-option-set-view.component'
 import { DHCPOption } from '../backend/model/dHCPOption'
 import { IPType } from '../iptype'

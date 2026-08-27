@@ -4,9 +4,9 @@ import {
     CascadedParametersBoardComponent,
 } from '../cascaded-parameters-board/cascaded-parameters-board.component'
 import { DHCPOption } from '../backend'
-import { Button } from 'primeng/button'
+import { Button } from '@openng/optimus-ui/button'
 import { ManagedAccessDirective } from '../managed-access.directive'
-import { Fieldset } from 'primeng/fieldset'
+import { Fieldset } from '@openng/optimus-ui/fieldset'
 import { DhcpOptionSetViewComponent } from '../dhcp-option-set-view/dhcp-option-set-view.component'
 
 /**

@@ -5,7 +5,7 @@ import { User } from '../backend'
 import { Subscription } from 'rxjs'
 import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { SettingsMenuComponent } from '../settings-menu/settings-menu.component'
-import { Panel } from 'primeng/panel'
+import { Panel } from '@openng/optimus-ui/panel'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
 
 /**

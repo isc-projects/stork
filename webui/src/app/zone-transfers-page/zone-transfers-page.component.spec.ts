@@ -1,7 +1,7 @@
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing'
 
 import { ZoneTransfersPageComponent } from './zone-transfers-page.component'
-import { ConfirmationService, FilterMetadata, MessageService } from 'primeng/api'
+import { ConfirmationService, FilterMetadata, MessageService } from '@openng/optimus-ui/api'
 import { Daemon, DNSService, ServicesService } from '../backend'
 import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
@@ -9,8 +9,8 @@ import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { provideRouter, Router } from '@angular/router'
 import { of, throwError } from 'rxjs'
 import createSpyObj = jasmine.createSpyObj
-import { TableState } from 'primeng/api'
-import { TableLazyLoadEvent } from 'primeng/table'
+import { TableState } from '@openng/optimus-ui/api'
+import { TableLazyLoadEvent } from '@openng/optimus-ui/table'
 
 describe('ZoneTransfersPage', () => {
     let component: ZoneTransfersPageComponent

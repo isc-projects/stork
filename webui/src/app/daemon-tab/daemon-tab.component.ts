@@ -5,12 +5,12 @@ import { daemonStatusIconClass, daemonStatusIconTooltip, getErrorMessage } from 
 import { KeaDaemonComponent } from '../kea-daemon/kea-daemon.component'
 import { Bind9DaemonComponent } from '../bind9-daemon/bind9-daemon.component'
 import { PdnsDaemonComponent } from '../pdns-daemon/pdns-daemon.component'
-import { Button } from 'primeng/button'
-import { Tooltip } from 'primeng/tooltip'
+import { Button } from '@openng/optimus-ui/button'
+import { Tooltip } from '@openng/optimus-ui/tooltip'
 import { isKeaDaemon } from '../version.service'
 import { EntityLinkComponent } from '../entity-link/entity-link.component'
 
-import { ConfirmationService, MessageService } from 'primeng/api'
+import { ConfirmationService, MessageService } from '@openng/optimus-ui/api'
 import { last } from 'rxjs'
 import { ManagedAccessDirective } from '../managed-access.directive'
 

@@ -1,15 +1,15 @@
 import { Component, Input, OnInit, inject } from '@angular/core'
-import { TreeNode, PrimeTemplate } from 'primeng/api'
+import { TreeNode, PrimeTemplate } from '@openng/optimus-ui/api'
 import { DHCPOption } from '../backend/model/dHCPOption'
 import { DhcpOptionsService } from '../dhcp-options.service'
 import { IPType } from '../iptype'
-import { Tree } from 'primeng/tree'
+import { Tree } from '@openng/optimus-ui/tree'
 
-import { Tag } from 'primeng/tag'
+import { Tag } from '@openng/optimus-ui/tag'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
-import { Tooltip } from 'primeng/tooltip'
-import { Divider } from 'primeng/divider'
-import { Checkbox } from 'primeng/checkbox'
+import { Tooltip } from '@openng/optimus-ui/tooltip'
+import { Divider } from '@openng/optimus-ui/divider'
+import { Checkbox } from '@openng/optimus-ui/checkbox'
 import { FormsModule } from '@angular/forms'
 
 /**

@@ -1,6 +1,6 @@
 import { ZoneTransfersPageComponent } from './zone-transfers-page.component'
 import { applicationConfig, Meta, moduleMetadata, StoryObj } from '@storybook/angular'
-import { ConfirmationService, MessageService } from 'primeng/api'
+import { ConfirmationService, MessageService } from '@openng/optimus-ui/api'
 import { provideRouter, withHashLocation } from '@angular/router'
 import { toastDecorator } from '../utils-stories'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'

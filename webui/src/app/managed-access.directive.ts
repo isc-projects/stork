@@ -10,7 +10,7 @@ import {
     inject,
 } from '@angular/core'
 import { AccessType, AuthService, ManagedAccessEntity } from './auth.service'
-import { Message } from 'primeng/message'
+import { Message } from '@openng/optimus-ui/message'
 
 /**
  * This directive is meant to check authorization privileges for given entity.

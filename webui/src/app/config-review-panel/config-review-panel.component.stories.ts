@@ -1,5 +1,5 @@
 import { applicationConfig, Meta, StoryObj } from '@storybook/angular'
-import { MessageService } from 'primeng/api'
+import { MessageService } from '@openng/optimus-ui/api'
 import { ConfigChecker, ConfigCheckerPreferences, ConfigCheckers, ConfigReports, ServicesService } from '../backend'
 import { ConfigReviewPanelComponent } from './config-review-panel.component'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'

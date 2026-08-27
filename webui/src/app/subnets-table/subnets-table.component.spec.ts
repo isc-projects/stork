@@ -1,8 +1,8 @@
 import { ComponentFixture, fakeAsync, flush, TestBed, tick } from '@angular/core/testing'
 
 import { SubnetsTableComponent } from './subnets-table.component'
-import { InputNumber } from 'primeng/inputnumber'
-import { MessageService, FilterMetadata } from 'primeng/api'
+import { InputNumber } from '@openng/optimus-ui/inputnumber'
+import { MessageService, FilterMetadata } from '@openng/optimus-ui/api'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { provideRouter } from '@angular/router'

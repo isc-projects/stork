@@ -2,7 +2,7 @@ import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testin
 
 import { ZonesPageComponent } from './zones-page.component'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
-import { ConfirmationService, MessageService, TableState } from 'primeng/api'
+import { ConfirmationService, MessageService, TableState } from '@openng/optimus-ui/api'
 import { Router, provideRouter } from '@angular/router'
 import {
     DNSService,
