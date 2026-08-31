@@ -84,7 +84,9 @@ stages:
     - amd64
   before_script:
     - mkdir -p .go/bin
-    - export PATH="$PATH:$GOPATH/bin"
+    - echo $PATH
+    - export PATH="$GOPATH/bin:$PATH"
+    - echo $PATH
     - go env
     - ls -al .go/bin
 
@@ -97,7 +99,9 @@ stages:
     - aarch64
   before_script:
     - mkdir -p .go/bin
-    - export PATH="$PATH:$GOPATH/bin"
+    - echo $PATH
+    - export PATH="$GOPATH/bin:$PATH"
+    - echo $PATH
     - go env
     - ls -al .go/bin
 

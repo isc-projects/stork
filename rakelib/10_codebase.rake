@@ -409,7 +409,7 @@ file NODE_MODULES => [CLANGPLUSPLUS, NPM, "webui/package.json", "webui/package-l
         ENV["NG_CLI_ANALYTICS"] = "false"
 
         if OS == "OpenBSD"
-            # The clang++ is required but instead what is actually used is g++ .
+            # The clang++ is required but instead what is actually used is g++.
             # See: https://obsd.solutions/en/blog/2022/02/23/node-sass-build-fails-on-openbsd-how-to-fix/
             ENV["CXX"] = CLANGPLUSPLUS
         end
