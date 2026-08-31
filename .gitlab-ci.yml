@@ -84,6 +84,9 @@ stages:
     - amd64
   before_script:
     - export PATH="$PATH:$GOPATH/bin"
+    - ls -al .
+    - ls -al .go/bin
+    - ls -al .go/pkg/mod
 
 # template setting appropriate tags for ARM (aarch64) architecture jobs
 .job_template_arm: &job_template_arm
@@ -94,6 +97,9 @@ stages:
     - aarch64
   before_script:
     - export PATH="$PATH:$GOPATH/bin"
+    - ls -al .
+    - ls -al .go/bin
+    - ls -al .go/pkg/mod
 
 # template with alpine image
 .image_alpine: &image_alpine
