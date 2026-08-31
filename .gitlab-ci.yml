@@ -83,6 +83,7 @@ stages:
     - runner-manager
     - amd64
   before_script:
+    - mkdir -p .go/bin
     - export PATH="$PATH:$GOPATH/bin"
     - go env
 
@@ -94,6 +95,7 @@ stages:
     - runner-manager
     - aarch64
   before_script:
+    - mkdir -p .go/bin
     - export PATH="$PATH:$GOPATH/bin"
     - go env
 
