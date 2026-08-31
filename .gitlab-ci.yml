@@ -83,7 +83,6 @@ stages:
     - runner-manager
     - amd64
   before_script:
-    - #mkdir -p .go
     - export PATH="$PATH:$GOPATH/bin"
 
 # template setting appropriate tags for ARM (aarch64) architecture jobs
@@ -94,7 +93,6 @@ stages:
     - runner-manager
     - aarch64
   before_script:
-    - #mkdir -p .go
     - export PATH="$PATH:$GOPATH/bin"
 
 # template with alpine image
