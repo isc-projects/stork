@@ -84,6 +84,7 @@ stages:
     - amd64
   before_script:
     - export PATH="$PATH:$GOPATH/bin"
+    - go env
 
 # template setting appropriate tags for ARM (aarch64) architecture jobs
 .job_template_arm: &job_template_arm
@@ -94,6 +95,7 @@ stages:
     - aarch64
   before_script:
     - export PATH="$PATH:$GOPATH/bin"
+    - go env
 
 # template with alpine image
 .image_alpine: &image_alpine
@@ -330,7 +332,6 @@ rebuild_cache_amd64:
     - rake prepare:deps
     - rake hook:prepare
     - rake hook:update_deps
-    - which mockgen
     - ls -al .go
 
 # rebuilds debian ARM caches only when needed
