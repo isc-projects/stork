@@ -920,14 +920,14 @@ add_version_guard(PROTOC, protoc_ver)
 
 PROTOC_GEN_GO = File.join(gobin, "protoc-gen-go")
 file PROTOC_GEN_GO => [GO] do
-    sh GO, "install", "google.golang.org/protobuf/cmd/protoc-gen-go@#{protoc_gen_go_ver}"
+    sh GO, "install", "-x", "google.golang.org/protobuf/cmd/protoc-gen-go@#{protoc_gen_go_ver}"
     sh PROTOC_GEN_GO, "--version"
 end
 add_version_guard(PROTOC_GEN_GO, protoc_gen_go_ver)
 
 PROTOC_GEN_GO_GRPC = File.join(gobin, "protoc-gen-go-grpc")
 file PROTOC_GEN_GO_GRPC => [GO] do
-    sh GO, "install", "google.golang.org/grpc/cmd/protoc-gen-go-grpc@#{protoc_gen_go_grpc_ver}"
+    sh GO, "install", "-x", "google.golang.org/grpc/cmd/protoc-gen-go-grpc@#{protoc_gen_go_grpc_ver}"
     sh PROTOC_GEN_GO_GRPC, "--version"
 end
 add_version_guard(PROTOC_GEN_GO_GRPC, protoc_gen_go_grpc_ver)
@@ -950,7 +950,7 @@ add_version_guard(GOLANGCILINT, golangcilint_ver)
 
 GOLIVEPPROF = File.join(gobin, "live-pprof")
 file GOLIVEPPROF => [GO] do
-    sh GO, "install", "github.com/moderato-app/live-pprof@#{go_live_pprof_ver}"
+    sh GO, "install", "-x", "github.com/moderato-app/live-pprof@#{go_live_pprof_ver}"
     if !File.file?(GOLIVEPPROF)
         fail
     end
@@ -976,21 +976,21 @@ add_version_guard(SHELLCHECK, shellcheck_ver)
 
 TPARSE = "#{gobin}/tparse"
 file TPARSE => [GO] do
-    sh GO, "install", "github.com/mfridman/tparse@#{tparse_ver}"
+    sh GO, "install", "-x", "github.com/mfridman/tparse@#{tparse_ver}"
     sh TPARSE, "--version"
 end
 add_version_guard(TPARSE, tparse_ver)
 
 GO_JUNIT_REPORT = "#{gobin}/go-junit-report"
 file GO_JUNIT_REPORT => [GO] do
-    sh GO, "install", "github.com/jstemmer/go-junit-report/v2@#{go_junit_report_ver}"
+    sh GO, "install", "-x", "github.com/jstemmer/go-junit-report/v2@#{go_junit_report_ver}"
     sh GO_JUNIT_REPORT, "--version"
 end
 add_version_guard(GO_JUNIT_REPORT, go_junit_report_ver)
 
 GOCOVER_COBERTURA = "#{gobin}/gocover-cobertura"
 file GOCOVER_COBERTURA => [GO] do
-    sh GO, "install", "github.com/boumenot/gocover-cobertura@#{gocover_cobertura_ver}"
+    sh GO, "install", "-x", "github.com/boumenot/gocover-cobertura@#{gocover_cobertura_ver}"
     if !File.file?(GOCOVER_COBERTURA)
         fail
     end
@@ -998,21 +998,21 @@ end
 
 MOCKGEN = File.join(gobin, "mockgen")
 file MOCKGEN => [GO] do
-    sh GO, "install", "go.uber.org/mock/mockgen@#{mockgen_ver}"
+    sh GO, "install", "-x", "go.uber.org/mock/mockgen@#{mockgen_ver}"
     sh MOCKGEN, "--version"
 end
 add_version_guard(MOCKGEN, mockgen_ver)
 
 DLV = File.join(gobin, "dlv")
 file DLV => [GO] do
-    sh GO, "install", "github.com/go-delve/delve/cmd/dlv@#{dlv_ver}"
+    sh GO, "install", "-x", "github.com/go-delve/delve/cmd/dlv@#{dlv_ver}"
     sh DLV, "version"
 end
 add_version_guard(DLV, dlv_ver)
 
 GDLV = File.join(gobin, "gdlv")
 file GDLV => [GO] do
-    sh GO, "install", "github.com/aarzilli/gdlv@#{gdlv_ver}"
+    sh GO, "install", "-x", "github.com/aarzilli/gdlv@#{gdlv_ver}"
     if !File.file?(GDLV)
         fail
     end
@@ -1022,14 +1022,14 @@ add_version_guard(GDLV, gdlv_ver)
 NFPM = File.join(gobin, "nfpm")
 file NFPM => [GO] do
     nfpm_major_ver = nfpm_ver.split('.')[0]
-    sh GO, "install", "github.com/goreleaser/nfpm/#{nfpm_major_ver}/cmd/nfpm@#{nfpm_ver}"
+    sh GO, "install", "-x", "github.com/goreleaser/nfpm/#{nfpm_major_ver}/cmd/nfpm@#{nfpm_ver}"
     sh NFPM, "--version"
 end
 add_version_guard(NFPM, nfpm_ver)
 
 GOVULNCHECK = File.join(gobin, "govulncheck")
 file GOVULNCHECK => [GO] do
-    sh GO, "install", "golang.org/x/vuln/cmd/govulncheck@#{govulncheck_ver}"
+    sh GO, "install", "-x", "golang.org/x/vuln/cmd/govulncheck@#{govulncheck_ver}"
     sh GOVULNCHECK, "-version"
     sh "touch", "-c", GOVULNCHECK
 end

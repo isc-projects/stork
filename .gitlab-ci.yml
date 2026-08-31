@@ -86,6 +86,7 @@ stages:
     - mkdir -p .go/bin
     - export PATH="$PATH:$GOPATH/bin"
     - go env
+    - ls -al .go/bin
 
 # template setting appropriate tags for ARM (aarch64) architecture jobs
 .job_template_arm: &job_template_arm
@@ -98,6 +99,7 @@ stages:
     - mkdir -p .go/bin
     - export PATH="$PATH:$GOPATH/bin"
     - go env
+    - ls -al .go/bin
 
 # template with alpine image
 .image_alpine: &image_alpine
