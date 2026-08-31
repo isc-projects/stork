@@ -84,7 +84,7 @@ stages:
     - amd64
   before_script:
     - export PATH="$PATH:$GOPATH/bin"
-    - ls -al .
+    - ls -al .go
     - ls -al .go/bin
     - ls -al .go/pkg/mod
 
@@ -97,7 +97,7 @@ stages:
     - aarch64
   before_script:
     - export PATH="$PATH:$GOPATH/bin"
-    - ls -al .
+    - ls -al .go
     - ls -al .go/bin
     - ls -al .go/pkg/mod
 
