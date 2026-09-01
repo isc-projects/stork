@@ -354,6 +354,16 @@ namespace :hook do
         end
     end
 
+    desc "Trigger GO hook dependencies installation.
+        HOOK_DIR - the hook (plugin) directory - optional, default: #{default_hook_directory_rel}"
+    task :prepare_deps => [GO] do
+        forEachHook do |dir_name, project_path, src_path|
+            Dir.chdir(src_path) do
+                sh GO, "mod", "download"
+            end
+        end
+    end
+
     desc "Audit the hook dependencies for known vulnerabilities.
         HOOK_DIR - the hook (plugin) directory - optional, default: #{default_hook_directory_rel}"
     task :audit => [GOVULNCHECK] do

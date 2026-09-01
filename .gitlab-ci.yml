@@ -308,8 +308,7 @@ stages:
   script:
     - rake prepare:dist
     - rake prepare:deps
-    - rake hook:prepare
-    - rake prepare:backend_deps
+    - rake hook:prepare_deps
 
 # job template for rebuilding cache for redhat image
 .cache_job_template_redhat: &cache_job_template_redhat
@@ -342,9 +341,9 @@ rebuild_cache_amd64:
   script:
     - rake prepare
     - rake prepare:dev
-    - rake hook:prepare
     - rake prepare:deps
-    - ls -al .go
+    - rake hook:prepare
+    - rake hook:prepare_deps
 
 # rebuilds debian ARM caches only when needed
 rebuild_cache_arm64:
@@ -356,8 +355,9 @@ rebuild_cache_arm64:
     - *nodejs_arm_cache
   script:
     - rake prepare
-    - rake hook:prepare
     - rake prepare:deps
+    - rake hook:prepare
+    - rake hook:prepare_deps
 
 # rebuilds alpine caches only when needed
 rebuild_cache_amd64_alpine:
