@@ -306,7 +306,6 @@ stages:
     - *rule_manual_allow_failure
 
   script:
-    - rake prepare:dev
     - rake prepare:dist
     - rake prepare:deps
     - rake hook:prepare_deps
@@ -356,7 +355,6 @@ rebuild_cache_arm64:
     - *nodejs_arm_cache
   script:
     - rake prepare
-    - rake prepare:dev
     - rake prepare:deps
     - rake hook:prepare
     - rake hook:prepare_deps

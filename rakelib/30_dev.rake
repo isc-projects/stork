@@ -1514,7 +1514,7 @@ end
 
 namespace :prepare do
     desc 'Install the external dependencies related to the development'
-    task :dev => [NFPM, PROTOC_GEN_GO, PROTOC_GEN_GO_GRPC, MOCKGEN, TPARSE] do
+    task :dev do
         find_and_prepare_deps(__FILE__, [CHROME_LINK])
     end
 end
