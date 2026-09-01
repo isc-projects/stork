@@ -307,8 +307,9 @@ stages:
 
   script:
     - rake prepare:dist
-    - rake hook:prepare
     - rake prepare:deps
+    - rake hook:prepare
+    - rake prepare:backend_deps
 
 # job template for rebuilding cache for redhat image
 .cache_job_template_redhat: &cache_job_template_redhat
