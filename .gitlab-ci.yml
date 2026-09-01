@@ -37,6 +37,10 @@ variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/tools/python/pip_cache"
 
   GOPATH: $CI_PROJECT_DIR/.go
+  GOMODCACHE: $CI_PROJECT_DIR/.go/pkg/mod
+  GOCACHE: $CI_PROJECT_DIR/.go/build-cache
+  GOBIN: $CI_PROJECT_DIR/.go/bin
+
   NPM_CACHE_DIR: $CI_PROJECT_DIR/.npm
 
   # Only pull the cache by default in all the jobs.
@@ -83,9 +87,9 @@ stages:
     - runner-manager
     - amd64
   before_script:
-    - mkdir -p .go/bin
+    - mkdir -p "$GOMODCACHE" "$GOCACHE" "$GOBIN"
     - echo $PATH
-    - export PATH="$GOPATH/bin:$PATH"
+    - export PATH="$PATH:$GOPATH/bin"
     - echo $PATH
     - go env
     - ls -al .go/bin
@@ -98,9 +102,9 @@ stages:
     - runner-manager
     - aarch64
   before_script:
-    - mkdir -p .go/bin
+    - mkdir -p "$GOMODCACHE" "$GOCACHE" "$GOBIN"
     - echo $PATH
-    - export PATH="$GOPATH/bin:$PATH"
+    - export PATH="$PATH:$GOPATH/bin"
     - echo $PATH
     - go env
     - ls -al .go/bin
