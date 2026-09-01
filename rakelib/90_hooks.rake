@@ -359,7 +359,7 @@ namespace :hook do
     task :prepare_deps => [GO] do
         forEachHook do |dir_name, project_path, src_path|
             Dir.chdir(src_path) do
-                sh GO, "mod", "download"
+                sh GO, "mod", "tidy"
             end
         end
     end
