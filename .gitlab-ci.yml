@@ -36,11 +36,13 @@ variables:
   # Download Python packages to cached location.
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/tools/python/pip_cache"
 
+  # Go ENV settings to have working cache.
   GOPATH: $CI_PROJECT_DIR/.go
   GOMODCACHE: $CI_PROJECT_DIR/.go/pkg/mod
   GOCACHE: $CI_PROJECT_DIR/.go/build-cache
   GOBIN: $CI_PROJECT_DIR/.go/bin
 
+  # NPM cache location.
   NPM_CACHE_DIR: $CI_PROJECT_DIR/.npm
 
   # Only pull the cache by default in all the jobs.
@@ -88,11 +90,7 @@ stages:
     - amd64
   before_script:
     - mkdir -p "$GOMODCACHE" "$GOCACHE" "$GOBIN"
-    - echo $PATH
     - export PATH="$PATH:$GOPATH/bin"
-    - echo $PATH
-    - go env
-    - ls -al .go/bin
 
 # template setting appropriate tags for ARM (aarch64) architecture jobs
 .job_template_arm: &job_template_arm
@@ -103,11 +101,7 @@ stages:
     - aarch64
   before_script:
     - mkdir -p "$GOMODCACHE" "$GOCACHE" "$GOBIN"
-    - echo $PATH
     - export PATH="$PATH:$GOPATH/bin"
-    - echo $PATH
-    - go env
-    - ls -al .go/bin
 
 # template with alpine image
 .image_alpine: &image_alpine
