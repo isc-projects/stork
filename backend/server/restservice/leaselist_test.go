@@ -92,6 +92,7 @@ func TestConvertLeaseFromRestAPIWithValidLease(t *testing.T) {
 			DUID:          keadata.NewColonSepHexStr(&duid),
 			ValidLifetime: 3600,
 			LocalSubnetID: 67,
+			Hostname:      "client.example",
 		},
 		Subnet: &dbmodel.Subnet{
 			ID:     9,
@@ -105,6 +106,7 @@ func TestConvertLeaseFromRestAPIWithValidLease(t *testing.T) {
 	require.EqualValues(t, lease.CLTT, *result.Cltt)
 	require.EqualValues(t, lease.LocalSubnetID, *result.LocalSubnetID)
 	require.EqualValues(t, lease.SubnetID, result.SubnetID)
+	require.EqualValues(t, lease.Hostname, result.Hostname)
 }
 
 // Verify that [convertSortFieldToColumnName] converts all of the supported sort

@@ -2,12 +2,14 @@ package dbmodel
 
 import (
 	"context"
+	"encoding/json"
 	"math"
 	"strings"
 
 	"github.com/go-pg/pg/v10"
 	"github.com/go-pg/pg/v10/orm"
 	pkgerrors "github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 
 	agentapi "isc.org/stork/api"
 	keadata "isc.org/stork/daemondata/kea"
@@ -220,19 +222,36 @@ func NewLeaseFromGRPC(grpc *agentapi.Lease, daemonID, subnetID int64) *Lease {
 	if grpc.Family == 6 {
 		ipv = storkutil.IPv6
 	}
+	var userContext map[string]any
+	if grpc.UserContext != "" {
+		err := json.Unmarshal([]byte(grpc.UserContext), &userContext)
+		if err != nil {
+			log.WithError(err).WithField("lease", grpc).Info("failed to parse UserContext JSON for lease")
+			return nil
+		}
+	}
 	return &Lease{
 		0,
 		keadata.Lease{
-			Family:        ipv,
-			IPAddress:     grpc.IpAddress,
-			HWAddress:     grpc.HwAddress,
-			DUID:          keadata.NewColonSepHexStr(&grpc.Duid),
-			ClientID:      keadata.NewColonSepHexStr(&grpc.ClientID),
-			CLTT:          grpc.Cltt,
-			ValidLifetime: uint32(grpc.ValidLifetime),
-			LocalSubnetID: grpc.SubnetID,
-			State:         grpc.State,
-			PrefixLength:  uint8(grpc.PrefixLen),
+			Family:            ipv,
+			IPAddress:         grpc.IpAddress,
+			HWAddress:         grpc.HwAddress,
+			DUID:              keadata.NewColonSepHexStr(&grpc.Duid),
+			ClientID:          keadata.NewColonSepHexStr(&grpc.ClientID),
+			CLTT:              grpc.Cltt,
+			ValidLifetime:     uint32(grpc.ValidLifetime),
+			LocalSubnetID:     grpc.SubnetID,
+			State:             grpc.State,
+			PrefixLength:      uint8(grpc.PrefixLen),
+			HWAddressSource:   grpc.HwAddressSource,
+			Type:              grpc.Type,
+			IAID:              grpc.Iaid,
+			PreferredLifetime: grpc.PreferredLifetime,
+			FqdnFwd:           grpc.FqdnFwd,
+			FqdnRev:           grpc.FqdnRev,
+			HWType:            grpc.HwType,
+			Hostname:          grpc.Hostname,
+			UserContext:       userContext,
 		},
 		daemonID,
 		nil,
