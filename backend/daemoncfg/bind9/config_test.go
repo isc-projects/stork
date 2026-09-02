@@ -1323,6 +1323,64 @@ func TestConfigExpand(t *testing.T) {
 	}
 }
 
+// Test that the wildcard include pattern is expanded correctly in both chroot and
+// non-chroot environments.
+func TestConfigExpandWildcardInclude(t *testing.T) {
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+
+	sb.Write("dir/include1.conf", "acl test { 1.2.3.4; };")
+	sb.Write("dir/include2.conf", "acl test { 1.2.3.4; };")
+	sb.Write("chroot/dir/include1.conf", "acl test { 1.2.3.4; };")
+	sb.Write("chroot/dir/include2.conf", "acl test { 1.2.3.4; };")
+
+	type testCase struct {
+		name                  string
+		namedConfPath         string
+		namedConfCreationPath string
+		pattern               string
+		chrootDir             string
+	}
+	testCases := []testCase{
+		{
+			name:                  "relative path",
+			namedConfPath:         filepath.Join(sb.BasePath, "dir/named.conf"),
+			namedConfCreationPath: "dir/named.conf",
+			pattern:               "include*.conf",
+		},
+		{
+			name:                  "absolute path",
+			namedConfPath:         filepath.Join(sb.BasePath, "dir/named.conf"),
+			namedConfCreationPath: "dir/named.conf",
+			pattern:               filepath.Join(sb.BasePath, "dir/include*.conf"),
+		},
+		{
+			name:                  "relative path with chroot",
+			namedConfPath:         "named.conf",
+			namedConfCreationPath: "chroot/named.conf",
+			pattern:               "dir/include*.conf",
+			chrootDir:             filepath.Join(sb.BasePath, "/chroot"),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			config := fmt.Sprintf(`include "%s";`, testCase.pattern)
+			sb.Write(testCase.namedConfCreationPath, config)
+
+			cfg, err := NewParser().ParseFile(testCase.namedConfPath, testCase.chrootDir)
+			require.NoError(t, err)
+			require.NotNil(t, cfg)
+
+			expanded, _, err := cfg.Expand()
+			require.NoError(t, err)
+			require.Len(t, expanded.Statements, 2)
+			require.NotNil(t, expanded.Statements[0].ACL)
+			require.NotNil(t, expanded.Statements[1].ACL)
+		})
+	}
+}
+
 // Test that the config can detect that two files are same in any case.
 func TestConfigAreSameFilesForSameFiles(t *testing.T) {
 	sb := testutil.NewSandbox()

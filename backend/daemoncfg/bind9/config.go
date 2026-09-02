@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/pkg/errors"
@@ -555,8 +556,41 @@ func (c *Config) GetZoneKey(viewName string, zoneName string) (*Key, error) {
 	return nil, nil
 }
 
+// Expands the file pattern into a list of matching file paths taking into consideration
+// the chroot directory. It prepends the chroot directory to the path pattern, expands the
+// pattern into matching files list, and trims the chroot directory from the expanded paths.
+func (c *Config) glob(path string) ([]string, error) {
+	var (
+		absChrootDir string
+		err          error
+	)
+	if c.chrootDir != "" {
+		// Ensure the chroot directory is absolute.
+		absChrootDir, err = filepath.Abs(c.chrootDir)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to get absolute path of chroot directory %s", c.chrootDir)
+		}
+		// Prepend the chroot directory to the path, so we can call glob on the absolute path.
+		path = filepath.Join(absChrootDir, path)
+	}
+	// Expand the file pattern into a list of matching file paths.
+	paths, err := filepath.Glob(path)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to glob the path pattern %s", path)
+	}
+	// Trim the chroot directory from the expanded paths because the parser expects
+	// paths to be relative to chroot directory.
+	relativePaths := make([]string, 0, len(paths))
+	for _, path := range paths {
+		path = filepath.Clean(strings.TrimPrefix(path, absChrootDir))
+		relativePaths = append(relativePaths, path)
+	}
+	return relativePaths, nil
+}
+
 // Expands the configuration by including the contents of the included files.
 // Returns the expanded configuration and the list of paths of included files.
+// This function accepts the wildcard include patterns.
 func (c *Config) Expand() (*Config, []string, error) {
 	baseDir := filepath.Dir(c.sourcePath)
 	expanded := &Config{
@@ -572,25 +606,32 @@ func (c *Config) Expand() (*Config, []string, error) {
 				// The path is relative to the base directory.
 				path = filepath.Join(baseDir, path)
 			}
-			// Clean the path so it may be compared with the source file path to
-			// avoid the cycles.
-			path = filepath.Clean(path)
-			if c.areSameFiles(path, c.sourcePath) {
-				// If the included file points to the including file, skip expanding it.
-				// One could consider returning an error but we want the parser to be
-				// liberal. Stork wants to be able to look into the file contents rather
-				// than validate it.
-				expanded.Statements = append(expanded.Statements, statement)
-				continue
-			}
-			// Parse the included file.
-			parsedInclude, err := NewParser().ParseFile(path, c.chrootDir)
+			// Expand the file pattern into a list of matching file paths.
+			paths, err := c.glob(path)
 			if err != nil {
 				return nil, nil, err
 			}
-			// Append the parsed statements to the parent file.
-			expanded.Statements = append(expanded.Statements, parsedInclude.Statements...)
-			includedFiles = append(includedFiles, parsedInclude.GetSourcePath())
+			for _, path := range paths {
+				// Clean the path so it may be compared with the source file path to
+				// avoid the cycles.
+				path = filepath.Clean(path)
+				if c.areSameFiles(path, c.sourcePath) {
+					// If the included file points to the including file, skip expanding it.
+					// One could consider returning an error but we want the parser to be
+					// liberal. Stork wants to be able to look into the file contents rather
+					// than validate it.
+					expanded.Statements = append(expanded.Statements, statement)
+					continue
+				}
+				// Parse the included file.
+				parsedInclude, err := NewParser().ParseFile(path, c.chrootDir)
+				if err != nil {
+					return nil, nil, err
+				}
+				// Append the parsed statements to the parent file.
+				expanded.Statements = append(expanded.Statements, parsedInclude.Statements...)
+				includedFiles = append(includedFiles, parsedInclude.GetSourcePath())
+			}
 		} else {
 			// This is not an include statement. Append it as is.
 			expanded.Statements = append(expanded.Statements, statement)
