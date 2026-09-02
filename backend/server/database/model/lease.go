@@ -125,6 +125,8 @@ const (
 	GetLeasesByPageSortColumnNameValidLifetime = "valid_lifetime"
 	// The column name for the IPv6 delegated prefix length.
 	GetLeasesByPageSortColumnNamePrefixLength = "prefix_length"
+	// The column name for the lease state.
+	GetLeasesByPageSortColumnNameState = "state"
 	// The "none" column name, which indicates that the default sort
 	// column should be used (lease ID).
 	GetLeasesByPageSortColumnNameNone = ""

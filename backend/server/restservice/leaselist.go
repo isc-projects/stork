@@ -83,6 +83,8 @@ func convertSortFieldToColumnName(sortField string) dbmodel.GetLeasesByPageSortC
 		return dbmodel.GetLeasesByPageSortColumnNameValidLifetime
 	case models.LeaseListSortFieldPrefixLength:
 		return dbmodel.GetLeasesByPageSortColumnNamePrefixLength
+	case models.LeaseListSortFieldState:
+		return dbmodel.GetLeasesByPageSortColumnNameState
 	default:
 		return dbmodel.GetLeasesByPageSortColumnNameNone
 	}

@@ -158,6 +158,11 @@ func TestConvertSortFieldToColumnNameHandlesAllCases(t *testing.T) {
 			expectedColName: dbmodel.GetLeasesByPageSortColumnNamePrefixLength,
 		},
 		{
+			description:     "State",
+			sortField:       string(models.LeaseListSortFieldState),
+			expectedColName: dbmodel.GetLeasesByPageSortColumnNameState,
+		},
+		{
 			description:     "Unknown field",
 			sortField:       "potato",
 			expectedColName: dbmodel.GetLeasesByPageSortColumnNameNone,
@@ -414,6 +419,7 @@ func helperSetUpLeases(t *testing.T, db *dbops.PgDB) ([]*dbmodel.Lease, *dbmodel
 
 	duid0through7 := "00:01:02:03:04:05:06:07"
 	duid1through8 := "01:02:03:04:05:06:07:08"
+	duid2through9 := "02:03:04:05:06:07:08:09"
 	leases := []*dbmodel.Lease{
 		{
 			DaemonID: daemon.ID,
@@ -439,6 +445,20 @@ func helperSetUpLeases(t *testing.T, db *dbops.PgDB) ([]*dbmodel.Lease, *dbmodel
 				CLTT:          10002,
 				Hostname:      "client.example",
 				State:         keadata.LeaseStateRegistered,
+				ValidLifetime: 3600,
+				LocalSubnetID: 123,
+			},
+		},
+		{
+			DaemonID: daemon.ID,
+			SubnetID: subnet.ID,
+			Lease: keadata.Lease{
+				Family:        6,
+				DUID:          keadata.NewColonSepHexStr(&duid2through9),
+				IPAddress:     "2001:db8:1::406",
+				CLTT:          10002,
+				Hostname:      "client.example",
+				State:         keadata.LeaseStateDefault,
 				ValidLifetime: 3600,
 				LocalSubnetID: 123,
 			},
@@ -512,4 +532,74 @@ func TestGetLeaseListHandlesParams(t *testing.T) {
 	require.Equal(t, leases[1].IPAddress, *okRsp.Payload.Items[0].IPAddress)
 	require.NotNil(t, okRsp.Payload.Items[1].IPAddress)
 	require.Equal(t, leases[0].IPAddress, *okRsp.Payload.Items[1].IPAddress)
+}
+
+// Verify that [GetLeaseList] sorts the lease list by lease state correctly.
+func TestGetLeaseListSortsByState(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	_, _ = helperSetUpLeases(t, db)
+	ctx := context.Background()
+	fec := &storktest.FakeEventCenter{}
+	rapi, err := NewRestAPI(dbSettings, db, fec)
+	require.NoError(t, err)
+
+	ctx, err = rapi.SessionManager.Load(ctx, "")
+	require.NoError(t, err)
+
+	superAdminUser := exampleSuperAdmin()
+	testHelperMakeUser(t, db, superAdminUser, "pass2")
+
+	err = rapi.SessionManager.LoginHandler(ctx, superAdminUser)
+	require.NoError(t, err)
+
+	sortField := string(models.LeaseListSortFieldState)
+	sortDirAsc := string(dbmodel.SortDirAsc)
+	sortDirDesc := string(dbmodel.SortDirDesc)
+
+	// Act
+	getLeaseListAscParams := dhcp.GetLeaseListParams{
+		SortField: &sortField,
+		SortDir:   &sortDirAsc,
+	}
+	getLeaseListDescParams := dhcp.GetLeaseListParams{
+		SortField: &sortField,
+		SortDir:   &sortDirDesc,
+	}
+	rspAsc := rapi.GetLeaseList(ctx, getLeaseListAscParams)
+	rspDesc := rapi.GetLeaseList(ctx, getLeaseListDescParams)
+
+	// Assert
+	require.IsType(t, &dhcp.GetLeaseListOK{}, rspAsc)
+	require.IsType(t, &dhcp.GetLeaseListOK{}, rspDesc)
+	require.NotNil(t, rspAsc)
+	require.NotNil(t, rspDesc)
+	okRspAsc := rspAsc.(*dhcp.GetLeaseListOK)
+	okRspDesc := rspDesc.(*dhcp.GetLeaseListOK)
+	require.NotNil(t, okRspAsc.Payload)
+	require.NotNil(t, okRspDesc.Payload)
+	require.EqualValues(t, 3, okRspAsc.Payload.Total)
+	require.EqualValues(t, 3, okRspAsc.Payload.Total)
+	require.NotNil(t, okRspAsc.Payload.Items)
+	require.NotNil(t, okRspDesc.Payload.Items)
+	require.Len(t, okRspAsc.Payload.Items, 3)
+	require.Len(t, okRspDesc.Payload.Items, 3)
+
+	items := okRspAsc.Payload.Items
+	for idx, lease := range items {
+		require.NotNil(t, lease.State)
+		if idx == 0 {
+			continue
+		}
+		require.LessOrEqual(t, *items[idx-1].State, *lease.State)
+	}
+	items = okRspDesc.Payload.Items
+	for idx, lease := range items {
+		require.NotNil(t, lease.State)
+		if idx == 0 {
+			continue
+		}
+		require.GreaterOrEqual(t, *items[idx-1].State, *lease.State)
+	}
 }
