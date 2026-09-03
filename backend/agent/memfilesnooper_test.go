@@ -997,6 +997,26 @@ func mockEmitRows(rows [][]string, wg *sync.WaitGroup) func() chan []string {
 	}
 }
 
+// mockEmitRowsWithPause writes groups of rows into the output channel, one at a
+// time, stopping between each group until signaled. It signals the wait group
+// when complete.
+func mockEmitRowsWithPause(rowgroups [][][]string, wg *sync.WaitGroup, readCh, writeCh chan struct{}) func() chan []string {
+	return func() chan []string {
+		channel := make(chan []string)
+		go func() {
+			for _, rowgroup := range rowgroups {
+				for _, row := range rowgroup {
+					channel <- row
+				}
+				readCh <- struct{}{}
+				<-writeCh
+			}
+			wg.Done()
+		}()
+		return channel
+	}
+}
+
 // Create a mock RowSource which will emit the list of rows, one at a time, into
 // the channel when started. It will signal the wait group when this is
 // complete.
@@ -1005,6 +1025,18 @@ func makeMockRowSource(ctrl *gomock.Controller, rows [][]string) (RowSource, *sy
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	rowSource.EXPECT().Start().DoAndReturn(mockEmitRows(rows, &wg))
+	rowSource.EXPECT().Stop()
+	return rowSource, &wg
+}
+
+// Create a mock RowSource which will emit the groups of rows, one at a time,
+// into the channel when started, pausing between each group until signaled via
+// the readCh. It will signal the wait group when this is all complete.
+func makeMockRowSourceWithPause(ctrl *gomock.Controller, rowgroups [][][]string, readCh, writeCh chan struct{}) (RowSource, *sync.WaitGroup) {
+	rowSource := NewMockRowSource(ctrl)
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	rowSource.EXPECT().Start().DoAndReturn(mockEmitRowsWithPause(rowgroups, &wg, readCh, writeCh))
 	rowSource.EXPECT().Stop()
 	return rowSource, &wg
 }
@@ -1309,4 +1341,66 @@ func TestMemfileSnooperEnsureWatchingCallsRowSource(t *testing.T) {
 	memfileSnooper.EnsureWatching("foo")
 
 	// Assert (ctrl.Finish does the work)
+}
+
+// Ensure that prior to leases expiring, the MemfileSnooper shows the leases,
+// and then after the leases expire, it shows the same leases as expired.
+func TestMemfileSnooperGetSnapshotExpiresLeases(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	rowgroups := [][][]string{
+		{
+			{"address", "hwaddr", "client_id", "valid_lifetime", "expire", "subnet_id", "fqdn_fwd", "fqdn_rev", "hostname", "state", "user_context", "pool_id"},
+{"192.0.2.1", "00:01:02:03:04:01", "", "180", "1784635775", "1", "0", "0", "host-1.example.org", "0", "", "0"},
+{"192.0.2.2", "00:01:02:03:04:02", "", "180", "1784635775", "1", "0", "0", "host-2.example.org", "0", "", "0"},
+{"192.0.2.3", "00:01:02:03:04:03", "", "180", "1784635775", "1", "0", "0", "host-3.example.org", "0", "", "0"},
+{"192.0.2.4", "00:01:02:03:04:04", "", "180", "1784635775", "1", "0", "0", "host-4.example.org", "0", "", "0"},
+		},
+		{
+{"192.0.2.1", "00:01:02:03:04:01", "", "180", "1784635775", "1", "0", "0", "", "2", "", "0"},
+{"192.0.2.2", "00:01:02:03:04:02", "", "180", "1784635775", "1", "0", "0", "", "2", "", "0"},
+{"192.0.2.3", "00:01:02:03:04:03", "", "180", "1784635775", "1", "0", "0", "", "2", "", "0"},
+{"192.0.2.4", "00:01:02:03:04:04", "", "180", "1784635775", "1", "0", "0", "", "2", "", "0"},
+		},
+	}
+
+	readCh := make(chan struct{})
+	defer close(readCh)
+	writeCh := make(chan struct{})
+	defer close(writeCh)
+
+	rowSource, wg := makeMockRowSourceWithPause(ctrl, rowgroups, readCh, writeCh)
+	memfileSnooper, err := NewMemfileSnooper(10, daemonname.DHCPv4, rowSource)
+	require.NoError(t, err)
+
+	// Act
+	err = memfileSnooper.Start()
+	require.NoError(t, err)
+
+	go func() {
+		// First block of rows.
+		<-readCh
+		snapshot := memfileSnooper.GetSnapshot()
+		require.Len(t, snapshot, 4)
+		for _, row := range snapshot {
+			require.Equal(t, keadata.LeaseStateDefault, row.State)
+		}
+		writeCh <- struct{}{}
+
+		// Second block of rows.
+		<-readCh
+		writeCh <- struct{}{}
+	}()
+	
+	wg.Wait()
+
+	memfileSnooper.Stop()
+
+	// Assert
+	snapshot := memfileSnooper.GetSnapshot()
+	require.Len(t, snapshot, 4)
+	for _, row := range snapshot {
+		require.Equal(t, keadata.LeaseStateExpiredReclaimed, row.State)
+	}
 }
