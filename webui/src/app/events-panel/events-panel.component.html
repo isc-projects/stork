@@ -42,12 +42,11 @@
                 <p-select
                     [options]="users"
                     [(ngModel)]="selectedUser"
-                    optionLabel="login"
                     id="user-events"
                     placeholder="any"
                     showClear="true"
                     tooltip="Show events related to selected user"
-                    styleClass="max-w-14rem w-10rem"
+                    class="max-w-14rem w-10rem"
                     (onChange)="onUserSelect($event)"
                 ></p-select>
             </div>

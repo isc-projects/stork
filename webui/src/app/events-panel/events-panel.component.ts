@@ -32,6 +32,11 @@ interface DaemonNameOption {
 }
 
 /**
+ * This type extends User interface with label property.
+ */
+type LabeledUser = User & { label: string }
+
+/**
  * A component that presents the events list. Each event has its own row.
  * The event's text is rendered by EventTextComponent.
  */
@@ -108,7 +113,7 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
         },
     ]
 
-    users: User[]
+    users: LabeledUser[]
     machines: MachinesDirectoryEntry[] = []
     daemonNames: DaemonNameOption[] = (() => {
         const names: DaemonNameOption[] = []
@@ -124,7 +129,7 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
 
     selectedMachine: MachinesDirectoryEntry
     selectedDaemonName: DaemonNameOption
-    selectedUser: User
+    selectedUser: LabeledUser
 
     /**
      * Indicates if the component was initialized.
@@ -206,7 +211,13 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
         if (this.auth.hasPrivilege('users')) {
             lastValueFrom(this.usersApi.getUsers(0, 1000, null))
                 .then((data) => {
-                    this.users = data.items
+                    this.users = (data.items ?? []).map((u: User) => {
+                        const user: LabeledUser = {
+                            ...u,
+                            label: `${u.login || u.email || 'unknown'} (${u.authenticationMethodId})`,
+                        }
+                        return user
+                    })
 
                     if (this.filter.userId) {
                         for (const u of this.users) {
