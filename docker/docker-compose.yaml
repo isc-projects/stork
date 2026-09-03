@@ -469,6 +469,8 @@ services:
       - ./docker/config/agent-bind9/db.bind9.example.org:/etc/bind/db.bind9.example.org
       - ./docker/config/agent-bind9/db.rpz.example.com:/etc/bind/db.rpz.example.com
       - ./docker/config/agent-bind9/named.conf:/etc/bind/named.conf
+      - ./docker/config/agent-bind9/keys.conf:/etc/bind/include/keys.conf
+      - ./docker/config/agent-bind9/acls.conf:/etc/bind/include/acls.conf
       - ./docker/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
       - ./docker/config/supervisor/named.conf:/etc/supervisor/conf.d/named.conf
       - ./docker/config/supervisor/stork-agent.conf:/etc/supervisor/conf.d/stork-agent.conf

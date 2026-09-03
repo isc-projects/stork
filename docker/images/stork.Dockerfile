@@ -439,8 +439,9 @@ RUN apk update \
         && rm -rf /var/cache/apk/* \
         # Alpine specific: need to generate rndc key on our own.
         && /usr/sbin/rndc-confgen -a \
-        && chown bind:bind /etc/bind/* \
-        && chmod g+w /etc/bind \
+        && mkdir -p /etc/bind/include \
+        && chown -R bind:bind /etc/bind \
+        && chmod -R g+w /etc/bind \
         # Puts empty database file to allow mounting it as a volume.
         && touch /etc/bind/db.test \
         # The bind image uses a dedicated user. We need to run the entry point
