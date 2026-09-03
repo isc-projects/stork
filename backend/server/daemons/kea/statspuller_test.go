@@ -1275,3 +1275,168 @@ func TestProcessDaemonResponsesForResponseWithBigNumbers(t *testing.T) {
 	require.Equal(t, uint64(0), stats["assigned-nas"])
 	require.Equal(t, uint64(0), stats["declined-addresses"])
 }
+
+// Test that the Stork local subnet ID (ID of the row in Stork's local subnet
+// table), the Kea local subnet ID (ID of the subnet assigned in the Kea
+// config), and the subnet ID (ID of the row in Stork's subnet table) are not
+// mismatched anywhere.
+// It reproduces a real-world scenario where these IDs were mismatched.
+func TestProcessDaemonResponsesForSubnetIDDifferentThanLocalSubnetIDs(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	_ = dbmodel.InitializeSettings(db, 0)
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	puller, _ := NewStatsPuller(db, fa)
+
+	// Seed database.
+	machine := &dbmodel.Machine{Address: "localhost", AgentPort: 8080}
+	_ = dbmodel.AddMachine(db, machine)
+
+	accessPoints := []*dbmodel.AccessPoint{
+		{
+			Type:     dbmodel.AccessPointControl,
+			Address:  "localhost",
+			Port:     8080,
+			Key:      "",
+			Protocol: protocoltype.HTTP,
+		},
+	}
+
+	daemon := dbmodel.NewDaemon(machine, daemonname.DHCPv6, true, accessPoints)
+	err := dbmodel.AddDaemon(db, daemon)
+	require.NoError(t, err)
+
+	// There will be three subnets with IDs: 2, 3, 4.
+	// Each subnet will have one local subnet. The local subnets ID will be:
+	// 5, 6, 7 respectively.
+	// Each local subnet will have one address pool. Their IDs will be:
+	// 8, 9, 10 respectively.
+	// Each local subnet will have one prefix pool. Their IDs will be:
+	// 11, 12, 13 respectively.
+	//
+	// The below subnet exists only to adjust the IDs for the test scenario.
+	// It will have ID 1, four local subnets with IDs 1, 2, 3, 4 respectively,
+	// seven address pools (IDs 1-7), and ten prefix pools (IDs 1-10)
+	// respectively.
+	subnet := &dbmodel.Subnet{
+		Prefix: "3000::/48",
+	}
+	for i := 1; i <= 4; i++ {
+		subnet.LocalSubnets = append(subnet.LocalSubnets, &dbmodel.LocalSubnet{
+			DaemonID: daemon.ID,
+		})
+	}
+	for i := 1; i <= 7; i++ {
+		subnet.LocalSubnets[0].AddressPools = append(
+			subnet.LocalSubnets[0].AddressPools,
+			dbmodel.AddressPool{
+				LowerBound: fmt.Sprintf("3000:%d::1", i),
+				UpperBound: fmt.Sprintf("3000:%d::ffff", i),
+			},
+		)
+	}
+	for i := 1; i <= 10; i++ {
+		subnet.LocalSubnets[0].PrefixPools = append(
+			subnet.LocalSubnets[0].PrefixPools,
+			dbmodel.PrefixPool{
+				Prefix:       fmt.Sprintf("3000:%d::/64", i),
+				DelegatedLen: 64,
+			},
+		)
+	}
+	err = dbmodel.AddSubnet(db, subnet)
+	require.NoError(t, err)
+	err = dbmodel.SetLocalSubnets(db, subnet)
+	require.NoError(t, err)
+	err = dbmodel.DeleteSubnet(db, subnet.ID)
+
+	for i := 1; i <= 3; i++ {
+		subnet := &dbmodel.Subnet{
+			Prefix: fmt.Sprintf("3001:%d::/48", i),
+			LocalSubnets: []*dbmodel.LocalSubnet{
+				{
+					DaemonID:      daemon.ID,
+					LocalSubnetID: int64(i + 100),
+					AddressPools: []dbmodel.AddressPool{{
+						LowerBound: fmt.Sprintf("3001:%d::1", i),
+						UpperBound: fmt.Sprintf("3001:%d::ffff", i),
+					}},
+					PrefixPools: []dbmodel.PrefixPool{{
+						Prefix:       fmt.Sprintf("3001:%d::/64", i),
+						DelegatedLen: 64,
+					}},
+				},
+			},
+		}
+		err = dbmodel.AddSubnet(db, subnet)
+		require.NoError(t, err)
+		err = dbmodel.SetLocalSubnets(db, subnet)
+		require.NoError(t, err)
+	}
+
+	// Kea API response.
+	rawResponseArguments := map[string]any{}
+	for i := 101; i <= 103; i++ {
+		rawResponseArguments[fmt.Sprintf("subnet[%d].total-nas", i)] = [][2]any{{i, "2019-07-30 10:13:00.000000"}}
+		rawResponseArguments[fmt.Sprintf("subnet[%d].assigned-nas", i)] = [][2]any{{i, "2019-07-30 10:13:00.000000"}}
+		rawResponseArguments[fmt.Sprintf("subnet[%d].declined-addresses", i)] = [][2]any{{i, "2019-07-30 10:13:00.000000"}}
+		rawResponseArguments[fmt.Sprintf("subnet[%d].total-pds", i)] = [][2]any{{i, "2019-07-30 10:13:00.000000"}}
+		rawResponseArguments[fmt.Sprintf("subnet[%d].assigned-pds", i)] = [][2]any{{i, "2019-07-30 10:13:00.000000"}}
+		rawResponseArguments[fmt.Sprintf("subnet[%d].pool[0].total-nas", i)] = [][2]any{{i, "2019-07-30 10:13:00.000000"}}
+		rawResponseArguments[fmt.Sprintf("subnet[%d].pool[0].assigned-nas", i)] = [][2]any{{i, "2019-07-30 10:13:00.000000"}}
+		rawResponseArguments[fmt.Sprintf("subnet[%d].pool[0].declined-addresses", i)] = [][2]any{{i, "2019-07-30 10:13:00.000000"}}
+		rawResponseArguments[fmt.Sprintf("subnet[%d].pd-pool[0].total-pds", i)] = [][2]any{{i, "2019-07-30 10:13:00.000000"}}
+		rawResponseArguments[fmt.Sprintf("subnet[%d].pd-pool[0].assigned-pds", i)] = [][2]any{{i, "2019-07-30 10:13:00.000000"}}
+	}
+
+	rawResponse := map[string]any{
+		"result":    0,
+		"arguments": rawResponseArguments,
+	}
+
+	jsonResponse, err := json.Marshal(rawResponse)
+	require.NoError(t, err)
+
+	var response keactrl.StatisticGetAllResponse
+	err = json.Unmarshal(jsonResponse, &response)
+	require.NoError(t, err)
+
+	// Act
+	err = puller.processDaemonResponse(daemon, &response)
+
+	// Assert
+	require.NoError(t, err)
+
+	subnets, err := dbmodel.GetAllSubnets(db, 6)
+	require.NoError(t, err)
+	require.Len(t, subnets, 3)
+	// Check if the IDs are various.
+	for i := 0; i < len(subnets); i++ {
+		subnet := subnets[i]
+		require.EqualValues(t, i+2, subnet.ID)
+		require.Len(t, subnet.LocalSubnets, 1)
+		localSubnet := subnet.LocalSubnets[0]
+		require.EqualValues(t, i+5, localSubnet.ID)
+		require.EqualValues(t, i+101, localSubnet.LocalSubnetID)
+		require.Len(t, localSubnet.AddressPools, 1)
+		require.EqualValues(t, i+8, localSubnet.AddressPools[0].ID)
+		require.Len(t, localSubnet.PrefixPools, 1)
+		require.EqualValues(t, i+11, localSubnet.PrefixPools[0].ID)
+
+		require.NotEqual(t, subnet.ID, subnet.LocalSubnets[0].ID)
+		require.NotEqual(t, subnet.ID, subnet.LocalSubnets[0].LocalSubnetID)
+		require.NotEqual(t, subnet.ID, subnet.LocalSubnets[0].AddressPools[0].ID)
+		require.NotEqual(t, subnet.ID, subnet.LocalSubnets[0].PrefixPools[0].ID)
+
+		require.NotEqual(t, subnet.LocalSubnets[0].ID, subnet.LocalSubnets[0].LocalSubnetID)
+		require.NotEqual(t, subnet.LocalSubnets[0].ID, subnet.LocalSubnets[0].AddressPools[0].ID)
+		require.NotEqual(t, subnet.LocalSubnets[0].ID, subnet.LocalSubnets[0].PrefixPools[0].ID)
+
+		require.NotEqual(t, subnet.LocalSubnets[0].LocalSubnetID, subnet.LocalSubnets[0].AddressPools[0].ID)
+		require.NotEqual(t, subnet.LocalSubnets[0].LocalSubnetID, subnet.LocalSubnets[0].PrefixPools[0].ID)
+
+		require.NotEqual(t, subnet.LocalSubnets[0].AddressPools[0].ID, subnet.LocalSubnets[0].PrefixPools[0].ID)
+	}
+}
