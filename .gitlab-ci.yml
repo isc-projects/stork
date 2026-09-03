@@ -259,7 +259,7 @@ stages:
           - webui/package.json
           - webui/package-lock.json
           - rakelib/**/*
-        compare_to: "$CI_COMMIT_REF_SLUG~1" # compares files under the "changes:paths" against previous commit in MR branch
+        compare_to: "$CI_COMMIT_REF_NAME~1" # compares files under the "changes:paths" against previous commit in MR branch
     - if: *is_push_to_master
       changes:
         paths:
@@ -290,7 +290,7 @@ stages:
           - backend/go.mod
           - backend/go.sum
           - rakelib/**/*
-        compare_to: "$CI_COMMIT_REF_SLUG~1" # compares files under the "changes:paths" against previous commit in MR branch
+        compare_to: "$CI_COMMIT_REF_NAME~1" # compares files under the "changes:paths" against previous commit in MR branch
     - if: *is_push_to_master
       changes:
         paths:
@@ -313,7 +313,7 @@ stages:
       changes:
         paths:
           - rakelib/**/*
-        compare_to: "$CI_COMMIT_REF_SLUG~1" # compares files under the "changes:paths" against previous commit in MR branch
+        compare_to: "$CI_COMMIT_REF_NAME~1" # compares files under the "changes:paths" against previous commit in MR branch
     - if: *is_push_to_master
       changes:
         paths:
