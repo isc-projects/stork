@@ -15,6 +15,7 @@
             <el-menu-item index="manager">Services Manager</el-menu-item>
             <el-menu-item index="dhcp">DHCP Traffic</el-menu-item>
             <el-menu-item index="dns">DNS Traffic</el-menu-item>
+            <el-menu-item index="credentials">Credentials</el-menu-item>
         </el-menu>
 
         <div style="height: 30px;">
@@ -120,6 +121,20 @@
                 </template>
             </el-table-column>
         </el-table>
+        <el-form ref="form" :model="credentials" v-if="menuIndex == 'credentials'">
+            <el-form-item label="Identifier">
+                <el-input v-model="credentials.identifier"></el-input>
+            </el-form-item>
+            <el-form-item label="Secret">
+                <el-input type="password" v-model="credentials.secret"></el-input>
+            </el-form-item>
+            <el-form-item label="Authentication Method ID">
+                <el-input type="text" v-model="credentials.authenticationMethodId"></el-input>
+            </el-form-item>
+            <el-form-item>
+                <el-button type="primary" v-on:click="updateSession">Login</el-button>
+            </el-form-item>
+        </el-form>
     </div>
 </body>
 </html>

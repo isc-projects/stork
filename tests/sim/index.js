@@ -3,6 +3,11 @@ ELEMENT.locale(ELEMENT.lang.en)
 var subnets = []
 var daemons = []
 var services = []
+var credentials = {
+    identifier: "",
+    secret: "",
+    authenticationMethodId: ""
+}
 
 var app = new Vue({
     el: '#app',
@@ -11,7 +16,8 @@ var app = new Vue({
         subnets: subnets,
         daemons: daemons,
         services: services,
-        disableDHCPButtons: false
+        disableDHCPButtons: false,
+        credentials: credentials,
     },
     created: function () {
         axios.get('/subnets').then(function (response) {
@@ -23,6 +29,11 @@ var app = new Vue({
         axios.get('/services').then(function (response) {
             this.services.push(...response.data.items)
         }).catch((err) => console.log('Error getting services: ', err))
+        axios.get('/session').then(function (response) {
+            this.credentials.identifier = response.data.identifier;
+            this.credentials.secret = response.data.secret;
+            this.credentials.authenticationMethodId = response.data.authenticationMethodId;
+        }).catch((err) => console.log('Error getting session: ', err))
     },
     methods: {
         menuSelect: function (key, keyPath) {
@@ -81,6 +92,18 @@ var app = new Vue({
                 this.services.length = 0;
                 this.services.push(...response.data.items);
             }).catch((err) => console.log('Error putting service: ', idx, data, err))
+        },
+        updateSession: function () {
+            var data = {
+                identifier: this.credentials.identifier,
+                secret: this.credentials.secret,
+                authenticationMethodId: this.credentials.authenticationMethodId
+            }
+            axios.put('/session', data)
+                .then(function (response) {
+                    this.credentials = response.data;
+                })
+                .catch((err) => console.log('Error updating session: ', data, err))
         }
     }
 })

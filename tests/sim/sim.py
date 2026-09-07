@@ -26,6 +26,12 @@ logging.basicConfig(level=LOGLEVEL)
 app: Flask = None
 log: logging.Logger = None
 
+credentials = {
+    "authenticationMethodId": "ldap",
+    "identifier": "admin",
+    "secret": "admin",
+}
+
 
 def _login_session():
     """Log-in to Stork server as admin with default credentials. Return a
@@ -35,11 +41,6 @@ def _login_session():
         return app.stored_session
 
     requests_session = requests.Session()
-    credentials = {
-        "authenticationMethodId": "ldap",
-        "identifier": "admin",
-        "secret": "admin",
-    }
     post_session_resp = requests_session.post(
         f"{STORK_SERVER_URL}/api/sessions", json=credentials, timeout=10
     )
@@ -159,6 +160,13 @@ def _refresh_services():
     app.services = services
 
 
+def _refresh_all():
+    """Refreshes all simulator data."""
+    _refresh_subnets()
+    _refresh_dns_daemons()
+    _refresh_services()
+
+
 def serialize_subnets(subnets):
     """Serializes subnets to JSON."""
     data = {"total": subnets["total"], "items": []}
@@ -206,9 +214,7 @@ def init():
 
 def main():
     """Runs the simulator."""
-    _refresh_subnets()
-    _refresh_dns_daemons()
-    _refresh_services()
+    _refresh_all()
 
 
 # Creates the Flask application and runs the simulator.
@@ -220,6 +226,28 @@ main()
 def root():
     """The root HTTP handler."""
     return app.send_static_file("index.html")
+
+
+@app.route("/session", methods=["GET"])
+def get_session():
+    """Retrieves the current session credentials."""
+    return json.dumps(credentials), 200
+
+
+@app.route("/session", methods=["PUT"])
+def put_session():
+    """Updates the session with provided credentials."""
+    global credentials
+    data = json.loads(request.data)
+    credentials = {
+        "identifier": data.get("identifier"),
+        "secret": data.get("secret"),
+        "authenticationMethodId": data.get("authenticationMethodId"),
+    }
+    app.stored_session = None
+    _login_session()
+    _refresh_all()
+    return "", 204
 
 
 @app.route("/subnets")
