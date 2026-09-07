@@ -25,7 +25,11 @@ kea-shell --service dhcp4 remote-subnet4-set << 'EOF'
         "id": 5,
         "subnet": "192.0.19.0/24",
         "shared-network-name": "palma",
-        "pools": [ { "pool": "192.0.19.100-192.0.19.200" } ]
+        "pools": [ { "pool": "192.0.19.100-192.0.19.200" } ],
+        "client-class": "class-11-00",
+        "relay": {
+            "ip-addresses": ["172.111.0.200"]
+        }
     }
 ],
 "server-tags": [ "all" ]
@@ -37,7 +41,11 @@ kea-shell --service dhcp4 remote-subnet4-set << 'EOF'
         "id": 6,
         "subnet": "192.0.20.0/24",
         "shared-network-name": null,
-        "pools": [ { "pool": "192.0.20.100-192.0.20.200" } ]
+        "pools": [ { "pool": "192.0.20.100-192.0.20.200" } ],
+        "client-class": "class-11-00",
+        "relay": {
+            "ip-addresses": ["172.111.0.200"]
+        }
     }
 ],
 "server-tags": [ "agent-kea-subscriber-1" ]

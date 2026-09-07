@@ -590,6 +590,9 @@ services:
       - "agent-kea-ha1:172.24.0.101"
       - "agent-kea-ha2:172.24.0.110"
       - "agent-kea-ha3:172.24.0.121"
+      - "agent-kea-subscriber-1:172.24.0.109"
+      - "agent-kea-subscriber-2:172.24.0.108"
+      - "agent-kea-subscriber-3:172.24.0.107"
     image: "${REGISTRY-registry.gitlab.isc.org/isc-projects/stork}/dhcp-traffic:latest"
     hostname: simulator
     networks:
@@ -610,6 +613,15 @@ services:
       subnet-03:
         ipv4_address: 172.103.0.200
         interface_name: eth4
+      subnet-11:
+        ipv4_address: 172.111.0.200
+        interface_name: eth8
+      subnet-12:
+        ipv4_address: 172.112.0.200
+        interface_name: eth9
+      subnet-13:
+        ipv4_address: 172.113.0.200
+        interface_name: eth10
       subnet6-00:
         ipv6_address: 3000:db8:1::200
         interface_name: eth5
@@ -719,6 +731,18 @@ networks:
     ipam:
       config:
         - subnet: 172.103.0.0/24
+  subnet-11:
+    ipam:
+      config:
+        - subnet: 172.111.0.0/24
+  subnet-12:
+    ipam:
+      config:
+        - subnet: 172.112.0.0/24
+  subnet-13:
+    ipam:
+      config:
+        - subnet: 172.113.0.0/24
   subnet6-00:
     enable_ipv6: true
     ipam:

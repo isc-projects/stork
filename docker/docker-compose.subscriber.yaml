@@ -18,6 +18,9 @@ services:
       storknet:
         ipv4_address: 172.24.0.109
         interface_name: eth0
+      subnet-11:
+        ipv4_address: 172.111.0.100
+        interface_name: eth1
     expose:
       - "8879" # stork server to agent
       - "9100" # node_exporter for prometheus
@@ -71,6 +74,9 @@ services:
       storknet:
         ipv4_address: 172.24.0.108
         interface_name: eth0
+      subnet-12:
+        ipv4_address: 172.112.0.100
+        interface_name: eth1
     expose:
       - "8878" # stork server to agent
       - "9100" # node_exporter for prometheus
@@ -125,6 +131,9 @@ services:
       storknet:
         ipv4_address: 172.24.0.107
         interface_name: eth0
+      subnet-13:
+        ipv4_address: 172.113.0.100
+        interface_name: eth1
     expose:
       - "8880" # stork server to agent
       - "9100" # node_exporter for prometheus
