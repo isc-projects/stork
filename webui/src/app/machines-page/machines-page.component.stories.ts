@@ -1130,3 +1130,117 @@ export const TestAuthorizeMachines: Story = {
         await expect(canvas.getAllByRole('row')).toHaveLength(3) // All rows in tbody + one row in the thead.
     },
 }
+
+export const TestAgentTokenAdminRole: Story = {
+    globals: {
+        role: 'admin',
+    },
+    parameters: ListMachines.parameters,
+    play: async ({ canvasElement }) => {
+        // Arrange
+        const canvas = within(canvasElement)
+        const selectButtonGroup = await canvas.findByRole('group') // OptimusUI p-selectButton has role=group
+        const clearFiltersBtn = await canvas.findByRole('button', { name: 'Clear' })
+        await userEvent.click(clearFiltersBtn)
+        await userEvent.click(await within(selectButtonGroup).findByText('Unauthorized'))
+
+        // Act + Assert
+        const table = await canvas.findByRole('table')
+        const rowGroups = await within(table).findAllByRole('rowgroup')
+        await expect(rowGroups).toBeTruthy()
+        await expect(rowGroups.length).toEqual(2)
+        const rows = await within(rowGroups[1]).findAllByRole('row')
+        await expect(rows).toBeTruthy()
+        await expect(rows.length).toEqual(3)
+
+        let cells = await within(rows[0]).findAllByRole('cell')
+        await expect(cells).toBeTruthy()
+        await expect(cells.length).toEqual(5)
+        // Cell with agent token is the fourth in the row. The cell is expected to be empty - token is not displayed.
+        await expect(cells[3]).toBeEmptyDOMElement()
+        cells = await within(rows[1]).findAllByRole('cell')
+        await expect(cells).toBeTruthy()
+        await expect(cells.length).toEqual(5)
+        await expect(cells[3]).toBeEmptyDOMElement()
+        cells = await within(rows[2]).findAllByRole('cell')
+        await expect(cells).toBeTruthy()
+        await expect(cells.length).toEqual(5)
+        await expect(cells[3]).toBeEmptyDOMElement()
+    },
+}
+
+export const TestAgentTokenReadOnlyRole: Story = {
+    globals: {
+        role: 'read-only',
+    },
+    parameters: ListMachines.parameters,
+    play: async ({ canvasElement }) => {
+        // Arrange
+        const canvas = within(canvasElement)
+        const selectButtonGroup = await canvas.findByRole('group') // OptimusUI p-selectButton has role=group
+        const clearFiltersBtn = await canvas.findByRole('button', { name: 'Clear' })
+        await userEvent.click(clearFiltersBtn)
+        await userEvent.click(await within(selectButtonGroup).findByText('Unauthorized'))
+
+        // Act + Assert
+        const table = await canvas.findByRole('table')
+        const rowGroups = await within(table).findAllByRole('rowgroup')
+        await expect(rowGroups).toBeTruthy()
+        await expect(rowGroups.length).toEqual(2)
+        const rows = await within(rowGroups[1]).findAllByRole('row')
+        await expect(rows).toBeTruthy()
+        await expect(rows.length).toEqual(3)
+
+        let cells = await within(rows[0]).findAllByRole('cell')
+        await expect(cells).toBeTruthy()
+        await expect(cells.length).toEqual(5)
+        // Cell with agent token is the fourth in the row. The cell is expected to be empty - token is not displayed.
+        await expect(cells[3]).toBeEmptyDOMElement()
+        cells = await within(rows[1]).findAllByRole('cell')
+        await expect(cells).toBeTruthy()
+        await expect(cells.length).toEqual(5)
+        await expect(cells[3]).toBeEmptyDOMElement()
+        cells = await within(rows[2]).findAllByRole('cell')
+        await expect(cells).toBeTruthy()
+        await expect(cells.length).toEqual(5)
+        await expect(cells[3]).toBeEmptyDOMElement()
+    },
+}
+
+export const TestAgentTokenSuperAdminRole: Story = {
+    globals: {
+        role: 'super-admin',
+    },
+    parameters: ListMachines.parameters,
+    play: async ({ canvasElement }) => {
+        // Arrange
+        const canvas = within(canvasElement)
+        const selectButtonGroup = await canvas.findByRole('group') // OptimusUI p-selectButton has role=group
+        const clearFiltersBtn = await canvas.findByRole('button', { name: 'Clear' })
+        await userEvent.click(clearFiltersBtn)
+        await userEvent.click(await within(selectButtonGroup).findByText('Unauthorized'))
+
+        // Act + Assert
+        const table = await canvas.findByRole('table')
+        const rowGroups = await within(table).findAllByRole('rowgroup')
+        await expect(rowGroups).toBeTruthy()
+        await expect(rowGroups.length).toEqual(2)
+        const rows = await within(rowGroups[1]).findAllByRole('row')
+        await expect(rows).toBeTruthy()
+        await expect(rows.length).toEqual(3)
+
+        let cells = await within(rows[0]).findAllByRole('cell')
+        await expect(cells).toBeTruthy()
+        await expect(cells.length).toEqual(5)
+        // Cell with agent token is the fourth in the row. The cell is expected not to be empty - token is displayed for super-admin.
+        await expect(cells[3]).not.toBeEmptyDOMElement()
+        cells = await within(rows[1]).findAllByRole('cell')
+        await expect(cells).toBeTruthy()
+        await expect(cells.length).toEqual(5)
+        await expect(cells[3]).not.toBeEmptyDOMElement()
+        cells = await within(rows[2]).findAllByRole('cell')
+        await expect(cells).toBeTruthy()
+        await expect(cells.length).toEqual(5)
+        await expect(cells[3]).not.toBeEmptyDOMElement()
+    },
+}
