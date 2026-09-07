@@ -108,3 +108,4 @@ ENV FLASK_APP=sim.py
 ENV LC_ALL=C.UTF-8
 ENV LANG=C.UTF-8
 CMD ["/app/venv/bin/python3", "-m", "gunicorn", "-w", "1", "-t", "60", "-b", "0.0.0.0:5000", "sim:app"]
+HEALTHCHECK CMD ["curl", "--fail", "http://localhost:5000"]
