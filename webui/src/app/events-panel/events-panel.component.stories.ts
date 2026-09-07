@@ -6,6 +6,7 @@ import { Events } from '../backend'
 import { toastDecorator } from '../utils-stories'
 import { EventsPanelComponent } from './events-panel.component'
 import { action } from 'storybook/actions'
+import { userEvent, within, expect } from 'storybook/test'
 
 export default {
     title: 'App/EventsPanel',
@@ -23,14 +24,49 @@ export default {
     ],
     argTypes: {
         ui: {
-            defaultValue: 'bare',
             control: 'radio',
             options: ['bare', 'table'],
         },
     },
+    args: {
+        ui: 'bare',
+    },
 } as Meta
 
 type Story = StoryObj<EventsPanelComponent>
+
+const users = [
+    {
+        authenticationMethodId: 'internal',
+        groups: [1],
+        id: 1,
+        lastname: 'admin',
+        login: 'admin',
+        name: 'admin',
+    },
+    {
+        authenticationMethodId: 'oidc',
+        email: 'user@example.org',
+        externalId: '123',
+        groups: [1],
+        id: 2,
+    },
+    {
+        authenticationMethodId: 'ldap',
+        externalId: '234',
+        groups: [1],
+        id: 3,
+    },
+    {
+        authenticationMethodId: 'ldap',
+        externalId: '2345',
+        groups: [1],
+        id: 4,
+        lastname: 'admin',
+        login: 'admin',
+        name: 'admin',
+    },
+]
 
 export const Primary: Story = {
     parameters: {
@@ -70,6 +106,29 @@ export const Primary: Story = {
                     } as Events
                 },
             },
+            {
+                url: 'api/users?start=s&limit=l',
+                method: 'GET',
+                status: 200,
+                delay: 500,
+                response: () => ({
+                    items: users,
+                    total: users.length,
+                }),
+            },
+            {
+                url: 'api/machines/directory',
+                method: 'GET',
+                status: 200,
+                delay: 500,
+                response: () => ({
+                    items: [
+                        { address: 'agent-kea', id: 7 },
+                        { address: 'agent-kea6', id: 1 },
+                    ],
+                    total: 2,
+                }),
+            },
         ],
     },
 }
@@ -88,5 +147,38 @@ export const Empty: Story = {
                 } as Events,
             },
         ],
+    },
+}
+
+export const TestUsersDropdown: Story = {
+    globals: {
+        role: 'super-admin',
+    },
+    args: {
+        ui: 'table',
+    },
+    parameters: Primary.parameters,
+    play: async ({ canvasElement }) => {
+        // Arrange
+        const canvas = within(canvasElement)
+        // Configure delay between consecutive user events to be more human-like and to give more time for OptimusUI animations when automatically testing.
+        const user = userEvent.setup({ delay: 250 })
+        const dropdowns = await canvas.findAllByRole('combobox', { name: 'any' })
+        await expect(dropdowns).toBeTruthy()
+        await expect(dropdowns.length).toEqual(3)
+
+        // Act
+        await user.click(dropdowns[2]) // The last combobox is expected to be the Users dropdown.
+
+        // Assert
+        const options = await canvas.findAllByRole('option')
+        await expect(options).toBeTruthy()
+        await expect(options.length).toEqual(users.length)
+        await expect(options[0]).toHaveTextContent('admin (internal)')
+        // This user has no login, so email address is used to label the user.
+        await expect(options[1]).toHaveTextContent('user@example.org (oidc)')
+        // This user has no login and no email, so "unknown" label should be displayed.
+        await expect(options[2]).toHaveTextContent('unknown (ldap)')
+        await expect(options[3]).toHaveTextContent('admin (ldap)')
     },
 }
