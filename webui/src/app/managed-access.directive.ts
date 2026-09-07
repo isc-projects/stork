@@ -68,7 +68,7 @@ export class ManagedAccessDirective implements AfterViewInit {
                 return
             }
 
-            // If this is a OptimusUI component...
+            // If this is an OptimusUI component...
             const pComponent =
                 this.htmlElement.querySelector('.p-component') ||
                 this.elementRef.nativeElement.classList.contains('p-component')

@@ -10,7 +10,7 @@ import { FormsModule } from '@angular/forms'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
 
 /**
- * This is a component that is supposed to be used in a Caption template of a OptimusUI table component.
+ * This is a component that is supposed to be used in a Caption template of an OptimusUI table component.
  * It is meant to organize the table filters toolbar and buttons that usually are displayed above the table.
  * Very often it is a 'Refresh List' button or more.
  * The purpose of having this separate component, is to have the same filtering toolbar look and feel
