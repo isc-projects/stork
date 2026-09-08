@@ -152,11 +152,6 @@ const routes: Routes = [
     },
     {
         path: 'dns/zone-transfers',
-        pathMatch: 'full',
-        redirectTo: 'dns/zone-transfers/all',
-    },
-    {
-        path: 'dns/zone-transfers/:id',
         component: ZoneTransfersPageComponent,
         canActivate: [AuthGuard],
         data: { key: 'zone-transfers' },
