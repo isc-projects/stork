@@ -61,7 +61,9 @@ func (r *RestAPI) SearchRecords(ctx context.Context, params search.SearchRecords
 	}
 
 	// get list of machines no matter if authorized or unauthorized
-	machines, err := r.getMachines(0, 5, &text, nil, "", dbmodel.SortDirAny)
+	_, dbUser := r.SessionManager.Logged(ctx)
+	superAdmin := dbUser.InGroup(&dbmodel.SystemGroup{ID: dbmodel.SuperAdminGroupID})
+	machines, err := r.getMachines(0, 5, &text, nil, "", dbmodel.SortDirAny, superAdmin)
 	if err != nil {
 		return handleSearchError(err, "Cannot get machines from the db")
 	}

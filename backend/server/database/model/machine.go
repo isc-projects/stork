@@ -406,6 +406,12 @@ func DeleteMachine(db *pg.DB, machine *Machine) error {
 	})
 }
 
+// Hides sensitive data in the machine. Currently it
+// makes the Agent token empty.
+func (machine *Machine) HideSensitiveData() {
+	machine.AgentToken = ""
+}
+
 // MachineTag interface implementation.
 
 // Returns machine ID.

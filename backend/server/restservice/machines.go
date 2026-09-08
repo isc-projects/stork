@@ -285,6 +285,11 @@ func (r *RestAPI) GetMachineState(ctx context.Context, params services.GetMachin
 		return rsp
 	}
 
+	_, dbUser := r.SessionManager.Logged(ctx)
+	superAdmin := dbUser.InGroup(&dbmodel.SystemGroup{ID: dbmodel.SuperAdminGroupID})
+	if !superAdmin {
+		dbMachine.HideSensitiveData()
+	}
 	m := r.machineToRestAPI(*dbMachine)
 	rsp := services.NewGetMachineStateOK().WithPayload(m)
 
@@ -292,7 +297,7 @@ func (r *RestAPI) GetMachineState(ctx context.Context, params services.GetMachin
 }
 
 // Get machines from database based on params and convert them to rest structures.
-func (r *RestAPI) getMachines(offset, limit int64, filterText *string, authorized *bool, sortField string, sortDir dbmodel.SortDirEnum) (*models.Machines, error) {
+func (r *RestAPI) getMachines(offset, limit int64, filterText *string, authorized *bool, sortField string, sortDir dbmodel.SortDirEnum, superAdmin bool) (*models.Machines, error) {
 	dbMachines, total, err := dbmodel.GetMachinesByPage(r.DB, offset, limit, filterText, authorized, sortField, sortDir)
 	if err != nil {
 		return nil, err
@@ -303,6 +308,9 @@ func (r *RestAPI) getMachines(offset, limit int64, filterText *string, authorize
 	}
 
 	for _, dbM := range dbMachines {
+		if !superAdmin {
+			dbM.HideSensitiveData()
+		}
 		m := r.machineToRestAPI(dbM)
 		machines.Items = append(machines.Items, m)
 	}
@@ -345,7 +353,9 @@ func (r *RestAPI) GetMachines(ctx context.Context, params services.GetMachinesPa
 		"sortDir":   sortDir,
 	}).Info("query machines")
 
-	machines, err := r.getMachines(start, limit, params.Text, params.Authorized, sortField, sortDir)
+	_, dbUser := r.SessionManager.Logged(ctx)
+	superAdmin := dbUser.InGroup(&dbmodel.SystemGroup{ID: dbmodel.SuperAdminGroupID})
+	machines, err := r.getMachines(start, limit, params.Text, params.Authorized, sortField, sortDir, superAdmin)
 	if err != nil {
 		msg := "Cannot get machines from db"
 		log.WithError(err).Error(msg)
@@ -487,6 +497,11 @@ func (r *RestAPI) GetMachine(ctx context.Context, params services.GetMachinePara
 			Message: &msg,
 		})
 		return rsp
+	}
+	_, dbUser := r.SessionManager.Logged(ctx)
+	superAdmin := dbUser.InGroup(&dbmodel.SystemGroup{ID: dbmodel.SuperAdminGroupID})
+	if !superAdmin {
+		dbMachine.HideSensitiveData()
 	}
 	m := r.machineToRestAPI(*dbMachine)
 	rsp := services.NewGetMachineOK().WithPayload(m)
@@ -861,10 +876,11 @@ func (r *RestAPI) UpdateMachine(ctx context.Context, params services.UpdateMachi
 		}
 	}
 
+	_, dbUser := r.SessionManager.Logged(ctx)
+	superAdmin := dbUser.InGroup(&dbmodel.SystemGroup{ID: dbmodel.SuperAdminGroupID})
 	// if machine authorization is changed then this action requires super-admin group
 	if dbMachine.Authorized != params.Machine.Authorized {
-		_, dbUser := r.SessionManager.Logged(ctx)
-		if !dbUser.InGroup(&dbmodel.SystemGroup{ID: dbmodel.SuperAdminGroupID}) {
+		if !superAdmin {
 			msg := "User is forbidden to change machine authorization"
 			rsp := services.NewUpdateMachineDefault(http.StatusForbidden).WithPayload(&models.APIError{
 				Message: &msg,
@@ -903,6 +919,9 @@ func (r *RestAPI) UpdateMachine(ctx context.Context, params services.UpdateMachi
 		}
 	}
 
+	if !superAdmin {
+		dbMachine.HideSensitiveData()
+	}
 	m := r.machineToRestAPI(*dbMachine)
 	rsp := services.NewUpdateMachineOK().WithPayload(m)
 	return rsp
