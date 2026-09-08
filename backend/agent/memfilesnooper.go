@@ -580,10 +580,10 @@ func (ms *RealMemfileSnooper) getSnapshotLockless() []*keadata.Lease {
 			IP:         lease.IPAddress,
 			Identifier: getIdentifier(lease),
 		}
-		if snapIdx, exists := index[key]; exists {
-			snapLease := snapshot[snapIdx]
-			if snapLease.CLTT < lease.CLTT {
-				snapshot[snapIdx] = lease
+		if existsIdx, exists := index[key]; exists {
+			existingLease := snapshot[existsIdx]
+			if lease.CLTT >= existingLease.CLTT {
+				snapshot[existsIdx] = lease
 			}
 		} else {
 			snapshot = append(snapshot, lease)
