@@ -98,7 +98,7 @@ export class ZoneTransfersPageComponent implements OnInit {
     private zone = inject(NgZone)
 
     /**
-     * PrimeNG message service used to display feedback messages in UI.
+     * Message service used to display feedback messages in UI.
      * @private
      */
     private messageService = inject(MessageService)
@@ -148,7 +148,7 @@ export class ZoneTransfersPageComponent implements OnInit {
     private readonly _zoneTransfersTableStateStorageKey = 'zone-transfers-table-state'
 
     /**
-     * PrimeNG table component containing list of all zones.
+     * Table component containing list of all zones.
      */
     @ViewChild('zoneTransfersTable') zoneTransfersTable!: Table
 
@@ -196,7 +196,7 @@ export class ZoneTransfersPageComponent implements OnInit {
      * The properties of this object correspond to queryParam keys.
      * Values of this object describe:
      * - filter type (numeric, enum, string or boolean)
-     * - filter matchMode (contains, equals) which corresponds to PrimeNG table filter metadata
+     * - filter matchMode (contains, equals) which corresponds to OptimusUI table filter metadata
      * - accepted enum values for enum type of filters
      * - array type; when set to true it means that the filter may use more than one value.
      */
@@ -261,7 +261,7 @@ export class ZoneTransfersPageComponent implements OnInit {
                 takeUntilDestroyed(this.destroyRef)
             )
             .subscribe((f) => {
-                // f.filterConstraint is passed as a reference to PrimeNG table filter FilterMetadata,
+                // f.filterConstraint is passed as a reference to OptimusUI table filter FilterMetadata,
                 // so it's value must be set according to UI columnFilter value.
                 f.filterConstraint.value = f.value
                 this.zone.run(() =>
@@ -273,7 +273,7 @@ export class ZoneTransfersPageComponent implements OnInit {
     /**
      * Lazily loads paged zone transfers data from backend.
      *
-     * @param event PrimeNG TableLazyLoadEvent with metadata about table pagination
+     * @param event OptimusUI TableLazyLoadEvent with metadata about table pagination
      * and filtering.
      */
     onLazyLoadZoneTransfers(event: TableLazyLoadEvent) {

@@ -379,11 +379,11 @@ export const TestZoneTransfersFilters: Story = {
         // Arrange
         const canvas = within(canvasElement)
         // Configure delay between consecutive user events to be more human-like and to give more time
-        // for PrimeNG animations when automatically testing.
+        // for OptimusUI animations when automatically testing.
         const user = userEvent.setup({ delay: 50 })
         const clearFiltersBtn = await canvas.findByRole('button', { name: 'Clear' })
         const table = await canvas.findByRole('table')
-        const comboboxes = canvas.getAllByRole('combobox') // PrimeNG p-select component has combobox role.
+        const comboboxes = canvas.getAllByRole('combobox') // OptimusUI select component has combobox role.
 
         await user.click(clearFiltersBtn)
 
