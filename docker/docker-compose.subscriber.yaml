@@ -44,6 +44,7 @@ services:
       - ./docker/config/agent-kea-subscriber-1/kea-dhcp6.conf:/etc/kea/kea-dhcp6.conf
       - ./docker/config/agent-kea-subscriber-1/init-kea-dhcp4.sh:/var/lib/process-initializer/kea-dhcp4/init-kea-dhcp4.sh
       - ./docker/config/agent-kea-subscriber-1/init-kea-dhcp6.sh:/var/lib/process-initializer/kea-dhcp6/init-kea-dhcp6.sh
+      - ./docker/config/agent-kea-subscriber-1/init_pgsql_query.sql:/var/lib/db/init_pgsql_query.sql
       - ./docker/config/supervisor/process_initializer.conf:/etc/supervisor/conf.d/process_initializer.conf
       - ./docker/tools/process_initializer.py:/usr/lib/process_initializer.py
       - ./docker/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
@@ -100,6 +101,7 @@ services:
       - ./docker/config/agent-kea-subscriber-2/kea-dhcp6.conf:/etc/kea/kea-dhcp6.conf
       - ./docker/config/agent-kea-subscriber-2/init-kea-dhcp4.sh:/var/lib/process-initializer/kea-dhcp4/init-kea-dhcp4.sh
       - ./docker/config/agent-kea-subscriber-2/init-kea-dhcp6.sh:/var/lib/process-initializer/kea-dhcp6/init-kea-dhcp6.sh
+      - ./docker/config/agent-kea-subscriber-2/init_pgsql_query.sql:/var/lib/db/init_pgsql_query.sql
       - ./docker/config/supervisor/process_initializer.conf:/etc/supervisor/conf.d/process_initializer.conf
       - ./docker/tools/process_initializer.py:/usr/lib/process_initializer.py
       - ./docker/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
@@ -155,6 +157,7 @@ services:
       - ./docker/config/agent-kea-subscriber-3/kea-ctrl-agent.conf:/etc/kea/kea-ctrl-agent.conf
       - ./docker/config/agent-kea-subscriber-3/kea-dhcp4.conf:/etc/kea/kea-dhcp4.conf
       - ./docker/config/agent-kea-subscriber-3/kea-dhcp6.conf:/etc/kea/kea-dhcp6.conf
+      - ./docker/config/agent-kea-subscriber-3/init_pgsql_query.sql:/var/lib/db/init_pgsql_query.sql
       - ./docker/config/supervisor/supervisord.conf:/etc/supervisor/supervisord.conf
       - ./docker/config/supervisor/kea-agent.conf:/etc/supervisor/conf.d/kea-agent.conf
       - ./docker/config/supervisor/kea-dhcp4.conf:/etc/supervisor/conf.d/kea-dhcp4.conf
