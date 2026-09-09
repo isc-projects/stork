@@ -21,6 +21,9 @@ services:
       subnet-11:
         ipv4_address: 172.111.0.100
         interface_name: eth1
+      subnet6-11:
+        ipv6_address: 3011:db8:1::100
+        interface_name: eth2
     expose:
       - "8879" # stork server to agent
       - "9100" # node_exporter for prometheus
@@ -78,6 +81,9 @@ services:
       subnet-12:
         ipv4_address: 172.112.0.100
         interface_name: eth1
+      subnet6-12:
+        ipv6_address: 3012:db8:1::100
+        interface_name: eth2
     expose:
       - "8878" # stork server to agent
       - "9100" # node_exporter for prometheus
@@ -136,6 +142,9 @@ services:
       subnet-13:
         ipv4_address: 172.113.0.100
         interface_name: eth1
+      subnet6-13:
+        ipv6_address: 3013:db8:1::100
+        interface_name: eth2
     expose:
       - "8880" # stork server to agent
       - "9100" # node_exporter for prometheus

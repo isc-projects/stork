@@ -26,7 +26,7 @@ kea-shell --service dhcp4 remote-subnet4-set << 'EOF'
         "subnet": "192.0.19.0/24",
         "shared-network-name": "palma",
         "pools": [ { "pool": "192.0.19.100-192.0.19.200" } ],
-        "client-class": "class-11-00",
+        "client-class": "class-11-01",
         "relay": {
             "ip-addresses": ["172.111.0.200"]
         }
@@ -42,7 +42,7 @@ kea-shell --service dhcp4 remote-subnet4-set << 'EOF'
         "subnet": "192.0.20.0/24",
         "shared-network-name": null,
         "pools": [ { "pool": "192.0.20.100-192.0.20.200" } ],
-        "client-class": "class-11-00",
+        "client-class": "class-11-02",
         "relay": {
             "ip-addresses": ["172.111.0.200"]
         }

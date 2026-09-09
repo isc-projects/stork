@@ -631,6 +631,15 @@ services:
       subnet6-02:
         ipv6_address: 3002:db8:1::10
         interface_name: eth7
+      subnet6-11:
+        ipv6_address: 3011:db8:1::200
+        interface_name: eth11
+      subnet6-12:
+        ipv6_address: 3012:db8:1::200
+        interface_name: eth12
+      subnet6-13:
+        ipv6_address: 3013:db8:1::200
+        interface_name: eth13
     ports:
       # We used to use port 5000 externally but that doesn't work
       # on macOS that has its own service on that port.
@@ -758,6 +767,21 @@ networks:
     ipam:
       config:
         - subnet: 3002:db8:1::/64
+  subnet6-11:
+    enable_ipv6: true
+    ipam:
+      config:
+        - subnet: 3011:db8:1::/64
+  subnet6-12:
+    enable_ipv6: true
+    ipam:
+      config:
+        - subnet: 3012:db8:1::/64
+  subnet6-13:
+    enable_ipv6: true
+    ipam:
+      config:
+        - subnet: 3013:db8:1::/64
 
 # Volumes shared cross services
 volumes:
