@@ -736,10 +736,12 @@ func TestFromGRPC(t *testing.T) {
 	}
 
 	// Act
-	actualv4 := NewLeaseFromGRPC(&v4, 99, 1)
-	actualv6 := NewLeaseFromGRPC(&v6, 100, 2)
+	actualv4, errv4 := NewLeaseFromGRPC(&v4, 99, 1)
+	actualv6, errv6 := NewLeaseFromGRPC(&v6, 100, 2)
 
 	// Assert
+	require.NoError(t, errv4)
+	require.NoError(t, errv6)
 	require.Equal(t, &expectedv4, actualv4)
 	require.Equal(t, &expectedv6, actualv6)
 }
@@ -749,7 +751,9 @@ func TestFromGRPCWithErrors(t *testing.T) {
 	t.Parallel()
 	t.Run("nil input", func(t *testing.T) {
 		t.Parallel()
-		require.Nil(t, NewLeaseFromGRPC(nil, 1, 1))
+		lease, err := NewLeaseFromGRPC(nil, 1, 1)
+		require.ErrorContains(t, err, "nil")
+		require.Nil(t, lease)
 	})
 	t.Run("valid lifetime too big", func(t *testing.T) {
 		t.Parallel()
@@ -763,7 +767,9 @@ func TestFromGRPCWithErrors(t *testing.T) {
 			SubnetID:      10,
 			State:         1,
 		}
-		require.Nil(t, NewLeaseFromGRPC(&badLft, 1, 1))
+		lease, err := NewLeaseFromGRPC(&badLft, 1, 1)
+		require.ErrorContains(t, err, "uint32")
+		require.Nil(t, lease)
 	})
 	t.Run("prefix length too long", func(t *testing.T) {
 		t.Parallel()
@@ -778,7 +784,9 @@ func TestFromGRPCWithErrors(t *testing.T) {
 			State:         2,
 			PrefixLen:     9001,
 		}
-		require.Nil(t, NewLeaseFromGRPC(&badPrefixLen, 1, 1))
+		lease, err := NewLeaseFromGRPC(&badPrefixLen, 1, 1)
+		require.ErrorContains(t, err, "uint8")
+		require.Nil(t, lease)
 	})
 	t.Run("no IPv5", func(t *testing.T) {
 		t.Parallel()
@@ -793,6 +801,26 @@ func TestFromGRPCWithErrors(t *testing.T) {
 			State:         2,
 			PrefixLen:     128,
 		}
-		require.Nil(t, NewLeaseFromGRPC(&badIPVersion, 1, 1))
+		lease, err := NewLeaseFromGRPC(&badIPVersion, 1, 1)
+		require.ErrorContains(t, err, "4 or 6")
+		require.Nil(t, lease)
+	})
+	t.Run("invalid JSON in usercontext", func(t *testing.T) {
+		t.Parallel()
+		badUserCtx := agentapi.Lease{
+			Family:        6,
+			IpAddress:     "fd75:9fa5:e76b:0:0:0:0:20",
+			Duid:          "00:00:00:00:00:00:00:00",
+			Expire:        1002,
+			Cltt:          101,
+			ValidLifetime: 901,
+			SubnetID:      9,
+			State:         2,
+			PrefixLen:     128,
+			UserContext:   "{",
+		}
+		lease, err := NewLeaseFromGRPC(&badUserCtx, 1, 1)
+		require.ErrorContains(t, err, "JSON")
+		require.Nil(t, lease)
 	})
 }

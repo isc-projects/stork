@@ -9,7 +9,6 @@ import (
 	"github.com/go-pg/pg/v10"
 	"github.com/go-pg/pg/v10/orm"
 	pkgerrors "github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 
 	agentapi "isc.org/stork/api"
 	keadata "isc.org/stork/daemondata/kea"
@@ -205,18 +204,18 @@ func GetLeasesByPage(dbi dbops.DBI, offset, limit int64, filters LeasesByPageFil
 }
 
 // Create a model.Lease from the gRPC Lease structure.
-func NewLeaseFromGRPC(grpc *agentapi.Lease, daemonID, subnetID int64) *Lease {
+func NewLeaseFromGRPC(grpc *agentapi.Lease, daemonID, subnetID int64) (*Lease, error) {
 	if grpc == nil {
-		return nil
+		return nil, pkgerrors.New("gRPC lease was nil")
 	}
 	if grpc.ValidLifetime > math.MaxUint32 {
-		return nil
+		return nil, pkgerrors.New("Valid lifetime larger than uint32, cannot convert without data loss")
 	}
 	if grpc.PrefixLen > math.MaxUint8 {
-		return nil
+		return nil, pkgerrors.New("Prefix length larger than uint8, which is wildly invalid")
 	}
 	if grpc.Family != 4 && grpc.Family != 6 {
-		return nil
+		return nil, pkgerrors.New("IP address family not 4 or 6")
 	}
 	ipv := storkutil.IPv4
 	if grpc.Family == 6 {
@@ -226,8 +225,7 @@ func NewLeaseFromGRPC(grpc *agentapi.Lease, daemonID, subnetID int64) *Lease {
 	if grpc.UserContext != "" {
 		err := json.Unmarshal([]byte(grpc.UserContext), &userContext)
 		if err != nil {
-			log.WithError(err).WithField("lease", grpc).Info("failed to parse UserContext JSON for lease")
-			return nil
+			return nil, pkgerrors.Wrap(err, "Unable to parse JSON user context data")
 		}
 	}
 	return &Lease{
@@ -257,5 +255,5 @@ func NewLeaseFromGRPC(grpc *agentapi.Lease, daemonID, subnetID int64) *Lease {
 		nil,
 		subnetID,
 		nil,
-	}
+	}, nil
 }

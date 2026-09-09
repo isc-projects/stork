@@ -268,9 +268,9 @@ func (puller *LeasesPuller) getLeasesFromDaemon(daemon *dbmodel.Daemon) error {
 						response.Lease.SubnetID,
 					))
 				}
-				modelLease := dbmodel.NewLeaseFromGRPC(response.Lease, daemon.ID, *subnetID)
-				if modelLease == nil {
-					return errors.New("unable to convert lease from gRPC format to model format; data is missing or invalid")
+				modelLease, err := dbmodel.NewLeaseFromGRPC(response.Lease, daemon.ID, *subnetID)
+				if err != nil {
+					return errors.Wrap(err, "unable to convert lease from gRPC format to model format")
 				}
 				err = dbmodel.AddLease(tx, modelLease)
 				if err != nil {
