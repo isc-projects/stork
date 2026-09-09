@@ -1346,6 +1346,7 @@ func TestMemfileSnooperEnsureWatchingCallsRowSource(t *testing.T) {
 // Ensure that prior to leases expiring, the MemfileSnooper shows the leases,
 // and then after the leases expire, it shows the same leases as expired.
 func TestMemfileSnooperGetSnapshotExpiresLeases(t *testing.T) {
+	// Arrange
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
