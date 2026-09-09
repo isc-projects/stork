@@ -22,7 +22,7 @@ EOF
 kea-shell --service dhcp4 remote-subnet4-set << 'EOF'
 "subnets": [
     {
-        "id": 5,
+        "id": 405,
         "subnet": "192.0.19.0/24",
         "shared-network-name": "palma",
         "pools": [ { "pool": "192.0.19.100-192.0.19.200" } ],
@@ -38,7 +38,7 @@ EOF
 kea-shell --service dhcp4 remote-subnet4-set << 'EOF'
 "subnets": [
     {
-        "id": 6,
+        "id": 406,
         "subnet": "192.0.20.0/24",
         "shared-network-name": null,
         "pools": [ { "pool": "192.0.20.100-192.0.20.200" } ],

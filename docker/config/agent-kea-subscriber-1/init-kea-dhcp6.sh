@@ -22,7 +22,7 @@ EOF
 kea-shell --service dhcp6 remote-subnet6-set << 'EOF'
 "subnets": [
     {
-        "id": 5,
+        "id": 405,
         "subnet": "2000:db8:19::/64",
         "shared-network-name": "palma",
         "pools": [ { "pool": "2000:db8:19::100-2000:db8:19::200" } ]
@@ -34,7 +34,7 @@ EOF
 kea-shell --service dhcp6 remote-subnet6-set << 'EOF'
 "subnets": [
     {
-        "id": 6,
+        "id": 406,
         "subnet": "2000:db8:20::/64",
         "shared-network-name": null,
         "pools": [ { "pool": "2000:db8:20::100-2000:db8:20::200" } ]

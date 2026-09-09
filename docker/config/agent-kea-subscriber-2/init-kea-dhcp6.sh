@@ -13,7 +13,7 @@ EOF
 kea-shell --service dhcp6 remote-subnet6-set << 'EOF'
 "subnets": [
     {
-        "id": 7,
+        "id": 407,
         "subnet": "2000:db8:21::/64",
         "shared-network-name": null,
         "pools": [ { "pool": "2000:db8:21::100-2000:db8:21::200" } ]
