@@ -26,12 +26,6 @@ logging.basicConfig(level=LOGLEVEL)
 app: Flask = None
 log: logging.Logger = None
 
-credentials = {
-    "authenticationMethodId": "ldap",
-    "identifier": "admin",
-    "secret": "admin",
-}
-
 
 def _login_session():
     """Log-in to Stork server as admin with default credentials. Return a
@@ -42,7 +36,7 @@ def _login_session():
 
     requests_session = requests.Session()
     post_session_resp = requests_session.post(
-        f"{STORK_SERVER_URL}/api/sessions", json=credentials, timeout=10
+        f"{STORK_SERVER_URL}/api/sessions", json=app.credentials, timeout=10
     )
     if post_session_resp.status_code == 200:
         log.info("successfully logged in")
@@ -209,6 +203,11 @@ def init():
     app_instance = Flask(__name__, static_url_path="", static_folder="")
     logger_instance = create_logger(app_instance)
     app_instance.stored_session = None
+    app_instance.credentials = {
+        "authenticationMethodId": "ldap",
+        "identifier": "admin",
+        "secret": "admin",
+    }
     return app_instance, logger_instance
 
 
@@ -231,15 +230,14 @@ def root():
 @app.route("/session", methods=["GET"])
 def get_session():
     """Retrieves the current session credentials."""
-    return json.dumps(credentials), 200
+    return json.dumps(app.credentials), 200
 
 
 @app.route("/session", methods=["PUT"])
 def put_session():
     """Updates the session with provided credentials."""
-    global credentials
     data = json.loads(request.data)
-    credentials = {
+    app.credentials = {
         "identifier": data.get("identifier"),
         "secret": data.get("secret"),
         "authenticationMethodId": data.get("authenticationMethodId"),

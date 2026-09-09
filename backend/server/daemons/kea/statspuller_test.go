@@ -1351,6 +1351,7 @@ func TestProcessDaemonResponsesForSubnetIDDifferentThanLocalSubnetIDs(t *testing
 	err = dbmodel.SetLocalSubnets(db, subnet)
 	require.NoError(t, err)
 	err = dbmodel.DeleteSubnet(db, subnet.ID)
+	require.NoError(t, err)
 
 	for i := 1; i <= 3; i++ {
 		subnet := &dbmodel.Subnet{
