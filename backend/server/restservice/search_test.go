@@ -24,6 +24,14 @@ func TestSearchRecords(t *testing.T) {
 	require.NoError(t, err)
 	ctx := context.Background()
 
+	// setup a user session, it is required to check user role
+	user, err := dbmodel.GetUserByID(rapi.DB, 1)
+	require.NoError(t, err)
+	ctx, err = rapi.SessionManager.Load(ctx, "")
+	require.NoError(t, err)
+	err = rapi.SessionManager.LoginHandler(ctx, user)
+	require.NoError(t, err)
+
 	// search with empty text
 	params := search.SearchRecordsParams{}
 	rsp := rapi.SearchRecords(ctx, params)

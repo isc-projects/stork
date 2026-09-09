@@ -286,8 +286,7 @@ func (r *RestAPI) GetMachineState(ctx context.Context, params services.GetMachin
 	}
 
 	_, dbUser := r.SessionManager.Logged(ctx)
-	superAdmin := dbUser.InGroup(&dbmodel.SystemGroup{ID: dbmodel.SuperAdminGroupID})
-	if !superAdmin {
+	if !dbUser.InGroup(&dbmodel.SystemGroup{ID: dbmodel.SuperAdminGroupID}) {
 		dbMachine.HideSensitiveData()
 	}
 	m := r.machineToRestAPI(*dbMachine)
@@ -499,8 +498,7 @@ func (r *RestAPI) GetMachine(ctx context.Context, params services.GetMachinePara
 		return rsp
 	}
 	_, dbUser := r.SessionManager.Logged(ctx)
-	superAdmin := dbUser.InGroup(&dbmodel.SystemGroup{ID: dbmodel.SuperAdminGroupID})
-	if !superAdmin {
+	if !dbUser.InGroup(&dbmodel.SystemGroup{ID: dbmodel.SuperAdminGroupID}) {
 		dbMachine.HideSensitiveData()
 	}
 	m := r.machineToRestAPI(*dbMachine)

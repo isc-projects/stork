@@ -105,6 +105,14 @@ func TestGetMachineStateOnly(t *testing.T) {
 	require.NoError(t, err)
 	ctx := context.Background()
 
+	// setup a user session, it is required to check user role
+	user, err := dbmodel.GetUserByID(rapi.DB, 1)
+	require.NoError(t, err)
+	ctx, err = rapi.SessionManager.Load(ctx, "")
+	require.NoError(t, err)
+	err = rapi.SessionManager.LoginHandler(ctx, user)
+	require.NoError(t, err)
+
 	// get state of non-existing machine
 	params := services.GetMachineStateParams{
 		ID: 123,
@@ -196,6 +204,14 @@ func TestGetMachineState(t *testing.T) {
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, fd, &daemons.Pullers{StatePuller: statePuller})
 	require.NoError(t, err)
 	ctx := context.Background()
+
+	// setup a user session, it is required to check user role
+	user, err := dbmodel.GetUserByID(rapi.DB, 1)
+	require.NoError(t, err)
+	ctx, err = rapi.SessionManager.Load(ctx, "")
+	require.NoError(t, err)
+	err = rapi.SessionManager.LoginHandler(ctx, user)
+	require.NoError(t, err)
 
 	// add machine
 	m := &dbmodel.Machine{
@@ -395,7 +411,16 @@ func TestGetMachineAndPowerDNSState(t *testing.T) {
 	rapi, err := NewRestAPI(&RestAPISettings{}, dbSettings, db, mockAgents, fc, fd, &daemons.Pullers{StatePuller: statePuller})
 	require.NoError(t, err)
 
-	rsp := rapi.GetMachineState(context.Background(), services.GetMachineStateParams{
+	// setup a user session, it is required to check user role
+	ctx := context.Background()
+	user, err := dbmodel.GetUserByID(rapi.DB, 1)
+	require.NoError(t, err)
+	ctx, err = rapi.SessionManager.Load(context.Background(), "")
+	require.NoError(t, err)
+	err = rapi.SessionManager.LoginHandler(ctx, user)
+	require.NoError(t, err)
+
+	rsp := rapi.GetMachineState(ctx, services.GetMachineStateParams{
 		ID: 1,
 	})
 	require.IsType(t, &services.GetMachineStateOK{}, rsp)
@@ -915,6 +940,14 @@ func TestGetMachines(t *testing.T) {
 	require.NoError(t, err)
 	ctx := context.Background()
 
+	// setup a user session, it is required to check user role
+	user, err := dbmodel.GetUserByID(rapi.DB, 1)
+	require.NoError(t, err)
+	ctx, err = rapi.SessionManager.Load(ctx, "")
+	require.NoError(t, err)
+	err = rapi.SessionManager.LoginHandler(ctx, user)
+	require.NoError(t, err)
+
 	var start, limit int64 = 0, 10
 	params := services.GetMachinesParams{
 		Start: &start,
@@ -957,6 +990,14 @@ func TestGetMachinesEmptyList(t *testing.T) {
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, fd)
 	require.NoError(t, err)
 	ctx := context.Background()
+
+	// setup a user session, it is required to check user role
+	user, err := dbmodel.GetUserByID(rapi.DB, 1)
+	require.NoError(t, err)
+	ctx, err = rapi.SessionManager.Load(ctx, "")
+	require.NoError(t, err)
+	err = rapi.SessionManager.LoginHandler(ctx, user)
+	require.NoError(t, err)
 
 	var start, limit int64 = 0, 10
 	params := services.GetMachinesParams{
@@ -1136,6 +1177,14 @@ func TestGetMachine(t *testing.T) {
 	require.NoError(t, err)
 	ctx := context.Background()
 
+	// setup a user session, it is required to check user role
+	user, err := dbmodel.GetUserByID(rapi.DB, 1)
+	require.NoError(t, err)
+	ctx, err = rapi.SessionManager.Load(ctx, "")
+	require.NoError(t, err)
+	err = rapi.SessionManager.LoginHandler(ctx, user)
+	require.NoError(t, err)
+
 	// get non-existing machine
 	params := services.GetMachineParams{
 		ID: 123,
@@ -1225,6 +1274,14 @@ func TestUpdateMachine(t *testing.T) {
 	rapi, err := NewRestAPI(&settings, dbSettings, db, fa, fec, fd, pullers)
 	require.NoError(t, err)
 	ctx := context.Background()
+
+	// setup a user session, it is required to check user role
+	sysUser, err := dbmodel.GetUserByID(rapi.DB, 1)
+	require.NoError(t, err)
+	ctx, err = rapi.SessionManager.Load(ctx, "")
+	require.NoError(t, err)
+	err = rapi.SessionManager.LoginHandler(ctx, sysUser)
+	require.NoError(t, err)
 
 	// empty request, variant 1 - should raise an error
 	params := services.UpdateMachineParams{}
