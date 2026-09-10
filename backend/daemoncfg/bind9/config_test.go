@@ -1330,9 +1330,9 @@ func TestConfigExpandWildcardInclude(t *testing.T) {
 	defer sb.Close()
 
 	sb.Write("dir/include1.conf", "acl test { 1.2.3.4; };")
-	sb.Write("dir/include2.conf", "acl test { 1.2.3.4; };")
-	sb.Write("chroot/dir/include1.conf", "acl test { 1.2.3.4; };")
-	sb.Write("chroot/dir/include2.conf", "acl test { 1.2.3.4; };")
+	sb.Write("dir/include2.conf", "acl test { 2.3.4.5; };")
+	sb.Write("chroot/dir/include1.conf", "acl test { 3.4.5.6; };")
+	sb.Write("chroot/dir/include2.conf", "acl test { 4.5.6.7; };")
 
 	type testCase struct {
 		name                  string
@@ -1340,6 +1340,7 @@ func TestConfigExpandWildcardInclude(t *testing.T) {
 		namedConfCreationPath string
 		pattern               string
 		chrootDir             string
+		expectedACLs          []string
 	}
 	testCases := []testCase{
 		{
@@ -1347,12 +1348,14 @@ func TestConfigExpandWildcardInclude(t *testing.T) {
 			namedConfPath:         filepath.Join(sb.BasePath, "dir/named.conf"),
 			namedConfCreationPath: "dir/named.conf",
 			pattern:               "include*.conf",
+			expectedACLs:          []string{"1.2.3.4", "2.3.4.5"},
 		},
 		{
 			name:                  "absolute path",
 			namedConfPath:         filepath.Join(sb.BasePath, "dir/named.conf"),
 			namedConfCreationPath: "dir/named.conf",
 			pattern:               filepath.Join(sb.BasePath, "dir/include*.conf"),
+			expectedACLs:          []string{"1.2.3.4", "2.3.4.5"},
 		},
 		{
 			name:                  "relative path with chroot",
@@ -1360,6 +1363,7 @@ func TestConfigExpandWildcardInclude(t *testing.T) {
 			namedConfCreationPath: "chroot/named.conf",
 			pattern:               "dir/include*.conf",
 			chrootDir:             filepath.Join(sb.BasePath, "/chroot"),
+			expectedACLs:          []string{"3.4.5.6", "4.5.6.7"},
 		},
 	}
 
@@ -1377,6 +1381,13 @@ func TestConfigExpandWildcardInclude(t *testing.T) {
 			require.Len(t, expanded.Statements, 2)
 			require.NotNil(t, expanded.Statements[0].ACL)
 			require.NotNil(t, expanded.Statements[1].ACL)
+
+			// Verufy that the correct statements were included.
+			for i, statement := range expanded.Statements {
+				require.NotNil(t, statement.ACL)
+				require.Len(t, statement.ACL.AddressMatchList.Elements, 1)
+				require.Equal(t, testCase.expectedACLs[i], statement.ACL.AddressMatchList.Elements[0].IPAddressOrACLName)
+			}
 		})
 	}
 }
