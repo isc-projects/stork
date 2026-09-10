@@ -148,6 +148,10 @@ stages:
   fallback_keys:
     - golang_amd64-$CI_DEFAULT_BRANCH
 
+.golang_cache_unprotected: &golang_cache_unprotected
+  <<: *golang_cache
+  unprotect: true
+
 .golang_arm_cache: &golang_arm_cache
   key: golang_arm64-$CI_COMMIT_REF_SLUG
   <<: *golang_cache_paths
@@ -385,8 +389,7 @@ rebuild_cache_arm64_redhat:
 rebuild_cache_amd64_unprotected:
   <<: *cache_job_template_debian
   cache:
-    - unprotect: true
-    - *golang_cache
+    - *golang_cache_unprotected
     - *python_cache
     - *nodejs_cache
     - *playwright_browsers_cache
