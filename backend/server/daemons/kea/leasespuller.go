@@ -270,7 +270,7 @@ func (puller *LeasesPuller) getLeasesFromDaemon(daemon *dbmodel.Daemon) error {
 				}
 				modelLease, err := dbmodel.NewLeaseFromGRPC(response.Lease, daemon.ID, *subnetID)
 				if err != nil {
-					return errors.Wrap(err, "unable to convert lease from gRPC format to model format")
+					return errors.WithMessage(err, "unable to convert lease from gRPC format to model format")
 				}
 				err = dbmodel.AddLease(tx, modelLease)
 				if err != nil {
