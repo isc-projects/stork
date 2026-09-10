@@ -64,9 +64,9 @@ func TestZoneGetFormattedOutput(t *testing.T) {
 			{
 				Option: &Option{
 					Identifier: "type",
-					Switches: []OptionSwitch{
+					Switches: []String{
 						{
-							IdentSwitch: storkutil.Ptr("forward"),
+							Unquoted: storkutil.Ptr("forward"),
 						},
 					},
 				},

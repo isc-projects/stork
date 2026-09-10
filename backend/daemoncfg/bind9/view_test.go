@@ -193,9 +193,9 @@ func TestViewGetFormattedOutput(t *testing.T) {
 						{
 							Option: &Option{
 								Identifier: "type",
-								Switches: []OptionSwitch{
+								Switches: []String{
 									{
-										IdentSwitch: storkutil.Ptr("forward"),
+										Unquoted: storkutil.Ptr("forward"),
 									},
 								},
 							},
@@ -206,9 +206,9 @@ func TestViewGetFormattedOutput(t *testing.T) {
 			{
 				Option: &Option{
 					Identifier: "test-option",
-					Switches: []OptionSwitch{
+					Switches: []String{
 						{
-							IdentSwitch: storkutil.Ptr("true"),
+							Unquoted: storkutil.Ptr("true"),
 						},
 					},
 				},

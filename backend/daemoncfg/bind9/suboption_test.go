@@ -12,12 +12,12 @@ import (
 func TestSuboptionFormat(t *testing.T) {
 	suboption := &Suboption{
 		Identifier: "test-suboption",
-		Switches: []OptionSwitch{
+		Switches: []String{
 			{
-				StringSwitch: storkutil.Ptr("string"),
+				Quoted: storkutil.Ptr("string"),
 			},
 			{
-				IdentSwitch: storkutil.Ptr("ident"),
+				Unquoted: storkutil.Ptr("ident"),
 			},
 		},
 		Contents: &GenericClauseContents{
@@ -52,12 +52,12 @@ func TestSuboptionFormatNoSwitches(t *testing.T) {
 func TestSuboptionFormatNoContents(t *testing.T) {
 	suboption := &Suboption{
 		Identifier: "test-suboption",
-		Switches: []OptionSwitch{
+		Switches: []String{
 			{
-				StringSwitch: storkutil.Ptr("string"),
+				Quoted: storkutil.Ptr("string"),
 			},
 			{
-				IdentSwitch: storkutil.Ptr("ident"),
+				Unquoted: storkutil.Ptr("ident"),
 			},
 		},
 	}

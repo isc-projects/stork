@@ -39,9 +39,9 @@ func TestChannelFormat(t *testing.T) {
 			{
 				Option: &Option{
 					Identifier: "print-time",
-					Switches: []OptionSwitch{
+					Switches: []String{
 						{
-							IdentSwitch: storkutil.Ptr("yes"),
+							Unquoted: storkutil.Ptr("yes"),
 						},
 					},
 				},

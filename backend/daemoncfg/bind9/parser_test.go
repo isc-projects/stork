@@ -81,7 +81,7 @@ func testParsedConfig(t *testing.T, cfg *Config) {
 	require.NotNil(t, statement.Option)
 	require.Equal(t, "tls", statement.Option.Identifier)
 	require.Len(t, statement.Option.Switches, 1)
-	require.Equal(t, "domain.name", statement.Option.Switches[0].GetStringValue())
+	require.Equal(t, "domain.name", statement.Option.Switches[0].GetValue())
 
 	statement, _ = next()
 	require.NotNil(t, statement.Options)
@@ -157,7 +157,7 @@ func testParsedConfig(t *testing.T, cfg *Config) {
 	require.NotNil(t, statement.View.Clauses[7].Option)
 	require.Equal(t, "allow-new-zones", statement.View.Clauses[7].Option.Identifier)
 	require.Len(t, statement.View.Clauses[7].Option.Switches, 1)
-	require.Equal(t, "no", statement.View.Clauses[7].Option.Switches[0].GetStringValue())
+	require.Equal(t, "no", statement.View.Clauses[7].Option.Switches[0].GetValue())
 
 	statement, _ = next()
 	require.NotNil(t, statement.View)
@@ -185,7 +185,7 @@ func testParsedConfig(t *testing.T, cfg *Config) {
 	require.NotNil(t, statement.Zone.Clauses[0].Option)
 	require.Equal(t, "type", statement.Zone.Clauses[0].Option.Identifier)
 	require.Len(t, statement.Zone.Clauses[0].Option.Switches, 1)
-	require.Equal(t, "master", statement.Zone.Clauses[0].Option.Switches[0].GetStringValue())
+	require.Equal(t, "master", statement.Zone.Clauses[0].Option.Switches[0].GetValue())
 	require.NotNil(t, statement.Zone.Clauses[1].AllowTransfer)
 	require.EqualValues(t, 853, *statement.Zone.Clauses[1].AllowTransfer.Port)
 	require.Nil(t, statement.Zone.Clauses[1].AllowTransfer.Transport)
@@ -193,7 +193,7 @@ func testParsedConfig(t *testing.T, cfg *Config) {
 	require.NotNil(t, statement.Zone.Clauses[2].Option)
 	require.Equal(t, "file", statement.Zone.Clauses[2].Option.Identifier)
 	require.Len(t, statement.Zone.Clauses[2].Option.Switches, 1)
-	require.Equal(t, "/etc/bind/db.nsd.example.com", statement.Zone.Clauses[2].Option.Switches[0].GetStringValue())
+	require.Equal(t, "/etc/bind/db.nsd.example.com", statement.Zone.Clauses[2].Option.Switches[0].GetValue())
 
 	// Logging. Test selected channel and category. Testing all of them
 	// can be overkill.
@@ -298,11 +298,11 @@ func TestParseGenericOption(t *testing.T) {
 	require.NotNil(t, cfg.Statements[0].Options.Clauses[0].Option)
 	require.Equal(t, "test-option", cfg.Statements[0].Options.Clauses[0].Option.Identifier)
 	require.Len(t, cfg.Statements[0].Options.Clauses[0].Option.Switches, 5)
-	require.Equal(t, "192.168.1.1", cfg.Statements[0].Options.Clauses[0].Option.Switches[0].GetStringValue())
-	require.Equal(t, "2001:db8:1::1", cfg.Statements[0].Options.Clauses[0].Option.Switches[1].GetStringValue())
-	require.Equal(t, "12", cfg.Statements[0].Options.Clauses[0].Option.Switches[2].GetStringValue())
-	require.Equal(t, "bar", cfg.Statements[0].Options.Clauses[0].Option.Switches[3].GetStringValue())
-	require.Equal(t, "1.1.1.1", cfg.Statements[0].Options.Clauses[0].Option.Switches[4].GetStringValue())
+	require.Equal(t, "192.168.1.1", cfg.Statements[0].Options.Clauses[0].Option.Switches[0].GetValue())
+	require.Equal(t, "2001:db8:1::1", cfg.Statements[0].Options.Clauses[0].Option.Switches[1].GetValue())
+	require.Equal(t, "12", cfg.Statements[0].Options.Clauses[0].Option.Switches[2].GetValue())
+	require.Equal(t, "bar", cfg.Statements[0].Options.Clauses[0].Option.Switches[3].GetValue())
+	require.Equal(t, "1.1.1.1", cfg.Statements[0].Options.Clauses[0].Option.Switches[4].GetValue())
 	require.NotNil(t, cfg.Statements[0].Options.Clauses[0].Option.Contents)
 	require.Len(t, cfg.Statements[0].Options.Clauses[0].Option.Contents.tokens, 4)
 	require.Equal(t, "generic-content", cfg.Statements[0].Options.Clauses[0].Option.Contents.tokens[0])
@@ -315,7 +315,7 @@ func TestParseGenericOption(t *testing.T) {
 
 	// Validate the first suboption.
 	require.Equal(t, "test-suboption1", cfg.Statements[0].Options.Clauses[0].Option.Suboptions[0].Identifier)
-	require.Equal(t, "192.0.2.1", cfg.Statements[0].Options.Clauses[0].Option.Suboptions[0].Switches[0].GetStringValue())
+	require.Equal(t, "192.0.2.1", cfg.Statements[0].Options.Clauses[0].Option.Suboptions[0].Switches[0].GetValue())
 	require.NotNil(t, cfg.Statements[0].Options.Clauses[0].Option.Suboptions[0].Contents)
 	require.Len(t, cfg.Statements[0].Options.Clauses[0].Option.Suboptions[0].Contents.tokens, 4)
 	require.Equal(t, "generic-content", cfg.Statements[0].Options.Clauses[0].Option.Suboptions[0].Contents.tokens[0])
@@ -325,8 +325,8 @@ func TestParseGenericOption(t *testing.T) {
 
 	// Validate the second suboption.
 	require.Equal(t, "test-suboption2", cfg.Statements[0].Options.Clauses[0].Option.Suboptions[1].Identifier)
-	require.Equal(t, "smiley", cfg.Statements[0].Options.Clauses[0].Option.Suboptions[1].Switches[0].GetStringValue())
-	require.Equal(t, "123", cfg.Statements[0].Options.Clauses[0].Option.Suboptions[1].Switches[1].GetStringValue())
+	require.Equal(t, "smiley", cfg.Statements[0].Options.Clauses[0].Option.Suboptions[1].Switches[0].GetValue())
+	require.Equal(t, "123", cfg.Statements[0].Options.Clauses[0].Option.Suboptions[1].Switches[1].GetValue())
 	require.Nil(t, cfg.Statements[0].Options.Clauses[0].Option.Suboptions[1].Contents)
 }
 
@@ -1086,8 +1086,8 @@ func TestParseOptionWithCurlyBrackets(t *testing.T) {
 	require.NotNil(t, cfg.Statements[0].Options.Clauses[0].Option)
 	require.Equal(t, "foo", cfg.Statements[0].Options.Clauses[0].Option.Identifier)
 	require.Len(t, cfg.Statements[0].Options.Clauses[0].Option.Switches, 2)
-	require.Equal(t, "123", cfg.Statements[0].Options.Clauses[0].Option.Switches[0].GetStringValue())
-	require.Equal(t, "abc", cfg.Statements[0].Options.Clauses[0].Option.Switches[1].GetStringValue())
+	require.Equal(t, "123", cfg.Statements[0].Options.Clauses[0].Option.Switches[0].GetValue())
+	require.Equal(t, "abc", cfg.Statements[0].Options.Clauses[0].Option.Switches[1].GetValue())
 	require.NotNil(t, cfg.Statements[0].Options.Clauses[0].Option.Contents)
 	require.Empty(t, cfg.Statements[0].Options.Clauses[0].Option.Suboptions)
 }
@@ -1108,13 +1108,13 @@ func TestParseOptionWithSuboptions(t *testing.T) {
 	require.NotNil(t, cfg.Statements[0].Options.Clauses[0].Option)
 	require.Equal(t, "foo", cfg.Statements[0].Options.Clauses[0].Option.Identifier)
 	require.Len(t, cfg.Statements[0].Options.Clauses[0].Option.Switches, 1)
-	require.Equal(t, "123", cfg.Statements[0].Options.Clauses[0].Option.Switches[0].GetStringValue())
+	require.Equal(t, "123", cfg.Statements[0].Options.Clauses[0].Option.Switches[0].GetValue())
 	require.NotNil(t, cfg.Statements[0].Options.Clauses[0].Option.Contents)
 	require.Len(t, cfg.Statements[0].Options.Clauses[0].Option.Suboptions, 2)
 	require.Equal(t, "except-from", cfg.Statements[0].Options.Clauses[0].Option.Suboptions[0].Identifier)
 	require.NotNil(t, cfg.Statements[0].Options.Clauses[0].Option.Suboptions[0].Contents)
 	require.Equal(t, "update", cfg.Statements[0].Options.Clauses[0].Option.Suboptions[1].Identifier)
-	require.Equal(t, "100", cfg.Statements[0].Options.Clauses[0].Option.Suboptions[1].Switches[0].GetStringValue())
+	require.Equal(t, "100", cfg.Statements[0].Options.Clauses[0].Option.Suboptions[1].Switches[0].GetValue())
 }
 
 // Test parsing ACL with negated key.
@@ -1230,8 +1230,8 @@ func TestParseDynDB(t *testing.T) {
 	require.NotNil(t, cfg.Statements[0].Option)
 	require.Equal(t, "dyndb", cfg.Statements[0].Option.Identifier)
 	require.Len(t, cfg.Statements[0].Option.Switches, 2)
-	require.Equal(t, "ipa", cfg.Statements[0].Option.Switches[0].GetStringValue())
-	require.Equal(t, "/usr/lib64/bind/ldap.so", cfg.Statements[0].Option.Switches[1].GetStringValue())
+	require.Equal(t, "ipa", cfg.Statements[0].Option.Switches[0].GetValue())
+	require.Equal(t, "/usr/lib64/bind/ldap.so", cfg.Statements[0].Option.Switches[1].GetValue())
 	require.NotNil(t, cfg.Statements[0].Option.Contents)
 	require.Empty(t, cfg.Statements[0].Option.Suboptions)
 }

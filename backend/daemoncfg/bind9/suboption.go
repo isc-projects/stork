@@ -6,7 +6,7 @@ var _ formattedElement = (*Suboption)(nil)
 // option. Suboptions can appear after curly braces in the option.
 type Suboption struct {
 	Identifier string                 `parser:"@Ident"`
-	Switches   []OptionSwitch         `parser:"( @@ )*"`
+	Switches   []String               `parser:"( @@ )*"`
 	Contents   *GenericClauseContents `parser:"( '{' @@ '}' )?"`
 }
 
@@ -15,11 +15,7 @@ func (s *Suboption) getFormattedOutput(filter *Filter) formatterOutput {
 	clause := newFormatterClause()
 	clause.addToken(s.Identifier)
 	for _, s := range s.Switches {
-		if s.StringSwitch != nil {
-			clause.addTokenf(`"%s"`, *s.StringSwitch)
-		} else if s.IdentSwitch != nil {
-			clause.addToken(*s.IdentSwitch)
-		}
+		clause.addToken(s.GetOriginalValue())
 	}
 	if s.Contents != nil {
 		clause.add(s.Contents.getFormattedOutput(filter))
