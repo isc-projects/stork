@@ -15,6 +15,8 @@ let mockGetSettingsResponse: Settings = {
     keaStatsPullerInterval: 15,
     keaStatusPullerInterval: 23,
     statePullerInterval: 44,
+    enableZoneTransferPruning: true,
+    zoneTransferPruningMaxAge: 604800,
     enableMachineRegistration: true,
 }
 

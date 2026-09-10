@@ -2,9 +2,11 @@ package restservice
 
 import (
 	"context"
+	http "net/http"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	gomock "go.uber.org/mock/gomock"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
 	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
@@ -18,13 +20,19 @@ func TestSettings(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockDNSManager := NewMockManager(ctrl)
+	mockDNSManager.EXPECT().RestartXFRPruning().Return(nil)
+
 	// Prepare rest API.
 	rSettings := RestAPISettings{}
 	fa := agentcommtest.NewFakeAgents(nil, nil)
 	fec := &storktest.FakeEventCenter{}
 	fd := &storktest.FakeDispatcher{}
 	ec := NewEndpointControl()
-	rapi, err := NewRestAPI(&rSettings, dbSettings, db, fa, fec, fd, ec)
+	rapi, err := NewRestAPI(&rSettings, dbSettings, db, fa, fec, fd, ec, mockDNSManager)
 	require.NoError(t, err)
 	ctx := context.Background()
 
@@ -56,6 +64,8 @@ func TestSettings(t *testing.T) {
 			GrafanaDhcp6DashboardID:      "dhcp6",
 			EnableMachineRegistration:    false,
 			EnableOnlineSoftwareVersions: false,
+			EnableZoneTransferPruning:    false,
+			ZoneTransferPruningMaxAge:    60,
 		},
 	}
 	rsp = rapi.UpdateSettings(ctx, paramsUS)
@@ -80,4 +90,46 @@ func TestSettings(t *testing.T) {
 
 	require.False(t, okRsp.Payload.EnableMachineRegistration)
 	require.False(t, okRsp.Payload.EnableOnlineSoftwareVersions)
+
+	require.False(t, okRsp.Payload.EnableZoneTransferPruning)
+	require.EqualValues(t, 60, okRsp.Payload.ZoneTransferPruningMaxAge)
+}
+
+// Test setting an invalid zone transfer pruning max age.
+func TestSettingsInvalidZoneTransferPruningMaxAge(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	// Make sure we don't restart the zone transfer pruning.
+	mockDNSManager := NewMockManager(ctrl)
+	mockDNSManager.EXPECT().RestartXFRPruning().Times(0)
+
+	// Prepare rest API.
+	rSettings := RestAPISettings{}
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	fec := &storktest.FakeEventCenter{}
+	fd := &storktest.FakeDispatcher{}
+	ec := NewEndpointControl()
+	rapi, err := NewRestAPI(&rSettings, dbSettings, db, fa, fec, fd, ec, mockDNSManager)
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	// Initialize global settings.
+	err = dbmodel.InitializeSettings(db, 0)
+	require.NoError(t, err)
+
+	// Update settings with invalid zone transfer pruning max age.
+	paramsUS := settings.UpdateSettingsParams{
+		Settings: &models.Settings{
+			ZoneTransferPruningMaxAge: 59,
+		},
+	}
+	rsp := rapi.UpdateSettings(ctx, paramsUS)
+	require.IsType(t, &settings.UpdateSettingsDefault{}, rsp)
+	defaultRsp := rsp.(*settings.UpdateSettingsDefault)
+	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+	require.EqualValues(t, "Zone transfer pruning max age must be at least 60 seconds", *defaultRsp.Payload.Message)
 }

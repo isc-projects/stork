@@ -8,10 +8,12 @@ import (
 	"net"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"testing/synctest"
 	"time"
 
+	"github.com/go-pg/pg/v10"
 	"github.com/stretchr/testify/require"
 	gomock "go.uber.org/mock/gomock"
 	agentapi "isc.org/stork/api"
@@ -2588,13 +2590,16 @@ func TestStartStopXFRTracking(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
+	err := dbmodel.InitializeSettings(db, 0)
+	require.NoError(t, err)
+
 	// Add a machine.
 	machine := &dbmodel.Machine{
 		ID:        0,
 		Address:   "localhost",
 		AgentPort: int64(8080),
 	}
-	err := dbmodel.AddMachine(db, machine)
+	err = dbmodel.AddMachine(db, machine)
 	require.NoError(t, err)
 
 	// Add several daemons, including the ones that don't support zone transfer tracking.
@@ -2822,4 +2827,83 @@ func TestPopulateMachineIPAddressCache(t *testing.T) {
 	require.False(t, loopback)
 	require.Len(t, machines, 1)
 	require.EqualValues(t, machine.ID, machines[0].ID)
+}
+
+func TestStartXFRPruning(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	err := dbmodel.InitializeSettings(db, 0)
+	require.NoError(t, err)
+
+	// Create the manager.
+	manager, err := NewManager(&appstest.ManagerAccessorsWrapper{
+		DB: db,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, manager)
+	require.IsType(t, &managerImpl{}, manager)
+	defer manager.Shutdown()
+
+	synctest.Test(t, func(t *testing.T) {
+		// Start the pruning.
+		isPruned := atomic.Bool{}
+		err = manager.(*managerImpl).startXFRPruning(1*time.Millisecond, func(dbi pg.DBI, xfrMaxAge int64) error {
+			isPruned.Store(true)
+			return nil
+		})
+		require.NoError(t, err)
+		synctest.Wait()
+
+		defer func() {
+			manager.(*managerImpl).stopXFRPruning()
+			synctest.Wait()
+		}()
+
+		require.Eventually(t, isPruned.Load, 1*time.Second, 100*time.Millisecond)
+	})
+}
+
+func TestRestartXFRPruning(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	err := dbmodel.InitializeSettings(db, 0)
+	require.NoError(t, err)
+
+	// Create the manager.
+	manager, err := NewManager(&appstest.ManagerAccessorsWrapper{
+		DB: db,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, manager)
+	require.IsType(t, &managerImpl{}, manager)
+	defer manager.Shutdown()
+
+	synctest.Test(t, func(t *testing.T) {
+		// Start the pruning with very long timeout.
+		isPruned := atomic.Bool{}
+		err = manager.(*managerImpl).restartXFRPruning(1*time.Hour, func(dbi pg.DBI, xfrMaxAge int64) error {
+			isPruned.Store(true)
+			return nil
+		})
+		require.NoError(t, err)
+		synctest.Wait()
+
+		defer func() {
+			manager.(*managerImpl).stopXFRPruning()
+			synctest.Wait()
+		}()
+
+		require.Never(t, isPruned.Load, 1*time.Second, 100*time.Millisecond)
+
+		err = manager.(*managerImpl).restartXFRPruning(1*time.Millisecond, func(dbi pg.DBI, xfrMaxAge int64) error {
+			isPruned.Store(true)
+			return nil
+		})
+		require.NoError(t, err)
+		synctest.Wait()
+
+		require.Eventually(t, isPruned.Load, 1*time.Second, 100*time.Millisecond)
+	})
 }

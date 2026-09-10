@@ -12,6 +12,9 @@ import (
 	"isc.org/stork/server/gen/restapi/operations/settings"
 )
 
+// Minimum zone transfer pruning max age in seconds.
+const minZoneTransferPruningMaxAge = 60
+
 // Get global settings.
 func (r *RestAPI) GetSettings(ctx context.Context, params settings.GetSettingsParams) middleware.Responder {
 	dbSettingsMap, err := dbmodel.GetAllSettings(r.DB)
@@ -34,6 +37,8 @@ func (r *RestAPI) GetSettings(ctx context.Context, params settings.GetSettingsPa
 		KeaStatusPullerInterval:      dbSettingsMap["kea_status_puller_interval"].(int64),
 		KeaLeasesPullerInterval:      dbSettingsMap["kea_leases_puller_interval"].(int64),
 		StatePullerInterval:          dbSettingsMap["state_puller_interval"].(int64),
+		EnableZoneTransferPruning:    dbSettingsMap["enable_zone_transfer_pruning"].(bool),
+		ZoneTransferPruningMaxAge:    dbSettingsMap["zone_transfer_pruning_max_age"].(int64),
 		EnableMachineRegistration:    dbSettingsMap["enable_machine_registration"].(bool),
 		EnableOnlineSoftwareVersions: dbSettingsMap["enable_online_software_versions"].(bool),
 	}
@@ -49,6 +54,15 @@ func (r *RestAPI) UpdateSettings(ctx context.Context, params settings.UpdateSett
 		msg := "Missing settings"
 		log.Error(msg)
 		rsp := settings.NewGetSettingsDefault(http.StatusBadRequest).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
+	}
+
+	if s.ZoneTransferPruningMaxAge < minZoneTransferPruningMaxAge {
+		msg := "Zone transfer pruning max age must be at least 60 seconds"
+		log.Error(msg)
+		rsp := settings.NewUpdateSettingsDefault(http.StatusBadRequest).WithPayload(&models.APIError{
 			Message: &msg,
 		})
 		return rsp
@@ -115,6 +129,23 @@ func (r *RestAPI) UpdateSettings(ctx context.Context, params settings.UpdateSett
 		return errRsp
 	}
 	r.EndpointControl.SetEnabled(EndpointOpCreateNewMachine, s.EnableMachineRegistration)
+
+	err = dbmodel.SetSettingBool(r.DB, "enable_zone_transfer_pruning", s.EnableZoneTransferPruning)
+	if err != nil {
+		log.WithError(err).Error("Cannot update enable_zone_transfer_pruning")
+		return errRsp
+	}
+	err = dbmodel.SetSettingInt(r.DB, "zone_transfer_pruning_max_age", s.ZoneTransferPruningMaxAge)
+	if err != nil {
+		log.WithError(err).Error("Cannot update zone_transfer_pruning_max_age")
+		return errRsp
+	}
+
+	err = r.DNSManager.RestartXFRPruning()
+	if err != nil {
+		log.WithError(err).Error("Cannot restart zone transfer pruning")
+		return errRsp
+	}
 
 	rsp := settings.NewUpdateSettingsOK()
 	return rsp

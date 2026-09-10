@@ -28,6 +28,8 @@ interface SettingsForm {
     keaStatsPullerInterval: FormControl<number>
     keaStatusPullerInterval: FormControl<number>
     keaLeasesPullerInterval: FormControl<number>
+    enableZoneTransferPruning: FormControl<boolean>
+    zoneTransferPruningMaxAge: FormControl<number>
     grafanaUrl: FormControl<string>
     grafanaDhcp4DashboardId: FormControl<string>
     grafanaDhcp6DashboardId: FormControl<string>
@@ -186,6 +188,8 @@ export class SettingsPageComponent implements OnInit {
             keaStatsPullerInterval: [0, [Validators.required, Validators.min(0)]],
             keaStatusPullerInterval: [0, [Validators.required, Validators.min(0)]],
             keaLeasesPullerInterval: [0, [Validators.required, Validators.min(0)]],
+            enableZoneTransferPruning: [false],
+            zoneTransferPruningMaxAge: [604800, [Validators.required, Validators.min(60)]],
             grafanaUrl: [''],
             grafanaDhcp4DashboardId: ['hRf18FvWz'],
             grafanaDhcp6DashboardId: ['AQPHKJUGz'],

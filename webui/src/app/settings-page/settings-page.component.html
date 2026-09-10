@@ -95,6 +95,53 @@
                         </div>
                     }
                 </p-fieldset>
+                <p-fieldset legend="Zone Transfers">
+                    <div class="flex align-items-center">
+                        <p-checkbox
+                            formControlName="enableZoneTransferPruning"
+                            [binary]="true"
+                            inputId="enable-zone-transfer-pruning-checkbox"
+                        />
+                        <label class="ml-2" for="enable-zone-transfer-pruning-checkbox"
+                            >Enable zone transfer pruning</label
+                        >
+                        <app-help-tip subject="Enable Zone Transfer Pruning">
+                            Zone transfers are collected by the Stork server and stored in the database. In deployments
+                            with large number of zone transfers it can lead to significant database growth. This setting
+                            enables systematic removal of the old zone transfers to maintain their history within a
+                            reasonable limit. Use the setting below to specify the maximum age of the zone transfers to
+                            hold in the Stork database.
+                        </app-help-tip>
+                    </div>
+
+                    <div class="my-3 flex flex-column">
+                        <label for="zoneTransferPruningMaxAge"
+                            >Maximum age of the zone transfers to keep (in seconds):</label
+                        >
+                        <div class="flex align-items-center">
+                            <p-inputNumber
+                                inputId="zoneTransferPruningMaxAge"
+                                mode="decimal"
+                                [min]="60"
+                                [useGrouping]="false"
+                                formControlName="zoneTransferPruningMaxAge"
+                                class="max-w-form"
+                            ></p-inputNumber
+                            ><app-help-tip subject="Zone Transfers Maximum Age">
+                                This value specifies the maximum age of a recorded zone transfer after which it is
+                                pruned from the database. For example, a value of 604800 will result in holding the
+                                captured zone transfers for 7 days. The minimum value is 60 seconds because the interval
+                                at which old zone transfers are pruned is also 60 seconds.
+                            </app-help-tip>
+                        </div>
+                        @if (hasError('zoneTransferPruningMaxAge', 'required')) {
+                            <div class="app-error">It is required.</div>
+                        }
+                        @if (hasError('zoneTransferPruningMaxAge', 'min')) {
+                            <div class="app-error">It must be greater than or equal to 60 seconds.</div>
+                        }
+                    </div>
+                </p-fieldset>
                 <p-fieldset legend="Grafana">
                     @for (setting of grafanaUrlSettings; track setting) {
                         <div class="my-3 flex flex-column">

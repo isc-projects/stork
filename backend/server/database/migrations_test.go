@@ -889,7 +889,7 @@ func TestMigrateFromDemoV2_3_0ToLatest(t *testing.T) {
 	require.NoError(t, err)
 	settings, err := dbmodel.GetAllSettings(db)
 	require.NoError(t, err)
-	require.Len(t, settings, 11)
+	require.Len(t, settings, 13)
 
 	expectSettings := map[string]any{
 		"kea_status_puller_interval":      int64(30),
@@ -903,6 +903,8 @@ func TestMigrateFromDemoV2_3_0ToLatest(t *testing.T) {
 		"kea_hosts_puller_interval":       int64(60),
 		"kea_leases_puller_interval":      int64(60),
 		"enable_online_software_versions": true,
+		"enable_zone_transfer_pruning":    true,
+		"zone_transfer_pruning_max_age":   int64(604800),
 	}
 
 	for expectedKey, expectedValue := range expectSettings {

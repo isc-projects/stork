@@ -19,6 +19,10 @@
         type: integer
       statePullerInterval:
         type: integer
+      enableZoneTransferPruning:
+        type: boolean
+      zoneTransferPruningMaxAge:
+        type: integer
       enableMachineRegistration:
         type: boolean
       enableOnlineSoftwareVersions:

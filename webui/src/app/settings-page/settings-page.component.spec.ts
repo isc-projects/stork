@@ -92,6 +92,8 @@ describe('SettingsPageComponent', () => {
             keaLeasesPullerInterval: 33,
             enableMachineRegistration: true,
             enableOnlineSoftwareVersions: true,
+            enableZoneTransferPruning: true,
+            zoneTransferPruningMaxAge: 70,
         }
         spyOn(settingsApi, 'getSettings').and.returnValue(of(settings))
         component.ngOnInit()
@@ -111,6 +113,9 @@ describe('SettingsPageComponent', () => {
         expect(component.settingsForm.get('keaLeasesPullerInterval')?.value).toBe(33)
         expect(component.settingsForm.get('enableMachineRegistration')?.value).toBeTrue()
         expect(component.settingsForm.get('enableOnlineSoftwareVersions')?.value).toBeTrue()
+
+        expect(component.settingsForm.get('enableZoneTransferPruning')?.value).toBeTrue()
+        expect(component.settingsForm.get('zoneTransferPruningMaxAge')?.value).toBe(70)
     }))
 
     it('should display error message upon getting the settings', fakeAsync(() => {
@@ -149,6 +154,8 @@ describe('SettingsPageComponent', () => {
             keaLeasesPullerInterval: 33,
             enableMachineRegistration: true,
             enableOnlineSoftwareVersions: true,
+            enableZoneTransferPruning: true,
+            zoneTransferPruningMaxAge: 10,
         }
         const updatedSettings: any = {
             statePullerInterval: 13,
@@ -162,6 +169,8 @@ describe('SettingsPageComponent', () => {
             keaLeasesPullerInterval: 13,
             enableMachineRegistration: false,
             enableOnlineSoftwareVersions: false,
+            enableZoneTransferPruning: false,
+            zoneTransferPruningMaxAge: 61,
         }
         spyOn(settingsApi, 'getSettings').and.returnValue(of(settings))
         spyOn(settingsApi, 'updateSettings').and.callThrough()
@@ -184,6 +193,7 @@ describe('SettingsPageComponent', () => {
             keaStatsPullerInterval: null,
             keaStatusPullerInterval: null,
             keaLeasesPullerInterval: null,
+            zoneTransferPruningMaxAge: 59,
         }
         spyOn(settingsApi, 'getSettings').and.returnValue(of(settings))
         spyOn(settingsApi, 'updateSettings').and.callThrough()
@@ -194,7 +204,8 @@ describe('SettingsPageComponent', () => {
         // Iteratively correct the values.
         for (const key of Object.keys(settings)) {
             expect(component.settingsForm.invalid).toBeTrue()
-            component.settingsForm.get(key)?.setValue(20)
+            // Minimum value for zone transfer pruning max age is 60 seconds.
+            component.settingsForm.get(key)?.setValue(60)
         }
         // The form should eventually be valid.
         expect(component.settingsForm.invalid).toBeFalse()

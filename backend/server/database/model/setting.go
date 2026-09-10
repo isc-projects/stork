@@ -82,6 +82,16 @@ func InitializeSettings(db *pg.DB, initialPullerInterval int64) error {
 			Value:   longInterval,
 		},
 		{
+			Name:    "enable_zone_transfer_pruning",
+			ValType: SettingValTypeBool,
+			Value:   "true",
+		},
+		{
+			Name:    "zone_transfer_pruning_max_age",
+			ValType: SettingValTypeInt,
+			Value:   "604800", // 7 days
+		},
+		{
 			Name:    "grafana_url",
 			ValType: SettingValTypeStr,
 			Value:   "",

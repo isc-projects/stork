@@ -1,6 +1,7 @@
 package dbmodel
 
 import (
+	"fmt"
 	"slices"
 	"testing"
 	"time"
@@ -930,4 +931,83 @@ func TestAddOrUpdateZoneTransferStateInvalidStatus(t *testing.T) {
 	// It should fail with a constraint violation error.
 	err = AddOrUpdateZoneTransferState(db, zoneTransfer)
 	require.ErrorContains(t, err, "zone_transfer_state_status_check")
+}
+
+// Tests deleting zone transfers old zone transfers started specified number of seconds ago.
+func TestDeleteZoneTransferStatesStartedSecondsAgo(t *testing.T) {
+	type testCase struct {
+		olderThanSeconds int64
+		remainingCount   int
+	}
+	// Create test cases differing in the age of the zone transfers to be deleted.
+	// The test creates 10 zone transfers starting 10s, 70s, 130s... ago. The age
+	// implies specific number of zone transfers that remain.
+	testCases := []testCase{
+		{
+			olderThanSeconds: 20,
+			remainingCount:   1,
+		},
+		{
+			olderThanSeconds: 130,
+			remainingCount:   2,
+		},
+		{
+			olderThanSeconds: 330,
+			remainingCount:   6,
+		},
+		{
+			olderThanSeconds: 0,
+			remainingCount:   0,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(fmt.Sprintf("older than %d seconds", testCase.olderThanSeconds), func(t *testing.T) {
+			db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+			defer teardown()
+
+			machine := &Machine{
+				Address:   "127.0.0.1",
+				AgentPort: 8080,
+			}
+			err := AddMachine(db, machine)
+			require.NoError(t, err)
+
+			daemon := &Daemon{
+				MachineID: machine.ID,
+			}
+			err = AddDaemon(db, daemon)
+			require.NoError(t, err)
+
+			for i := range 10 {
+				// Create a zone transfer starting 10s, 70s, 130s... ago.
+				zoneTransfer := &ZoneTransferState{
+					DaemonID:  daemon.ID,
+					ViewName:  "_default",
+					ZoneName:  fmt.Sprintf("zone%d.example.org", i),
+					Status:    bind9xfr.StatusCompleted,
+					StartedAt: time.Now().Add(-time.Duration(60*i+10) * time.Second),
+				}
+				err = AddOrUpdateZoneTransferState(db, zoneTransfer)
+				require.NoError(t, err)
+			}
+
+			// Delete zone transfers older than the specified number of seconds.
+			err = DeleteZoneTransferStatesStartedSecondsAgo(db, testCase.olderThanSeconds)
+			require.NoError(t, err)
+
+			// Get the time when the zone transfers were deleted. We can use it to check that
+			// the recent zone transfers were not deleted.
+			deletedTime := storkutil.UTCNow()
+
+			zoneTransfers, total, err := GetZoneTransferStatesByPage(db, &GetZoneTransferStatesFilter{}, "", SortDirDesc)
+			require.NoError(t, err)
+			require.EqualValues(t, testCase.remainingCount, total)
+			require.Len(t, zoneTransfers, testCase.remainingCount)
+
+			for _, zoneTransfer := range zoneTransfers {
+				require.Greater(t, zoneTransfer.StartedAt, deletedTime.Add(-time.Duration(testCase.olderThanSeconds)*time.Second))
+			}
+		})
+	}
 }

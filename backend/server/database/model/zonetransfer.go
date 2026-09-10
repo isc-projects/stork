@@ -307,3 +307,14 @@ func GetZoneTransferStatesByPage(dbi pg.DBI, filter *GetZoneTransferStatesFilter
 	}
 	return zoneTransfers, int64(total), err
 }
+
+// Deletes zone transfers started specified number of seconds ago.
+func DeleteZoneTransferStatesStartedSecondsAgo(dbi pg.DBI, startedSecondsAgo int64) error {
+	_, err := dbi.Model(&ZoneTransferState{}).
+		Where("started_at < NOW() AT TIME ZONE 'UTC' - ? * interval '1 second'", startedSecondsAgo).
+		Delete()
+	if err != nil {
+		return errors.Wrapf(err, "failed to delete zone transfer states started %d seconds ago", startedSecondsAgo)
+	}
+	return nil
+}

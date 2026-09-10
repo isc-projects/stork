@@ -13,6 +13,7 @@ import (
 	"github.com/go-pg/pg/v10"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/sync/singleflight"
 	agentapi "isc.org/stork/api"
 	bind9config "isc.org/stork/daemoncfg/bind9"
 	"isc.org/stork/datamodel/daemonname"
@@ -124,6 +125,8 @@ type Manager interface {
 	StopXFRTracking()
 	// Stops tracking zone transfers for a selected BIND 9 daemon.
 	StopXFRTrackingForDaemon(daemon *dbmodel.Daemon)
+	// Restarts zone transfer pruning with the interval of 60 seconds.
+	RestartXFRPruning() error
 	// Checks if zone transfers are being tracked for a selected BIND 9 daemon.
 	IsXFRTrackingActiveForDaemon(daemon *dbmodel.Daemon) bool
 	// Populates the machine IP address cache from the database. This function should
@@ -433,6 +436,14 @@ type managerImpl struct {
 	xfrCollectorsMutex sync.RWMutex
 	// A cache holding IP addresses to machines mappings.
 	machineIPAddressCache *machineIPAddressCache
+	// A mutex protecting the XFR pruning state from concurrent access.
+	xfrPrunerMutex sync.RWMutex
+	// A cancel function for the XFR pruning goroutine.
+	xfrPrunerCancel context.CancelFunc
+	// A channel to stop the XFR pruning goroutine.
+	xfrPrunerStopChan chan struct{}
+	// A singleflight group to ensure that XFR pruning restarts are sequential.
+	xfrPrunerSingleflight singleflight.Group
 }
 
 // A structure returned over the channel when Manager completes asynchronous task.
@@ -847,6 +858,7 @@ func (manager *managerImpl) Shutdown() {
 	log.Info("Shutting down DNS Manager")
 	manager.StopXFRTracking()
 	manager.stopRRsRequestWorkers()
+	manager.stopXFRPruning()
 }
 
 // Returns zone contents (RRs) for a specified view, zone and daemon.
@@ -1062,6 +1074,10 @@ func (manager *managerImpl) StartXFRTracking() error {
 	if err != nil {
 		return errors.Wrap(err, "failed to get BIND 9 daemons while starting zone transfer tracking")
 	}
+	err = manager.RestartXFRPruning()
+	if err != nil {
+		return err
+	}
 	for _, daemon := range daemons {
 		if daemon.Bind9Daemon == nil {
 			// Zone transfer tracking is supported only for BIND 9 daemons.
@@ -1110,6 +1126,7 @@ func (manager *managerImpl) StopXFRTracking() {
 			collector.stop()
 		}()
 	}
+	manager.stopXFRPruning()
 	// Wait for all collectors to stop.
 	wg.Wait()
 }
@@ -1144,4 +1161,85 @@ func storeResult[K comparable, T any](mutex *sync.Mutex, results map[K]T, key K,
 	mutex.Lock()
 	defer mutex.Unlock()
 	results[key] = value
+}
+
+// Starts the goroutine that removes old zone transfers periodically.
+// It uses the settings from the database to determine whether or not
+// pruning should be enabled and the maximum age of zone transfers to be kept.
+// The custom function can be specified for testing purposes.
+// The default function used by the RestartXFRPruning method is
+// dbmodel.DeleteZoneTransferStatesStartedSecondsAgo.
+func (manager *managerImpl) startXFRPruning(interval time.Duration, pruneFunc func(dbi pg.DBI, xfrMaxAge int64) error) error {
+	xfrPruningEnabled, err := dbmodel.GetSettingBool(manager.db, "enable_zone_transfer_pruning")
+	if err != nil {
+		return errors.WithMessage(err, "failed to start zone transfer records pruning")
+	}
+	if !xfrPruningEnabled {
+		log.Info("Zone transfer records pruning is now disabled")
+		return nil
+	}
+	xfrMaxAge, err := dbmodel.GetSettingInt(manager.db, "zone_transfer_pruning_max_age")
+	if err != nil {
+		return errors.WithMessage(err, "failed to start zone transfer records pruning")
+	}
+	manager.xfrPrunerMutex.Lock()
+	defer manager.xfrPrunerMutex.Unlock()
+	if manager.xfrPrunerStopChan != nil {
+		return nil
+	}
+	manager.xfrPrunerStopChan = make(chan struct{})
+	ctx, cancel := context.WithCancel(context.Background())
+	manager.xfrPrunerCancel = cancel
+
+	log.Infof("Starting to regularly prune zone transfer records older than %d seconds", xfrMaxAge)
+
+	go func() {
+		defer func() {
+			manager.xfrPrunerMutex.Lock()
+			defer manager.xfrPrunerMutex.Unlock()
+			manager.xfrPrunerCancel = nil
+			close(manager.xfrPrunerStopChan)
+			manager.xfrPrunerStopChan = nil
+		}()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(interval):
+				if err := pruneFunc(manager.db, xfrMaxAge); err != nil {
+					log.Error(err)
+				}
+			}
+		}
+	}()
+	return nil
+}
+
+// Stops the XFR pruning goroutine and waits for it to finish.
+// It returns immediately if the XFR pruning goroutine is not running.
+func (manager *managerImpl) stopXFRPruning() {
+	manager.xfrPrunerMutex.Lock()
+	cancel := manager.xfrPrunerCancel
+	stopChan := manager.xfrPrunerStopChan
+	manager.xfrPrunerMutex.Unlock()
+	if cancel != nil && stopChan != nil {
+		cancel()
+		<-stopChan
+	}
+}
+
+// Restarts the XFR pruning goroutine with the specified interval and pruning function.
+func (manager *managerImpl) restartXFRPruning(interval time.Duration, pruneFunc func(dbi pg.DBI, xfrMaxAge int64) error) error {
+	_, err, _ := manager.xfrPrunerSingleflight.Do("xfr_pruner", func() (any, error) {
+		manager.stopXFRPruning()
+		err := manager.startXFRPruning(interval, pruneFunc)
+		return nil, err
+	})
+	return err
+}
+
+// Restarts the XFR pruning goroutine with the interval of 60 seconds and the default
+// pruning function.
+func (manager *managerImpl) RestartXFRPruning() error {
+	return manager.restartXFRPruning(time.Minute, dbmodel.DeleteZoneTransferStatesStartedSecondsAgo)
 }
