@@ -435,9 +435,9 @@ rebuild_cache_arm64_redhat:
   cache:
     - *python_arm_cache_redhat
 
-# rebuilds debian caches for unprotected branches only when MR is merged to master (also with on demand option)
+# rebuilds debian caches for unprotected branches only when MR is merged to master (also with "on demand" option)
 rebuild_cache_amd64_unprotected:
-  <<: *cache_job_template
+  extends: rebuild_cache_amd64
   rules:
     - if: *is_push_to_master
       changes:
@@ -453,59 +453,78 @@ rebuild_cache_amd64_unprotected:
     - *python_cache_unprotected
     - *nodejs_cache_unprotected
     - *playwright_browsers_cache_unprotected
-  script:
-    - rake prepare
-    - rake prepare:dev
-    - rake prepare:deps
-    - rake hook:prepare
-    - rake hook:prepare_deps
 
-# rebuilds debian ARM caches only when needed
-#rebuild_cache_arm64_unprotected:
-#  <<: *cache_job_template_debian
-#  <<: *job_template_arm
-#  cache:
-#    - unprotect: true
-#    - *golang_arm_cache
-#    - *python_arm_cache
-#    - *nodejs_arm_cache
-#  script:
-#    - rake prepare
-#    - rake prepare:deps
-#    - rake hook:prepare
-#    - rake hook:prepare_deps
-#
-## rebuilds alpine caches only when needed
-#rebuild_cache_amd64_alpine_unprotected:
-#  <<: *cache_job_template_alpine
-#  cache:
-#    - unprotect: true
-#    - *golang_cache_alpine
-#    - *python_cache_alpine
-#
-## rebuilds alpine ARM caches only when needed
-#rebuild_cache_arm64_alpine_unprotected:
-#  <<: *cache_job_template_alpine
-#  <<: *job_template_arm
-#  cache:
-#    - unprotect: true
-#    - *golang_arm_cache_alpine
-#    - *python_arm_cache_alpine
-#
-## rebuilds redhat caches only when needed
-#rebuild_cache_amd64_redhat_unprotected:
-#  <<: *cache_job_template_redhat
-#  cache:
-#    - unprotect: true
-#    - *python_cache_redhat
-#
-## rebuilds redhat ARM caches only when needed
-#rebuild_cache_arm64_redhat_unprotected:
-#  <<: *cache_job_template_redhat
-#  <<: *job_template_arm
-#  cache:
-#    - unprotect: true
-#    - *python_arm_cache_redhat
+# rebuilds debian ARM caches for unprotected branches only when MR is merged to master (also with "on demand" option)
+rebuild_cache_arm64_unprotected:
+  extends: rebuild_cache_arm64
+  rules:
+    - if: *is_push_to_master
+      changes:
+        paths:
+          - backend/go.mod
+          - backend/go.sum
+          - webui/package.json
+          - webui/package-lock.json
+          - rakelib/**/*
+    - *rule_manual_allow_failure
+  cache:
+    - *golang_arm_cache_unprotected
+    - *python_arm_cache_unprotected
+    - *nodejs_arm_cache_unprotected
+
+# rebuilds alpine caches for unprotected branches only when MR is merged to master (also with "on demand" option)
+rebuild_cache_amd64_alpine_unprotected:
+  extends: rebuild_cache_amd64_alpine
+  rules:
+    - if: *is_push_to_master
+      changes:
+        paths:
+          - backend/go.mod
+          - backend/go.sum
+          - rakelib/**/*
+    - *rule_manual_allow_failure
+  cache:
+    - *golang_cache_alpine_unprotected
+    - *python_cache_alpine_unprotected
+
+# rebuilds alpine ARM caches for unprotected branches only when MR is merged to master (also with "on demand" option)
+rebuild_cache_arm64_alpine_unprotected:
+  extends: rebuild_cache_arm64_alpine
+  rules:
+    - if: *is_push_to_master
+      changes:
+        paths:
+          - backend/go.mod
+          - backend/go.sum
+          - rakelib/**/*
+    - *rule_manual_allow_failure
+  cache:
+    - *golang_arm_cache_alpine_unprotected
+    - *python_arm_cache_alpine_unprotected
+
+# rebuilds redhat caches for unprotected branches only when MR is merged to master (also with "on demand" option)
+rebuild_cache_amd64_redhat_unprotected:
+  extends: rebuild_cache_amd64_redhat
+  rules:
+    - if: *is_push_to_master
+      changes:
+        paths:
+          - rakelib/**/*
+    - *rule_manual_allow_failure
+  cache:
+    - *python_cache_redhat_unprotected
+
+# rebuilds redhat ARM caches for unprotected branches only when MR is merged to master (also with "on demand" option)
+rebuild_cache_arm64_redhat_unprotected:
+  extends: rebuild_cache_arm64_redhat
+  rules:
+    - if: *is_push_to_master
+      changes:
+        paths:
+          - rakelib/**/*
+    - *rule_manual_allow_failure
+  cache:
+    - *python_arm_cache_redhat_unprotected
 
 ####################################################################################
 ### STAGE build                                                                  ###
