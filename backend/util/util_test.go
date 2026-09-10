@@ -175,7 +175,7 @@ func TestReadFileWithIncludes(t *testing.T) {
 	err = json.Unmarshal(raw, &content)
 	require.NoError(t, err)
 	data := content.(map[string]interface{})
-	require.Contains(t, data, "biz", "buz", "boz")
+	require.Contains(t, data, "biz", "buz", "boz", "bus")
 
 	// Non-imported content
 	biz := data["biz"].(string)
@@ -191,6 +191,15 @@ func TestReadFileWithIncludes(t *testing.T) {
 	bar := buz["bar"].(string)
 	require.EqualValues(t, bar, "24")
 	baz := buz["baz"].(bool)
+	require.EqualValues(t, baz, true)
+
+	bus := data["bus"].(map[string]interface{})
+	require.Contains(t, bus, "foo", "bar", "baz")
+	foo = int(bus["foo"].(float64))
+	require.EqualValues(t, foo, 42)
+	bar = bus["bar"].(string)
+	require.EqualValues(t, bar, "24")
+	baz = bus["baz"].(bool)
 	require.EqualValues(t, baz, true)
 }
 

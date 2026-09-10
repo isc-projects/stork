@@ -507,6 +507,36 @@ func TestNormalizeJSON(t *testing.T) {
 		require.JSONEq(t, expected, string(output))
 	})
 
+	t.Run("the trailing comma is preserved if it is the last character", func(t *testing.T) {
+		// Arrange
+		input := `
+			{ "a": 1 }, 
+			# Some trailing whitespace.
+		`
+
+		// Act
+		output := NormalizeJSON([]byte(input))
+
+		// Assert
+		expected := `{"a":1},`
+		require.Equal(t, expected, string(output))
+	})
+
+	t.Run("trailing slash is preserved if it is the last character", func(t *testing.T) {
+		// Arrange
+		input := `
+			{ "a": 1 } \ 
+			# Some trailing whitespace.
+		`
+
+		// Act
+		output := NormalizeJSON([]byte(input))
+
+		// Assert
+		expected := `{"a":1}\`
+		require.Equal(t, expected, string(output))
+	})
+
 	t.Run("trailing commas and comments combined", func(t *testing.T) {
 		// Arrange
 		input := `[ # An array

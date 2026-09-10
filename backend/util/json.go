@@ -152,6 +152,9 @@ func ExtractJSONInt64(container map[string]interface{}, key string) (int64, erro
 //
 // The output JSON trims all whitespace except for Unix line breaks.
 //
+// If the trailing comma is the last character in the input, it will be
+// preserved to handle JSON include statements properly.
+//
 // Inspired by https://github.com/muhammadmuzzammil1998/jsonc.
 func NormalizeJSON(input []byte) []byte {
 	// This function operates on the UTF-8 characters (runes). This object allows
@@ -281,6 +284,12 @@ func NormalizeJSON(input []byte) []byte {
 
 		// Normal character, just write it to the output.
 		writeRune(currentChar)
+	}
+
+	if remainingComma {
+		// Preserve the trailing comma if it is the last, non-whitespace
+		// character in the input.
+		writeRune(',')
 	}
 
 	return output.Bytes()

@@ -1,5 +1,6 @@
 {
     "biz": "zib",
     "buz": <?include "config-without-includes.json"?>,
-    "boz": "zob"
+    "bus": <?include "config-without-includes-trailing-comma.json"?>
+    "boz": "zob",
 }
