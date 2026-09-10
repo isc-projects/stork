@@ -105,12 +105,24 @@ func TestGetMachineStateOnly(t *testing.T) {
 	require.NoError(t, err)
 	ctx := context.Background()
 
-	// setup a user session, it is required to check user role
-	user, err := dbmodel.GetUserByID(rapi.DB, 1)
+	// Prepare a super-admin user.
+	superAdminUser, err := dbmodel.GetUserByID(rapi.DB, 1)
 	require.NoError(t, err)
+	require.True(t, superAdminUser.InGroup(&dbmodel.SystemGroup{ID: dbmodel.SuperAdminGroupID}))
+	// Prepare also a user that is not super-admin.
+	adminUser := &dbmodel.SystemUser{
+		Email:    "john@example.org",
+		Lastname: "Smith",
+		Name:     "John",
+	}
+	conflict, err := dbmodel.CreateUser(rapi.DB, adminUser)
+	require.False(t, conflict)
+	require.NoError(t, err)
+	require.False(t, adminUser.InGroup(&dbmodel.SystemGroup{ID: dbmodel.SuperAdminGroupID}))
+	// Setup a user session, it is required to check user role.
 	ctx, err = rapi.SessionManager.Load(ctx, "")
 	require.NoError(t, err)
-	err = rapi.SessionManager.LoginHandler(ctx, user)
+	err = rapi.SessionManager.LoginHandler(ctx, superAdminUser)
 	require.NoError(t, err)
 
 	// get state of non-existing machine
@@ -125,8 +137,9 @@ func TestGetMachineStateOnly(t *testing.T) {
 
 	// add machine
 	m := &dbmodel.Machine{
-		Address:   "localhost",
-		AgentPort: 8080,
+		Address:    "localhost",
+		AgentPort:  8080,
+		AgentToken: "randToken",
 	}
 	err = dbmodel.AddMachine(db, m)
 	require.NoError(t, err)
@@ -135,16 +148,31 @@ func TestGetMachineStateOnly(t *testing.T) {
 	params = services.GetMachineStateParams{
 		ID: m.ID,
 	}
-	rsp = rapi.GetMachineState(ctx, params)
-	require.IsType(t, &services.GetMachineStateOK{}, rsp)
-	okRsp := rsp.(*services.GetMachineStateOK)
-	require.Equal(t, "localhost", *okRsp.Payload.Address)
-	require.EqualValues(t, 8080, okRsp.Payload.AgentPort)
-	require.Less(t, int64(0), okRsp.Payload.Memory)
-	require.Less(t, int64(0), okRsp.Payload.Cpus)
-	require.LessOrEqual(t, int64(0), okRsp.Payload.Uptime)
-	require.NotNil(t, okRsp.Payload.Daemons)
-	require.Empty(t, okRsp.Payload.Daemons)
+
+	t.Run("run with super-admin privileges", func(t *testing.T) {
+		rsp = rapi.GetMachineState(ctx, params)
+		require.IsType(t, &services.GetMachineStateOK{}, rsp)
+		okRsp := rsp.(*services.GetMachineStateOK)
+		require.Equal(t, "localhost", *okRsp.Payload.Address)
+		require.EqualValues(t, 8080, okRsp.Payload.AgentPort)
+		require.Less(t, int64(0), okRsp.Payload.Memory)
+		require.Less(t, int64(0), okRsp.Payload.Cpus)
+		require.LessOrEqual(t, int64(0), okRsp.Payload.Uptime)
+		require.NotNil(t, okRsp.Payload.Daemons)
+		require.Empty(t, okRsp.Payload.Daemons)
+		require.NotEmpty(t, okRsp.Payload.AgentToken)
+	})
+
+	t.Run("run without super-admin privileges", func(t *testing.T) {
+		ctx, err = rapi.SessionManager.Load(context.Background(), "")
+		err = rapi.SessionManager.LoginHandler(ctx, adminUser)
+		require.NoError(t, err)
+
+		rsp = rapi.GetMachineState(ctx, params)
+		require.IsType(t, &services.GetMachineStateOK{}, rsp)
+		okRsp := rsp.(*services.GetMachineStateOK)
+		require.Empty(t, okRsp.Payload.AgentToken)
+	})
 }
 
 func mockGetDaemonsState(callNo int, daemon agentcomm.ControlledDaemon, cmdResponses []interface{}) {
@@ -412,10 +440,9 @@ func TestGetMachineAndPowerDNSState(t *testing.T) {
 	require.NoError(t, err)
 
 	// setup a user session, it is required to check user role
-	ctx := context.Background()
 	user, err := dbmodel.GetUserByID(rapi.DB, 1)
 	require.NoError(t, err)
-	ctx, err = rapi.SessionManager.Load(context.Background(), "")
+	ctx, err := rapi.SessionManager.Load(context.Background(), "")
 	require.NoError(t, err)
 	err = rapi.SessionManager.LoginHandler(ctx, user)
 	require.NoError(t, err)
@@ -919,15 +946,17 @@ func TestGetMachines(t *testing.T) {
 	defer teardown()
 
 	machine1 := &dbmodel.Machine{
-		Address:   "machine1.example.org",
-		AgentPort: 8080,
+		Address:    "machine1.example.org",
+		AgentPort:  8080,
+		AgentToken: "randToken",
 	}
 	err := dbmodel.AddMachine(db, machine1)
 	require.NoError(t, err)
 
 	machine2 := &dbmodel.Machine{
-		Address:   "machine2.example.org",
-		AgentPort: 8080,
+		Address:    "machine2.example.org",
+		AgentPort:  8080,
+		AgentToken: "randToken",
 	}
 	err = dbmodel.AddMachine(db, machine2)
 	require.NoError(t, err)
@@ -940,12 +969,24 @@ func TestGetMachines(t *testing.T) {
 	require.NoError(t, err)
 	ctx := context.Background()
 
-	// setup a user session, it is required to check user role
-	user, err := dbmodel.GetUserByID(rapi.DB, 1)
+	// Prepare a super-admin user.
+	superAdminUser, err := dbmodel.GetUserByID(rapi.DB, 1)
 	require.NoError(t, err)
+	require.True(t, superAdminUser.InGroup(&dbmodel.SystemGroup{ID: dbmodel.SuperAdminGroupID}))
+	// Prepare also a user that is not super-admin.
+	adminUser := &dbmodel.SystemUser{
+		Email:    "john@example.org",
+		Lastname: "Smith",
+		Name:     "John",
+	}
+	conflict, err := dbmodel.CreateUser(rapi.DB, adminUser)
+	require.False(t, conflict)
+	require.NoError(t, err)
+	require.False(t, adminUser.InGroup(&dbmodel.SystemGroup{ID: dbmodel.SuperAdminGroupID}))
+	// Setup a user session, it is required to check user role.
 	ctx, err = rapi.SessionManager.Load(ctx, "")
 	require.NoError(t, err)
-	err = rapi.SessionManager.LoginHandler(ctx, user)
+	err = rapi.SessionManager.LoginHandler(ctx, superAdminUser)
 	require.NoError(t, err)
 
 	var start, limit int64 = 0, 10
@@ -954,28 +995,47 @@ func TestGetMachines(t *testing.T) {
 		Limit: &limit,
 	}
 
-	rsp := rapi.GetMachines(ctx, params)
-	ms := rsp.(*services.GetMachinesOK).Payload
-	require.EqualValues(t, ms.Total, 2)
+	t.Run("run with super-admin privileges", func(t *testing.T) {
+		rsp := rapi.GetMachines(ctx, params)
+		ms := rsp.(*services.GetMachinesOK).Payload
+		require.EqualValues(t, ms.Total, 2)
 
-	// Check if results were sorted by default by ID in ascending order.
-	require.Greater(t, ms.Items[1].ID, ms.Items[0].ID)
+		// Check if results were sorted by default by ID in ascending order.
+		require.Greater(t, ms.Items[1].ID, ms.Items[0].ID)
 
-	// Test GetMachines again but with explicit sorting applied.
-	params = services.GetMachinesParams{
-		Start:     &start,
-		Limit:     &limit,
-		SortField: storkutil.Ptr("address"),
-		SortDir:   storkutil.Ptr(string(dbmodel.SortDirDesc)),
-	}
+		// Check if agent token is not missing.
+		require.NotEmpty(t, ms.Items[0].AgentToken)
+		require.NotEmpty(t, ms.Items[1].AgentToken)
 
-	rsp = rapi.GetMachines(ctx, params)
-	ms = rsp.(*services.GetMachinesOK).Payload
-	require.EqualValues(t, ms.Total, 2)
+		// Test GetMachines again but with explicit sorting applied.
+		params = services.GetMachinesParams{
+			Start:     &start,
+			Limit:     &limit,
+			SortField: storkutil.Ptr("address"),
+			SortDir:   storkutil.Ptr(string(dbmodel.SortDirDesc)),
+		}
 
-	// Check if results were sorted as expected.
-	require.EqualValues(t, "machine2.example.org", *ms.Items[0].Address)
-	require.EqualValues(t, "machine1.example.org", *ms.Items[1].Address)
+		rsp = rapi.GetMachines(ctx, params)
+		ms = rsp.(*services.GetMachinesOK).Payload
+		require.EqualValues(t, ms.Total, 2)
+
+		// Check if results were sorted as expected.
+		require.EqualValues(t, "machine2.example.org", *ms.Items[0].Address)
+		require.EqualValues(t, "machine1.example.org", *ms.Items[1].Address)
+	})
+
+	t.Run("run without super-admin privileges", func(t *testing.T) {
+		ctx, err = rapi.SessionManager.Load(context.Background(), "")
+		err = rapi.SessionManager.LoginHandler(ctx, adminUser)
+		require.NoError(t, err)
+
+		rsp := rapi.GetMachines(ctx, params)
+		ms := rsp.(*services.GetMachinesOK).Payload
+		require.EqualValues(t, ms.Total, 2)
+		// Agent token should be empty.
+		require.Empty(t, ms.Items[0].AgentToken)
+		require.Empty(t, ms.Items[1].AgentToken)
+	})
 }
 
 // Test that the empty list is returned when the database contains no machines.
@@ -1177,12 +1237,24 @@ func TestGetMachine(t *testing.T) {
 	require.NoError(t, err)
 	ctx := context.Background()
 
-	// setup a user session, it is required to check user role
-	user, err := dbmodel.GetUserByID(rapi.DB, 1)
+	// Prepare a super-admin user.
+	superAdminUser, err := dbmodel.GetUserByID(rapi.DB, 1)
 	require.NoError(t, err)
+	require.True(t, superAdminUser.InGroup(&dbmodel.SystemGroup{ID: dbmodel.SuperAdminGroupID}))
+	// Prepare also a user that is not super-admin.
+	adminUser := &dbmodel.SystemUser{
+		Email:    "john@example.org",
+		Lastname: "Smith",
+		Name:     "John",
+	}
+	conflict, err := dbmodel.CreateUser(rapi.DB, adminUser)
+	require.False(t, conflict)
+	require.NoError(t, err)
+	require.False(t, adminUser.InGroup(&dbmodel.SystemGroup{ID: dbmodel.SuperAdminGroupID}))
+	// Setup a user session, it is required to check user role.
 	ctx, err = rapi.SessionManager.Load(ctx, "")
 	require.NoError(t, err)
-	err = rapi.SessionManager.LoginHandler(ctx, user)
+	err = rapi.SessionManager.LoginHandler(ctx, superAdminUser)
 	require.NoError(t, err)
 
 	// get non-existing machine
@@ -1199,6 +1271,7 @@ func TestGetMachine(t *testing.T) {
 	m := &dbmodel.Machine{
 		Address:       "localhost",
 		AgentPort:     8080,
+		AgentToken:    "randToken",
 		LastVisitedAt: time.Now(),
 	}
 	err = dbmodel.AddMachine(db, m)
@@ -1208,43 +1281,62 @@ func TestGetMachine(t *testing.T) {
 	params = services.GetMachineParams{
 		ID: m.ID,
 	}
-	rsp = rapi.GetMachine(ctx, params)
-	require.IsType(t, &services.GetMachineOK{}, rsp)
-	okRsp := rsp.(*services.GetMachineOK)
-	require.Equal(t, m.ID, okRsp.Payload.ID)
-	require.NotNil(t, okRsp.Payload.LastVisitedAt)
 
-	// add machine 2
-	m2 := &dbmodel.Machine{
-		Address:   "localhost",
-		AgentPort: 8082,
-	}
-	err = dbmodel.AddMachine(db, m2)
-	require.NoError(t, err)
+	t.Run("run with super-admin privileges", func(t *testing.T) {
+		rsp = rapi.GetMachine(ctx, params)
+		require.IsType(t, &services.GetMachineOK{}, rsp)
+		okRsp := rsp.(*services.GetMachineOK)
+		require.Equal(t, m.ID, okRsp.Payload.ID)
+		require.NotNil(t, okRsp.Payload.LastVisitedAt)
+		require.NotEmpty(t, okRsp.Payload.AgentToken)
 
-	// add daemon to machine 2
-	accessPoint := &dbmodel.AccessPoint{
-		Type:    dbmodel.AccessPointControl,
-		Address: "",
-		Port:    1234,
-	}
-	daemon := dbmodel.NewDaemon(m2, daemonname.CA, true, []*dbmodel.AccessPoint{accessPoint})
-	err = dbmodel.AddDaemon(db, daemon)
-	require.NoError(t, err)
-	require.NotEqual(t, 0, daemon.ID)
+		// add machine 2
+		m2 := &dbmodel.Machine{
+			Address:   "localhost",
+			AgentPort: 8082,
+		}
+		err = dbmodel.AddMachine(db, m2)
+		require.NoError(t, err)
 
-	// get added machine 2 with kea daemons
-	params = services.GetMachineParams{
-		ID: m2.ID,
-	}
-	rsp = rapi.GetMachine(ctx, params)
-	require.IsType(t, &services.GetMachineOK{}, rsp)
-	okRsp = rsp.(*services.GetMachineOK)
-	require.Equal(t, m2.ID, okRsp.Payload.ID)
-	require.Len(t, okRsp.Payload.Daemons, 1)
-	require.Equal(t, daemon.ID, okRsp.Payload.Daemons[0].ID)
-	require.Len(t, okRsp.Payload.Daemons[0].AccessPoints, 1)
-	require.Nil(t, okRsp.Payload.LastVisitedAt)
+		// add daemon to machine 2
+		accessPoint := &dbmodel.AccessPoint{
+			Type:    dbmodel.AccessPointControl,
+			Address: "",
+			Port:    1234,
+		}
+		daemon := dbmodel.NewDaemon(m2, daemonname.CA, true, []*dbmodel.AccessPoint{accessPoint})
+		err = dbmodel.AddDaemon(db, daemon)
+		require.NoError(t, err)
+		require.NotEqual(t, 0, daemon.ID)
+
+		// get added machine 2 with kea daemons
+		params = services.GetMachineParams{
+			ID: m2.ID,
+		}
+		rsp = rapi.GetMachine(ctx, params)
+		require.IsType(t, &services.GetMachineOK{}, rsp)
+		okRsp = rsp.(*services.GetMachineOK)
+		require.Equal(t, m2.ID, okRsp.Payload.ID)
+		require.Len(t, okRsp.Payload.Daemons, 1)
+		require.Equal(t, daemon.ID, okRsp.Payload.Daemons[0].ID)
+		require.Len(t, okRsp.Payload.Daemons[0].AccessPoints, 1)
+		require.Nil(t, okRsp.Payload.LastVisitedAt)
+	})
+
+	t.Run("run without super-admin privileges", func(t *testing.T) {
+		ctx, err = rapi.SessionManager.Load(context.Background(), "")
+		err = rapi.SessionManager.LoginHandler(ctx, adminUser)
+		require.NoError(t, err)
+
+		rsp = rapi.GetMachine(ctx, services.GetMachineParams{
+			ID: m.ID,
+		})
+		require.IsType(t, &services.GetMachineOK{}, rsp)
+		okRsp := rsp.(*services.GetMachineOK)
+		require.Equal(t, m.ID, okRsp.Payload.ID)
+		require.NotNil(t, okRsp.Payload.LastVisitedAt)
+		require.Empty(t, okRsp.Payload.AgentToken)
+	})
 }
 
 func TestUpdateMachine(t *testing.T) {
@@ -1275,132 +1367,182 @@ func TestUpdateMachine(t *testing.T) {
 	require.NoError(t, err)
 	ctx := context.Background()
 
-	// setup a user session, it is required to check user role
-	sysUser, err := dbmodel.GetUserByID(rapi.DB, 1)
+	// Prepare a super-admin user.
+	superAdminUser, err := dbmodel.GetUserByID(rapi.DB, 1)
 	require.NoError(t, err)
+	require.True(t, superAdminUser.InGroup(&dbmodel.SystemGroup{ID: dbmodel.SuperAdminGroupID}))
+	// Prepare also a user that is not super-admin.
+	adminUser := &dbmodel.SystemUser{
+		Email:    "john@example.org",
+		Lastname: "Smith",
+		Name:     "John",
+	}
+	conflict, err := dbmodel.CreateUser(rapi.DB, adminUser)
+	require.False(t, conflict)
+	require.NoError(t, err)
+	require.False(t, adminUser.InGroup(&dbmodel.SystemGroup{ID: dbmodel.SuperAdminGroupID}))
+	// Setup a user session, it is required to check user role.
 	ctx, err = rapi.SessionManager.Load(ctx, "")
 	require.NoError(t, err)
-	err = rapi.SessionManager.LoginHandler(ctx, sysUser)
+	err = rapi.SessionManager.LoginHandler(ctx, superAdminUser)
 	require.NoError(t, err)
 
-	// empty request, variant 1 - should raise an error
-	params := services.UpdateMachineParams{}
-	rsp := rapi.UpdateMachine(ctx, params)
-	defaultRsp := rsp.(*services.UpdateMachineDefault)
-	require.IsType(t, &services.UpdateMachineDefault{}, rsp)
-	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
-	require.Equal(t, "Missing parameters", *defaultRsp.Payload.Message)
-
-	// empty request, variant 2 - should raise an error
-	params = services.UpdateMachineParams{
-		Machine: &models.Machine{},
+	// Test machine
+	testM := &dbmodel.Machine{
+		Address:    "localhost",
+		AgentPort:  1245,
+		AgentToken: "randToken",
 	}
-	rsp = rapi.UpdateMachine(ctx, params)
-	require.IsType(t, &services.UpdateMachineDefault{}, rsp)
-	defaultRsp = rsp.(*services.UpdateMachineDefault)
-	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
-	require.Equal(t, "Missing parameters", *defaultRsp.Payload.Message)
-
-	// update non-existing machine
-	addr := "localhost"
-	params = services.UpdateMachineParams{
-		ID: 123,
-		Machine: &models.Machine{
-			Address:   &addr,
-			AgentPort: 8080,
-		},
-	}
-	rsp = rapi.UpdateMachine(ctx, params)
-	require.IsType(t, &services.UpdateMachineDefault{}, rsp)
-	defaultRsp = rsp.(*services.UpdateMachineDefault)
-	require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
-	require.Equal(t, "Cannot find machine with ID 123", *defaultRsp.Payload.Message)
-
-	// add machine
-	m := &dbmodel.Machine{
-		Address:   "localhost",
-		AgentPort: 1010,
-	}
-	err = dbmodel.AddMachine(db, m)
+	err = dbmodel.AddMachine(db, testM)
 	require.NoError(t, err)
+	require.Greater(t, testM.ID, int64(0))
 
-	// update added machine - all ok
-	params = services.UpdateMachineParams{
-		ID: m.ID,
-		Machine: &models.Machine{
-			Address:   &addr,
-			AgentPort: 8080,
-		},
-	}
-	rsp = rapi.UpdateMachine(ctx, params)
-	okRsp := rsp.(*services.UpdateMachineOK)
-	require.Equal(t, m.ID, okRsp.Payload.ID)
-	require.Equal(t, addr, *okRsp.Payload.Address)
-	require.False(t, okRsp.Payload.Authorized) // machine is not yet authorized
-	require.Nil(t, okRsp.Payload.LastVisitedAt)
+	t.Run("run with super-admin privileges", func(t *testing.T) {
+		// empty request, variant 1 - should raise an error
+		params := services.UpdateMachineParams{}
+		rsp := rapi.UpdateMachine(ctx, params)
+		defaultRsp := rsp.(*services.UpdateMachineDefault)
+		require.IsType(t, &services.UpdateMachineDefault{}, rsp)
+		require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+		require.Equal(t, "Missing parameters", *defaultRsp.Payload.Message)
 
-	// setup a user session, it is required to check user role in UpdateMachine
-	// in case of authorization change
-	user, err := dbmodel.GetUserByID(rapi.DB, 1)
-	require.NoError(t, err)
-	ctx2, err := rapi.SessionManager.Load(ctx, "")
-	require.NoError(t, err)
-	err = rapi.SessionManager.LoginHandler(ctx2, user)
-	require.NoError(t, err)
+		// empty request, variant 2 - should raise an error
+		params = services.UpdateMachineParams{
+			Machine: &models.Machine{},
+		}
+		rsp = rapi.UpdateMachine(ctx, params)
+		require.IsType(t, &services.UpdateMachineDefault{}, rsp)
+		defaultRsp = rsp.(*services.UpdateMachineDefault)
+		require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+		require.Equal(t, "Missing parameters", *defaultRsp.Payload.Message)
 
-	// authorize the machine
-	require.False(t, fa.GetStateCalled)
-	params = services.UpdateMachineParams{
-		ID: m.ID,
-		Machine: &models.Machine{
-			Address:    &addr,
-			AgentPort:  8080,
-			Authorized: true,
-		},
-	}
-	rsp = rapi.UpdateMachine(ctx2, params)
-	okRsp = rsp.(*services.UpdateMachineOK)
-	require.Equal(t, m.ID, okRsp.Payload.ID)
-	require.Equal(t, addr, *okRsp.Payload.Address)
-	require.True(t, okRsp.Payload.Authorized) // machine is authorized now
-	require.True(t, fa.GetStateCalled)
+		// update non-existing machine
+		addr := "localhost"
+		params = services.UpdateMachineParams{
+			ID: 123,
+			Machine: &models.Machine{
+				Address:   &addr,
+				AgentPort: 8080,
+			},
+		}
+		rsp = rapi.UpdateMachine(ctx, params)
+		require.IsType(t, &services.UpdateMachineDefault{}, rsp)
+		defaultRsp = rsp.(*services.UpdateMachineDefault)
+		require.Equal(t, http.StatusNotFound, getStatusCode(*defaultRsp))
+		require.Equal(t, "Cannot find machine with ID 123", *defaultRsp.Payload.Message)
 
-	// add another machine
-	m2 := &dbmodel.Machine{
-		Address:   "localhost",
-		AgentPort: 2020,
-	}
-	err = dbmodel.AddMachine(db, m2)
-	require.NoError(t, err)
+		// add machine
+		m := &dbmodel.Machine{
+			Address:    "localhost",
+			AgentPort:  1010,
+			AgentToken: "randToken",
+		}
+		err = dbmodel.AddMachine(db, m)
+		require.NoError(t, err)
 
-	// update second machine to have the same address - should raise error due to duplication
-	params = services.UpdateMachineParams{
-		ID: m2.ID,
-		Machine: &models.Machine{
-			Address:   &addr,
-			AgentPort: 8080,
-		},
-	}
-	rsp = rapi.UpdateMachine(ctx, params)
-	require.IsType(t, &services.UpdateMachineDefault{}, rsp)
-	defaultRsp = rsp.(*services.UpdateMachineDefault)
-	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
-	require.Equal(t, "Machine with address localhost:8080 already exists", *defaultRsp.Payload.Message)
+		// update added machine - all ok
+		params = services.UpdateMachineParams{
+			ID: m.ID,
+			Machine: &models.Machine{
+				Address:   &addr,
+				AgentPort: 8080,
+			},
+		}
+		rsp = rapi.UpdateMachine(ctx, params)
+		okRsp := rsp.(*services.UpdateMachineOK)
+		require.Equal(t, m.ID, okRsp.Payload.ID)
+		require.Equal(t, addr, *okRsp.Payload.Address)
+		require.False(t, okRsp.Payload.Authorized) // machine is not yet authorized
+		require.Nil(t, okRsp.Payload.LastVisitedAt)
+		require.NotEmpty(t, okRsp.Payload.AgentToken)
 
-	// update second machine with bad address
-	addr = "aaa:"
-	params = services.UpdateMachineParams{
-		ID: m2.ID,
-		Machine: &models.Machine{
-			Address:   &addr,
-			AgentPort: 8080,
-		},
-	}
-	rsp = rapi.UpdateMachine(ctx, params)
-	require.IsType(t, &services.UpdateMachineDefault{}, rsp)
-	defaultRsp = rsp.(*services.UpdateMachineDefault)
-	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
-	require.Equal(t, "Cannot parse address", *defaultRsp.Payload.Message)
+		// setup a user session, it is required to check user role in UpdateMachine
+		// in case of authorization change
+		user, err := dbmodel.GetUserByID(rapi.DB, 1)
+		require.NoError(t, err)
+		ctx2, err := rapi.SessionManager.Load(ctx, "")
+		require.NoError(t, err)
+		err = rapi.SessionManager.LoginHandler(ctx2, user)
+		require.NoError(t, err)
+
+		// authorize the machine
+		require.False(t, fa.GetStateCalled)
+		params = services.UpdateMachineParams{
+			ID: m.ID,
+			Machine: &models.Machine{
+				Address:    &addr,
+				AgentPort:  8080,
+				Authorized: true,
+			},
+		}
+		rsp = rapi.UpdateMachine(ctx2, params)
+		okRsp = rsp.(*services.UpdateMachineOK)
+		require.Equal(t, m.ID, okRsp.Payload.ID)
+		require.Equal(t, addr, *okRsp.Payload.Address)
+		require.True(t, okRsp.Payload.Authorized) // machine is authorized now
+		require.True(t, fa.GetStateCalled)
+
+		// add another machine
+		m2 := &dbmodel.Machine{
+			Address:   "localhost",
+			AgentPort: 2020,
+		}
+		err = dbmodel.AddMachine(db, m2)
+		require.NoError(t, err)
+
+		// update second machine to have the same address - should raise error due to duplication
+		params = services.UpdateMachineParams{
+			ID: m2.ID,
+			Machine: &models.Machine{
+				Address:   &addr,
+				AgentPort: 8080,
+			},
+		}
+		rsp = rapi.UpdateMachine(ctx, params)
+		require.IsType(t, &services.UpdateMachineDefault{}, rsp)
+		defaultRsp = rsp.(*services.UpdateMachineDefault)
+		require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+		require.Equal(t, "Machine with address localhost:8080 already exists", *defaultRsp.Payload.Message)
+
+		// update second machine with bad address
+		addr = "aaa:"
+		params = services.UpdateMachineParams{
+			ID: m2.ID,
+			Machine: &models.Machine{
+				Address:   &addr,
+				AgentPort: 8080,
+			},
+		}
+		rsp = rapi.UpdateMachine(ctx, params)
+		require.IsType(t, &services.UpdateMachineDefault{}, rsp)
+		defaultRsp = rsp.(*services.UpdateMachineDefault)
+		require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+		require.Equal(t, "Cannot parse address", *defaultRsp.Payload.Message)
+	})
+
+	t.Run("run without super-admin privileges", func(t *testing.T) {
+		ctx, err = rapi.SessionManager.Load(context.Background(), "")
+		err = rapi.SessionManager.LoginHandler(ctx, adminUser)
+		require.NoError(t, err)
+
+		// update added machine - all ok
+		addr := "localhost"
+		params := services.UpdateMachineParams{
+			ID: testM.ID,
+			Machine: &models.Machine{
+				Address:   &addr,
+				AgentPort: 8087,
+			},
+		}
+		rsp := rapi.UpdateMachine(ctx, params)
+		okRsp, ok := rsp.(*services.UpdateMachineOK)
+		require.True(t, ok)
+		require.Equal(t, testM.ID, okRsp.Payload.ID)
+		require.Equal(t, addr, *okRsp.Payload.Address)
+		require.False(t, okRsp.Payload.Authorized) // machine is not yet authorized
+		require.Nil(t, okRsp.Payload.LastVisitedAt)
+		require.Empty(t, okRsp.Payload.AgentToken)
+	})
 }
 
 // Test deleting a machine and its associations.

@@ -24,12 +24,24 @@ func TestSearchRecords(t *testing.T) {
 	require.NoError(t, err)
 	ctx := context.Background()
 
-	// setup a user session, it is required to check user role
-	user, err := dbmodel.GetUserByID(rapi.DB, 1)
+	// Prepare a super-admin user.
+	superAdminUser, err := dbmodel.GetUserByID(rapi.DB, 1)
 	require.NoError(t, err)
+	require.True(t, superAdminUser.InGroup(&dbmodel.SystemGroup{ID: dbmodel.SuperAdminGroupID}))
+	// Prepare also a user that is not super-admin.
+	adminUser := &dbmodel.SystemUser{
+		Email:    "john@example.org",
+		Lastname: "Smith",
+		Name:     "John",
+	}
+	conflict, err := dbmodel.CreateUser(rapi.DB, adminUser)
+	require.False(t, conflict)
+	require.NoError(t, err)
+	require.False(t, adminUser.InGroup(&dbmodel.SystemGroup{ID: dbmodel.SuperAdminGroupID}))
+	// Setup a user session, it is required to check user role.
 	ctx, err = rapi.SessionManager.Load(ctx, "")
 	require.NoError(t, err)
-	err = rapi.SessionManager.LoginHandler(ctx, user)
+	err = rapi.SessionManager.LoginHandler(ctx, superAdminUser)
 	require.NoError(t, err)
 
 	// search with empty text
@@ -56,6 +68,7 @@ func TestSearchRecords(t *testing.T) {
 	m := &dbmodel.Machine{
 		Address:    "localhost",
 		AgentPort:  8080,
+		AgentToken: "randToken",
 		Authorized: true,
 	}
 	err = dbmodel.AddMachine(db, m)
@@ -64,6 +77,7 @@ func TestSearchRecords(t *testing.T) {
 	unauthorized := &dbmodel.Machine{
 		Address:    "localhost",
 		AgentPort:  8980,
+		AgentToken: "randToken",
 		Authorized: false,
 	}
 	err = dbmodel.AddMachine(db, unauthorized)
@@ -268,143 +282,166 @@ func TestSearchRecords(t *testing.T) {
 	_, err = dbmodel.CommitNetworksIntoDB(db, []dbmodel.SharedNetwork{appNetworks[0]}, []dbmodel.Subnet{subnets[1]})
 	require.NoError(t, err)
 
-	// search for 'fox' - shared network and subnet are expected
-	text := "fox"
-	params = search.SearchRecordsParams{
-		Text: &text,
-	}
-	rsp = rapi.SearchRecords(ctx, params)
-	require.IsType(t, &search.SearchRecordsOK{}, rsp)
-	okRsp = rsp.(*search.SearchRecordsOK)
-	require.Len(t, okRsp.Payload.Daemons.Items, 0)
-	require.Zero(t, okRsp.Payload.Daemons.Total)
-	require.Len(t, okRsp.Payload.Groups.Items, 0)
-	require.Zero(t, okRsp.Payload.Groups.Total)
-	require.Len(t, okRsp.Payload.Hosts.Items, 0)
-	require.Zero(t, okRsp.Payload.Hosts.Total)
-	require.Len(t, okRsp.Payload.Machines.Items, 0)
-	require.Zero(t, okRsp.Payload.Machines.Total)
-	require.Len(t, okRsp.Payload.SharedNetworks.Items, 1)
-	require.EqualValues(t, 1, okRsp.Payload.SharedNetworks.Total)
-	require.Len(t, okRsp.Payload.Subnets.Items, 1)
-	require.EqualValues(t, 1, okRsp.Payload.Subnets.Total)
-	require.Len(t, okRsp.Payload.Users.Items, 0)
-	require.Zero(t, okRsp.Payload.Users.Total)
+	t.Run("run with super-admin privileges", func(t *testing.T) {
+		// search for 'fox' - shared network and subnet are expected
+		text := "fox"
+		params = search.SearchRecordsParams{
+			Text: &text,
+		}
+		rsp = rapi.SearchRecords(ctx, params)
+		require.IsType(t, &search.SearchRecordsOK{}, rsp)
+		okRsp = rsp.(*search.SearchRecordsOK)
+		require.Len(t, okRsp.Payload.Daemons.Items, 0)
+		require.Zero(t, okRsp.Payload.Daemons.Total)
+		require.Len(t, okRsp.Payload.Groups.Items, 0)
+		require.Zero(t, okRsp.Payload.Groups.Total)
+		require.Len(t, okRsp.Payload.Hosts.Items, 0)
+		require.Zero(t, okRsp.Payload.Hosts.Total)
+		require.Len(t, okRsp.Payload.Machines.Items, 0)
+		require.Zero(t, okRsp.Payload.Machines.Total)
+		require.Len(t, okRsp.Payload.SharedNetworks.Items, 1)
+		require.EqualValues(t, 1, okRsp.Payload.SharedNetworks.Total)
+		require.Len(t, okRsp.Payload.Subnets.Items, 1)
+		require.EqualValues(t, 1, okRsp.Payload.Subnets.Total)
+		require.Len(t, okRsp.Payload.Users.Items, 0)
+		require.Zero(t, okRsp.Payload.Users.Total)
 
-	// search for '192.118.0.0/24' - subnet is expected
-	text = "192.118.0.0/24"
-	params = search.SearchRecordsParams{
-		Text: &text,
-	}
-	rsp = rapi.SearchRecords(ctx, params)
-	require.IsType(t, &search.SearchRecordsOK{}, rsp)
-	okRsp = rsp.(*search.SearchRecordsOK)
-	require.Len(t, okRsp.Payload.Daemons.Items, 0)
-	require.Zero(t, okRsp.Payload.Daemons.Total)
-	require.Len(t, okRsp.Payload.Groups.Items, 0)
-	require.Zero(t, okRsp.Payload.Groups.Total)
-	require.Len(t, okRsp.Payload.Hosts.Items, 0)
-	require.Zero(t, okRsp.Payload.Hosts.Total)
-	require.Len(t, okRsp.Payload.Machines.Items, 0)
-	require.Zero(t, okRsp.Payload.Machines.Total)
-	require.Len(t, okRsp.Payload.SharedNetworks.Items, 0)
-	require.Zero(t, okRsp.Payload.SharedNetworks.Total)
-	require.Len(t, okRsp.Payload.Subnets.Items, 1)
-	require.EqualValues(t, 1, okRsp.Payload.Subnets.Total)
-	require.Len(t, okRsp.Payload.Users.Items, 0)
-	require.Zero(t, okRsp.Payload.Users.Total)
+		// search for '192.118.0.0/24' - subnet is expected
+		text = "192.118.0.0/24"
+		params = search.SearchRecordsParams{
+			Text: &text,
+		}
+		rsp = rapi.SearchRecords(ctx, params)
+		require.IsType(t, &search.SearchRecordsOK{}, rsp)
+		okRsp = rsp.(*search.SearchRecordsOK)
+		require.Len(t, okRsp.Payload.Daemons.Items, 0)
+		require.Zero(t, okRsp.Payload.Daemons.Total)
+		require.Len(t, okRsp.Payload.Groups.Items, 0)
+		require.Zero(t, okRsp.Payload.Groups.Total)
+		require.Len(t, okRsp.Payload.Hosts.Items, 0)
+		require.Zero(t, okRsp.Payload.Hosts.Total)
+		require.Len(t, okRsp.Payload.Machines.Items, 0)
+		require.Zero(t, okRsp.Payload.Machines.Total)
+		require.Len(t, okRsp.Payload.SharedNetworks.Items, 0)
+		require.Zero(t, okRsp.Payload.SharedNetworks.Total)
+		require.Len(t, okRsp.Payload.Subnets.Items, 1)
+		require.EqualValues(t, 1, okRsp.Payload.Subnets.Total)
+		require.Len(t, okRsp.Payload.Users.Items, 0)
+		require.Zero(t, okRsp.Payload.Users.Total)
 
-	// search for 'super' - group is expected
-	text = "super"
-	params = search.SearchRecordsParams{
-		Text: &text,
-	}
-	rsp = rapi.SearchRecords(ctx, params)
-	require.IsType(t, &search.SearchRecordsOK{}, rsp)
-	okRsp = rsp.(*search.SearchRecordsOK)
-	require.Len(t, okRsp.Payload.Daemons.Items, 0)
-	require.Zero(t, okRsp.Payload.Daemons.Total)
-	require.Len(t, okRsp.Payload.Groups.Items, 1)
-	require.EqualValues(t, 1, okRsp.Payload.Groups.Total)
-	require.Len(t, okRsp.Payload.Hosts.Items, 0)
-	require.Zero(t, okRsp.Payload.Hosts.Total)
-	require.Len(t, okRsp.Payload.Machines.Items, 0)
-	require.Zero(t, okRsp.Payload.Machines.Total)
-	require.Len(t, okRsp.Payload.SharedNetworks.Items, 0)
-	require.Zero(t, okRsp.Payload.SharedNetworks.Total)
-	require.Len(t, okRsp.Payload.Subnets.Items, 0)
-	require.Zero(t, okRsp.Payload.Subnets.Total)
-	require.Len(t, okRsp.Payload.Users.Items, 0)
-	require.Zero(t, okRsp.Payload.Users.Total)
+		// search for 'super' - group is expected
+		text = "super"
+		params = search.SearchRecordsParams{
+			Text: &text,
+		}
+		rsp = rapi.SearchRecords(ctx, params)
+		require.IsType(t, &search.SearchRecordsOK{}, rsp)
+		okRsp = rsp.(*search.SearchRecordsOK)
+		require.Len(t, okRsp.Payload.Daemons.Items, 0)
+		require.Zero(t, okRsp.Payload.Daemons.Total)
+		require.Len(t, okRsp.Payload.Groups.Items, 1)
+		require.EqualValues(t, 1, okRsp.Payload.Groups.Total)
+		require.Len(t, okRsp.Payload.Hosts.Items, 0)
+		require.Zero(t, okRsp.Payload.Hosts.Total)
+		require.Len(t, okRsp.Payload.Machines.Items, 0)
+		require.Zero(t, okRsp.Payload.Machines.Total)
+		require.Len(t, okRsp.Payload.SharedNetworks.Items, 0)
+		require.Zero(t, okRsp.Payload.SharedNetworks.Total)
+		require.Len(t, okRsp.Payload.Subnets.Items, 0)
+		require.Zero(t, okRsp.Payload.Subnets.Total)
+		require.Len(t, okRsp.Payload.Users.Items, 0)
+		require.Zero(t, okRsp.Payload.Users.Total)
 
-	// search for 'admin' - user and group are expected
-	text = "admin"
-	params = search.SearchRecordsParams{
-		Text: &text,
-	}
-	rsp = rapi.SearchRecords(ctx, params)
-	require.IsType(t, &search.SearchRecordsOK{}, rsp)
-	okRsp = rsp.(*search.SearchRecordsOK)
-	require.Len(t, okRsp.Payload.Daemons.Items, 0)
-	require.Zero(t, okRsp.Payload.Daemons.Total)
-	require.Len(t, okRsp.Payload.Groups.Items, 2)
-	require.EqualValues(t, 2, okRsp.Payload.Groups.Total)
-	require.Len(t, okRsp.Payload.Hosts.Items, 0)
-	require.Zero(t, okRsp.Payload.Hosts.Total)
-	require.Len(t, okRsp.Payload.Machines.Items, 0)
-	require.Zero(t, okRsp.Payload.Machines.Total)
-	require.Len(t, okRsp.Payload.SharedNetworks.Items, 0)
-	require.Zero(t, okRsp.Payload.SharedNetworks.Total)
-	require.Len(t, okRsp.Payload.Subnets.Items, 0)
-	require.Zero(t, okRsp.Payload.Subnets.Total)
-	require.Len(t, okRsp.Payload.Users.Items, 1)
-	require.EqualValues(t, 1, okRsp.Payload.Users.Total)
+		// search for 'admin' - user and group are expected
+		text = "admin"
+		params = search.SearchRecordsParams{
+			Text: &text,
+		}
+		rsp = rapi.SearchRecords(ctx, params)
+		require.IsType(t, &search.SearchRecordsOK{}, rsp)
+		okRsp = rsp.(*search.SearchRecordsOK)
+		require.Len(t, okRsp.Payload.Daemons.Items, 0)
+		require.Zero(t, okRsp.Payload.Daemons.Total)
+		require.Len(t, okRsp.Payload.Groups.Items, 2)
+		require.EqualValues(t, 2, okRsp.Payload.Groups.Total)
+		require.Len(t, okRsp.Payload.Hosts.Items, 0)
+		require.Zero(t, okRsp.Payload.Hosts.Total)
+		require.Len(t, okRsp.Payload.Machines.Items, 0)
+		require.Zero(t, okRsp.Payload.Machines.Total)
+		require.Len(t, okRsp.Payload.SharedNetworks.Items, 0)
+		require.Zero(t, okRsp.Payload.SharedNetworks.Total)
+		require.Len(t, okRsp.Payload.Subnets.Items, 0)
+		require.Zero(t, okRsp.Payload.Subnets.Total)
+		require.Len(t, okRsp.Payload.Users.Items, 1)
+		require.EqualValues(t, 1, okRsp.Payload.Users.Total)
 
-	// search for 'localhost' - 2 machines are expected; one authorized and one unauthorized
-	text = "localhost"
-	params = search.SearchRecordsParams{
-		Text: &text,
-	}
-	rsp = rapi.SearchRecords(ctx, params)
-	require.IsType(t, &search.SearchRecordsOK{}, rsp)
-	okRsp = rsp.(*search.SearchRecordsOK)
-	require.Len(t, okRsp.Payload.Daemons.Items, 4)
-	require.EqualValues(t, 4, okRsp.Payload.Daemons.Total)
-	require.Len(t, okRsp.Payload.Groups.Items, 0)
-	require.Zero(t, okRsp.Payload.Groups.Total)
-	require.Len(t, okRsp.Payload.Hosts.Items, 0)
-	require.Zero(t, okRsp.Payload.Hosts.Total)
-	require.Len(t, okRsp.Payload.Machines.Items, 2)
-	require.EqualValues(t, 2, okRsp.Payload.Machines.Total)
-	require.Len(t, okRsp.Payload.SharedNetworks.Items, 0)
-	require.Zero(t, okRsp.Payload.SharedNetworks.Total)
-	require.Len(t, okRsp.Payload.Subnets.Items, 0)
-	require.Zero(t, okRsp.Payload.Subnets.Total)
-	require.Len(t, okRsp.Payload.Users.Items, 0)
-	require.Zero(t, okRsp.Payload.Users.Total)
+		// search for 'localhost' - 2 machines are expected; one authorized and one unauthorized
+		text = "localhost"
+		params = search.SearchRecordsParams{
+			Text: &text,
+		}
+		rsp = rapi.SearchRecords(ctx, params)
+		require.IsType(t, &search.SearchRecordsOK{}, rsp)
+		okRsp = rsp.(*search.SearchRecordsOK)
+		require.Len(t, okRsp.Payload.Daemons.Items, 4)
+		require.EqualValues(t, 4, okRsp.Payload.Daemons.Total)
+		require.Len(t, okRsp.Payload.Groups.Items, 0)
+		require.Zero(t, okRsp.Payload.Groups.Total)
+		require.Len(t, okRsp.Payload.Hosts.Items, 0)
+		require.Zero(t, okRsp.Payload.Hosts.Total)
+		require.Len(t, okRsp.Payload.Machines.Items, 2)
+		require.EqualValues(t, 2, okRsp.Payload.Machines.Total)
+		require.NotEmpty(t, okRsp.Payload.Machines.Items[0].AgentToken)
+		require.NotEmpty(t, okRsp.Payload.Machines.Items[1].AgentToken)
+		require.Len(t, okRsp.Payload.SharedNetworks.Items, 0)
+		require.Zero(t, okRsp.Payload.SharedNetworks.Total)
+		require.Len(t, okRsp.Payload.Subnets.Items, 0)
+		require.Zero(t, okRsp.Payload.Subnets.Total)
+		require.Len(t, okRsp.Payload.Users.Items, 0)
+		require.Zero(t, okRsp.Payload.Users.Total)
 
-	// search for 'dhcp' - all daemons are expected
-	text = "dhcp"
-	params = search.SearchRecordsParams{
-		Text: &text,
-	}
-	rsp = rapi.SearchRecords(ctx, params)
-	require.IsType(t, &search.SearchRecordsOK{}, rsp)
-	okRsp = rsp.(*search.SearchRecordsOK)
-	require.Len(t, okRsp.Payload.Daemons.Items, 4)
-	require.EqualValues(t, 4, okRsp.Payload.Daemons.Total)
-	require.Len(t, okRsp.Payload.Groups.Items, 0)
-	require.Zero(t, okRsp.Payload.Groups.Total)
-	require.Len(t, okRsp.Payload.Hosts.Items, 0)
-	require.Zero(t, okRsp.Payload.Hosts.Total)
-	require.Len(t, okRsp.Payload.Machines.Items, 0)
-	require.Zero(t, okRsp.Payload.Machines.Total)
-	require.Len(t, okRsp.Payload.SharedNetworks.Items, 0)
-	require.Zero(t, okRsp.Payload.SharedNetworks.Total)
-	require.Len(t, okRsp.Payload.Subnets.Items, 0)
-	require.Zero(t, okRsp.Payload.Subnets.Total)
-	require.Len(t, okRsp.Payload.Users.Items, 0)
-	require.Zero(t, okRsp.Payload.Users.Total)
+		// search for 'dhcp' - all daemons are expected
+		text = "dhcp"
+		params = search.SearchRecordsParams{
+			Text: &text,
+		}
+		rsp = rapi.SearchRecords(ctx, params)
+		require.IsType(t, &search.SearchRecordsOK{}, rsp)
+		okRsp = rsp.(*search.SearchRecordsOK)
+		require.Len(t, okRsp.Payload.Daemons.Items, 4)
+		require.EqualValues(t, 4, okRsp.Payload.Daemons.Total)
+		require.Len(t, okRsp.Payload.Groups.Items, 0)
+		require.Zero(t, okRsp.Payload.Groups.Total)
+		require.Len(t, okRsp.Payload.Hosts.Items, 0)
+		require.Zero(t, okRsp.Payload.Hosts.Total)
+		require.Len(t, okRsp.Payload.Machines.Items, 0)
+		require.Zero(t, okRsp.Payload.Machines.Total)
+		require.Len(t, okRsp.Payload.SharedNetworks.Items, 0)
+		require.Zero(t, okRsp.Payload.SharedNetworks.Total)
+		require.Len(t, okRsp.Payload.Subnets.Items, 0)
+		require.Zero(t, okRsp.Payload.Subnets.Total)
+		require.Len(t, okRsp.Payload.Users.Items, 0)
+		require.Zero(t, okRsp.Payload.Users.Total)
+	})
+
+	t.Run("run without super-admin privileges", func(t *testing.T) {
+		ctx, err = rapi.SessionManager.Load(context.Background(), "")
+		err = rapi.SessionManager.LoginHandler(ctx, adminUser)
+		require.NoError(t, err)
+
+		// search for 'localhost' - 2 machines are expected; one authorized and one unauthorized
+		text := "localhost"
+		params = search.SearchRecordsParams{
+			Text: &text,
+		}
+		rsp = rapi.SearchRecords(ctx, params)
+		require.IsType(t, &search.SearchRecordsOK{}, rsp)
+		okRsp = rsp.(*search.SearchRecordsOK)
+		require.Len(t, okRsp.Payload.Machines.Items, 2)
+		require.EqualValues(t, 2, okRsp.Payload.Machines.Total)
+		require.Empty(t, okRsp.Payload.Machines.Items[0].AgentToken)
+		require.Empty(t, okRsp.Payload.Machines.Items[1].AgentToken)
+	})
 }
 
 // Check handing error in search.

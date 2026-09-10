@@ -1592,3 +1592,16 @@ func TestGetLabelWithoutHostname(t *testing.T) {
 	}
 	require.Equal(t, "2001:db8::1", machine.GetLabel())
 }
+
+// Test that HideSensitiveData modifies the machine to hide sensitive data.
+func TestHideSensitiveData(t *testing.T) {
+	machine := Machine{
+		Address:    "2001:db8::1",
+		AgentPort:  1234,
+		AgentToken: "randomToken",
+	}
+	machine.HideSensitiveData()
+	require.Empty(t, machine.AgentToken)
+	require.EqualValues(t, 1234, machine.AgentPort)
+	require.Equal(t, "2001:db8::1", machine.Address)
+}
