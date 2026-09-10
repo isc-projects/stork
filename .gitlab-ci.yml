@@ -148,10 +148,6 @@ stages:
   fallback_keys:
     - golang_amd64-$CI_DEFAULT_BRANCH
 
-.golang_cache_unprotected: &golang_cache_unprotected
-  <<: *golang_cache
-  unprotect: true
-
 .golang_arm_cache: &golang_arm_cache
   key: golang_arm64-$CI_COMMIT_REF_SLUG
   <<: *golang_cache_paths
@@ -225,6 +221,60 @@ stages:
   policy: $CACHE_POLICY
   fallback_keys:
     - playwright_browsers-$CI_DEFAULT_BRANCH
+
+# Unprotected variants of the above caches.
+# They are used to build unprotected caches on demand.
+.golang_cache_unprotected: &golang_cache_unprotected
+  <<: *golang_cache
+  unprotect: true
+
+.golang_arm_cache_unprotected: &golang_arm_cache_unprotected
+  <<: *golang_arm_cache
+  unprotect: true
+
+.golang_cache_alpine_unprotected: &golang_cache_alpine_unprotected
+  <<: *golang_cache_alpine
+  unprotect: true
+
+.golang_arm_cache_alpine_unprotected: &golang_arm_cache_alpine_unprotected
+  <<: *golang_arm_cache_alpine
+  unprotect: true
+
+.nodejs_cache_unprotected: &nodejs_cache_unprotected
+  <<: *nodejs_cache
+  unprotect: true
+
+.nodejs_arm_cache_unprotected: &nodejs_arm_cache_unprotected
+  <<: *nodejs_arm_cache
+  unprotect: true
+
+.python_cache_unprotected: &python_cache_unprotected
+  <<: *python_cache
+  unprotect: true
+
+.python_arm_cache_unprotected: &python_arm_cache_unprotected
+  <<: *python_arm_cache
+  unprotect: true
+
+.python_cache_alpine_unprotected: &python_cache_alpine_unprotected
+  <<: *python_cache_alpine
+  unprotect: true
+
+.python_arm_cache_alpine_unprotected: &python_arm_cache_alpine_unprotected
+  <<: *python_arm_cache_alpine
+  unprotect: true
+
+.python_cache_redhat_unprotected: &python_cache_redhat_unprotected
+  <<: *python_cache_redhat
+  unprotect: true
+
+.python_arm_cache_redhat_unprotected: &python_arm_cache_redhat_unprotected
+  <<: *python_arm_cache_redhat
+  unprotect: true
+
+.playwright_browsers_cache_unprotected: &playwright_browsers_cache_unprotected
+  <<: *playwright_browsers_cache
+  unprotect: true
 
 ####################################################################################
 ### STAGE cache                                                                  ###
@@ -385,14 +435,24 @@ rebuild_cache_arm64_redhat:
   cache:
     - *python_arm_cache_redhat
 
-# rebuilds debian caches only when needed
+# rebuilds debian caches for unprotected branches only when MR is merged to master (also with on demand option)
 rebuild_cache_amd64_unprotected:
-  <<: *cache_job_template_debian
+  <<: *cache_job_template
+  rules:
+    - if: *is_push_to_master
+      changes:
+        paths:
+          - backend/go.mod
+          - backend/go.sum
+          - webui/package.json
+          - webui/package-lock.json
+          - rakelib/**/*
+    - *rule_manual_allow_failure
   cache:
     - *golang_cache_unprotected
-    - *python_cache
-    - *nodejs_cache
-    - *playwright_browsers_cache
+    - *python_cache_unprotected
+    - *nodejs_cache_unprotected
+    - *playwright_browsers_cache_unprotected
   script:
     - rake prepare
     - rake prepare:dev
