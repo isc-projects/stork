@@ -165,6 +165,7 @@ func TestGetMachineStateOnly(t *testing.T) {
 
 	t.Run("run without super-admin privileges", func(t *testing.T) {
 		ctx, err = rapi.SessionManager.Load(context.Background(), "")
+		require.NoError(t, err)
 		err = rapi.SessionManager.LoginHandler(ctx, adminUser)
 		require.NoError(t, err)
 
@@ -1026,6 +1027,7 @@ func TestGetMachines(t *testing.T) {
 
 	t.Run("run without super-admin privileges", func(t *testing.T) {
 		ctx, err = rapi.SessionManager.Load(context.Background(), "")
+		require.NoError(t, err)
 		err = rapi.SessionManager.LoginHandler(ctx, adminUser)
 		require.NoError(t, err)
 
@@ -1325,6 +1327,7 @@ func TestGetMachine(t *testing.T) {
 
 	t.Run("run without super-admin privileges", func(t *testing.T) {
 		ctx, err = rapi.SessionManager.Load(context.Background(), "")
+		require.NoError(t, err)
 		err = rapi.SessionManager.LoginHandler(ctx, adminUser)
 		require.NoError(t, err)
 
@@ -1522,6 +1525,7 @@ func TestUpdateMachine(t *testing.T) {
 
 	t.Run("run without super-admin privileges", func(t *testing.T) {
 		ctx, err = rapi.SessionManager.Load(context.Background(), "")
+		require.NoError(t, err)
 		err = rapi.SessionManager.LoginHandler(ctx, adminUser)
 		require.NoError(t, err)
 

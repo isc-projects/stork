@@ -426,6 +426,7 @@ func TestSearchRecords(t *testing.T) {
 
 	t.Run("run without super-admin privileges", func(t *testing.T) {
 		ctx, err = rapi.SessionManager.Load(context.Background(), "")
+		require.NoError(t, err)
 		err = rapi.SessionManager.LoginHandler(ctx, adminUser)
 		require.NoError(t, err)
 
