@@ -381,6 +381,69 @@ rebuild_cache_arm64_redhat:
   cache:
     - *python_arm_cache_redhat
 
+# rebuilds debian caches only when needed
+rebuild_cache_amd64_unprotected:
+  <<: *cache_job_template_debian
+  cache:
+    - unprotect: true
+    - *golang_cache
+    - *python_cache
+    - *nodejs_cache
+    - *playwright_browsers_cache
+  script:
+    - rake prepare
+    - rake prepare:dev
+    - rake prepare:deps
+    - rake hook:prepare
+    - rake hook:prepare_deps
+
+# rebuilds debian ARM caches only when needed
+#rebuild_cache_arm64_unprotected:
+#  <<: *cache_job_template_debian
+#  <<: *job_template_arm
+#  cache:
+#    - unprotect: true
+#    - *golang_arm_cache
+#    - *python_arm_cache
+#    - *nodejs_arm_cache
+#  script:
+#    - rake prepare
+#    - rake prepare:deps
+#    - rake hook:prepare
+#    - rake hook:prepare_deps
+#
+## rebuilds alpine caches only when needed
+#rebuild_cache_amd64_alpine_unprotected:
+#  <<: *cache_job_template_alpine
+#  cache:
+#    - unprotect: true
+#    - *golang_cache_alpine
+#    - *python_cache_alpine
+#
+## rebuilds alpine ARM caches only when needed
+#rebuild_cache_arm64_alpine_unprotected:
+#  <<: *cache_job_template_alpine
+#  <<: *job_template_arm
+#  cache:
+#    - unprotect: true
+#    - *golang_arm_cache_alpine
+#    - *python_arm_cache_alpine
+#
+## rebuilds redhat caches only when needed
+#rebuild_cache_amd64_redhat_unprotected:
+#  <<: *cache_job_template_redhat
+#  cache:
+#    - unprotect: true
+#    - *python_cache_redhat
+#
+## rebuilds redhat ARM caches only when needed
+#rebuild_cache_arm64_redhat_unprotected:
+#  <<: *cache_job_template_redhat
+#  <<: *job_template_arm
+#  cache:
+#    - unprotect: true
+#    - *python_arm_cache_redhat
+
 ####################################################################################
 ### STAGE build                                                                  ###
 ####################################################################################
