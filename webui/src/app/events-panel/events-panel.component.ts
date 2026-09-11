@@ -5,7 +5,7 @@ import { LazyLoadEvent, MessageService, ConfirmationService } from '@openng/opti
 import { EventsService, UsersService, ServicesService } from '../backend/api/api'
 import { AuthService } from '../auth.service'
 import { Subscription, filter, lastValueFrom } from 'rxjs'
-import { daemonNameToFriendlyName, getErrorMessage } from '../utils'
+import { daemonNameToFriendlyName, getAuthenticationMethodLabel, getErrorMessage } from '../utils'
 import { Daemon, Event, Events, EventSortField, MachinesDirectoryEntry, User } from '../backend'
 import { ServerSentEventsService, SSEFilter } from '../server-sent-events.service'
 import { convertSortingFields } from '../table'
@@ -214,7 +214,7 @@ export class EventsPanelComponent implements OnInit, OnChanges, OnDestroy {
                     this.users = (data.items ?? []).map((u: User) => {
                         const user: LabeledUser = {
                             ...u,
-                            label: `${u.login || u.email || 'unknown'} (${u.authenticationMethodId})`,
+                            label: `${u.login || u.email || 'unknown'} (${getAuthenticationMethodLabel(u.authenticationMethodId)})`,
                         }
                         return user
                     })

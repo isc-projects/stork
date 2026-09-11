@@ -12,7 +12,7 @@ import { Group, User, UsersService } from '../backend'
 import { UserFormState } from '../forms/user-form'
 import { MessageService, SelectItem } from '@openng/optimus-ui/api'
 import { lastValueFrom } from 'rxjs'
-import { getErrorMessage } from '../utils'
+import { getAuthenticationMethodLabel, getErrorMessage } from '../utils'
 import { TabType } from '../tab-view/tab-view.component'
 import { PasswordPolicy } from '../password-policy'
 import { isInternalUser } from '../auth.service'
@@ -342,4 +342,10 @@ export class UserFormComponent implements OnInit {
     formSubmit = output<UserFormState>()
 
     formCancel = output()
+
+    /**
+     * Reference to utility getAuthenticationMethodLabel() function so it can be used in HTML template.
+     * @protected
+     */
+    protected readonly getAuthenticationMethodLabel = getAuthenticationMethodLabel
 }

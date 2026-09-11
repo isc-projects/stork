@@ -175,7 +175,7 @@
                     <td align="center">{{ u.name | placeholder }}</td>
                     <td align="center">{{ u.lastname | placeholder }}</td>
                     <td align="center">{{ getGroupNames(u.groups) }}</td>
-                    <td align="center">{{ u.authenticationMethodId }}</td>
+                    <td align="center">{{ getAuthenticationMethodLabel(u.authenticationMethodId) }}</td>
                     <td align="center">{{ u.externalId | placeholder }}</td>
                 </tr>
             </ng-template>
@@ -246,7 +246,7 @@
                     <b>Authentication:</b>
                 </div>
                 <div class="col-12 sm:col-9 word-break-all">
-                    {{ user.authenticationMethodId }}
+                    {{ getAuthenticationMethodLabel(user.authenticationMethodId) }}
                 </div>
                 <div class="col-12 sm:col-3">
                     <b>External ID:</b>

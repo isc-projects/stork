@@ -7,6 +7,7 @@ import { BreadcrumbsComponent } from '../breadcrumbs/breadcrumbs.component'
 import { SettingsMenuComponent } from '../settings-menu/settings-menu.component'
 import { Panel } from '@openng/optimus-ui/panel'
 import { PlaceholderPipe } from '../pipes/placeholder.pipe'
+import { getAuthenticationMethodLabel } from '../utils'
 
 /**
  * This component is for displaying information about the user's account.
@@ -84,4 +85,10 @@ export class ProfilePageComponent implements OnInit, OnDestroy {
             return this.currentUser.id.toString()
         }
     }
+
+    /**
+     * Reference to utility getAuthenticationMethodLabel() function so it can be used in HTML template.
+     * @protected
+     */
+    protected readonly getAuthenticationMethodLabel = getAuthenticationMethodLabel
 }

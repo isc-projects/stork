@@ -904,3 +904,17 @@ export function generateUUID(): string {
         byteToHex[randomBytes[15]]
     ).toLowerCase()
 }
+
+/**
+ * Returns label for any authentication method ID supported by Stork.
+ * @param authenticationMethodID authentication method ID supported by Stork
+ */
+export function getAuthenticationMethodLabel(authenticationMethodID: string): string {
+    switch (authenticationMethodID) {
+        case 'ldap':
+        case 'oidc':
+            return authenticationMethodID.toUpperCase()
+        default:
+            return authenticationMethodID
+    }
+}

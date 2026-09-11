@@ -176,9 +176,9 @@ export const TestUsersDropdown: Story = {
         await expect(options.length).toEqual(users.length)
         await expect(options[0]).toHaveTextContent('admin (internal)')
         // This user has no login, so email address is used to label the user.
-        await expect(options[1]).toHaveTextContent('user@example.org (oidc)')
+        await expect(options[1]).toHaveTextContent('user@example.org (OIDC)')
         // This user has no login and no email, so "unknown" label should be displayed.
-        await expect(options[2]).toHaveTextContent('unknown (ldap)')
-        await expect(options[3]).toHaveTextContent('admin (ldap)')
+        await expect(options[2]).toHaveTextContent('unknown (LDAP)')
+        await expect(options[3]).toHaveTextContent('admin (LDAP)')
     },
 }

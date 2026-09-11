@@ -13,7 +13,7 @@ import { AuthService, isInternalUser } from '../auth.service'
 import { ServerDataService } from '../server-data.service'
 import { UserSortField, UsersService } from '../backend'
 import { debounceTime, firstValueFrom, lastValueFrom, Subject, Subscription } from 'rxjs'
-import { getErrorMessage } from '../utils'
+import { getAuthenticationMethodLabel, getErrorMessage } from '../utils'
 import { Group, User } from '../backend'
 import { TabViewComponent } from '../tab-view/tab-view.component'
 import { convertSortingFields, tableFiltersToQueryParams, tableHasFilter } from '../table'
@@ -331,4 +331,10 @@ export class UsersPageComponent implements OnInit, OnDestroy {
      * @protected
      */
     protected readonly UserSortField = UserSortField
+
+    /**
+     * Reference to utility getAuthenticationMethodLabel() function so it can be used in HTML template.
+     * @protected
+     */
+    protected readonly getAuthenticationMethodLabel = getAuthenticationMethodLabel
 }

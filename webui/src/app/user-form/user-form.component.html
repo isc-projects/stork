@@ -31,7 +31,9 @@
                 @if (!isInternalUser()) {
                     <p-message
                         severity="info"
-                        text="The external authorization service '{{ user().authenticationMethodId }}' manages this user
+                        text="The external authorization service '{{
+                            getAuthenticationMethodLabel(user().authenticationMethodId)
+                        }}' manages this user
                             profile. It can be only modified via the administrator panel of the authentication service."
                     >
                     </p-message>
@@ -163,7 +165,8 @@
                         <small>
                             @if (user()?.externallyManagedGroups) {
                                 Group assignment for this user account is disabled because it is managed externally by
-                                the '{{ user().authenticationMethodId }}' authentication service.
+                                the '{{ getAuthenticationMethodLabel(user().authenticationMethodId) }}' authentication
+                                service.
                             } @else {
                                 {{ getGroupDescription(formGroup.controls['userGroup'].value?.id) }}
                             }

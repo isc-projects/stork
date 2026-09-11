@@ -18,6 +18,7 @@ import {
     deepEqual,
     durationToString,
     generateUUID,
+    getAuthenticationMethodLabel,
 } from './utils'
 
 describe('utils', () => {
@@ -554,6 +555,13 @@ describe('utils', () => {
         c.d = c
         expect(deepEqual(a, a)).toBeTrue()
         expect(deepEqual(a, c)).toBeFalse()
+    })
+
+    it('should return authentication method label', () => {
+        expect(getAuthenticationMethodLabel('oidc')).toEqual('OIDC')
+        expect(getAuthenticationMethodLabel('ldap')).toEqual('LDAP')
+        expect(getAuthenticationMethodLabel('internal')).toEqual('internal')
+        expect(getAuthenticationMethodLabel('cuStom')).toEqual('cuStom')
     })
 
     it('should generate unique UUIDs in secure context', () => {
