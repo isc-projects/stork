@@ -106,6 +106,22 @@ func TestParseBoolField(t *testing.T) {
 
 	_, err = keaconfig.ParseBoolField("foo")
 	require.Error(t, err)
+
+	// Matches Kea's own convertToBool: "0"/"1" are also accepted.
+	bv, err = keaconfig.ParseBoolField("1")
+	require.NoError(t, err)
+	require.True(t, bv)
+
+	bv, err = keaconfig.ParseBoolField("0")
+	require.NoError(t, err)
+	require.False(t, bv)
+
+	// Kea does not accept single-letter "t"/"f", or any other numeric
+	// string, as a boolean value.
+	for _, v := range []string{"t", "f", "T", "F", "2"} {
+		_, err = keaconfig.ParseBoolField(v)
+		require.Error(t, err)
+	}
 }
 
 // Test parsing an uint8 option field value.

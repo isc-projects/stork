@@ -437,6 +437,50 @@ func TestCreateDHCPOptionCSV(t *testing.T) {
 	require.EqualValues(t, -5, fields[8].GetValues()[0])
 }
 
+// Test that a bare "0" or "1" value in an option with no known definition is
+// inferred as a number rather than a boolean. Regression test for a bug
+// where such a value (e.g. the encoding-type field of the sip-servers
+// option, code 120, whose CSV data looks like "1, 172.24.0.12") was
+// misidentified as a bool. Stork then round-tripped it back to Kea as the
+// literal string "true"/"false" on the next subnet update (e.g. when only
+// renaming the subnet), which Kea rejected with "unable to convert the
+// value 'true' to integer data type". Kea's own bool parser
+// (OptionDefinition::convertToBool) accepts "0"/"1" as valid booleans too,
+// so there is no way to distinguish a genuinely boolean field from a
+// numeric one without a known definition; inferDHCPOptionField checks the
+// numeric types first for this reason. This is safe even for a genuinely
+// boolean field with an unknown definition, since Kea accepts "0"/"1" for
+// a real boolean option just as readily as "true"/"false".
+func TestCreateDHCPOptionCSVNumericZeroOrOneNotBool(t *testing.T) {
+	optionData := keaconfig.SingleOptionData{
+		SingleOptionDataKnownParameters: keaconfig.SingleOptionDataKnownParameters{
+			AlwaysSend: true,
+			Code:       120,
+			CSVFormat:  true,
+			Data:       "1, 172.24.0.12",
+			Name:       "sip-servers",
+			Space:      "dhcp4",
+		},
+	}
+	controller := gomock.NewController(t)
+	defer controller.Finish()
+	lookup := NewMockDHCPOptionDefinitionLookup(controller)
+	lookup.EXPECT().Find(gomock.Any(), gomock.Any()).Return(nil)
+	option, err := keaconfig.CreateDHCPOption(optionData, storkutil.IPv4, lookup)
+	require.NoError(t, err)
+
+	fields := option.GetFields()
+	require.Len(t, fields, 2)
+
+	require.Equal(t, dhcpmodel.Uint32Field, fields[0].GetFieldType())
+	require.Len(t, fields[0].GetValues(), 1)
+	require.EqualValues(t, 1, fields[0].GetValues()[0])
+
+	require.Equal(t, dhcpmodel.IPv4AddressField, fields[1].GetFieldType())
+	require.Len(t, fields[1].GetValues(), 1)
+	require.Equal(t, "172.24.0.12", fields[1].GetValues()[0])
+}
+
 // Test that an option in a hex bytes format received from Kea is correctly parsed
 // into the Stork's representation of an option.
 func TestCreateDHCPOptionHex(t *testing.T) {

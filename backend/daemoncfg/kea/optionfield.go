@@ -87,15 +87,16 @@ func (option DHCPOption) GetUnknownParameters() map[string]any {
 func inferDHCPOptionField(value string) dhcpOptionField {
 	var field dhcpOptionField
 
-	// Is it a bool value?
-	if bv, err := ParseBoolField(value); err == nil {
-		field = dhcpOptionField{
-			FieldType: dhcpmodel.BoolField,
-			Values:    []any{bv},
-		}
-		return field
-	}
-	// Is it an unsigned number?
+	// Is it an unsigned number? Checked before the bool case because Kea's
+	// own bool parser (OptionDefinition::convertToBool) accepts "0"/"1" as
+	// valid booleans too, so there is no way to tell a bare "0"/"1" apart
+	// from a genuine bool without knowing the option's definition. A
+	// numeric field with an unknown definition (e.g. the encoding-type
+	// field of the sip-servers option, code 120) is far more common than a
+	// boolean one, and guessing numeric here is always safe: Kea accepts
+	// "0"/"1" for a real boolean field just as readily as for an integer
+	// one, so round-tripping the value back to Kea as "0"/"1" (rather than
+	// "true"/"false") never breaks a genuine boolean field either.
 	if iv, err := ParseUint32Field(value); err == nil {
 		field = dhcpOptionField{
 			FieldType: dhcpmodel.Uint32Field,
@@ -108,6 +109,14 @@ func inferDHCPOptionField(value string) dhcpOptionField {
 		field = dhcpOptionField{
 			FieldType: dhcpmodel.Int32Field,
 			Values:    []any{iv},
+		}
+		return field
+	}
+	// Is it a bool value?
+	if bv, err := ParseBoolField(value); err == nil {
+		field = dhcpOptionField{
+			FieldType: dhcpmodel.BoolField,
+			Values:    []any{bv},
 		}
 		return field
 	}
@@ -269,11 +278,19 @@ func ParseDHCPOptionField(fieldType dhcpmodel.DHCPOptionFieldType, value string)
 
 // Parse boolean option field.
 func ParseBoolField(value string) (bool, error) {
-	bv, err := strconv.ParseBool(value)
-	if err != nil {
+	// Matches Kea's own OptionDefinition::convertToBool exactly: "true"
+	// and "false" (case-insensitive), plus the numeric "1"/"0". Kea does
+	// NOT accept single-letter "t"/"f" or any other numeric string (e.g.
+	// "2"), so strconv.ParseBool is intentionally not used here, as it is
+	// looser than Kea in that respect.
+	switch strings.ToLower(value) {
+	case "true", "1":
+		return true, nil
+	case "false", "0":
+		return false, nil
+	default:
 		return false, errors.Errorf("%s is not a valid bool option field value", value)
 	}
-	return bv, nil
 }
 
 // Parse uint8 option field.
