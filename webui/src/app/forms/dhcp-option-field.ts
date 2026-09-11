@@ -1,5 +1,6 @@
 import { AbstractControl, AbstractControlOptions, AsyncValidatorFn, ValidatorFn } from '@angular/forms'
 import { LinkedFormGroup } from './linked-form-group'
+import { generateUUID } from '../utils'
 
 /**
  * An emum holding all supported DHCP option field types.
@@ -50,7 +51,7 @@ export class DhcpOptionField {
         this.fieldType = fieldType
         for (let i = 0; i < inputNum; i++) {
             // Generate UUID identifiers.
-            this._inputIds.push(crypto.randomUUID())
+            this._inputIds.push(generateUUID())
         }
     }
 

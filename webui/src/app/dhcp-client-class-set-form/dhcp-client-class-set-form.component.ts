@@ -4,6 +4,7 @@ import { SelectableClientClass } from '../forms/selectable-client-class'
 import { AutoCompleteCompleteEvent, AutoComplete } from '@openng/optimus-ui/autocomplete'
 import { FloatLabel } from '@openng/optimus-ui/floatlabel'
 import { NgTemplateOutlet } from '@angular/common'
+import { generateUUID } from '../utils'
 
 /**
  * A component providing a "chips" input box to specify client classes
@@ -58,7 +59,7 @@ export class DhcpClientClassSetFormComponent implements OnInit {
      * It sorts the list of client classes specified as an input.
      */
     ngOnInit(): void {
-        this.inputId = crypto.randomUUID()
+        this.inputId = generateUUID()
     }
 
     /**

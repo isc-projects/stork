@@ -4,7 +4,7 @@ import { AddressPoolForm, KeaPoolParametersForm, SubnetSetFormService } from '..
 
 import { createDefaultDhcpOptionFormGroup } from '../forms/dhcp-option-form'
 import { IPType } from '../iptype'
-import { getSeverityByIndex, getVersionRange } from '../utils'
+import { getSeverityByIndex, getVersionRange, generateUUID } from '../utils'
 import { Fieldset } from '@openng/optimus-ui/fieldset'
 import { FloatLabel } from '@openng/optimus-ui/floatlabel'
 import { InputText } from '@openng/optimus-ui/inputtext'
@@ -71,9 +71,9 @@ export class AddressPoolFormComponent implements OnInit {
      * UUIDS used as unique element identifiers.
      */
     uuids = {
-        poolStart: crypto.randomUUID(),
-        poolEnd: crypto.randomUUID(),
-        selectedDaemonGroups: crypto.randomUUID(),
+        poolStart: generateUUID(),
+        poolEnd: generateUUID(),
+        selectedDaemonGroups: generateUUID(),
     }
 
     /**

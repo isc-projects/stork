@@ -2,7 +2,7 @@ import { Component, Input, OnInit, inject } from '@angular/core'
 import { FormGroup, UntypedFormArray, UntypedFormControl, FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { KeaPoolParametersForm, PrefixPoolForm, SubnetSetFormService } from '../forms/subnet-set-form.service'
 
-import { getSeverityByIndex, getVersionRange } from '../utils'
+import { generateUUID, getSeverityByIndex, getVersionRange } from '../utils'
 import { createDefaultDhcpOptionFormGroup } from '../forms/dhcp-option-form'
 import { IPType } from '../iptype'
 import { Fieldset } from '@openng/optimus-ui/fieldset'
@@ -73,10 +73,10 @@ export class PrefixPoolFormComponent implements OnInit {
      * UUIDS used as unique element identifiers.
      */
     uuids = {
-        prefix: crypto.randomUUID(),
-        delegatedLength: crypto.randomUUID(),
-        excludedPrefix: crypto.randomUUID(),
-        selectedDaemonGroups: crypto.randomUUID(),
+        prefix: generateUUID(),
+        delegatedLength: generateUUID(),
+        excludedPrefix: generateUUID(),
+        selectedDaemonGroups: generateUUID(),
     }
 
     /**

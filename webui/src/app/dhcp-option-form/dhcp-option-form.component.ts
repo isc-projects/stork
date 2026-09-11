@@ -22,6 +22,7 @@ import { InputText } from '@openng/optimus-ui/inputtext'
 import { ToggleButton } from '@openng/optimus-ui/togglebutton'
 import { Tag } from '@openng/optimus-ui/tag'
 import { DhcpOptionSetFormComponent } from '../dhcp-option-set-form/dhcp-option-set-form.component'
+import { generateUUID } from '../utils'
 
 /**
  * A signature to a function adding a field to the form.
@@ -276,8 +277,8 @@ export class DhcpOptionFormComponent implements OnInit {
     ngOnInit(): void {
         this.lastFieldType = DhcpOptionFieldType.Binary
         this.lastFieldCommand = this.addBinaryField
-        this.codeInputId = crypto.randomUUID()
-        this.alwaysSendCheckboxId = crypto.randomUUID()
+        this.codeInputId = generateUUID()
+        this.alwaysSendCheckboxId = generateUUID()
         this.fieldTypes = [
             {
                 label: DhcpOptionFieldType.Binary,

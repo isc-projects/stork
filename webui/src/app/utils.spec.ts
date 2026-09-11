@@ -17,6 +17,7 @@ import {
     getVersionRange,
     deepEqual,
     durationToString,
+    generateUUID,
 } from './utils'
 
 describe('utils', () => {
@@ -553,5 +554,13 @@ describe('utils', () => {
         c.d = c
         expect(deepEqual(a, a)).toBeTrue()
         expect(deepEqual(a, c)).toBeFalse()
+    })
+
+    it('should generate unique UUIDs', () => {
+        const uuid1 = generateUUID()
+        const uuid2 = generateUUID()
+        expect(uuid1).not.toBe(uuid2)
+        expect(uuid1).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/)
+        expect(uuid2).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/)
     })
 })

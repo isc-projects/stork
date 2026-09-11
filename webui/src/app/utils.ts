@@ -843,3 +843,64 @@ export function getIconBySeverity(severity: Severity): string {
             return 'pi pi-info-circle'
     }
 }
+
+/**
+ * Convert array of 16 byte values to UUID string format of the form:
+ * XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+ *
+ * Adopted from https://github.com/uuidjs/uuid/blob/main/src/stringify.ts .
+ * Robert Kieffer <https://github.com/uuidjs/uuid> MIT License
+ */
+const byteToHex: string[] = []
+
+for (let i = 0; i < 256; ++i) {
+    byteToHex.push((i + 0x100).toString(16).slice(1))
+}
+
+/**
+ * Generates a random UUID (v4).
+ *
+ * Adopted from https://github.com/uuidjs/uuid/blob/main/src/v4.ts .
+ * Robert Kieffer <https://github.com/uuidjs/uuid> MIT License
+ */
+export function generateUUID(): string {
+    if (crypto.randomUUID) {
+        // This function is available only in secure context.
+        return crypto.randomUUID()
+    }
+
+    const randomBytes = new Uint8Array(16)
+    crypto.getRandomValues(randomBytes)
+
+    // Per 4.4, set bits for version and `clock_seq_hi_and_reserved`
+    randomBytes[6] = (randomBytes[6] & 0x0f) | 0x40
+    randomBytes[8] = (randomBytes[8] & 0x3f) | 0x80
+
+    // Note: Be careful editing this code!  It's been tuned for performance
+    // and works in ways you may not expect. See https://github.com/uuidjs/uuid/pull/434
+    //
+    // Note to future-self: No, you can't remove the `toLowerCase()` call.
+    // REF: https://github.com/uuidjs/uuid/pull/677#issuecomment-1757351351
+    return (
+        byteToHex[randomBytes[0]] +
+        byteToHex[randomBytes[1]] +
+        byteToHex[randomBytes[2]] +
+        byteToHex[randomBytes[3]] +
+        '-' +
+        byteToHex[randomBytes[4]] +
+        byteToHex[randomBytes[5]] +
+        '-' +
+        byteToHex[randomBytes[6]] +
+        byteToHex[randomBytes[7]] +
+        '-' +
+        byteToHex[randomBytes[8]] +
+        byteToHex[randomBytes[9]] +
+        '-' +
+        byteToHex[randomBytes[10]] +
+        byteToHex[randomBytes[11]] +
+        byteToHex[randomBytes[12]] +
+        byteToHex[randomBytes[13]] +
+        byteToHex[randomBytes[14]] +
+        byteToHex[randomBytes[15]]
+    ).toLowerCase()
+}
