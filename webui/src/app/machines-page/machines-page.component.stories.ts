@@ -1156,16 +1156,16 @@ export const TestAgentTokenAdminRole: Story = {
         let cells = await within(rows[0]).findAllByRole('cell')
         await expect(cells).toBeTruthy()
         await expect(cells.length).toEqual(5)
-        // Cell with agent token is the fourth in the row. The cell is expected to be empty - token is not displayed.
-        await expect(cells[3]).toBeEmptyDOMElement()
+        // Cell with agent token is the fourth in the row. Token should be redacted.
+        await expect(cells[3]).toHaveTextContent('(redacted)')
         cells = await within(rows[1]).findAllByRole('cell')
         await expect(cells).toBeTruthy()
         await expect(cells.length).toEqual(5)
-        await expect(cells[3]).toBeEmptyDOMElement()
+        await expect(cells[3]).toHaveTextContent('(redacted)')
         cells = await within(rows[2]).findAllByRole('cell')
         await expect(cells).toBeTruthy()
         await expect(cells.length).toEqual(5)
-        await expect(cells[3]).toBeEmptyDOMElement()
+        await expect(cells[3]).toHaveTextContent('(redacted)')
     },
 }
 
@@ -1194,16 +1194,16 @@ export const TestAgentTokenReadOnlyRole: Story = {
         let cells = await within(rows[0]).findAllByRole('cell')
         await expect(cells).toBeTruthy()
         await expect(cells.length).toEqual(5)
-        // Cell with agent token is the fourth in the row. The cell is expected to be empty - token is not displayed.
-        await expect(cells[3]).toBeEmptyDOMElement()
+        // Cell with agent token is the fourth in the row. Token should be redacted.
+        await expect(cells[3]).toHaveTextContent('(redacted)')
         cells = await within(rows[1]).findAllByRole('cell')
         await expect(cells).toBeTruthy()
         await expect(cells.length).toEqual(5)
-        await expect(cells[3]).toBeEmptyDOMElement()
+        await expect(cells[3]).toHaveTextContent('(redacted)')
         cells = await within(rows[2]).findAllByRole('cell')
         await expect(cells).toBeTruthy()
         await expect(cells.length).toEqual(5)
-        await expect(cells[3]).toBeEmptyDOMElement()
+        await expect(cells[3]).toHaveTextContent('(redacted)')
     },
 }
 
@@ -1233,14 +1233,14 @@ export const TestAgentTokenSuperAdminRole: Story = {
         await expect(cells).toBeTruthy()
         await expect(cells.length).toEqual(5)
         // Cell with agent token is the fourth in the row. The cell is expected not to be empty - token is displayed for super-admin.
-        await expect(cells[3]).not.toBeEmptyDOMElement()
+        await expect(cells[3]).toHaveTextContent(/^random\-agent\-.+/)
         cells = await within(rows[1]).findAllByRole('cell')
         await expect(cells).toBeTruthy()
         await expect(cells.length).toEqual(5)
-        await expect(cells[3]).not.toBeEmptyDOMElement()
+        await expect(cells[3]).toHaveTextContent(/^random\-agent\-.+/)
         cells = await within(rows[2]).findAllByRole('cell')
         await expect(cells).toBeTruthy()
         await expect(cells.length).toEqual(5)
-        await expect(cells[3]).not.toBeEmptyDOMElement()
+        await expect(cells[3]).toHaveTextContent(/^random\-agent\-.+/)
     },
 }

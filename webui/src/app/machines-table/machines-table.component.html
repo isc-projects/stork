@@ -245,8 +245,8 @@
             <td>{{ m.address }}:{{ m.agentPort }}</td>
             @if (unauthorizedMachinesDisplayed()) {
                 <td [class.word-break-all]="authorizedMachinesDisplayed()">
-                    @if (!m.authorized && canAuthorizeMachine()) {
-                        {{ m.agentToken }}
+                    @if (!m.authorized) {
+                        {{ (canAuthorizeMachine() ? m.agentToken : '(redacted)') | placeholder }}
                     }
                 </td>
             }
