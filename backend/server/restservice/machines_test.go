@@ -1546,6 +1546,10 @@ func TestUpdateMachine(t *testing.T) {
 		require.False(t, okRsp.Payload.Authorized) // machine is not yet authorized
 		require.Nil(t, okRsp.Payload.LastVisitedAt)
 		require.Empty(t, okRsp.Payload.AgentToken)
+
+		dbM, err := dbmodel.GetMachineByID(db, testM.ID)
+		require.NoError(t, err)
+		require.NotEmpty(t, dbM.AgentToken)
 	})
 }
 
