@@ -10,6 +10,7 @@ Primary developers:
                  Kea statistics)
 - Piotrek Zadroga (maintainer, UI, responsive UI, version reporting, DNS zone viewer,
                    read-only user role)
+- William Leuschner (maintainer, UI, lease tracking)
 
 Active developers:
 
@@ -19,7 +20,7 @@ Active developers:
 - Andrei Pavel (CI, release engineering, UI)
 - Marcin Godzina (QA, release engineering)
 - Suzanne Goldlust (documentation)
-- William Leuschner
+- Tomek Sawka (QA, release engineering)
 
 Primary area of work mentioned in parentheses. The list is in
 roughly chronological order.
