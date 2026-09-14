@@ -521,7 +521,7 @@ namespace :prepare do
     end
 
     desc 'Trigger the backend (GO) dependencies installation.'
-    task :backend_deps => [GO, NFPM, PROTOC_GEN_GO, PROTOC_GEN_GO_GRPC, MOCKGEN, TPARSE, GO_JUNIT_REPORT, GOCOVER_COBERTURA] do
+    task :backend_deps => [GO] do
         Dir.chdir("backend") do
             sh GO, "mod", "download"
         end
@@ -542,7 +542,7 @@ end
 
 namespace :check do
     desc 'Check the external dependencies related to the codebase'
-    task :codebase do
+    task :codebase => [NFPM, PROTOC_GEN_GO, PROTOC_GEN_GO_GRPC, MOCKGEN, TPARSE, GO_JUNIT_REPORT, GOCOVER_COBERTURA] do
         check_deps(__FILE__)
     end
 end
