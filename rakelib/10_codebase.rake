@@ -516,7 +516,7 @@ end
 
 namespace :prepare do
     desc 'Install the external dependencies related to the codebase'
-    task :codebase do
+    task :codebase => [NFPM, PROTOC_GEN_GO, PROTOC_GEN_GO_GRPC, MOCKGEN, TPARSE, GO_JUNIT_REPORT, GOCOVER_COBERTURA] do
         find_and_prepare_deps(__FILE__)
     end
 
@@ -542,7 +542,7 @@ end
 
 namespace :check do
     desc 'Check the external dependencies related to the codebase'
-    task :codebase => [NFPM, PROTOC_GEN_GO, PROTOC_GEN_GO_GRPC, MOCKGEN, TPARSE, GO_JUNIT_REPORT, GOCOVER_COBERTURA] do
+    task :codebase do
         check_deps(__FILE__)
     end
 end
