@@ -164,7 +164,7 @@ func TestGetMachineStateOnly(t *testing.T) {
 	})
 
 	t.Run("run without super-admin privileges", func(t *testing.T) {
-		ctx, err = rapi.SessionManager.Load(context.Background(), "")
+		ctx, err = rapi.SessionManager.Load(t.Context(), "")
 		require.NoError(t, err)
 		err = rapi.SessionManager.LoginHandler(ctx, adminUser)
 		require.NoError(t, err)
@@ -443,7 +443,7 @@ func TestGetMachineAndPowerDNSState(t *testing.T) {
 	// setup a user session, it is required to check user role
 	user, err := dbmodel.GetUserByID(rapi.DB, 1)
 	require.NoError(t, err)
-	ctx, err := rapi.SessionManager.Load(context.Background(), "")
+	ctx, err := rapi.SessionManager.Load(t.Context(), "")
 	require.NoError(t, err)
 	err = rapi.SessionManager.LoginHandler(ctx, user)
 	require.NoError(t, err)
@@ -1026,7 +1026,7 @@ func TestGetMachines(t *testing.T) {
 	})
 
 	t.Run("run without super-admin privileges", func(t *testing.T) {
-		ctx, err = rapi.SessionManager.Load(context.Background(), "")
+		ctx, err = rapi.SessionManager.Load(t.Context(), "")
 		require.NoError(t, err)
 		err = rapi.SessionManager.LoginHandler(ctx, adminUser)
 		require.NoError(t, err)
@@ -1326,7 +1326,7 @@ func TestGetMachine(t *testing.T) {
 	})
 
 	t.Run("run without super-admin privileges", func(t *testing.T) {
-		ctx, err = rapi.SessionManager.Load(context.Background(), "")
+		ctx, err = rapi.SessionManager.Load(t.Context(), "")
 		require.NoError(t, err)
 		err = rapi.SessionManager.LoginHandler(ctx, adminUser)
 		require.NoError(t, err)
@@ -1524,7 +1524,7 @@ func TestUpdateMachine(t *testing.T) {
 	})
 
 	t.Run("run without super-admin privileges", func(t *testing.T) {
-		ctx, err = rapi.SessionManager.Load(context.Background(), "")
+		ctx, err = rapi.SessionManager.Load(t.Context(), "")
 		require.NoError(t, err)
 		err = rapi.SessionManager.LoginHandler(ctx, adminUser)
 		require.NoError(t, err)
