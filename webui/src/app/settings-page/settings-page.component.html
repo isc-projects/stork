@@ -109,8 +109,8 @@
                             Zone transfers are collected by the Stork server and stored in the database. Deployments
                             with a large number of zone transfers may observe significant database growth. This setting
                             enables systematic removal of the old zone transfers to maintain their history within a
-                            reasonable limit and prevent unbounded growth. Use the "Zone Transfers Maximum Age"
-                            setting to specify the maximum age of the zone transfers to keep in the Stork database.
+                            reasonable limit and prevent unbounded growth. Use the "Zone Transfers Maximum Age" setting
+                            to specify the maximum age of the zone transfers to keep in the Stork database.
                         </app-help-tip>
                     </div>
 
@@ -129,9 +129,9 @@
                             ></p-inputNumber
                             ><app-help-tip subject="Zone Transfers Maximum Age">
                                 This value specifies the maximum age of a recorded zone transfer after which it is
-                                pruned from the database. For example, the default value of 604800 will result in holding the
-                                captured zone transfers for 7 days. The minimum value is 60 seconds because the interval
-                                at which old zone transfers are pruned is also 60 seconds.
+                                pruned from the database. For example, the default value of 604800 will result in
+                                holding the captured zone transfers for 7 days. The minimum value is 60 seconds because
+                                the interval at which old zone transfers are pruned is also 60 seconds.
                             </app-help-tip>
                         </div>
                         @if (hasError('zoneTransferPruningMaxAge', 'required')) {
