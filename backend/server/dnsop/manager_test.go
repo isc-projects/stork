@@ -2829,6 +2829,7 @@ func TestPopulateMachineIPAddressCache(t *testing.T) {
 	require.EqualValues(t, machine.ID, machines[0].ID)
 }
 
+// Test that zone transfer pruning is started when enabled.
 func TestStartXFRPruning(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -2864,6 +2865,7 @@ func TestStartXFRPruning(t *testing.T) {
 	})
 }
 
+// Test that zone transfer pruning is correctly restarted.
 func TestRestartXFRPruning(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
