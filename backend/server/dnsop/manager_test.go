@@ -2856,12 +2856,25 @@ func TestStartXFRPruning(t *testing.T) {
 		require.NoError(t, err)
 		synctest.Wait()
 
+		// Make sure that there is no harm in starting it again.
+		isPrunedAgain := atomic.Bool{}
+		err = manager.(*managerImpl).startXFRPruning(1*time.Millisecond, func(dbi pg.DBI, xfrMaxAge int64) error {
+			isPrunedAgain.Store(true)
+			return nil
+		})
+		require.NoError(t, err)
+		synctest.Wait()
+
 		defer func() {
 			manager.(*managerImpl).stopXFRPruning()
 			synctest.Wait()
 		}()
 
+		// The first attempt to start the pruner should succeed. The second
+		// one should be silently ignored. Therefore the isPrunedAgain should
+		// never be set.
 		require.Eventually(t, isPruned.Load, 1*time.Second, 100*time.Millisecond)
+		require.Never(t, isPrunedAgain.Load, 1*time.Second, 100*time.Millisecond)
 	})
 }
 
