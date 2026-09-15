@@ -654,7 +654,7 @@ openapi_generator_ver = '7.24.0'
 # Other
 bundler_ver = '2.6.9'
 shellcheck_ver = '0.11.0'
-pip_tools_ver = '7.5.3'
+pip_tools_ver = '7.6.1'
 pip_audit_ver = '2.10.1'
 
 # System-dependent variables
