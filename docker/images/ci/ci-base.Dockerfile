@@ -3,9 +3,9 @@ FROM debian:13.5-slim
 # To update the Go version, go to https://go.dev/dl/, find suitable
 # version, also get the linux-amd64 and linux-arm64 SHA256 sums.
 # In the future, we could semi automate it using https://go.dev/dl/?mode=json
-ARG GO_VERSION=1.26.7
-ARG GO_SHA256_AMD64=ffb5f8de10c62550dfddab66b36b57030721e0a44a3218e9e1181d7b59f121ca
-ARG GO_SHA256_ARM64=5a4ec883379d51ee9ce1040d5e87f8d35e20387574dd8c947feb01eabc3c1b37
+ARG GO_VERSION=1.26.8
+ARG GO_SHA256_AMD64=d0f743b33e8d8945e6b1f432edd15785c70507121d6e2a723b21285eddf8b57b
+ARG GO_SHA256_ARM64=211ffced9dcb9633a55eac6364816ec0ddd951389a740e88fa8b3337971bdda0
 
 ENV PATH="/root/go/bin:/usr/local/go/bin:${PATH}"
 
