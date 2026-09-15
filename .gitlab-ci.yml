@@ -97,7 +97,7 @@ stages:
 
 # template with redhat image
 .image_redhat: &image_redhat
-  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-redhat-ubi:20
+  image: registry.gitlab.isc.org/isc-projects/stork/pkgs-redhat-ubi:21
 
 # template with debian image
 .image_debian: &image_debian
