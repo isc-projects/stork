@@ -5,6 +5,7 @@ import (
 	http "net/http"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	gomock "go.uber.org/mock/gomock"
 	agentcommtest "isc.org/stork/server/agentcomm/test"
@@ -96,7 +97,7 @@ func TestSettings(t *testing.T) {
 }
 
 // Test setting an invalid zone transfer pruning max age.
-func TestSettingsInvalidZoneTransferPruningMaxAge(t *testing.T) {
+func TestUpdateSettingsInvalidZoneTransferPruningMaxAge(t *testing.T) {
 	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
@@ -132,4 +133,43 @@ func TestSettingsInvalidZoneTransferPruningMaxAge(t *testing.T) {
 	defaultRsp := rsp.(*settings.UpdateSettingsDefault)
 	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
 	require.EqualValues(t, "Zone transfer pruning max age must be at least 60 seconds", *defaultRsp.Payload.Message)
+}
+
+// Test that an error is returned when restarting zone transfer pruning fails
+// while updating the settings.
+func TestUpdateSettingsRestartXFRPruningError(t *testing.T) {
+	db, dbSettings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	// Return an error when restarting zone transfer pruning.
+	mockDNSManager := NewMockManager(ctrl)
+	mockDNSManager.EXPECT().RestartXFRPruning().Return(errors.New("error"))
+
+	// Prepare rest API.
+	rSettings := RestAPISettings{}
+	fa := agentcommtest.NewFakeAgents(nil, nil)
+	fec := &storktest.FakeEventCenter{}
+	fd := &storktest.FakeDispatcher{}
+	ec := NewEndpointControl()
+	rapi, err := NewRestAPI(&rSettings, dbSettings, db, fa, fec, fd, ec, mockDNSManager)
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	// Initialize global settings.
+	err = dbmodel.InitializeSettings(db, 0)
+	require.NoError(t, err)
+
+	paramsUS := settings.UpdateSettingsParams{
+		Settings: &models.Settings{
+			ZoneTransferPruningMaxAge: 60,
+		},
+	}
+	rsp := rapi.UpdateSettings(ctx, paramsUS)
+	require.IsType(t, &settings.UpdateSettingsDefault{}, rsp)
+	defaultRsp := rsp.(*settings.UpdateSettingsDefault)
+	require.Equal(t, http.StatusBadRequest, getStatusCode(*defaultRsp))
+	require.EqualValues(t, "Cannot restart zone transfer pruning", *defaultRsp.Payload.Message)
 }

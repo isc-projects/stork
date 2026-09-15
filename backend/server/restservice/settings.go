@@ -69,7 +69,7 @@ func (r *RestAPI) UpdateSettings(ctx context.Context, params settings.UpdateSett
 	}
 
 	msg := "Problem updating settings"
-	errRsp := settings.NewGetSettingsDefault(http.StatusBadRequest).WithPayload(&models.APIError{
+	errRsp := settings.NewUpdateSettingsDefault(http.StatusBadRequest).WithPayload(&models.APIError{
 		Message: &msg,
 	})
 
@@ -143,8 +143,12 @@ func (r *RestAPI) UpdateSettings(ctx context.Context, params settings.UpdateSett
 
 	err = r.DNSManager.RestartXFRPruning()
 	if err != nil {
-		log.WithError(err).Error("Cannot restart zone transfer pruning")
-		return errRsp
+		msg := "Cannot restart zone transfer pruning"
+		log.Error(msg)
+		rsp := settings.NewUpdateSettingsDefault(http.StatusBadRequest).WithPayload(&models.APIError{
+			Message: &msg,
+		})
+		return rsp
 	}
 
 	rsp := settings.NewUpdateSettingsOK()
