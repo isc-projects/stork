@@ -259,7 +259,10 @@ namespace :release do
             end
 
             sh CLOUDSMITH, "check", "service"
-            sh CLOUDSMITH, "whoami", "-k", "#{key}"
+
+            # Set the API key as an environment variable to ensure that the key is not printed to the console.
+            ENV["CLOUDSMITH_API_KEY"] = key
+            sh CLOUDSMITH, "whoami"
 
             package_type_commands = {
                 'deb' => 'deb',
@@ -292,10 +295,12 @@ namespace :release do
                                 repo = 'stork'
                             end
                         end
-                        sh CLOUDSMITH, "upload", type_command, "-k", "#{key}", "-W", "--republish", "isc/#{repo}/#{distro}/any-version", file
+                        sh CLOUDSMITH, "upload", type_command, "-W", "--republish", "isc/#{repo}/#{distro}/any-version", file
                     end
                 end
             end
+        ensure
+            ENV.delete("CLOUDSMITH_API_KEY")
         end
     end
 end
