@@ -2865,6 +2865,46 @@ func TestStartXFRPruning(t *testing.T) {
 	})
 }
 
+// Test that zone transfer pruning is not started when it is disabled.
+func TestStartXFRPruningDisabled(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	err := dbmodel.InitializeSettings(db, 0)
+	require.NoError(t, err)
+
+	// Disable zone transfer pruning.
+	err = dbmodel.SetSettingBool(db, "enable_zone_transfer_pruning", false)
+	require.NoError(t, err)
+
+	// Create the manager.
+	manager, err := NewManager(&appstest.ManagerAccessorsWrapper{
+		DB: db,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, manager)
+	require.IsType(t, &managerImpl{}, manager)
+	defer manager.Shutdown()
+
+	synctest.Test(t, func(t *testing.T) {
+		// Try to start the pruning. It should not be started.
+		isPruned := atomic.Bool{}
+		err = manager.(*managerImpl).startXFRPruning(1*time.Millisecond, func(dbi pg.DBI, xfrMaxAge int64) error {
+			isPruned.Store(true)
+			return nil
+		})
+		require.NoError(t, err)
+		synctest.Wait()
+
+		defer func() {
+			manager.(*managerImpl).stopXFRPruning()
+			synctest.Wait()
+		}()
+
+		require.Never(t, isPruned.Load, 1*time.Second, 100*time.Millisecond)
+	})
+}
+
 // Test that zone transfer pruning is correctly restarted.
 func TestRestartXFRPruning(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
