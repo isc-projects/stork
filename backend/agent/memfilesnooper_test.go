@@ -1379,14 +1379,11 @@ func TestMemfileSnooperGetSnapshotExpiresLeases(t *testing.T) {
 	err = memfileSnooper.Start()
 	require.NoError(t, err)
 
+	var firstSnapshot []*keadata.Lease
 	go func() {
 		// First block of rows.
 		<-readCh
-		snapshot := memfileSnooper.GetSnapshot()
-		require.Len(t, snapshot, 4)
-		for _, row := range snapshot {
-			require.Equal(t, keadata.LeaseStateDefault, row.State)
-		}
+		firstSnapshot = memfileSnooper.GetSnapshot()
 		writeCh <- struct{}{}
 
 		// Second block of rows.
@@ -1396,12 +1393,16 @@ func TestMemfileSnooperGetSnapshotExpiresLeases(t *testing.T) {
 
 	wg.Wait()
 
+	secondSnapshot := memfileSnooper.GetSnapshot()
 	memfileSnooper.Stop()
 
 	// Assert
-	snapshot := memfileSnooper.GetSnapshot()
-	require.Len(t, snapshot, 4)
-	for _, row := range snapshot {
+	require.Len(t, firstSnapshot, 4)
+	for _, row := range firstSnapshot {
+		require.Equal(t, keadata.LeaseStateDefault, row.State)
+	}
+	require.Len(t, secondSnapshot, 4)
+	for _, row := range secondSnapshot {
 		require.Equal(t, keadata.LeaseStateExpiredReclaimed, row.State)
 	}
 }
