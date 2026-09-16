@@ -187,7 +187,7 @@ namespace :release do
           sh 'rm', '-f', sanitize_script
         }
 
-        fetch_file("https://gitlab.isc.org/isc-projects/stork/-/wikis/Releases/sanitize-release-notes.sh", sanitize_script)
+        fetch_file("https://gitlab.isc.org/isc-projects/kea/-/wikis/Release-Notes/sanitize-release-notes.sh", sanitize_script)
         fetch_file("https://gitlab.isc.org/isc-projects/stork/-/wikis/Releases/Release-notes-#{STORK_VERSION}.md", release_notes_filename)
         sh "chmod", "+x", sanitize_script
         sh sanitize_script, release_notes_filename
