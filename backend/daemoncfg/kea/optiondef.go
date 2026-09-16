@@ -103,13 +103,21 @@ func GetDHCPOptionDefinitionFieldType(def DHCPOptionDefinition, position int) (d
 	case RecordOption:
 		recordTypes := def.GetRecordTypes()
 		// Empty record types is theoretically impossible because Kea doesn't
-		// allow it. However, let's be safe and check because it may cause
-		// division by 0. Also, if it is not an array and the position is
-		// out of the record boundaries, return false.
+		// allow it. However, let's be safe and check. Also, if it is not an
+		// array and the position is out of the record boundaries, return
+		// false.
 		if len(recordTypes) == 0 || (!def.GetArray() && (position > len(recordTypes)-1)) {
 			return "", false
 		}
-		recordPosition := position % len(recordTypes)
+		// Per Kea's own semantics, "array" on a record option means the
+		// *last* field type in the record repeats for any positions beyond
+		// the record's fixed fields (e.g. a mandatory flag followed by an
+		// arbitrary number of addresses) - the whole record does not cycle
+		// back to its first field type.
+		recordPosition := position
+		if recordPosition >= len(recordTypes) {
+			recordPosition = len(recordTypes) - 1
+		}
 		return recordTypes[recordPosition], true
 	default:
 		if position > 0 && !def.GetArray() {

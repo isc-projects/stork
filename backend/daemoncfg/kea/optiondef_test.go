@@ -100,31 +100,32 @@ func TestDHCPOptionDefinitionFieldTypeRecord(t *testing.T) {
 }
 
 // Check that option field types are returned for the option comprising
-// an array of records. When the position is greater than the size of
-// the record, the next record field types are returned.
+// a record with a trailing array field. Per Kea's own semantics, "array"
+// on a record option means the *last* field type repeats for any values
+// beyond the record's fixed fields; the record does not cycle back to its
+// first field type. Regression test for a bug where slp-directory-agent
+// (record-types "bool, ipv4-address", array) misidentified the third and
+// later CSV values (meant to be additional ipv4-address values) as bool,
+// because the record was wrapping back to position 0 via a modulo
+// operation on every position, causing Stork to reject the entire subnet
+// containing this option during a config pull.
 func TestDHCPOptionDefinitionFieldTypeRecordArray(t *testing.T) {
 	def := &dhcpOptionDefinition{
 		Array:      true,
 		OptionType: RecordOption,
 		RecordTypes: []DHCPOptionType{
-			Uint8Option,
-			Uint16Option,
-			Uint32Option,
+			BoolOption,
+			IPv4AddressOption,
 		},
 	}
-	for i := 0; i < 3; i++ {
-		offset := i * len(def.RecordTypes)
-		fieldType, ok := GetDHCPOptionDefinitionFieldType(def, offset)
-		require.True(t, ok)
-		require.Equal(t, dhcpmodel.Uint8Field, fieldType)
+	fieldType, ok := GetDHCPOptionDefinitionFieldType(def, 0)
+	require.True(t, ok)
+	require.Equal(t, dhcpmodel.BoolField, fieldType)
 
-		fieldType, ok = GetDHCPOptionDefinitionFieldType(def, offset+1)
+	for i := 1; i < 5; i++ {
+		fieldType, ok := GetDHCPOptionDefinitionFieldType(def, i)
 		require.True(t, ok)
-		require.Equal(t, dhcpmodel.Uint16Field, fieldType)
-
-		fieldType, ok = GetDHCPOptionDefinitionFieldType(def, offset+2)
-		require.True(t, ok)
-		require.Equal(t, dhcpmodel.Uint32Field, fieldType)
+		require.Equal(t, dhcpmodel.IPv4AddressField, fieldType)
 	}
 }
 
