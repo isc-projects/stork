@@ -501,6 +501,75 @@ This section describes the solutions for some common issues with the Stork serve
               to make the same change for every agent where you want this feature to
               be enabled.
 
+---------------
+
+:Issue:       The Stork server does not display any zone transfers in the Zone Transfers List page
+              when BIND writes logs to files.
+:Solution:    Check that zone transfer tracking is enabled on the respective Stork agents
+              and that the BIND servers log zone transfers at least at ``info`` severity level.
+              Make sure that log files containing zone transfers are accessible to the Stork agents.
+:Explanation: There are numerous possible reasons why zone transfers are not displayed in the
+              Zone Transfers List page. Since zone transfer tracking may potentially be very
+              resource-intensive (depending on the number of zones and the frequency of zone transfers),
+              it is disabled by default on the Stork agents. The admin must explicitly enable zone
+              transfers using the ``--enable-zone-transfer-tracking`` command-line flag or the
+              ``STORK_AGENT_ENABLE_ZONE_TRANSFER_TRACKING=1`` environment variable.
+
+              Stork agents detect zone transfers by parsing the BIND servers' log files. The useful
+              logs are typically logged at ``info`` severity level. If logging at this level is too
+              verbose, the admin can configure the servers to only log zone transfer events at
+              this level and other events at less verbose levels. It is best to log zone transfer
+              events into separate files, so the Stork agent does not have to parse unrelated
+              logs among the zone transfer logs. Finally, the administrator must ensure proper
+              permissions on the log files, so the Stork agent can read them.
+
+---------------
+
+:Issue:       The Stork server does not display any zone transfers in the Zone Transfers List page
+              when BIND writes logs to the systemd journal.
+:Solution:    Check that zone transfer tracking is enabled on the respective Stork agents
+              and that the BIND servers log zone transfers at least at ``info`` severity level.
+              Make sure that Stork agents were started with the ``--xfr-tracking-systemd-unit`` flag or
+              the ``STORK_AGENT_XFR_TRACKING_SYSTEMD_UNIT`` environment variable set to the BIND service
+              name (typically ``named.service`` or simply ``named``). Finally, make sure that
+              ``journalctl`` command is runnable by the Stork agent.
+:Explanation: Stork agent has no means to know whether BIND was started using ``systemd`` or not.
+              Therefore, the administrator must explicitly enable zone transfers tracking in the
+              ``systemd`` journal. This is enabled with the ``--xfr-tracking-systemd-unit`` flag or
+              the ``STORK_AGENT_XFR_TRACKING_SYSTEMD_UNIT`` environment variable. When enabled,
+              Stork agent runs the ``journalctl`` command to monitor zone transfers logged into
+              the systemd journal. The command is run with the following parameters:
+
+              .. code-block:: console
+
+                $ journalctl -o short-iso-precise -f -u named.service --since "1 days ago"
+
+              To troubleshoot the problems with the journal monitoring, the administrator can
+              run this command manually and check the output.
+
+
+---------------
+
+:Issue:       Timestamps in the Zone Transfers List page are invalid (i.e., ``0001-01-01 00:00:00``).
+:Solution:    Make sure that BIND is configured to print time in the logs using the ``print-time yes`` setting.
+:Explanation: When Stork agent is started it looks into past logs to detect zone transfers before
+              it waits for the new ones. It guarantees that no transfers are missed during the
+              periods of Stork agent's inactivity. To ensure correctness of the timestamps of
+              these past transfers, the agent must use the timestamps from the BIND logs.
+              The agent will still report the transfers when logs missing the timestamps. However,
+              in that case, all transfers will have the zero timestamp printed in the dashboard.
+              This can be corrected by adding ``print-time yes`` in the configuration of the
+              logging channel used by ``xfer-in`` and ``xfer-out`` categories. For example:
+
+              .. code-block:: text
+
+                channel xfer-in {
+                    file "/var/log/bind/xfer-in" versions 3 size 10M;
+                    print-time yes;
+                    severity info;
+                };
+
+
 High Virtual Memory Usage
 =========================
 

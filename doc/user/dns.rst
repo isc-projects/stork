@@ -213,6 +213,88 @@ See `match-clients <https://bind9.readthedocs.io/en/stable/reference.html#namedc
 and `allow-transfer <https://bind9.readthedocs.io/en/stable/reference.html#namedconf-statement-allow-transfer>`_
 sections of the BIND 9 reference manual for more details.
 
+Zone Transfer Monitoring Settings
+---------------------------------
+
+The :ref:`zone-transfers-monitoring` section documents the usage of the zone transfer monitoring
+dashboard to track the transfers between all BIND servers in the network administrated with Stork.
+In this section, it is described how BIND servers should be configured to make use of this feature.
+
+Stork agent takes advantage of BIND 9 logging to detect zone transfers on that BIND instance.
+It can parse and follow both the logs emitted directly to a file or to the ``systemd`` journal.
+
+Stork can infer the log files to track from the BIND configuration when BIND is detected. Such
+a configuration can look similar to the following:
+
+.. code-block:: text
+
+    logging {
+        channel default_log {
+            file "/var/log/bind/default.log" versions 3 size 20m;
+            print-time yes;
+            print-category yes;
+            print-severity yes;
+            severity info;
+        };
+        channel xfer-in {
+            file "/var/log/bind/xfer-in" versions 3 size 20m;
+            print-time yes;
+            print-severity yes;
+            severity info;
+        };
+        channel xfer-out {
+            file "/var/log/bind/xfer-out" versions 3 size 20m;
+            print-time yes;
+            print-severity yes;
+            severity info;
+        };
+        category xfer-out { xfer-out; };
+        category xfer-in { xfer-in; };
+    };
+
+
+It creates dedicated channels for the zone transfer logs. Stork agent will track the
+logs from these channels but not the default channel. Even though, separation of the logs
+is not strictly required, it is recommended in the installations with large logs volumes
+to avoid the performance degradation. If zone transfer monitoring logs are mixed with the
+other logs, Stork agent will have to work harder to filter those that are relevant.
+
+The ``severity`` of the log messages in the zone transfer channels should be set to ``info``
+at least. It can be set to ``debug``. Logging at higher levels (e.g., ``warning`` or ``notice``)
+will effectively silence any logs useful for zone transfers detection. As a result, the zone
+transfers from the particular server will not appear in the dashboard.
+
+Stork agent should be able to extract the relevant logging settings in most cases. Still, the
+administrators can use two Stork agent's command line switches
+(i.e., ``--xfr-in-tracking-path`` and ``--xfr-out-tracking-path``) and the corresponding
+environment variables (i.e., ``STORK_AGENT_XFR_IN_TRACKING_PATH`` and
+``STORK_AGENT_XFR_OUT_TRACKING_PATH``) to specify the exact locations of the log files to track.
+Both can point to the same file if both incoming and outgoing zone transfers are logged
+to it.
+
+Stork agent must be run with the ``--enable-xfr-tracking`` switch or the ``STORK_AGENT_ENABLE_XFR_TRACKING``
+environment variable set to ``true`` to enable zone transfer monitoring.
+
+For example:
+
+.. code-block:: text
+
+    $ stork-agent --enable-xfr-tracking --xfr-in-tracking-path /var/log/named/xfer-in --xfr-out-tracking-path /var/log/named/xfer-out
+
+
+If BIND server is running as a ``systemd`` service, the agent must be configured to track the
+``systemd`` logs instead. In this case, the agent must be started with the ``--xfr-tracking-systemd-unit``
+switch or the ``STORK_AGENT_XFR_TRACKING_SYSTEMD_UNIT`` environment variable set to the BIND service name
+(typically ``named.service`` or simply ``named``).
+
+For example:
+
+.. code-block:: text
+
+    $ stork-agent --enable-xfr-tracking --xfr-tracking-systemd-unit named.service
+
+In that case, the Stork agent runs the ``journalctl`` command to track the logs from ``systemd`` service.
+
 
 PowerDNS
 ~~~~~~~~
@@ -386,3 +468,103 @@ get the latest snapshot of the zone contents, click the ``Refresh from DNS``
 button. Check ``Cached from DNS server on`` timestamp to see the age of the
 presented zone contents.
 
+.. _zone-transfers-monitoring:
+
+Zone Transfers Monitoring
+=========================
+
+In the networks with interconnected primary and secondary DNS servers, it is possible
+to monitor the zone transfers between them. Zone transfers are used by the DNS servers
+to synchronize zone contents. A zone configured or updated on a primary DNS server is
+propagated to the secondary DNS servers connected to the primary. The secondary DNS servers
+can have other secondary DNS servers connected to them. Moreover, a secondary DNS server
+for a particular zone can be a primary DNS server for another zone. With this level of
+granularity, the administrators can sometimes create very complex hierarchical topologies
+of the DNS services which increases the risk of the failures, and difficulties in troubleshooting.
+
+To help with monitoring and troubleshooting, Stork provides the zone transfer monitoring
+dashboard.
+
+
+Zone Transfers Monitoring Dashboard
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Navigate to the ``DNS --> Zone Transfers`` to open the dashboard.
+
+The dashboard displays zone transfers sorted from the one that started most recently
+(i.e., by the ``Started At`` timestamp). This is the timestamp read from the DNS
+server logs marking the beginning of the zone transfer. In other words, this is the
+exact moment when the zone transfer was initiated by the DNS server.
+
+When expanding a zone transfer row, there are also other timestamps displayed in the
+``Transfer Details`` section. The ``Created At`` timestamp marks the moment when the
+zone transfer was first detected and recorded by Stork. The ``Completed At`` timestamp
+indicates when the zone transfer was completed (either successfully or unsuccessfully).
+
+Zone transfers can have one of the following statuses:
+
+- ``started`` - the zone transfer was initiated and it is still in progress
+- ``completed`` - the zone transfer was completed successfully
+- ``message`` - the zone transfer neither completed successfully nor failed, but a log message pertaining to this zone transfer was logged after it was started
+- ``failed`` - the zone transfer failed as indicated by the zone transfer status log message
+- ``up-to-date`` - the zone transfer was initiated but the zone was already up to date, as indicated by the received SOA record, so the transfer is discontinued
+
+Stork marks the zone transfer as ``failed`` when it comes across BIND log message similar to this:
+
+.. code-block:: text
+
+    23-Feb-2026 10:41:27.147 0x7ffffb63b000: transfer of 'bind9.example.org/IN' from 172.24.0.53#53: Transfer status: connection refused
+
+
+It clearly indicates the transfer failure. However, it is possible that BIND logs some more subtle messages indirectly indicating
+the transfer failure. In that case, the zone transfer status may be set to ``message``, and the administrator should inspect
+the ``Log Message`` field to evaluate the transfer result. Analyzing BIND logs directly may also be helpful.
+
+The ``Primary`` and the ``Secondary`` columns hold the IP addresses or names of the machines hosting the DNS servers participating
+in the transfers. The ``Primary`` is the DNS server performing an outgoing transfer, and the ``Secondary`` is the DNS server
+performing an incoming transfer. These columns may contain either an IP address (without the link) or a link to the Stork agent
+monitoring the given DNS server. It is an IP address when the DNS server participating the transfer is outside of the network
+monitored by Stork or the DNS server is within the network but is not monitored by Stork.
+
+For example, if the local DNS server mirrors the root zone:
+
+.. code-block:: text
+
+    zone "." {
+        type mirror;
+        allow-transfer { any; };
+        primaries { 192.5.5.241; };
+    };
+
+
+the ``Primary`` column will contain the IP address ``192.5.5.241`` (without the link), and the ``Secondary`` column will contain the link
+to the Stork agent where the local DNS server transferring from the F-root server is running.
+
+The ``Statistics`` field contains the statistics for the zone transfer reported by BIND in the logs.
+
+
+Local Zone Transfers
+~~~~~~~~~~~~~~~~~~~~
+
+Stork agent uses `AXFR (authoritative transfer) <https://www.rfc-editor.org/info/rfc5936>`_
+to fetch zone contents from a local DNS server. If a user clicks the ``Show Zone`` button and the
+zone contents are not yet cached in the Stork server database, the zone transfer is initiated
+between the agent and the local DNS server. These transfers are captured by the zone transfer
+monitoring but they are not shown in the dashboard by default. They are less interesting from
+the administrator's perspective and presenting them could clutter the dashboard.
+
+To see the local zone transfers in the dashboard, check the ``Include local transfers``
+checkbox above the transfers list. They are marked with the ``local`` tag in the
+``Primary`` and the ``Secondary`` columns, so it is easy to distinguish them from
+the transfers between the DNS servers.
+
+
+Removing Old Zone Transfers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To prevent continued growth of the database size, Stork periodically removes the old
+zone transfers. By default, zone transfers started more than 24 hours ago are removed.
+This setting can be controlled on the Settings page in the ``Zone Transfers`` section.
+Set the new value for the ``Maximum age of the zone transfers to keep`` in seconds.
+Note that this value must be greater or equal 60 seconds. In order to disable the removal
+of old zone transfers, uncheck the ``Enable zone transfer pruning`` checkbox.
