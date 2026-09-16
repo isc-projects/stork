@@ -56,30 +56,30 @@ func GetDefaultListenOnClauses() *ListenOnClauses {
 func (l ListenOnClauses) GetMatchingListenOnClause(port int64) *ListenOn {
 	// For default port and no listen-on clauses, return the default
 	// listen-on clause.
-	if len(l) == 0 && port == 53 {
+	if len(l) == 0 && (port == 0 || port == 53) {
 		return (*GetDefaultListenOnClauses())[0]
 	}
 	// Check listen-on clauses that include 127.0.0.1 or 0.0.0.0.
 	for _, listenOn := range l {
-		if listenOn.GetPort() == port && !listenOn.Includes("none") && (listenOn.Includes("127.0.0.1") || listenOn.Includes("0.0.0.0")) {
+		if (port == 0 || listenOn.GetPort() == port) && !listenOn.Includes("none") && (listenOn.Includes("127.0.0.1") || listenOn.Includes("0.0.0.0")) {
 			return listenOn
 		}
 	}
 	// Check listen-on-v6 clauses that include ::1 or ::.
 	for _, listenOn := range l {
-		if listenOn.GetPort() == port && !listenOn.Includes("none") && (listenOn.Includes("::1") || listenOn.Includes("::")) {
+		if (port == 0 || listenOn.GetPort() == port) && !listenOn.Includes("none") && (listenOn.Includes("::1") || listenOn.Includes("::")) {
 			return listenOn
 		}
 	}
 	// Check listen-on clauses that include any.
 	for _, listenOn := range l {
-		if listenOn.GetPort() == port && !listenOn.Includes("none") && listenOn.Includes("any") {
+		if (port == 0 || listenOn.GetPort() == port) && !listenOn.Includes("none") && listenOn.Includes("any") {
 			return listenOn
 		}
 	}
 	// Check listen-on clauses that include the specified port.
 	for _, listenOn := range l {
-		if listenOn.GetPort() == port && !listenOn.Includes("none") {
+		if (port == 0 || listenOn.GetPort() == port) && !listenOn.Includes("none") {
 			return listenOn
 		}
 	}

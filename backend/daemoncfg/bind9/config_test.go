@@ -690,6 +690,60 @@ func TestGetAXFRCredentialsForDefaultViewListenOnAllowTransferPreferredPort(t *t
 	require.Equal(t, "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=", secret)
 }
 
+// Test that the custom port is used when allow-transfer lacks the port but
+// the listen-on clause specifies the port.
+func TestGetAXFRCredentialsForDefaultViewListenOnNoAllowTransferPort(t *testing.T) {
+	config := `
+		options {
+			allow-transfer { any; };
+			listen-on port 54 { 127.0.0.1; };
+			listen-on-v6 port 853 { 2001:db8:1::1; ::1; };
+		};
+		key "trusted-key" {
+			algorithm hmac-sha256;
+			secret "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=";
+		};
+	`
+	cfg, err := NewParser().Parse("", "", strings.NewReader(config))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	address, keyName, algorithm, secret, err := cfg.GetAXFRCredentials(DefaultViewName, "example.com")
+	require.NoError(t, err)
+	require.Equal(t, "127.0.0.1:54", address)
+	require.Empty(t, keyName)
+	require.Empty(t, algorithm)
+	require.Empty(t, secret)
+}
+
+// Test that the custom port is used when allow-transfer at the view level
+// lacks the port but the listen-on clause specifies the port.
+func TestGetAXFRCredentialsForViewListenOnNoAllowTransferPort(t *testing.T) {
+	config := `
+		options {
+			listen-on port 853 { 127.0.0.1; };
+			listen-on-v6 port 54 { 2001:db8:1::1; ::1; };
+		};
+		key "trusted-key" {
+			algorithm hmac-sha256;
+			secret "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=";
+		};
+		view "trusted" {
+			allow-transfer { key trusted-key; };
+		};
+	`
+	cfg, err := NewParser().Parse("", "", strings.NewReader(config))
+	require.NoError(t, err)
+	require.NotNil(t, cfg)
+
+	address, keyName, algorithm, secret, err := cfg.GetAXFRCredentials("trusted", "example.com")
+	require.NoError(t, err)
+	require.Equal(t, "127.0.0.1:853", address)
+	require.Equal(t, "trusted-key", keyName)
+	require.Equal(t, "hmac-sha256", algorithm)
+	require.Equal(t, "VO6xA4Tc1PWYaqMuPaf6wfkITb+c9/mkzlEaWJavejU=", secret)
+}
+
 func TestGetAXFRCredentialsForDefaultViewListenOnAllowTransferAny(t *testing.T) {
 	config := `
 		options {

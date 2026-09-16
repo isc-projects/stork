@@ -1,6 +1,7 @@
 package bind9config
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -22,15 +23,20 @@ func TestGetDefaultListenOnClauses(t *testing.T) {
 	require.False(t, (*listenOnClauses)[0].Includes("::"))
 }
 
-// Test that the default listen-on clause is returned for port 53.
+// Test that the default listen-on clause is returned for port 0 (unspecified)or 53.
 func TestGetMatchingListenOnDefault(t *testing.T) {
-	listenOnClauses := GetDefaultListenOnClauses()
-	listenOn := listenOnClauses.GetMatchingListenOnClause(53)
-	require.NotNil(t, listenOn)
-	require.Len(t, *listenOnClauses, 1)
-	require.Len(t, (*listenOnClauses)[0].AddressMatchList.Elements, 1)
-	require.Equal(t, "127.0.0.1", (*listenOnClauses)[0].AddressMatchList.Elements[0].IPAddressOrACLName)
-	require.Equal(t, int64(53), listenOn.GetPort())
+	testCases := []int64{0, 53}
+	for _, testCase := range testCases {
+		t.Run(fmt.Sprintf("port %d", testCase), func(t *testing.T) {
+			listenOnClauses := GetDefaultListenOnClauses()
+			listenOn := listenOnClauses.GetMatchingListenOnClause(testCase)
+			require.NotNil(t, listenOn)
+			require.Len(t, *listenOnClauses, 1)
+			require.Len(t, (*listenOnClauses)[0].AddressMatchList.Elements, 1)
+			require.Equal(t, "127.0.0.1", (*listenOnClauses)[0].AddressMatchList.Elements[0].IPAddressOrACLName)
+			require.Equal(t, int64(53), listenOn.GetPort())
+		})
+	}
 }
 
 // Test that getting a listen-on clause when multiple clauses exist and the

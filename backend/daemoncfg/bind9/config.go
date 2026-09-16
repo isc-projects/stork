@@ -230,8 +230,8 @@ func (c *Config) getAXFRCredentialsForDefaultView(zoneName string) (address stri
 		keys = append(keys, nil)
 	}
 	// The allow-transfer clause may optionally specify the port number. The client should send
-	// the request to this port number. The default port is 53.
-	port := int64(53)
+	// the request to this port number.
+	var port int64
 	if allowTransfer.Port != nil {
 		port = *allowTransfer.Port
 	}
@@ -353,8 +353,8 @@ func (c *Config) getAXFRCredentialsForView(viewName string, zoneName string) (ad
 	}
 
 	// The allow-transfer clause may optionally specify the port number. The client should send
-	// the request to this port number. The default port is 53.
-	port := int64(53)
+	// the request to this port number.
+	var port int64
 	if allowTransfer.Port != nil {
 		port = *allowTransfer.Port
 	}
