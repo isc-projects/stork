@@ -125,6 +125,7 @@ Release notes: {release_notes}
    1. Run `upload_to_repo_hooks`.
    1. Wait for the jobs to complete.
    1. [ ] Check that the tarballs were uploaded to repo.isc.org:/data/shared/sweng/stork/releases/.
+   1. [ ] Check that release notes in repo.isc.org:/data/shared/sweng/stork/releases/ were sanitized with [kea.wiki's sanitize-release-notes.sh](https://gitlab.isc.org/isc-projects/kea/-/wikis/Release-Notes/sanitize-release-notes.sh) by upload job. It is also advised to sanitize release notes inside stork.wiki with mentioned script.
 1. [ ] Sign the tarballs. Run QA script [stork/release/sign-tarballs.sh](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/stork/release/sign-tarballs.sh).
     * Example command: `./sign-tarballs.sh 1.2.0 wlodek 0259A33B5F5A3A4466CF345C7A5E084CACA51884`
     * To get the fingerprint, run `gpg --list-keys wlodek@isc.org`.
