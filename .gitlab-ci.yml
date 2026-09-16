@@ -138,6 +138,7 @@ stages:
 .nodejs_cache_paths: &nodejs_cache_paths
   paths:
     - .npm
+    - tools/java
   policy: $CACHE_POLICY
 
 # For all below cache templates, the default cache key is using MR branch name as suffix.

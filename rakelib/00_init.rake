@@ -720,6 +720,9 @@ gobin = tool_command_output("go", "env", "GOBIN")
 gobin = File.join(gopath, "bin") if gobin.nil? || gobin.empty?
 directory go_tools_dir
 
+java_tools_dir = File.join(tools_dir, "java")
+directory java_tools_dir
+
 ruby_tools_dir = File.join(tools_dir, "ruby")
 directory ruby_tools_dir
 
@@ -867,8 +870,8 @@ NPM = require_manual_install_on("npm", any_system)
 
 NPX = require_manual_install_on("npx", any_system)
 
-OPENAPI_GENERATOR = File.join(tools_dir, "openapi-generator-cli.jar")
-file OPENAPI_GENERATOR => [WGET, tools_dir] do
+OPENAPI_GENERATOR = File.join(java_tools_dir, "openapi-generator-cli.jar")
+file OPENAPI_GENERATOR => [WGET, java_tools_dir] do
     fetch_file "https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/#{openapi_generator_ver}/openapi-generator-cli-#{openapi_generator_ver}.jar", OPENAPI_GENERATOR
     sh "touch", "-c", OPENAPI_GENERATOR
 end
