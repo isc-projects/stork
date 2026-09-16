@@ -516,7 +516,7 @@ end
 
 namespace :prepare do
     desc 'Install the external dependencies related to the codebase'
-    task :codebase => [NFPM, PROTOC_GEN_GO, PROTOC_GEN_GO_GRPC, MOCKGEN, TPARSE, GO_JUNIT_REPORT, GOCOVER_COBERTURA] do
+    task :codebase do
         find_and_prepare_deps(__FILE__)
     end
 
@@ -538,6 +538,9 @@ namespace :prepare do
 
     desc 'Prepare Sphinx dependencies needed for documentation building'
     task :doc_deps => [SPHINX_BUILD]
+
+    desc 'Trigger installation of a subset of backend (GO) dependencies required in CI'
+    task :ci => [NFPM, PROTOC_GEN_GO, PROTOC_GEN_GO_GRPC, MOCKGEN, TPARSE, GO_JUNIT_REPORT, GOCOVER_COBERTURA]
 end
 
 namespace :check do

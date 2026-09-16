@@ -356,7 +356,7 @@ stages:
 
   script:
     - rake prepare:dist
-    - rake prepare:codebase
+    - rake prepare:ci
     - rake prepare:deps
     - rake hook:prepare_deps
 
@@ -390,7 +390,7 @@ rebuild_cache_amd64:
     - *playwright_browsers_cache
   script:
     - rake prepare
-    - rake prepare:codebase
+    - rake prepare:ci
     - rake prepare:dev
     - rake prepare:deps
     - rake hook:prepare
@@ -406,7 +406,7 @@ rebuild_cache_arm64:
     - *nodejs_arm_cache
   script:
     - rake prepare
-    - rake prepare:codebase
+    - rake prepare:ci
     - rake prepare:deps
     - rake hook:prepare
     - rake hook:prepare_deps
