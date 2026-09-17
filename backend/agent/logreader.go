@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os/exec"
 
 	"github.com/nxadm/tail"
 	"github.com/pkg/errors"
@@ -270,6 +271,12 @@ func (lc *systemdLogReader) capture(ctx context.Context, options ...logReaderCap
 			// Cleanup the resources when we're done.
 			close(lines)
 			if err := cmd.Wait(); err != nil {
+				var exitErr *exec.ExitError
+				if errors.As(err, &exitErr) {
+					// Exit error is expected this stage.
+					return
+				}
+				// Other errors are unexpected.
 				log.WithError(err).Error("failed to wait for the journalctl command to complete")
 			}
 		}()
