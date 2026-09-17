@@ -357,9 +357,22 @@ namespace :hook do
     desc "Trigger GO hook dependencies installation.
         HOOK_DIR - the hook (plugin) directory - optional, default: #{default_hook_directory_rel}"
     task :prepare_deps => [GO] do
+        require 'tmpdir'
+        mod_files = ["go.mod", "go.sum"]
+
         forEachHook do |dir_name, project_path, src_path|
+            # Make a backup of the original mod files
             Dir.chdir(src_path) do
-                sh GO, "mod", "tidy"
+                Dir.mktmpdir do |temp|
+                    # Preserve the original mod files.
+                    sh "cp", *mod_files, temp
+
+                    # Remap the core dependency to the local directory.
+                    remap_core_local()
+
+                    # Revert the changes in Go mod files.
+                    sh "cp", *mod_files.collect { |f| File.join(temp, f) }, "."
+                end
             end
         end
     end
