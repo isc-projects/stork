@@ -363,8 +363,8 @@ func (sa *StorkAgent) ForwardRndcCommand(ctx context.Context, in *agentapi.Forwa
 		return response, nil
 	}
 
-	bind9Daemon := daemon.(*Bind9Daemon)
-	if bind9Daemon == nil {
+	bind9Daemon, ok := daemon.(*Bind9Daemon)
+	if !ok {
 		rndcRsp.Status.Code = agentapi.Status_ERROR
 		rndcRsp.Status.Message = fmt.Sprintf("incorrect daemon found: %s instead of BIND 9", daemon.GetName())
 		response.Status = rndcRsp.Status
@@ -620,8 +620,9 @@ func (sa *StorkAgent) ForwardToKeaOverHTTP(ctx context.Context, in *agentapi.For
 	var daemon *keaDaemon
 	if unknownDaemon := sa.Monitor.GetDaemonByAccessPoint(AccessPointControl, host, port); unknownDaemon != nil {
 		logFields["daemon"] = unknownDaemon.String()
-		daemon = unknownDaemon.(*keaDaemon)
-		if daemon == nil {
+		var ok bool
+		daemon, ok = unknownDaemon.(*keaDaemon)
+		if !ok {
 			log.WithFields(logFields).Warn("daemon found is not a Kea daemon")
 			response.Status.Code = agentapi.Status_ERROR
 			response.Status.Message = "incorrect URL to Kea CA"

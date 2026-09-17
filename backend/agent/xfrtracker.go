@@ -332,7 +332,9 @@ func deriveTransferStats(source, target *bind9xfr.State) {
 func (t *xfrTracker) getOpenZoneTransfersUnsafe() []bind9xfr.State {
 	states := make([]bind9xfr.State, 0, t.openTransfersList.Len())
 	for element := t.openTransfersList.Front(); element != nil; element = element.Next() {
-		states = append(states, *element.Value.(*bind9xfr.State))
+		if state, ok := element.Value.(*bind9xfr.State); ok && state != nil {
+			states = append(states, *state)
+		}
 	}
 	return states
 }
@@ -350,7 +352,9 @@ func (t *xfrTracker) getOpenZoneTransfers() []bind9xfr.State {
 func (t *xfrTracker) getClosedZoneTransfersUnsafe() []bind9xfr.State {
 	states := make([]bind9xfr.State, 0, t.closedTransfersList.Len())
 	for element := t.closedTransfersList.Front(); element != nil; element = element.Next() {
-		states = append(states, *element.Value.(*bind9xfr.State))
+		if state, ok := element.Value.(*bind9xfr.State); ok && state != nil {
+			states = append(states, *state)
+		}
 	}
 	return states
 }

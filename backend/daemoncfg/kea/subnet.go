@@ -483,7 +483,10 @@ func CreateSubnet4(daemonID int64, lookup DHCPOptionDefinitionLookup, subnet Sub
 			keaPool.OptionData = append(keaPool.OptionData, *optionData)
 		}
 		// Pool-level Kea-specific parameters.
-		keaPoolAccessor := pool.(AddressPool)
+		keaPoolAccessor, ok := pool.(AddressPool)
+		if !ok {
+			return nil, errors.Errorf("specified pool does not implement the AddressPool interface: %+v", pool)
+		}
 		params := keaPoolAccessor.GetKeaParameters()
 		if params.ClientClass != nil {
 			keaPool.ClientClass = params.ClientClass
@@ -563,7 +566,10 @@ func CreateSubnet6(daemonID int64, lookup DHCPOptionDefinitionLookup, subnet Sub
 			keaPool.OptionData = append(keaPool.OptionData, *optionData)
 		}
 		// Pool-level Kea-specific parameters.
-		keaPoolAccessor := pool.(AddressPool)
+		keaPoolAccessor, ok := pool.(AddressPool)
+		if !ok {
+			return nil, errors.Errorf("specified pool does not implement the AddressPool interface: %+v", pool)
+		}
 		params := keaPoolAccessor.GetKeaParameters()
 		if params.ClientClass != nil {
 			keaPool.ClientClass = params.ClientClass
@@ -607,7 +613,10 @@ func CreateSubnet6(daemonID int64, lookup DHCPOptionDefinitionLookup, subnet Sub
 			keaPool.OptionData = append(keaPool.OptionData, *optionData)
 		}
 		// Pool-level Kea-specific parameters.
-		keaPoolAccessor := pool.(PrefixPool)
+		keaPoolAccessor, ok := pool.(PrefixPool)
+		if !ok {
+			return nil, errors.Errorf("specified pool does not implement the PrefixPool interface: %+v", pool)
+		}
 		params := keaPoolAccessor.GetKeaParameters()
 		if params.ClientClass != nil {
 			keaPool.ClientClass = params.ClientClass

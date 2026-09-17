@@ -9,6 +9,7 @@ import (
 )
 
 //go:generate mockgen -package=keaconfig_test -destination=addresspoolmock_test.go isc.org/stork/daemoncfg/kea AddressPool
+//go:generate mockgen -package=keaconfig_test -destination=addresspoolaccessormock_test.go isc.org/stork/datamodel/dhcp AddressPoolAccessor
 
 // Test parsing a pool address range, ensuring that the whitespace
 // is removed between the lower bound and the upper bound.

@@ -96,9 +96,8 @@ func CreateEvent(level dbmodel.EventLevel, text string, objects ...interface{}) 
 			streams = append(streams, entity)
 
 		case string:
-			s := obj.(string)
-			if len(s) > 0 {
-				details = s
+			if len(entity) > 0 {
+				details = entity
 			}
 
 		case error:

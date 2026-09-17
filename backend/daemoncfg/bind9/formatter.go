@@ -431,13 +431,13 @@ func getFormatterClauseFromStruct(s any, filter *Filter) formatterOutput {
 	for i := 0; i < structValue.NumField(); i++ {
 		field := structValue.Field(i)
 		t := field.Type()
-		if t.Implements(reflect.TypeOf((*formattedElement)(nil)).Elem()) {
+		if t.Implements(reflect.TypeFor[formattedElement]()) {
 			if !field.IsNil() {
 				filterTag := structType.Field(i).Tag.Get("filter")
 				if filterTag == "" {
 					return field.Interface().(formattedElement).getFormattedOutput(filter)
 				}
-				for _, tag := range strings.Split(filterTag, ",") {
+				for tag := range strings.SplitSeq(filterTag, ",") {
 					if filter.IsEnabled(FilterType(tag)) {
 						return field.Interface().(formattedElement).getFormattedOutput(filter)
 					}

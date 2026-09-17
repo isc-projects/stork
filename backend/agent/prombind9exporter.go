@@ -894,11 +894,9 @@ func (pbe *PromBind9Exporter) Start() {
 	pbe.procExporter = collectors.NewProcessCollector(
 		collectors.ProcessCollectorOpts{
 			PidFn: func() (int, error) {
-				for _, d := range pbe.Monitor.GetDaemons() {
-					if d.GetName() == daemonname.Bind9 {
-						daemonBIND9 := d.(*Bind9Daemon)
-						pid := daemonBIND9.pid
-						return int(pid), nil
+				for _, daemon := range pbe.Monitor.GetDaemons() {
+					if d, ok := daemon.(*Bind9Daemon); ok {
+						return int(d.pid), nil
 					}
 				}
 
@@ -983,25 +981,36 @@ func (pbe *PromBind9Exporter) scrapeServerStat(statMap map[string]interface{}, s
 
 // scrapeTimeStats stores time related statistics from statMap.
 func (pbe *PromBind9Exporter) scrapeTimeStats(statMap map[string]interface{}) (err error) {
-	var timeVal time.Time
-	var timeStr string
-
 	// boot_time_seconds
-	timeStr = getStat(statMap, "boot-time").(string)
-	timeVal, err = time.Parse(time.RFC3339, timeStr)
+	v := getStat(statMap, "boot-time")
+	timeStr, ok := v.(string)
+	if !ok {
+		return errors.Errorf("parsed boot-time %+v is not a string", v)
+	}
+	timeVal, err := time.Parse(time.RFC3339, timeStr)
 	if err != nil {
 		return errors.Wrapf(err, "problem parsing time %+s", timeStr)
 	}
 	pbe.stats.BootTime = timeVal
+
 	// config_time_seconds
-	timeStr = getStat(statMap, "config-time").(string)
+	v = getStat(statMap, "config-time")
+	timeStr, ok = v.(string)
+	if !ok {
+		return errors.Errorf("parsed config-time %+v is not a string", v)
+	}
 	timeVal, err = time.Parse(time.RFC3339, timeStr)
 	if err != nil {
 		return errors.Wrapf(err, "problem parsing time %+s", timeStr)
 	}
 	pbe.stats.ConfigTime = timeVal
+
 	// current_time_seconds
-	timeStr = getStat(statMap, "current-time").(string)
+	v = getStat(statMap, "current-time")
+	timeStr, ok = v.(string)
+	if !ok {
+		return errors.Errorf("parsed current-time %+v is not a string", v)
+	}
 	timeVal, err = time.Parse(time.RFC3339, timeStr)
 	if err != nil {
 		return errors.Wrapf(err, "problem parsing time %+s", timeStr)
@@ -1246,7 +1255,7 @@ func (pbe *PromBind9Exporter) setDaemonStats(stats map[string]any) (ret error) {
 		return errors.Errorf("no 'views' in response: %+v", stats)
 	}
 
-	views := viewsIfc.(map[string]interface{})
+	views, ok := viewsIfc.(map[string]interface{})
 	if !ok {
 		return errors.Errorf("problem casting viewsIfc: %+v", viewsIfc)
 	}

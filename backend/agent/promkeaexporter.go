@@ -981,20 +981,24 @@ func (pke *PromKeaExporter) collectStats() error {
 	activeDHCP6DaemonsCount := 0
 
 	for _, daemon := range daemons {
-		switch daemon.GetName() {
+		keaDaemon, ok := daemon.(*keaDaemon)
+		if !ok {
+			// Ignore non-Kea daemons.
+			continue
+		}
+
+		switch keaDaemon.GetName() {
 		case daemonname.CA, daemonname.D2:
 			keaDaemonsCount++
-			// These daemons doesn't support statistic-get-all command.
+			// These daemons don't support statistic-get-all command.
 			continue
 		case daemonname.DHCPv4, daemonname.DHCPv6:
 			keaDaemonsCount++
 			// Proceed.
 		default:
-			// Ignore non-kea daemons.
+			// Ignore kea daemons with unknown name.
 			continue
 		}
-
-		keaDaemon := daemon.(*keaDaemon)
 
 		// Request to kea dhcp daemons for getting all stats.
 		request := keactrl.NewCommandBase(keactrl.StatisticGetAll, keaDaemon.GetName())

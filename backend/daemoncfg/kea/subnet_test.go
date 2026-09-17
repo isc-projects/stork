@@ -653,6 +653,27 @@ func TestCreateSubnet4(t *testing.T) {
 	require.EqualValues(t, 1001, *subnet4.ValidLifetime)
 }
 
+// Test that the CreateSubnet4 function returns an error when any of the address pools does not
+// implement the AddressPool interface.
+func TestCreateSubnet4InvalidAddressPoolType(t *testing.T) {
+	controller := gomock.NewController(t)
+	// The AddressPoolAccessor does not implement the AddressPool interface.
+	poolMock := NewMockAddressPoolAccessor(controller)
+	poolMock.EXPECT().GetLowerBound().AnyTimes().Return("10.0.0.10")
+	poolMock.EXPECT().GetUpperBound().AnyTimes().Return("10.0.0.20")
+	poolMock.EXPECT().GetDHCPOptions().AnyTimes().Return([]dhcpmodel.DHCPOptionAccessor{})
+	// The subnet returns the address pool having invalid type.
+	subnetMock := NewMockSubnetAccessor(controller)
+	subnetMock.EXPECT().GetID(gomock.Any()).Return(int64(1))
+	subnetMock.EXPECT().GetPrefix().Return("10.0.0.0/8")
+	subnetMock.EXPECT().GetUserContext(gomock.Any()).Return(map[string]any{})
+	subnetMock.EXPECT().GetAddressPools(gomock.Any()).Return([]dhcpmodel.AddressPoolAccessor{poolMock})
+	// An attempt to create the subnet should fail when asserting the pool type.
+	subnet, err := keaconfig.CreateSubnet4(1, nil, subnetMock)
+	require.Error(t, err)
+	require.Nil(t, subnet)
+}
+
 // Test converting an IPv6 subnet in Stork into the subnet configuration
 // in Kea.
 func TestCreateSubnet6(t *testing.T) {
@@ -876,6 +897,52 @@ func TestCreateSubnet6(t *testing.T) {
 	require.Equal(t, float32(0.32), *subnet6.T1Percent)
 	require.Equal(t, float32(0.44), *subnet6.T2Percent)
 	require.EqualValues(t, 1001, *subnet6.ValidLifetime)
+}
+
+// Test that the CreateSubnet6 function returns an error when any of the address pools does not
+// implement the AddressPool interface.
+func TestCreateSubnet6InvalidAddressPoolType(t *testing.T) {
+	controller := gomock.NewController(t)
+	// The AddressPoolAccessor does not implement the AddressPool interface.
+	poolsMock := NewMockAddressPoolAccessor(controller)
+	poolsMock.EXPECT().GetLowerBound().AnyTimes().Return("2001:db8:1::10")
+	poolsMock.EXPECT().GetUpperBound().AnyTimes().Return("2001:db8:1::20")
+	poolsMock.EXPECT().GetDHCPOptions().AnyTimes().Return([]dhcpmodel.DHCPOptionAccessor{})
+	// The subnet returns the address pool having invalid type.
+	subnetMock := NewMockSubnetAccessor(controller)
+	subnetMock.EXPECT().GetID(gomock.Any()).Return(int64(1))
+	subnetMock.EXPECT().GetPrefix().Return("2001:db8:1::/64")
+	subnetMock.EXPECT().GetUserContext(gomock.Any()).Return(map[string]any{})
+	subnetMock.EXPECT().GetAddressPools(gomock.Any()).Return([]dhcpmodel.AddressPoolAccessor{poolsMock})
+	// An attempt to create the subnet should fail when asserting the pool type.
+	subnet, err := keaconfig.CreateSubnet6(1, nil, subnetMock)
+	require.Error(t, err)
+	require.Nil(t, subnet)
+}
+
+// Test that the CreateSubnet6 function returns an error when any of the prefix pools does not
+// implement the PrefixPool interface.
+func TestCreateSubnet6InvalidPrefixPoolType(t *testing.T) {
+	controller := gomock.NewController(t)
+	// The PrefixPoolAccessor does not implement the PrefixPool interface.
+	poolMock := NewMockPrefixPoolAccessor(controller)
+	poolMock.EXPECT().GetModel().AnyTimes().Return(&dhcpmodel.PrefixPool{
+		Prefix:         "3001::/64",
+		DelegatedLen:   64,
+		ExcludedPrefix: "3001:1::/64",
+	})
+	poolMock.EXPECT().GetDHCPOptions().AnyTimes().Return([]dhcpmodel.DHCPOptionAccessor{})
+	// The subnet returns the prefix pool having invalid type.
+	subnetMock := NewMockSubnetAccessor(controller)
+	subnetMock.EXPECT().GetID(gomock.Any()).Return(int64(1))
+	subnetMock.EXPECT().GetPrefix().Return("2001:db8:1::/64")
+	subnetMock.EXPECT().GetUserContext(gomock.Any()).Return(map[string]any{})
+	subnetMock.EXPECT().GetAddressPools(gomock.Any()).Return([]dhcpmodel.AddressPoolAccessor{})
+	subnetMock.EXPECT().GetPrefixPools(gomock.Any()).Return([]dhcpmodel.PrefixPoolAccessor{poolMock})
+	// An attempt to create the subnet should fail when asserting the pool type.
+	subnet, err := keaconfig.CreateSubnet6(1, nil, subnetMock)
+	require.Error(t, err)
+	require.Nil(t, subnet)
 }
 
 // Test conversion of the subnet to a structure used when deleting the

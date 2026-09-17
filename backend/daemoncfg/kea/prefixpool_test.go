@@ -9,6 +9,7 @@ import (
 )
 
 //go:generate mockgen -package=keaconfig_test -destination=prefixpoolmock_test.go isc.org/stork/daemoncfg/kea PrefixPool
+//go:generate mockgen -package=keaconfig_test -destination=prefixpoolaccessormock_test.go isc.org/stork/datamodel/dhcp PrefixPoolAccessor
 
 // Test that unknown parameters are parsed correctly.
 func TestParsePrefixPoolWithUnknownParameters(t *testing.T) {
