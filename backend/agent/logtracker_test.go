@@ -483,7 +483,7 @@ func TestLogTrackerStopStuckRead(t *testing.T) {
 		})
 
 		executor := NewMockCommandExecutor(ctrl)
-		executor.EXPECT().Start(gomock.Any(), gomock.Any(), gomock.Any(), "journalctl", "-f", "-u", "test.service", "-n", "0").Return(command, nil)
+		executor.EXPECT().Start(gomock.Any(), gomock.Any(), gomock.Any(), "journalctl", "-o", "short-iso-precise", "-f", "-u", "test.service", "-n", "0").Return(command, nil)
 		executor.EXPECT().LookPath(gomock.Any()).Return("", nil)
 
 		tracker := newLogTracker(executor, logTrackerConfig{
@@ -532,7 +532,7 @@ func TestLogTrackerStartReaderError(t *testing.T) {
 
 	// Starting the reader returns an error.
 	executor := NewMockCommandExecutor(ctrl)
-	executor.EXPECT().Start(gomock.Any(), gomock.Any(), gomock.Any(), "journalctl", "-f").Return(nil, errors.New("test error"))
+	executor.EXPECT().Start(gomock.Any(), gomock.Any(), gomock.Any(), "journalctl", "-o", "short-iso-precise", "-f", "-u", "test.service", "--no-tail", "-n", "+1").Return(nil, errors.New("test error"))
 	executor.EXPECT().LookPath(gomock.Any()).Return("", nil)
 
 	tracker := newLogTracker(executor, logTrackerConfig{
@@ -612,7 +612,7 @@ func TestLogTrackerBackfillError(t *testing.T) {
 		command.EXPECT().Wait().AnyTimes().Return(nil)
 
 		executor := NewMockCommandExecutor(ctrl)
-		executor.EXPECT().Start(gomock.Any(), gomock.Any(), gomock.Any(), "journalctl", "-f", "-n", "0").Return(command, nil)
+		executor.EXPECT().Start(gomock.Any(), gomock.Any(), gomock.Any(), "journalctl", "-o", "short-iso-precise", "-f", "-n", "0").Return(command, nil)
 		// Creating log reader results in checking whether or not journalctl is available.
 		// We expect that it is called once for each subscriber, and it should be successful.
 		executor.EXPECT().LookPath(gomock.Any()).Times(2).Return("", nil)

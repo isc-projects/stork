@@ -236,7 +236,8 @@ func (lc *systemdLogReader) capture(ctx context.Context, options ...logReaderCap
 		return nil, errors.New("cannot read from the end of the systemd log without following")
 	}
 	// Build the journalctl command line arguments.
-	var args []string
+	// Start by ensuring that the timestamps are in the RFC 3339 format.
+	args := []string{"-o", "short-iso-precise"}
 	if config.follow {
 		// Follow the new lines.
 		args = append(args, "-f")

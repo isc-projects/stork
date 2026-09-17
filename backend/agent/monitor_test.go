@@ -557,7 +557,7 @@ func TestDetectDaemonsWithXfrTracking(t *testing.T) {
 	// Mock the command executor to return the output of the journalctl command.
 	// Also, mock the file system operations to return the test file information.
 	commander := NewMockCommandExecutor(ctrl)
-	commander.EXPECT().Start(gomock.Any(), gomock.Any(), gomock.Any(), "journalctl", "-f", "-u", "named.service", "--since", "1 days ago").Return(output, nil)
+	commander.EXPECT().Start(gomock.Any(), gomock.Any(), gomock.Any(), "journalctl", "-o", "short-iso-precise", "-f", "-u", "named.service", "--since", "1 days ago").Return(output, nil)
 	commander.EXPECT().LookPath(gomock.Any()).AnyTimes().Return("", nil)
 	commander.EXPECT().GetFileInfo(gomock.Any()).AnyTimes().Return(&testFileInfo{}, nil)
 	commander.EXPECT().IsFileExist(gomock.Any()).AnyTimes().Return(true)

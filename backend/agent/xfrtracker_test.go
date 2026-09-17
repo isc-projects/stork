@@ -222,8 +222,8 @@ func TestXfrTrackerTrackSystemdUnit(t *testing.T) {
 		// Create a mock command executor that expects journalctl invocations for
 		// two different subscribers. They both return the same output.
 		executor := NewMockCommandExecutor(ctrl)
-		executor.EXPECT().Start(gomock.Any(), gomock.Any(), gomock.Any(), "journalctl", "-f", "-u", "named.service", "--since", "1 days ago").Return(output, nil)
-		executor.EXPECT().Start(gomock.Any(), gomock.Any(), gomock.Any(), "journalctl", "-f", "-u", "xfr.service", "--since", "1 days ago").Return(output, nil)
+		executor.EXPECT().Start(gomock.Any(), gomock.Any(), gomock.Any(), "journalctl", "-o", "short-iso-precise", "-f", "-u", "named.service", "--since", "1 days ago").Return(output, nil)
+		executor.EXPECT().Start(gomock.Any(), gomock.Any(), gomock.Any(), "journalctl", "-o", "short-iso-precise", "-f", "-u", "xfr.service", "--since", "1 days ago").Return(output, nil)
 		executor.EXPECT().LookPath(gomock.Any()).AnyTimes().Return("", nil)
 
 		// Create the log tracker using the mock command executor and the

@@ -418,32 +418,32 @@ func TestSystemdFileLogReaderOptions(t *testing.T) {
 		{
 			name:         "follow with unit name",
 			options:      []logReaderCaptureOption{logReaderCaptureOptionFollow(), logReaderCaptureOptionUnitName("named.service")},
-			expectedArgs: []any{"-f", "-u", "named.service", "--no-tail", "-n", "+1"},
+			expectedArgs: []any{"-o", "short-iso-precise", "-f", "-u", "named.service", "--no-tail", "-n", "+1"},
 		},
 		{
 			name:         "follow from end",
 			options:      []logReaderCaptureOption{logReaderCaptureOptionFromEnd(), logReaderCaptureOptionFollow()},
-			expectedArgs: []any{"-f", "-n", "0"},
+			expectedArgs: []any{"-o", "short-iso-precise", "-f", "-n", "0"},
 		},
 		{
 			name:         "follow since days ago",
 			options:      []logReaderCaptureOption{logReaderCaptureOptionSinceDaysAgo(4), logReaderCaptureOptionFollow()},
-			expectedArgs: []any{"-f", "--since", "4 days ago"},
+			expectedArgs: []any{"-o", "short-iso-precise", "-f", "--since", "4 days ago"},
 		},
 		{
 			name:         "follow from start",
 			options:      []logReaderCaptureOption{logReaderCaptureOptionFollow()},
-			expectedArgs: []any{"-f", "--no-tail", "-n", "+1"},
+			expectedArgs: []any{"-o", "short-iso-precise", "-f", "--no-tail", "-n", "+1"},
 		},
 		{
 			name:         "read since days ago",
 			options:      []logReaderCaptureOption{logReaderCaptureOptionSinceDaysAgo(4)},
-			expectedArgs: []any{"--since", "4 days ago"},
+			expectedArgs: []any{"-o", "short-iso-precise", "--since", "4 days ago"},
 		},
 		{
 			name:         "read from start",
 			options:      []logReaderCaptureOption{},
-			expectedArgs: []any{"--no-tail", "-n", "+1"},
+			expectedArgs: []any{"-o", "short-iso-precise", "--no-tail", "-n", "+1"},
 		},
 	}
 

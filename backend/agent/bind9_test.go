@@ -272,7 +272,7 @@ func TestBind9BootstrapCleanupSystemdXfrTracking(t *testing.T) {
 
 	// Create the mock command executor.
 	commander := NewMockCommandExecutor(ctrl)
-	commander.EXPECT().Start(gomock.Any(), gomock.Any(), gomock.Any(), "journalctl", "-f", "-u", "named.service", "--since", "1 days ago").Return(output, nil)
+	commander.EXPECT().Start(gomock.Any(), gomock.Any(), gomock.Any(), "journalctl", "-o", "short-iso-precise", "-f", "-u", "named.service", "--since", "1 days ago").Return(output, nil)
 	commander.EXPECT().LookPath(gomock.Any()).AnyTimes().Return("", nil)
 
 	// Create the log tracker and the XFR tracker.
