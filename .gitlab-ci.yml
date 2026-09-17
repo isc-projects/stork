@@ -130,9 +130,11 @@ stages:
     - .go
   policy: $CACHE_POLICY
 
-.python_cache_paths: &python_cache_paths
+.utils_cache_paths: &utils_cache_paths
   paths:
     - tools/python
+    - tools/ruby
+    - tools/shellcheck
   policy: $CACHE_POLICY
 
 .nodejs_cache_paths: &nodejs_cache_paths
@@ -179,41 +181,41 @@ stages:
   fallback_keys:
     - nodejs_arm64-$CI_DEFAULT_BRANCH
 
-.python_cache: &python_cache
-  key: python_amd64-$CI_COMMIT_REF_SLUG
-  <<: *python_cache_paths
+.utils_cache: &utils_cache
+  key: utils_amd64-$CI_COMMIT_REF_SLUG
+  <<: *utils_cache_paths
   fallback_keys:
-    - python_amd64-$CI_DEFAULT_BRANCH
+    - utils_amd64-$CI_DEFAULT_BRANCH
 
-.python_arm_cache: &python_arm_cache
-  key: python_arm64-$CI_COMMIT_REF_SLUG
-  <<: *python_cache_paths
+.utils_arm_cache: &utils_arm_cache
+  key: utils_arm64-$CI_COMMIT_REF_SLUG
+  <<: *utils_cache_paths
   fallback_keys:
-    - python_arm64-$CI_DEFAULT_BRANCH
+    - utils_arm64-$CI_DEFAULT_BRANCH
 
-.python_cache_alpine: &python_cache_alpine
-  key: python_amd64_alpine-$CI_COMMIT_REF_SLUG
-  <<: *python_cache_paths
+.utils_cache_alpine: &utils_cache_alpine
+  key: utils_amd64_alpine-$CI_COMMIT_REF_SLUG
+  <<: *utils_cache_paths
   fallback_keys:
-    - python_amd64_alpine-$CI_DEFAULT_BRANCH
+    - utils_amd64_alpine-$CI_DEFAULT_BRANCH
 
-.python_arm_cache_alpine: &python_arm_cache_alpine
-  key: python_arm64_alpine-$CI_COMMIT_REF_SLUG
-  <<: *python_cache_paths
+.utils_arm_cache_alpine: &utils_arm_cache_alpine
+  key: utils_arm64_alpine-$CI_COMMIT_REF_SLUG
+  <<: *utils_cache_paths
   fallback_keys:
-    - python_arm64_alpine-$CI_DEFAULT_BRANCH
+    - utils_arm64_alpine-$CI_DEFAULT_BRANCH
 
-.python_cache_redhat: &python_cache_redhat
-  key: python_amd64_redhat-$CI_COMMIT_REF_SLUG
-  <<: *python_cache_paths
+.utils_cache_redhat: &utils_cache_redhat
+  key: utils_amd64_redhat-$CI_COMMIT_REF_SLUG
+  <<: *utils_cache_paths
   fallback_keys:
-    - python_amd64_redhat-$CI_DEFAULT_BRANCH
+    - utils_amd64_redhat-$CI_DEFAULT_BRANCH
 
-.python_arm_cache_redhat: &python_arm_cache_redhat
-  key: python_arm64_redhat-$CI_COMMIT_REF_SLUG
-  <<: *python_cache_paths
+.utils_arm_cache_redhat: &utils_arm_cache_redhat
+  key: utils_arm64_redhat-$CI_COMMIT_REF_SLUG
+  <<: *utils_cache_paths
   fallback_keys:
-    - python_arm64_redhat-$CI_DEFAULT_BRANCH
+    - utils_arm64_redhat-$CI_DEFAULT_BRANCH
 
 .playwright_browsers_cache: &playwright_browsers_cache
   key: playwright_browsers-$CI_COMMIT_REF_SLUG
@@ -249,28 +251,28 @@ stages:
   <<: *nodejs_arm_cache
   unprotect: true
 
-.python_cache_unprotected: &python_cache_unprotected
-  <<: *python_cache
+.utils_cache_unprotected: &utils_cache_unprotected
+  <<: *utils_cache
   unprotect: true
 
-.python_arm_cache_unprotected: &python_arm_cache_unprotected
-  <<: *python_arm_cache
+.utils_arm_cache_unprotected: &utils_arm_cache_unprotected
+  <<: *utils_arm_cache
   unprotect: true
 
-.python_cache_alpine_unprotected: &python_cache_alpine_unprotected
-  <<: *python_cache_alpine
+.utils_cache_alpine_unprotected: &utils_cache_alpine_unprotected
+  <<: *utils_cache_alpine
   unprotect: true
 
-.python_arm_cache_alpine_unprotected: &python_arm_cache_alpine_unprotected
-  <<: *python_arm_cache_alpine
+.utils_arm_cache_alpine_unprotected: &utils_arm_cache_alpine_unprotected
+  <<: *utils_arm_cache_alpine
   unprotect: true
 
-.python_cache_redhat_unprotected: &python_cache_redhat_unprotected
-  <<: *python_cache_redhat
+.utils_cache_redhat_unprotected: &utils_cache_redhat_unprotected
+  <<: *utils_cache_redhat
   unprotect: true
 
-.python_arm_cache_redhat_unprotected: &python_arm_cache_redhat_unprotected
-  <<: *python_arm_cache_redhat
+.utils_arm_cache_redhat_unprotected: &utils_arm_cache_redhat_unprotected
+  <<: *utils_arm_cache_redhat
   unprotect: true
 
 .playwright_browsers_cache_unprotected: &playwright_browsers_cache_unprotected
@@ -385,7 +387,7 @@ rebuild_cache_amd64:
   <<: *cache_job_template_debian
   cache:
     - *golang_cache
-    - *python_cache
+    - *utils_cache
     - *nodejs_cache
     - *playwright_browsers_cache
   script:
@@ -402,7 +404,7 @@ rebuild_cache_arm64:
   <<: *job_template_arm
   cache:
     - *golang_arm_cache
-    - *python_arm_cache
+    - *utils_arm_cache
     - *nodejs_arm_cache
   script:
     - rake prepare
@@ -416,7 +418,7 @@ rebuild_cache_amd64_alpine:
   <<: *cache_job_template_alpine
   cache:
     - *golang_cache_alpine
-    - *python_cache_alpine
+    - *utils_cache_alpine
 
 # rebuilds alpine ARM caches only when needed
 rebuild_cache_arm64_alpine:
@@ -424,20 +426,20 @@ rebuild_cache_arm64_alpine:
   <<: *job_template_arm
   cache:
     - *golang_arm_cache_alpine
-    - *python_arm_cache_alpine
+    - *utils_arm_cache_alpine
 
 # rebuilds redhat caches only when needed
 rebuild_cache_amd64_redhat:
   <<: *cache_job_template_redhat
   cache:
-    - *python_cache_redhat
+    - *utils_cache_redhat
 
 # rebuilds redhat ARM caches only when needed
 rebuild_cache_arm64_redhat:
   <<: *cache_job_template_redhat
   <<: *job_template_arm
   cache:
-    - *python_arm_cache_redhat
+    - *utils_arm_cache_redhat
 
 # rebuilds debian caches for unprotected branches only when MR is merged to master (also with "on demand" option)
 rebuild_cache_amd64_unprotected:
@@ -454,7 +456,7 @@ rebuild_cache_amd64_unprotected:
     - *rule_manual_allow_failure
   cache:
     - *golang_cache_unprotected
-    - *python_cache_unprotected
+    - *utils_cache_unprotected
     - *nodejs_cache_unprotected
     - *playwright_browsers_cache_unprotected
 
@@ -473,7 +475,7 @@ rebuild_cache_arm64_unprotected:
     - *rule_manual_allow_failure
   cache:
     - *golang_arm_cache_unprotected
-    - *python_arm_cache_unprotected
+    - *utils_arm_cache_unprotected
     - *nodejs_arm_cache_unprotected
 
 # rebuilds alpine caches for unprotected branches only when MR is merged to master (also with "on demand" option)
@@ -489,7 +491,7 @@ rebuild_cache_amd64_alpine_unprotected:
     - *rule_manual_allow_failure
   cache:
     - *golang_cache_alpine_unprotected
-    - *python_cache_alpine_unprotected
+    - *utils_cache_alpine_unprotected
 
 # rebuilds alpine ARM caches for unprotected branches only when MR is merged to master (also with "on demand" option)
 rebuild_cache_arm64_alpine_unprotected:
@@ -504,7 +506,7 @@ rebuild_cache_arm64_alpine_unprotected:
     - *rule_manual_allow_failure
   cache:
     - *golang_arm_cache_alpine_unprotected
-    - *python_arm_cache_alpine_unprotected
+    - *utils_arm_cache_alpine_unprotected
 
 # rebuilds redhat caches for unprotected branches only when MR is merged to master (also with "on demand" option)
 rebuild_cache_amd64_redhat_unprotected:
@@ -516,7 +518,7 @@ rebuild_cache_amd64_redhat_unprotected:
           - rakelib/**/*
     - *rule_manual_allow_failure
   cache:
-    - *python_cache_redhat_unprotected
+    - *utils_cache_redhat_unprotected
 
 # rebuilds redhat ARM caches for unprotected branches only when MR is merged to master (also with "on demand" option)
 rebuild_cache_arm64_redhat_unprotected:
@@ -528,7 +530,7 @@ rebuild_cache_arm64_redhat_unprotected:
           - rakelib/**/*
     - *rule_manual_allow_failure
   cache:
-    - *python_arm_cache_redhat_unprotected
+    - *utils_arm_cache_redhat_unprotected
 
 ####################################################################################
 ### STAGE build                                                                  ###
@@ -555,7 +557,7 @@ build_ui:
   cache:
     - *nodejs_cache
     - *golang_cache
-    - *python_cache
+    - *utils_cache
   script:
     - rake build:ui
   artifacts:
@@ -567,7 +569,7 @@ build_ui:
 build_doc:
   <<: *build_template
   cache:
-    - *python_cache
+    - *utils_cache
   script:
     - rake build:doc
   variables:
@@ -635,7 +637,7 @@ build_debs_amd64:
   <<: *build_template
   cache:
     - *golang_cache
-    - *python_cache
+    - *utils_cache
     - *nodejs_cache
   needs:
     # Use the binaries compiled by the legacy image.
@@ -654,7 +656,7 @@ build_debs_arm64:
   <<: *job_template_arm
   cache:
     - *golang_arm_cache
-    - *python_arm_cache
+    - *utils_arm_cache
     - *nodejs_arm_cache
   needs:
     # Use the binaries compiled by the legacy image.
@@ -665,7 +667,7 @@ build_rpms_amd64:
   <<: *image_redhat
   cache:
     - *golang_cache
-    - *python_cache_redhat
+    - *utils_cache_redhat
     - *nodejs_cache
   needs:
     # Use the binaries compiled by the legacy image.
@@ -684,7 +686,7 @@ build_rpms_arm64:
   <<: *job_template_arm
   cache:
     - *golang_arm_cache
-    - *python_arm_cache_redhat
+    - *utils_arm_cache_redhat
     - *nodejs_arm_cache
   needs:
     # Use the binaries compiled by the legacy image.
@@ -695,7 +697,7 @@ build_apks_amd64:
   <<: *image_alpine
   cache:
     - *golang_cache_alpine
-    - *python_cache_alpine
+    - *utils_cache_alpine
     - *nodejs_cache
   script:
     - rake build:agent_pkg
@@ -711,7 +713,7 @@ build_apks_arm64:
   <<: *job_template_arm
   cache:
     - *golang_arm_cache_alpine
-    - *python_arm_cache_alpine
+    - *utils_arm_cache_alpine
     - *nodejs_arm_cache
 
 packages:
@@ -763,7 +765,7 @@ lint_changelog:
 lint_python_pylint:
   <<: *checks_template
   cache:
-    - *python_cache
+    - *utils_cache
     - *nodejs_cache
     - *golang_cache
   script:
@@ -772,14 +774,14 @@ lint_python_pylint:
 lint_python_flake8:
   <<: *checks_template
   cache:
-    - *python_cache
+    - *utils_cache
   script:
     - rake lint:python:flake8
 
 lint_python_black:
   <<: *checks_template
   cache:
-    - *python_cache
+    - *utils_cache
   script:
     - rake lint:python:black
 
@@ -844,7 +846,8 @@ storybook_tests:
 
 danger:
   <<: *checks_template
-  needs: [ ] # this job doesn't need cache, so it can start right away
+  cache:
+    - *utils_cache
   before_script:
     - export CI_MERGE_REQUEST_ID=$(git ls-remote -q origin merge-requests\*\head | grep $CI_COMMIT_SHA | sed 's/.*refs\/merge-requests\/\([0-9]*\)\/head/\1/g')
     - export CI_PROJECT_PATH=$CI_PROJECT_ID #some version of gitlab has problems with searching by project path
@@ -855,7 +858,8 @@ danger:
 
 lint_shell:
   <<: *checks_template
-  needs: [ ] # this job doesn't need cache, so it can start right away
+  cache:
+    - *utils_cache
   script:
     - rake lint:shell
 
@@ -1151,7 +1155,7 @@ build_hooks_debs_amd64:
     - build_hooks_legacy_amd64
   cache:
     - *golang_cache
-    - *python_cache
+    - *utils_cache
   script:
     - rake hook:build_pkg SUPPRESS_PREREQUISITES=true
     - cp dist/hook-pkgs/*.deb ./
@@ -1168,7 +1172,7 @@ build_hooks_debs_arm64:
     - build_hooks_legacy_arm64
   cache:
     - *golang_arm_cache
-    - *python_arm_cache
+    - *utils_arm_cache
 
 build_hooks_rpms_amd64:
   <<: *hooks_template
@@ -1180,7 +1184,7 @@ build_hooks_rpms_amd64:
     - build_hooks_legacy_amd64
   cache:
     - *golang_cache
-    - *python_cache_redhat
+    - *utils_cache_redhat
   script:
     - rake hook:build_pkg SUPPRESS_PREREQUISITES=true
     - cp dist/hook-pkgs/*.rpm ./
@@ -1197,7 +1201,7 @@ build_hooks_rpms_arm64:
     - build_hooks_legacy_arm64
   cache:
     - *golang_arm_cache
-    - *python_arm_cache_redhat
+    - *utils_arm_cache_redhat
 
 build_hooks_apks_amd64:
   <<: *hooks_template
@@ -1206,7 +1210,7 @@ build_hooks_apks_amd64:
     GIT_SUBMODULE_STRATEGY: normal
   cache:
     - *golang_cache_alpine
-    - *python_cache_alpine
+    - *utils_cache_alpine
   script:
     - rake hook:build_pkg
     - cp dist/hook-pkgs/*.apk ./
@@ -1220,7 +1224,7 @@ build_hooks_apks_arm64:
   <<: *job_template_arm
   cache:
     - *golang_arm_cache_alpine
-    - *python_arm_cache_alpine
+    - *utils_arm_cache_alpine
 
 packages_hooks:
   <<: *hooks_template
