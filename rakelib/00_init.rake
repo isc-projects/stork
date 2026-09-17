@@ -726,6 +726,9 @@ directory java_tools_dir
 ruby_tools_dir = File.join(tools_dir, "ruby")
 directory ruby_tools_dir
 
+shellcheck_tools_dir = File.join(tools_dir, "shellcheck")
+directory shellcheck_tools_dir
+
 # We use the "bundle" gem to manage the dependencies. The "bundle" package is
 # installed using the "gem" executable in the tools/ruby/gems directory, and
 # the link is created in the tools/ruby/bin directory. Next, Ruby dependencies
@@ -960,9 +963,9 @@ file GOLIVEPPROF => [GO] do
 end
 add_version_guard(GOLIVEPPROF, go_live_pprof_ver)
 
-shellcheck = File.join(tools_dir, "shellcheck")
-file shellcheck => [WGET, TAR, tools_dir] do
-    Dir.chdir(tools_dir) do
+shellcheck = File.join(shellcheck_tools_dir, "shellcheck")
+file shellcheck => [WGET, TAR, shellcheck_tools_dir] do
+    Dir.chdir(shellcheck_tools_dir) do
         # Download the shellcheck binary.
         fetch_file "https://github.com/koalaman/shellcheck/releases/download/v#{shellcheck_ver}/shellcheck-v#{shellcheck_ver}.#{shellcheck_suffix}.tar.xz", "shellcheck.tar.xz"
         sh "mkdir", "-p", "tmp"
