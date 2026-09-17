@@ -357,9 +357,9 @@ stages:
     - *rule_manual_allow_failure
 
   script:
-    - rake prepare:dist
-    - rake prepare:ci
-    - rake prepare:deps
+    - rake --trace prepare:dist
+    - rake --trace prepare:ci
+    - rake --trace prepare:deps
     - rake hook:prepare_deps
 
 # job template for rebuilding cache for redhat image
@@ -379,7 +379,7 @@ stages:
     - *rule_manual_allow_failure
 
   script:
-    - rake prepare:doc_deps
+    - rake --trace prepare:doc_deps
 
 ### jobs definitions ###
 # rebuilds debian caches only when needed
@@ -391,10 +391,7 @@ rebuild_cache_amd64:
     - *nodejs_cache
     - *playwright_browsers_cache
   script:
-    - rake prepare
-    - rake prepare:ci
-    - rake prepare:dev
-    - rake prepare:deps
+    - rake --trace prepare
     - rake hook:prepare
     - rake hook:prepare_deps
 
@@ -407,9 +404,8 @@ rebuild_cache_arm64:
     - *utils_arm_cache
     - *nodejs_arm_cache
   script:
-    - rake prepare
-    - rake prepare:ci
-    - rake prepare:deps
+    - rake --trace prepare
+    - rake --trace prepare:deps
     - rake hook:prepare
     - rake hook:prepare_deps
 
@@ -1029,7 +1025,7 @@ system_test:
     - git clone -b "${STORK_TESTS_BRANCH}" --depth 1 https://gitlab.isc.org/isc-projects/stork-tests.git
     - export STORK_REPO_DIR="${PWD}"
     - cd stork-tests
-    - rake prepare:systemtest
+    - rake --trace prepare:systemtest
   script:
     - rake systemtest:build
     - rake systemtest
