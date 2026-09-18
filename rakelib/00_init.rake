@@ -719,6 +719,8 @@ gopath = File.join(Dir.home, "go") if gopath.nil? || gopath.empty?
 gobin = tool_command_output("go", "env", "GOBIN")
 gobin = File.join(gopath, "bin") if gobin.nil? || gobin.empty?
 directory go_tools_dir
+puts "GOPATH: %s" % gopath
+puts "GOBIN: %s" % gobin
 
 java_tools_dir = File.join(tools_dir, "java")
 directory java_tools_dir
