@@ -3551,7 +3551,7 @@ func TestMachineToRestAPIForNilKeaConfig(t *testing.T) {
 	require.NoError(t, err)
 
 	// Act
-	restMachine := rapi.machineToRestAPI(*machine)
+	restMachine := rapi.machineToRestAPI(*machine, false)
 
 	// Assert
 	require.NotNil(t, restMachine)

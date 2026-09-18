@@ -246,7 +246,7 @@
             @if (unauthorizedMachinesDisplayed()) {
                 <td [class.word-break-all]="authorizedMachinesDisplayed()">
                     @if (!m.authorized) {
-                        {{ (canAuthorizeMachine() ? m.agentToken : '(redacted)') | placeholder }}
+                        {{ canAuthorizeMachine() ? m.agentToken : '(redacted)' }}
                     }
                 </td>
             }

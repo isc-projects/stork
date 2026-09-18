@@ -197,13 +197,17 @@ func (r *RestAPI) GetSoftwareVersions(ctx context.Context, params general.GetSof
 	return rsp
 }
 
-// Convert db machine to rest structure.
-func (r *RestAPI) machineToRestAPI(dbMachine dbmodel.Machine) *models.Machine {
+// Convert db machine to rest structure. Takes a bool flag stating if RestAPI user has super-admin role or not.
+func (r *RestAPI) machineToRestAPI(dbMachine dbmodel.Machine, superAdmin bool) *models.Machine {
 	daemons := []*models.AnyDaemon{}
 
 	for _, dbDaemon := range dbMachine.Daemons {
 		daemon := r.daemonToRestAPI(dbDaemon)
 		daemons = append(daemons, daemon)
+	}
+
+	if !superAdmin {
+		dbMachine.HideSensitiveData()
 	}
 
 	m := models.Machine{
@@ -286,10 +290,8 @@ func (r *RestAPI) GetMachineState(ctx context.Context, params services.GetMachin
 	}
 
 	_, dbUser := r.SessionManager.Logged(ctx)
-	if !dbUser.InGroup(&dbmodel.SystemGroup{ID: dbmodel.SuperAdminGroupID}) {
-		dbMachine.HideSensitiveData()
-	}
-	m := r.machineToRestAPI(*dbMachine)
+	superAdmin := dbUser.InGroup(&dbmodel.SystemGroup{ID: dbmodel.SuperAdminGroupID})
+	m := r.machineToRestAPI(*dbMachine, superAdmin)
 	rsp := services.NewGetMachineStateOK().WithPayload(m)
 
 	return rsp
@@ -307,10 +309,7 @@ func (r *RestAPI) getMachines(offset, limit int64, filterText *string, authorize
 	}
 
 	for _, dbM := range dbMachines {
-		if !superAdmin {
-			dbM.HideSensitiveData()
-		}
-		m := r.machineToRestAPI(dbM)
+		m := r.machineToRestAPI(dbM, superAdmin)
 		machines.Items = append(machines.Items, m)
 	}
 
@@ -498,10 +497,8 @@ func (r *RestAPI) GetMachine(ctx context.Context, params services.GetMachinePara
 		return rsp
 	}
 	_, dbUser := r.SessionManager.Logged(ctx)
-	if !dbUser.InGroup(&dbmodel.SystemGroup{ID: dbmodel.SuperAdminGroupID}) {
-		dbMachine.HideSensitiveData()
-	}
-	m := r.machineToRestAPI(*dbMachine)
+	superAdmin := dbUser.InGroup(&dbmodel.SystemGroup{ID: dbmodel.SuperAdminGroupID})
+	m := r.machineToRestAPI(*dbMachine, superAdmin)
 	rsp := services.NewGetMachineOK().WithPayload(m)
 	return rsp
 }
@@ -917,10 +914,7 @@ func (r *RestAPI) UpdateMachine(ctx context.Context, params services.UpdateMachi
 		}
 	}
 
-	if !superAdmin {
-		dbMachine.HideSensitiveData()
-	}
-	m := r.machineToRestAPI(*dbMachine)
+	m := r.machineToRestAPI(*dbMachine, superAdmin)
 	rsp := services.NewUpdateMachineOK().WithPayload(m)
 	return rsp
 }
