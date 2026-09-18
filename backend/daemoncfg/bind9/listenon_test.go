@@ -455,6 +455,22 @@ func TestGetPreferredIPAddressLocalLoopback(t *testing.T) {
 	require.Equal(t, "127.0.0.1", preferredIPAddress)
 }
 
+// Test that IPv4 local loopback address is preferred over IPv6 local loopback address.
+func TestGetPreferredIPAddressPreferIPv4OverIPv6(t *testing.T) {
+	listenOn := &ListenOn{
+		Variant: "listen-on",
+		AddressMatchList: &AddressMatchList{
+			Elements: []*AddressMatchListElement{
+				{IPAddressOrACLName: "::1"},
+				{IPAddressOrACLName: "127.0.0.1"},
+			},
+		},
+	}
+	preferredIPAddress, err := listenOn.GetPreferredIPAddress(nil, nil, nil, "")
+	require.NoError(t, err)
+	require.Equal(t, "127.0.0.1", preferredIPAddress)
+}
+
 // Test that zero address is preferred over other addresses, and the
 // local loopback address is returned in such a case.
 func TestGetPreferredIPAddressZeroAddress(t *testing.T) {
