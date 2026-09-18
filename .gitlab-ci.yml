@@ -37,10 +37,10 @@ variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/tools/python/pip_cache"
 
   # Go ENV settings to have working cache.
-  GOPATH: $CI_PROJECT_DIR/tools/golang
-  GOMODCACHE: $CI_PROJECT_DIR/tools/golang/pkg/mod
-  GOCACHE: $CI_PROJECT_DIR/tools/golang/build-cache
-  GOBIN: $CI_PROJECT_DIR/tools/golang/bin
+  GOPATH: $CI_PROJECT_DIR/.go
+  GOMODCACHE: $CI_PROJECT_DIR/.go/pkg/mod
+  GOCACHE: $CI_PROJECT_DIR/.go/build-cache
+  GOBIN: $CI_PROJECT_DIR/.go/bin
 
   # NPM cache location.
   NPM_CACHE_DIR: $CI_PROJECT_DIR/.npm
@@ -127,6 +127,7 @@ stages:
 .golang_cache_paths: &golang_cache_paths
   paths:
     - tools/golang
+    - .go
   policy: $CACHE_POLICY
 
 .utils_cache_paths: &utils_cache_paths
@@ -390,7 +391,8 @@ rebuild_cache_amd64:
     - *nodejs_cache
     - *playwright_browsers_cache
   script:
-    - rake --trace prepare
+    - rake --trace prepare:dev # dev needed to prepare also playwright browsers
+    - rake --trace prepare:deps
     - rake hook:prepare
     - rake hook:prepare_deps
 
