@@ -358,7 +358,6 @@ stages:
 
   script:
     - rake --trace prepare:dist
-    - rake --trace prepare:ci
     - rake --trace prepare:deps
     - rake hook:prepare_deps
 
@@ -391,7 +390,8 @@ rebuild_cache_amd64:
     - *nodejs_cache
     - *playwright_browsers_cache
   script:
-    - rake --trace prepare:dev # dev needed to prepare also playwright browsers
+    - rake --trace prepare
+    - rake --trace prepare:dev
     - rake --trace prepare:deps
     - rake hook:prepare
     - rake hook:prepare_deps
