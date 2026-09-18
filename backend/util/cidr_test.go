@@ -530,7 +530,7 @@ func TestGetHostIPv6Addresses(t *testing.T) {
 
 // Test that the function correctly determines that an IP address is
 // assigned to a local network interface.
-func TestIsLocalIPAddress(t *testing.T) {
+func TestIsHostIPAddress(t *testing.T) {
 	addrs, err := net.InterfaceAddrs()
 	require.NoError(t, err)
 	for _, addr := range addrs {
@@ -540,9 +540,25 @@ func TestIsLocalIPAddress(t *testing.T) {
 	}
 }
 
+// Test that matching IP addresses in non-canonical form are successfully matched
+// with the local IP addresses.
+func TestIsHostIPAddressNonCanonicalForm(t *testing.T) {
+	getHostAddressesFn := func() ([]string, error) {
+		return []string{
+			"2001:db8:1::1",
+			"192.0.2.1",
+		}, nil
+	}
+	require.True(t, isHostIPAddress("2001:db8:1:0::1", getHostAddressesFn))
+	require.True(t, isHostIPAddress("2001:db8:1::1/128", getHostAddressesFn))
+	require.False(t, isHostIPAddress("2001:db8:1:0::2", getHostAddressesFn))
+	require.True(t, isHostIPAddress("192.0.2.1/32", getHostAddressesFn))
+	require.False(t, isHostIPAddress("192.0.2.2/32", getHostAddressesFn))
+}
+
 // Test that the function checking if the address is assigned to a local
 // network interface returns false for non-IP addresses.
-func TestIsLocalIPAddressNotAnAddress(t *testing.T) {
+func TestIsHostIPAddressNotAnAddress(t *testing.T) {
 	require.False(t, IsHostIPAddress("foobar"))
 	require.False(t, IsHostIPAddress(""))
 	require.False(t, IsHostIPAddress("192.0.2.1/24"))

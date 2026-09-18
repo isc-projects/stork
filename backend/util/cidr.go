@@ -322,12 +322,33 @@ func GetHostIPv6Addresses() ([]string, error) {
 }
 
 // Checks if the specified IP address is assigned to a network interface on the host.
-func IsHostIPAddress(ipAddress string) bool {
-	localAddresses, err := getHostIPAddresses(nil)
+// It accepts the function that returns a list of IP addresses assigned to the local
+// interfaces. It is expected that the returned list contains addresses in the canonical
+// form. The reason for creating the unexported function called by IsHostIPAddress is to
+// allow unit testing.
+func isHostIPAddress(ipAddress string, getHostAddressesFn func() ([]string, error)) bool {
+	// Remove the prefix length from the IP address if specified.
+	host, _, _ := strings.Cut(ipAddress, "/")
+	// Let's parse this IP address and check if it is valid, and
+	// to make sure it is represented in the canonical form.
+	// Otherwise we would not be able to compare it with the list
+	// of local addresses.
+	ip := net.ParseIP(host)
+	if ip == nil {
+		return false
+	}
+	// Get the list of IP addresses assigned to the local interfaces.
+	localAddresses, err := getHostAddressesFn()
 	if err != nil {
 		return false
 	}
-	return slices.Contains(localAddresses, ipAddress)
+	// Check if the IP address is within the list.
+	return slices.Contains(localAddresses, ip.String())
+}
+
+// Checks if the specified IP address is assigned to a network interface on the host.
+func IsHostIPAddress(ipAddress string) bool {
+	return isHostIPAddress(ipAddress, func() ([]string, error) { return getHostIPAddresses(nil) })
 }
 
 // Checks if the specified IP address belongs to a network where one of the
