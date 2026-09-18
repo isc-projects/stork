@@ -899,15 +899,23 @@ func TestAddressMatchListMatchTooMuchRecursion(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	globalConfig := NewMockAddressMatchListGlobalConfigAccessor(ctrl)
-	globalConfig.EXPECT().GetACL(gomock.Any()).Times(0)
-	globalConfig.EXPECT().GetKey(gomock.Any()).Times(0)
 
-	aml := &AddressMatchList{}
-	_, _, err := aml.match(maxAddressMatchListRecursionLevel, globalConfig, "127.0.0.1", "", storkutil.IsHostIPAddress, storkutil.IsIPAddressInHostNetwork)
-	require.NoError(t, err)
+	root := &AddressMatchList{
+		Elements: []*AddressMatchListElement{},
+	}
+	ptr := root
 
-	_, _, err = aml.match(maxAddressMatchListRecursionLevel+1, globalConfig, "127.0.0.1", "", storkutil.IsHostIPAddress, storkutil.IsIPAddressInHostNetwork)
-	require.Error(t, err)
+	// Create a chain of address match lists exceeding the maximum recursion level.
+	for range maxAddressMatchListRecursionLevel + 1 {
+		ptr.Elements = append(ptr.Elements, &AddressMatchListElement{
+			AddressMatchList: &AddressMatchList{
+				Elements: []*AddressMatchListElement{},
+			},
+		})
+		// Move the pointer to the next level.
+		ptr = ptr.Elements[0].AddressMatchList
+	}
+	_, _, err := root.match(0, globalConfig, "127.0.0.1", "", storkutil.IsHostIPAddress, storkutil.IsIPAddressInHostNetwork)
 	require.ErrorContains(t, err, "address match list recursion level exceeded: 11")
 }
 
