@@ -52,7 +52,10 @@ func GetDefaultListenOnClauses() *ListenOnClauses {
 // Attempts to find a listen-on clause that matches the specified port,
 // typically extracted from the allow-transfer clause. This search
 // prefers listen-on clauses enabling listening on local loopback
-// addresses.
+// addresses. The port of 0 means that it is unspecified (e.g., port
+// keyword lacking in the allow-transfer clause). In that case the port
+// is not matched against the port of the listen-on clause. The listen-on
+// clause can contain any port.
 func (l ListenOnClauses) GetMatchingListenOnClause(port int64) *ListenOn {
 	// For default port and no listen-on clauses, return the default
 	// listen-on clause.
