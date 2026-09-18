@@ -85,18 +85,20 @@ func (aml *AddressMatchList) match(level int, globalConfig AddressMatchListGloba
 			// Match against all IP addresses belonging to the host networks.
 			match = localNetworkMatchFn != nil && localNetworkMatchFn(ipAddress)
 			negative = element.Negation
-		case element.KeyID != "" && keyID != "":
+		case element.KeyID != "":
 			// The current element is a key. Let's simply compare key IDs.
+			// If the matched keyID is empty this comparison results in no
+			// match and next element will be tried.
 			match = element.KeyID == keyID
 			negative = element.Negation
 		case element.IPAddressOrACLName != "":
 			if element.IsIPAddress() {
-				if ipAddress != "" {
-					// An IP address specified in the address match list.
-					// Compare it withe IP address in the argument.
-					match = element.IPAddressOrACLName == ipAddress
-					negative = element.Negation
-				}
+				// An IP address specified in the address match list.
+				// Compare it with the IP address in the argument.
+				// If the matched IP address is empty this comparison
+				// results in no match and next element will be tried.
+				match = element.IPAddressOrACLName == ipAddress
+				negative = element.Negation
 				break
 			}
 			// It seems that the current element is an ACL name.
