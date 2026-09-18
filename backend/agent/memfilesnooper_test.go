@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"sync"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/pkg/errors"
@@ -998,9 +999,8 @@ func mockEmitRows(rows [][]string, wg *sync.WaitGroup) func() chan []string {
 }
 
 // mockEmitRowsWithPause writes groups of rows into the output channel, one at a
-// time, stopping between each group until signaled. It signals the wait group
-// when complete.
-func mockEmitRowsWithPause(rowgroups [][][]string, wg *sync.WaitGroup, readCh, writeCh chan struct{}) func() chan []string {
+// time, stopping between each group until signaled to continue using continueCh.
+func mockEmitRowsWithPause(rowgroups [][][]string, continueCh chan struct{}) func() chan []string {
 	return func() chan []string {
 		channel := make(chan []string)
 		go func() {
@@ -1008,10 +1008,8 @@ func mockEmitRowsWithPause(rowgroups [][][]string, wg *sync.WaitGroup, readCh, w
 				for _, row := range rowgroup {
 					channel <- row
 				}
-				readCh <- struct{}{}
-				<-writeCh
+				<-continueCh
 			}
-			wg.Done()
 		}()
 		return channel
 	}
@@ -1031,14 +1029,12 @@ func makeMockRowSource(ctrl *gomock.Controller, rows [][]string) (RowSource, *sy
 
 // Create a mock RowSource which will emit the groups of rows, one at a time,
 // into the channel when started, pausing between each group until signaled via
-// the readCh. It will signal the wait group when this is all complete.
-func makeMockRowSourceWithPause(ctrl *gomock.Controller, rowgroups [][][]string, readCh, writeCh chan struct{}) (RowSource, *sync.WaitGroup) {
+// the continueCh.
+func makeMockRowSourceWithPause(ctrl *gomock.Controller, rowgroups [][][]string, continueCh chan struct{}) RowSource {
 	rowSource := NewMockRowSource(ctrl)
-	wg := sync.WaitGroup{}
-	wg.Add(1)
-	rowSource.EXPECT().Start().DoAndReturn(mockEmitRowsWithPause(rowgroups, &wg, readCh, writeCh))
+	rowSource.EXPECT().Start().DoAndReturn(mockEmitRowsWithPause(rowgroups, continueCh))
 	rowSource.EXPECT().Stop()
-	return rowSource, &wg
+	return rowSource
 }
 
 // Ensure that the MemfileSnooper collects all the leases from the RowSource.
@@ -1346,60 +1342,73 @@ func TestMemfileSnooperEnsureWatchingCallsRowSource(t *testing.T) {
 // Ensure that prior to leases expiring, the MemfileSnooper shows the leases,
 // and then after the leases expire, it shows the same leases as expired.
 func TestMemfileSnooperGetSnapshotExpiresLeases(t *testing.T) {
-	// Arrange
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	synctest.Test(t, func(t *testing.T) {
+		// Arrange
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
 
-	rowgroups := [][][]string{
-		{
-			{"address", "hwaddr", "client_id", "valid_lifetime", "expire", "subnet_id", "fqdn_fwd", "fqdn_rev", "hostname", "state", "user_context", "pool_id"},
-			{"192.0.2.1", "00:01:02:03:04:01", "", "180", "1784635775", "1", "0", "0", "host-1.example.org", "0", "", "0"},
-			{"192.0.2.2", "00:01:02:03:04:02", "", "180", "1784635775", "1", "0", "0", "host-2.example.org", "0", "", "0"},
-			{"192.0.2.3", "00:01:02:03:04:03", "", "180", "1784635775", "1", "0", "0", "host-3.example.org", "0", "", "0"},
-			{"192.0.2.4", "00:01:02:03:04:04", "", "180", "1784635775", "1", "0", "0", "host-4.example.org", "0", "", "0"},
-		},
-		{
-			{"192.0.2.1", "00:01:02:03:04:01", "", "180", "1784635775", "1", "0", "0", "", "2", "", "0"},
-			{"192.0.2.2", "00:01:02:03:04:02", "", "180", "1784635775", "1", "0", "0", "", "2", "", "0"},
-			{"192.0.2.3", "00:01:02:03:04:03", "", "180", "1784635775", "1", "0", "0", "", "2", "", "0"},
-			{"192.0.2.4", "00:01:02:03:04:04", "", "180", "1784635775", "1", "0", "0", "", "2", "", "0"},
-		},
-	}
+		rowgroups := [][][]string{
+			{
+				{"address", "hwaddr", "client_id", "valid_lifetime", "expire", "subnet_id", "fqdn_fwd", "fqdn_rev", "hostname", "state", "user_context", "pool_id"},
+				{"192.0.2.1", "00:01:02:03:04:01", "", "180", "1784635775", "1", "0", "0", "host-1.example.org", "0", "", "0"},
+				{"192.0.2.2", "00:01:02:03:04:02", "", "180", "1784635775", "1", "0", "0", "host-2.example.org", "0", "", "0"},
+				{"192.0.2.3", "00:01:02:03:04:03", "", "180", "1784635775", "1", "0", "0", "host-3.example.org", "0", "", "0"},
+				{"192.0.2.4", "00:01:02:03:04:04", "", "180", "1784635775", "1", "0", "0", "host-4.example.org", "0", "", "0"},
+			},
+			{
+				{"192.0.2.1", "00:01:02:03:04:01", "", "180", "1784635775", "1", "0", "0", "", "2", "", "0"},
+				{"192.0.2.2", "00:01:02:03:04:02", "", "180", "1784635775", "1", "0", "0", "", "2", "", "0"},
+				{"192.0.2.3", "00:01:02:03:04:03", "", "180", "1784635775", "1", "0", "0", "", "2", "", "0"},
+				{"192.0.2.4", "00:01:02:03:04:04", "", "180", "1784635775", "1", "0", "0", "", "2", "", "0"},
+			},
+		}
 
-	readCh := make(chan struct{})
-	defer close(readCh)
-	writeCh := make(chan struct{})
-	defer close(writeCh)
+		continueCh := make(chan struct{})
+		defer close(continueCh)
 
-	rowSource, wg := makeMockRowSourceWithPause(ctrl, rowgroups, readCh, writeCh)
-	memfileSnooper, err := NewMemfileSnooper(10, daemonname.DHCPv4, rowSource)
-	require.NoError(t, err)
+		rowSource := makeMockRowSourceWithPause(ctrl, rowgroups, continueCh)
+		memfileSnooper, err := NewMemfileSnooper(10, daemonname.DHCPv4, rowSource)
+		require.NoError(t, err)
 
-	// Act
-	err = memfileSnooper.Start()
-	require.NoError(t, err)
+		// Act
+		err = memfileSnooper.Start()
+		require.NoError(t, err)
 
-	// First block of rows.
-	<-readCh
-	firstSnapshot := memfileSnooper.GetSnapshot()
-	writeCh <- struct{}{}
+		// Wait for the RowSource goroutine to become durably blocked.
+		// It is the case after the first batch of leases.
+		synctest.Wait()
 
-	// Second block of rows.
-	<-readCh
-	writeCh <- struct{}{}
+		firstSnapshot := memfileSnooper.GetSnapshot()
 
-	wg.Wait()
+		// Unblock the goroutine by sending the signal to it.
+		continueCh <- struct{}{}
 
-	secondSnapshot := memfileSnooper.GetSnapshot()
-	memfileSnooper.Stop()
+		// Wait for the goroutine to block again.
+		// We should now have the second block of rows collected.
+		synctest.Wait()
 
-	// Assert
-	require.Len(t, firstSnapshot, 4)
-	for _, row := range firstSnapshot {
-		require.Equal(t, keadata.LeaseStateDefault, row.State)
-	}
-	require.Len(t, secondSnapshot, 4)
-	for _, row := range secondSnapshot {
-		require.Equal(t, keadata.LeaseStateExpiredReclaimed, row.State)
-	}
+		// Unblock the goroutine by sending the signal to it.
+		// The goroutine should exit.
+		continueCh <- struct{}{}
+
+		// Wait for the goroutine to exit.
+		synctest.Wait()
+
+		// The last block of rows should be still collected.
+		secondSnapshot := memfileSnooper.GetSnapshot()
+		memfileSnooper.Stop()
+
+		// Wait for the snooper to stop the worker goroutine.
+		synctest.Wait()
+
+		// Assert
+		require.Len(t, firstSnapshot, 4)
+		for _, row := range firstSnapshot {
+			require.Equal(t, keadata.LeaseStateDefault, row.State)
+		}
+		require.Len(t, secondSnapshot, 4)
+		for _, row := range secondSnapshot {
+			require.Equal(t, keadata.LeaseStateExpiredReclaimed, row.State)
+		}
+	})
 }
