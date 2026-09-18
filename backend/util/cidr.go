@@ -287,7 +287,7 @@ func IsIPAddress(ipAddress string) bool {
 // Returns a list of IP addresses with filtering. The specified function should
 // return true if the address should be included in the list. If the function is
 // nil, all addresses are included.
-func getHostIPAddressesFunc(filter func(addr net.Addr) bool) ([]string, error) {
+func getHostIPAddresses(filter func(addr net.Addr) bool) ([]string, error) {
 	addrs, err := net.InterfaceAddrs()
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot get IP addresses from network interfaces")
@@ -307,7 +307,7 @@ func getHostIPAddressesFunc(filter func(addr net.Addr) bool) ([]string, error) {
 
 // Returns a list of IPv4 addresses on the host.
 func GetHostIPv4Addresses() ([]string, error) {
-	return getHostIPAddressesFunc(func(addr net.Addr) bool {
+	return getHostIPAddresses(func(addr net.Addr) bool {
 		ip, _, err := net.ParseCIDR(addr.String())
 		return err == nil && ip.To4() != nil
 	})
@@ -315,7 +315,7 @@ func GetHostIPv4Addresses() ([]string, error) {
 
 // Returns a list of IPv6 addresses on the host.
 func GetHostIPv6Addresses() ([]string, error) {
-	return getHostIPAddressesFunc(func(addr net.Addr) bool {
+	return getHostIPAddresses(func(addr net.Addr) bool {
 		ip, _, err := net.ParseCIDR(addr.String())
 		return err == nil && ip.To4() == nil
 	})
@@ -323,7 +323,7 @@ func GetHostIPv6Addresses() ([]string, error) {
 
 // Checks if the specified IP address is assigned to a network interface on the host.
 func IsHostIPAddress(ipAddress string) bool {
-	localAddresses, err := getHostIPAddressesFunc(nil)
+	localAddresses, err := getHostIPAddresses(nil)
 	if err != nil {
 		return false
 	}
