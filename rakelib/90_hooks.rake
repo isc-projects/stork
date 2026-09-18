@@ -367,6 +367,10 @@ namespace :hook do
                     # Preserve the original mod files.
                     sh "cp", *mod_files, temp
 
+                    sh GO, "mod", "tidy"
+                    # Revert the changes in Go mod files.
+                    sh "cp", *mod_files.collect { |f| File.join(temp, f) }, "."
+
                     # Remap the core dependency to the local directory.
                     remap_core_local()
 
