@@ -37,10 +37,10 @@ variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/tools/python/pip_cache"
 
   # Go ENV settings to have working cache.
-  GOPATH: $CI_PROJECT_DIR/.go
-  GOMODCACHE: $CI_PROJECT_DIR/.go/pkg/mod
-  GOCACHE: $CI_PROJECT_DIR/.go/build-cache
-  GOBIN: $CI_PROJECT_DIR/.go/bin
+  GOPATH: $CI_PROJECT_DIR/tools/golang
+  GOMODCACHE: $CI_PROJECT_DIR/tools/golang/pkg/mod
+  GOCACHE: $CI_PROJECT_DIR/tools/golang/build-cache
+  GOBIN: $CI_PROJECT_DIR/tools/golang/bin
 
   # NPM cache location.
   NPM_CACHE_DIR: $CI_PROJECT_DIR/.npm
@@ -127,7 +127,6 @@ stages:
 .golang_cache_paths: &golang_cache_paths
   paths:
     - tools/golang
-    - .go
   policy: $CACHE_POLICY
 
 .utils_cache_paths: &utils_cache_paths
