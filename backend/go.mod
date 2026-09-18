@@ -25,6 +25,7 @@ require (
 	github.com/go-pg/migrations/v8 v8.1.0
 	github.com/go-pg/pg/v10 v10.15.1
 	github.com/go-resty/resty/v2 v2.17.2
+	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.4
 	github.com/jessevdk/go-flags v1.6.1
 	github.com/lib/pq v1.12.3
 	github.com/miekg/dns v1.1.73

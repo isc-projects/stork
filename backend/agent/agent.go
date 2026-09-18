@@ -9,12 +9,14 @@ import (
 	"math"
 	"net"
 	"runtime"
+	"runtime/debug"
 	"slices"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
 	"github.com/pkg/errors"
 	"github.com/shirou/gopsutil/v4/host"
 	"github.com/shirou/gopsutil/v4/load"
@@ -216,7 +218,22 @@ func newGRPCServerWithTLS(certStore *CertStore) (*grpc.Server, error) {
 	}
 
 	timeoutOption := grpc.ConnectionTimeout(30 * time.Second)
-	srv := grpc.NewServer(grpc.Creds(creds), timeoutOption)
+
+	// Install the interceptors for recovering from panics both in the unary
+	// calls and in the stream calls.
+	grpcPanicRecoveryHandler := func(p any) error {
+		log.Errorf("gRPC panic: %v\n%s", p, debug.Stack())
+		return status.Errorf(codes.Internal, "internal error")
+	}
+	srv := grpc.NewServer(
+		grpc.Creds(creds),
+		timeoutOption,
+		grpc.UnaryInterceptor(
+			recovery.UnaryServerInterceptor(recovery.WithRecoveryHandler(grpcPanicRecoveryHandler)),
+		),
+		grpc.StreamInterceptor(
+			recovery.StreamServerInterceptor(recovery.WithRecoveryHandler(grpcPanicRecoveryHandler)),
+		))
 	return srv, nil
 }
 
