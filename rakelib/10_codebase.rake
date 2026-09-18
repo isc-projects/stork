@@ -403,9 +403,6 @@ file NODE_MODULES => [CLANGPLUSPLUS, NPM, "webui/package.json", "webui/package-l
     ci_opts = []
     if ENV["CI"] == "true"
         ci_opts += ["--no-audit", "--no-progress"]
-        if !ENV["NPM_CACHE_DIR"].nil?
-            ci_opts += ["--cache", ENV["NPM_CACHE_DIR"]]
-        end
     end
 
     Dir.chdir("webui") do
@@ -538,9 +535,6 @@ namespace :prepare do
 
     desc 'Prepare Sphinx dependencies needed for documentation building'
     task :doc_deps => [SPHINX_BUILD]
-
-    desc 'Trigger installation of a subset of backend (GO) dependencies required in CI'
-    task :ci => [NFPM, PROTOC_GEN_GO, PROTOC_GEN_GO_GRPC, MOCKGEN, TPARSE, GO_JUNIT_REPORT, GOCOVER_COBERTURA]
 end
 
 namespace :check do
