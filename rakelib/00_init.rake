@@ -731,7 +731,7 @@ directory java_tools_dir
 ruby_tools_dir = File.join(tools_dir, "ruby")
 directory ruby_tools_dir
 
-shellcheck_tools_dir = File.join(tools_dir, "shellcheck")
+shellcheck_tools_dir = File.join(tools_dir, "shellchk")
 directory shellcheck_tools_dir
 
 # We use the "bundle" gem to manage the dependencies. The "bundle" package is

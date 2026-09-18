@@ -134,7 +134,7 @@ stages:
   paths:
     - tools/python
     - tools/ruby
-    - tools/shellcheck
+    - tools/shellchk
   policy: $CACHE_POLICY
 
 .nodejs_cache_paths: &nodejs_cache_paths
