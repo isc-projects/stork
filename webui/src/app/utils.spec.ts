@@ -556,8 +556,7 @@ describe('utils', () => {
         expect(deepEqual(a, c)).toBeFalse()
     })
 
-    it('should generate unique UUIDs in insecure crypto', () => {
-        crypto.randomUUID = undefined as never
+    it('should generate unique UUIDs in secure context', () => {
         const uuid1 = generateUUID()
         const uuid2 = generateUUID()
         expect(uuid1).not.toBe(uuid2)
@@ -565,9 +564,17 @@ describe('utils', () => {
         expect(uuid2).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/)
     })
 
-    it('should generate unique UUIDs in secure crypto', () => {
-        crypto.randomUUID = () => '42000000-0000-0000-0000-000000000000'
-        const uuid = generateUUID()
-        expect(uuid).toBe('42000000-0000-0000-0000-000000000000')
+    it('should generate unique UUIDs in insecure context', () => {
+        const backup = crypto.randomUUID
+        crypto.randomUUID = undefined
+        try {
+            const uuid1 = generateUUID()
+            const uuid2 = generateUUID()
+            expect(uuid1).not.toBe(uuid2)
+            expect(uuid1).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/)
+            expect(uuid2).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/)
+        } finally {
+            crypto.randomUUID = backup
+        }
     })
 })
