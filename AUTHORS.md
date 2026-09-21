@@ -53,3 +53,5 @@ We have received the following contributions:
   - 2026-05: Fix the management of a Stork system user in the Alpine package.
 - Sebastien De Groof
   - 2026-07: Add support for allocation statistics.
+- Wojciech Lipiński
+  - 2026-09: Fixed updating DHCP options with numeric values and no option definitions
