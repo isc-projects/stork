@@ -1,5 +1,4 @@
-Stork authors and contributors
-------------------------------
+# Stork authors and contributors
 
 Primary developers:
 
@@ -36,21 +35,21 @@ Former developers:
 
 We have received the following contributions:
 
- - Franek Górski
-   - 2019-09: Grafana template
- - Yannick Martin (OVHCloud)
-   - 2021-05: Fix for Stork agent not honoring the listen-only flags
- - Kevin Fleming
-   - 2022-03: Automatic Stork services restart on failure
- - Mark Tinberg (University of Wisconsin-Madison)
-   - 2024-02: Enhanced the package installation scripts
- - Robin Berger
-   - 2024-03: Separated DN used in various contexts in the LDAP hook.
- - Benjamin Solenthaler
-   - 2025-11: Fix for editing host reservation with an IPv6 prefix.
- - Lucas Petrino
-   - 2025-11: Fix for monitor Kea listening on IPv6 address.
- - Phillip Jaenke
-   - 2026-05: Fix the management of a Stork system user in the Alpine package.
- - Sebastien De Groof
-   - 2026-07: Add support for allocation statistics.
+- Franek Górski
+  - 2019-09: Grafana template
+- Yannick Martin (OVHCloud)
+  - 2021-05: Fix for Stork agent not honoring the listen-only flags
+- Kevin Fleming
+  - 2022-03: Automatic Stork services restart on failure
+- Mark Tinberg (University of Wisconsin-Madison)
+  - 2024-02: Enhanced the package installation scripts
+- Robin Berger
+  - 2024-03: Separated DN used in various contexts in the LDAP hook.
+- Benjamin Solenthaler
+  - 2025-11: Fix for editing host reservation with an IPv6 prefix.
+- Lucas Petrino
+  - 2025-11: Fix for monitor Kea listening on IPv6 address.
+- Phillip Jaenke
+  - 2026-05: Fix the management of a Stork system user in the Alpine package.
+- Sebastien De Groof
+  - 2026-07: Add support for allocation statistics.
