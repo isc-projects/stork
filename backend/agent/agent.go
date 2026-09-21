@@ -220,7 +220,8 @@ func newGRPCServerWithTLS(certStore *CertStore) (*grpc.Server, error) {
 	timeoutOption := grpc.ConnectionTimeout(30 * time.Second)
 
 	// Install the interceptors for recovering from panics both in the unary
-	// calls and in the stream calls.
+	// calls and in the stream calls. When adding new interceptors, please make
+	// sure that the panic recovery handler is last.
 	grpcPanicRecoveryHandler := func(p any) error {
 		log.Errorf("gRPC panic: %v\n%s", p, debug.Stack())
 		return status.Errorf(codes.Internal, "internal error")
