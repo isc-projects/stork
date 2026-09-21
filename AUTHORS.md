@@ -4,12 +4,13 @@ Stork authors and contributors
 Primary developers:
 
 - Marcin Siodelski (maintainer, database, server, agent, UI, config management,
-                    config review, Kea, BIND 9, PowerDNS, DNS zone viewer)
+                    config review, Kea, BIND 9, PowerDNS, DNS zone viewer, zone
+                    transfer monitoring)
 - Sławek Figiel (maintainer, database, server, agent, UI, hooks, LDAP, system tests,
                  registration, config migration, config review, Prometheus,
-                 Kea statistics)
+                 Kea statistics, Kea config backend)
 - Piotrek Zadroga (maintainer, UI, responsive UI, version reporting, DNS zone viewer,
-                   read-only user role)
+                   read-only user role, OIDC)
 - William Leuschner (maintainer, UI, lease tracking)
 
 Active developers:
