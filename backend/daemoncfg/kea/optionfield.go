@@ -36,6 +36,11 @@ func (option DHCPOption) IsAlwaysSend() bool {
 	return option.AlwaysSend
 }
 
+// Checks if the option should never be returned to a DHCP client.
+func (option DHCPOption) IsNeverSend() bool {
+	return option.NeverSend
+}
+
 // Returns option code.
 func (option DHCPOption) GetCode() uint16 {
 	return option.Code

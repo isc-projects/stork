@@ -32,6 +32,7 @@ export function createDefaultDhcpOptionFormGroup(
             ],
         ],
         alwaysSend: [{ value: false, disabled: false }],
+        neverSend: [{ value: false, disabled: false }],
         optionFields: fb.array([]),
         suboptions: fb.array([]),
         unknown: fb.record<any>({}),

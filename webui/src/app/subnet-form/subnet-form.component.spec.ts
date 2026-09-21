@@ -913,6 +913,7 @@ describe('SubnetFormComponent', () => {
                             options: [
                                 {
                                     alwaysSend: true,
+                                    neverSend: false,
                                     code: 5,
                                     encapsulate: '',
                                     fields: [
@@ -955,6 +956,7 @@ describe('SubnetFormComponent', () => {
                             options: [
                                 {
                                     alwaysSend: true,
+                                    neverSend: false,
                                     code: 5,
                                     encapsulate: '',
                                     fields: [
@@ -984,6 +986,31 @@ describe('SubnetFormComponent', () => {
         )
         expect(component.formSubmit.emit).toHaveBeenCalled()
         expect(messageService.add).toHaveBeenCalled()
+    }))
+
+    it('should submit never-send=true when updating IPv4 subnet option', fakeAsync(() => {
+        spyOn(dhcpApi, 'updateSubnetBegin').and.returnValue(wrapInHttpResponse(cannedResponseBeginSubnet4))
+        component.subnetId = 123
+        component.ngOnInit()
+        tick()
+        fixture.detectChanges()
+
+        // Toggle never-send for the first local subnet option.
+        component.state.group.get('options.data.0.0.neverSend')?.setValue(true)
+
+        const okResp: any = {
+            status: 200,
+        }
+        spyOn(dhcpApi, 'updateSubnetSubmit').and.returnValue(of(okResp))
+        spyOn(component.formSubmit, 'emit')
+        spyOn(messageService, 'add')
+
+        component.onSubmit()
+        tick()
+        fixture.detectChanges()
+
+        const submittedSubnet = (dhcpApi.updateSubnetSubmit as jasmine.Spy).calls.mostRecent().args[2] as Subnet
+        expect(submittedSubnet.localSubnets[0].keaConfigSubnetParameters.subnetLevelParameters.options[0].neverSend).toBeTrue()
     }))
 
     it('should open a form for updating IPv6 subnet', fakeAsync(() => {
@@ -1052,6 +1079,7 @@ describe('SubnetFormComponent', () => {
                             options: [
                                 {
                                     alwaysSend: true,
+                                    neverSend: false,
                                     code: 23,
                                     encapsulate: '',
                                     fields: [
@@ -1102,6 +1130,7 @@ describe('SubnetFormComponent', () => {
                             options: [
                                 {
                                     alwaysSend: true,
+                                    neverSend: false,
                                     code: 23,
                                     encapsulate: '',
                                     fields: [

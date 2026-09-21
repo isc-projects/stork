@@ -294,6 +294,7 @@ describe('KeaGlobalConfigurationFormComponent', () => {
                         options: [
                             {
                                 alwaysSend: false,
+                                neverSend: false,
                                 code: 6,
                                 encapsulate: '',
                                 fields: [

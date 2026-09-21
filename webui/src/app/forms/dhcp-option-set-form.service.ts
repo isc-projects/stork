@@ -112,6 +112,7 @@ export class DhcpOptionSetFormService extends FormProcessor {
             }
             const item: DHCPOption = {
                 alwaysSend: option.get('alwaysSend').value,
+                neverSend: !!option.get('neverSend')?.value,
                 code: optionCode,
                 encapsulate: '',
                 fields: new Array<DHCPOptionField>(),
@@ -233,6 +234,9 @@ export class DhcpOptionSetFormService extends FormProcessor {
             }
             if (option.alwaysSend) {
                 optionFormGroup.get('alwaysSend').setValue(option.alwaysSend)
+            }
+            if (option.neverSend) {
+                optionFormGroup.get('neverSend').setValue(option.neverSend)
             }
             if (option.clientClasses?.length > 0 && (!keaVersionRange || gte(keaVersionRange[1], '2.7.4'))) {
                 optionFormGroup.get('clientClasses').setValue(option.clientClasses)

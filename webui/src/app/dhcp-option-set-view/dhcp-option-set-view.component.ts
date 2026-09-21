@@ -21,6 +21,13 @@ export interface OptionNode {
      * if the client has requested the option.
      */
     alwaysSend?: boolean
+
+    /**
+     * Indicates if the option should never be sent to a DHCP client,
+     * even if the client has requested it.
+     */
+    neverSend?: boolean
+
     /**
      * Option code.
      */
@@ -176,6 +183,7 @@ export class DhcpOptionSetViewComponent implements OnInit {
                 expanded: true,
                 data: {
                     alwaysSend: option.alwaysSend,
+                    neverSend: option.neverSend,
                     code: option.code,
                     universe: option.universe,
                     level: level,

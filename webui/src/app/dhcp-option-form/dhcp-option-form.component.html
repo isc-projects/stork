@@ -105,6 +105,16 @@
                 ></p-checkbox>
                 <label for="{{ alwaysSendCheckboxId }}">Always Send</label>
             </div>
+            <div class="field-checkbox mb-0">
+                <p-checkbox
+                    ngDefaultControl
+                    formControlName="neverSend"
+                    [binary]="true"
+                    inputId="{{ neverSendCheckboxId }}"
+                    pTooltip="When checked, the option will never be returned to a DHCP client, even if it is requested."
+                ></p-checkbox>
+                <label for="{{ neverSendCheckboxId }}">Never Send</label>
+            </div>
         }
         <p-splitButton
             label="{{ 'Add ' + lastFieldType }}"

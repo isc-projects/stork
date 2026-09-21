@@ -29,6 +29,8 @@ describe('DhcpOptionFormComponent', () => {
     it('should create', () => {
         expect(component).toBeTruthy()
         expect(component.formGroup.contains('optionCode')).toBeTrue()
+        expect(component.formGroup.contains('alwaysSend')).toBeTrue()
+        expect(component.formGroup.contains('neverSend')).toBeTrue()
         expect(component.formGroup.contains('optionFields')).toBeTrue()
         expect(component.formGroup.contains('suboptions')).toBeTrue()
     })

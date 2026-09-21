@@ -13,6 +13,7 @@ import (
 // Represents the known (supported by Stork) parameters of a DHCP option.
 type SingleOptionDataKnownParameters struct {
 	AlwaysSend    bool     `json:"always-send,omitempty"`
+	NeverSend     bool     `json:"never-send,omitempty"`
 	Code          uint16   `json:"code,omitempty"`
 	CSVFormat     bool     `json:"csv-format"`
 	Data          string   `json:"data,omitempty"`
@@ -64,6 +65,7 @@ func CreateSingleOptionData(daemonID int64, lookup DHCPOptionDefinitionLookup, o
 	data := &SingleOptionData{
 		SingleOptionDataKnownParameters: SingleOptionDataKnownParameters{
 			AlwaysSend:    option.IsAlwaysSend(),
+			NeverSend:     option.IsNeverSend(),
 			Code:          option.GetCode(),
 			CSVFormat:     lookup.DefinitionExists(daemonID, option),
 			Name:          option.GetName(),
@@ -123,6 +125,7 @@ func CreateSingleOptionData(daemonID int64, lookup DHCPOptionDefinitionLookup, o
 // by the CreateDHCPOption function.
 type DHCPOption struct {
 	AlwaysSend        bool
+	NeverSend         bool
 	Code              uint16
 	Encapsulate       string
 	Fields            []dhcpmodel.DHCPOptionFieldAccessor
@@ -138,6 +141,7 @@ type DHCPOption struct {
 func CreateDHCPOption(optionData SingleOptionData, universe storkutil.IPType, lookup DHCPOptionDefinitionLookup) (dhcpmodel.DHCPOptionAccessor, error) {
 	option := DHCPOption{
 		AlwaysSend:        optionData.AlwaysSend,
+		NeverSend:         optionData.NeverSend,
 		Code:              optionData.Code,
 		Name:              optionData.Name,
 		Space:             optionData.Space,

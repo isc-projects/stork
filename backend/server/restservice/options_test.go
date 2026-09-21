@@ -35,6 +35,7 @@ func TestFlattenDHCPv4Options(t *testing.T) {
 			},
 			Options: []*models.DHCPOption{
 				{
+					NeverSend:   true,
 					Code:        1,
 					Encapsulate: "option-1001.1",
 					Fields: []*models.DHCPOptionField{
@@ -168,6 +169,7 @@ func TestFlattenDHCPv4Options(t *testing.T) {
 		return options[i].Code < options[j].Code
 	})
 	require.False(t, options[0].AlwaysSend)
+	require.True(t, options[0].NeverSend)
 	require.EqualValues(t, 1, options[0].Code)
 	require.Len(t, options[0].Fields, 1)
 	require.Len(t, options[0].Fields[0].Values, 1)
@@ -176,11 +178,13 @@ func TestFlattenDHCPv4Options(t *testing.T) {
 	require.Equal(t, "option-1001.1", options[0].Encapsulate)
 	require.Equal(t, storkutil.IPv4, options[0].Universe)
 	require.Contains(t, options[0].UnknownParameters, "client-classes")
+	require.NotContains(t, options[0].UnknownParameters, "never-send")
 	clientClasses := options[0].UnknownParameters["client-classes"].([]any)
 	require.Len(t, clientClasses, 1)
 	require.Equal(t, "KNOWN", clientClasses[0])
 
 	require.False(t, options[1].AlwaysSend)
+	require.False(t, options[1].NeverSend)
 	require.EqualValues(t, 2, options[1].Code)
 	require.Len(t, options[1].Fields, 1)
 	require.Len(t, options[1].Fields[0].Values, 1)
@@ -413,6 +417,7 @@ func TestUnflattenDHCPOptions(t *testing.T) {
 	options := []dbmodel.DHCPOption{
 		{
 			AlwaysSend:  true,
+			NeverSend:   true,
 			Code:        1001,
 			Encapsulate: "option-1001",
 			Fields: []dbmodel.DHCPOptionField{
@@ -456,6 +461,7 @@ func TestUnflattenDHCPOptions(t *testing.T) {
 	restOptions := rapi.unflattenDHCPOptions(options, "", 0)
 	require.Len(t, restOptions, 1)
 	require.True(t, restOptions[0].AlwaysSend)
+	require.True(t, restOptions[0].NeverSend)
 	require.EqualValues(t, 1001, restOptions[0].Code)
 	require.EqualValues(t, "option-1001", restOptions[0].Encapsulate)
 	require.Len(t, restOptions[0].Fields, 1)
@@ -468,6 +474,7 @@ func TestUnflattenDHCPOptions(t *testing.T) {
 	require.IsType(t, map[string]any(nil), restOptions[0].Unknown)
 	unknownOptionParameters := restOptions[0].Unknown.(map[string]any)
 	require.Contains(t, unknownOptionParameters, "client-classes")
+	require.NotContains(t, unknownOptionParameters, "never-send")
 	clientClasses := unknownOptionParameters["client-classes"].([]any)
 	require.Len(t, clientClasses, 1)
 	require.Equal(t, "KNOWN", clientClasses[0])
@@ -510,6 +517,7 @@ func TestUnflattenDHCPOptionsWithClientClasses(t *testing.T) {
 	options := []dbmodel.DHCPOption{
 		{
 			AlwaysSend:    false,
+			NeverSend:     true,
 			Code:          6,
 			ClientClasses: []string{"KNOWN", "UNKNOWN"},
 			Fields: []dbmodel.DHCPOptionField{
@@ -528,6 +536,7 @@ func TestUnflattenDHCPOptionsWithClientClasses(t *testing.T) {
 	// Assert
 	require.Len(t, restOptions, 1)
 	require.Equal(t, []string{"KNOWN", "UNKNOWN"}, restOptions[0].ClientClasses)
+	require.True(t, restOptions[0].NeverSend)
 	require.EqualValues(t, 6, restOptions[0].Code)
 }
 

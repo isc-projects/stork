@@ -60,6 +60,7 @@ export const CombinedOptions: Story = {
                 },
                 {
                     code: 1028,
+                    neverSend: true,
                     options: [
                         {
                             code: 1029,

@@ -76,6 +76,7 @@ describe('DhcpOptionSetViewComponent', () => {
                 },
                 {
                     code: 1028,
+                    neverSend: true,
                     options: [
                         {
                             code: 1029,
@@ -158,6 +159,7 @@ describe('DhcpOptionSetViewComponent', () => {
 
         // Option 1028.
         expect((component.optionNodes[0][2] as TreeNode<OptionNode>).data.alwaysSend).toBeFalsy()
+        expect((component.optionNodes[0][2] as TreeNode<OptionNode>).data.neverSend).toBeTrue()
         expect((component.optionNodes[0][2] as TreeNode<OptionNode>).data.code).toBe(1028)
         expect(component.optionNodes[0][2].children.length).toBe(1)
 
@@ -173,16 +175,18 @@ describe('DhcpOptionSetViewComponent', () => {
 
         // Make sure that appropriate tags are displayed.
         let optionTags = fixture.debugElement.queryAll(By.css('p-tag'))
-        expect(optionTags.length).toBe(4)
+        expect(optionTags.length).toBe(5)
 
         // First option is configured to be always sent.
         expect(optionTags[0].properties.innerText).toBe('always sent')
         // One of the suboptions is empty.
         expect(optionTags[1].properties.innerText).toBe('empty suboption')
+        // One of the suboptions is never sent.
+        expect(optionTags[2].properties.innerText).toBe('never sent')
         // One of the top-level options is empty.
-        expect(optionTags[2].properties.innerText).toBe('empty option')
+        expect(optionTags[3].properties.innerText).toBe('empty option')
         // Another empty suboption.
-        expect(optionTags[3].properties.innerText).toBe('empty suboption')
+        expect(optionTags[4].properties.innerText).toBe('empty suboption')
     })
 
     it('should should display a message indicating there are no options', () => {

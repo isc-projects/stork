@@ -10,6 +10,11 @@
                     <p-tag>always sent</p-tag>
                 </div>
             }
+            @if (node.data.neverSend) {
+                <div class="ml-2">
+                    <p-tag severity="warn">never sent</p-tag>
+                </div>
+            }
             @if (isEmpty(node)) {
                 <div class="ml-2">
                     <p-tag>empty option</p-tag>
@@ -25,10 +30,11 @@
                     Option fields and suboptions are displayed for the option {{ node.data.code }}. Hover the cursor
                     over the option fields to see their types. If the "always sent" tag is shown next to the option
                     code, the option is configured to always be returned to the DHCP client, even when it is not
-                    requested. The "empty option" and "empty suboption" tags indicate that the configured DHCP option
-                    contains no payload. The "{{ node.data.level }}" tag is shown when DHCP options are inherited from
-                    multiple configuration levels; it indicates that the option has been defined at the level presented
-                    by the tag.
+                    requested. If the "never sent" tag is shown, the option is configured to never be returned to the
+                    DHCP client, even when it is requested. The "empty option" and "empty suboption" tags indicate that
+                    the configured DHCP option contains no payload. The "{{ node.data.level }}" tag is shown when DHCP
+                    options are inherited from multiple configuration levels; it indicates that the option has been
+                    defined at the level presented by the tag.
                 </app-help-tip>
             </div>
         </div>

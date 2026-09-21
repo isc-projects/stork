@@ -6,11 +6,13 @@ describe('DhcpOptionForm', () => {
     it('should create a default option form group', () => {
         const fg = createDefaultDhcpOptionFormGroup(null, IPType.IPv4)
         expect(fg.contains('alwaysSend')).toBeTrue()
+        expect(fg.contains('neverSend')).toBeTrue()
         expect(fg.contains('optionCode')).toBeTrue()
         expect(fg.contains('optionFields')).toBeTrue()
         expect(fg.contains('suboptions')).toBeTrue()
 
         expect(fg.get('alwaysSend').value).toBeFalse()
+        expect(fg.get('neverSend').value).toBeFalse()
         expect(fg.get('clientClasses').value).toEqual([])
         expect(fg.get('optionCode').value).toBe(null)
         expect((fg.get('optionFields') as UntypedFormArray).length).toBe(0)

@@ -17,6 +17,9 @@ type DHCPOptionAccessor interface {
 	// Returns a boolean flag indicating if the option should be
 	// always returned, regardless whether it is requested or not.
 	IsAlwaysSend() bool
+	// Returns a boolean flag indicating if the option should never
+	// be returned to a DHCP client.
+	IsNeverSend() bool
 	// Returns option code.
 	GetCode() uint16
 	// Returns encapsulated option space name.

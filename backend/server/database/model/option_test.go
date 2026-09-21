@@ -14,6 +14,7 @@ func TestDHCPOptionInterface(t *testing.T) {
 	// Create an option.
 	option := DHCPOption{
 		AlwaysSend:  true,
+		NeverSend:   true,
 		Code:        1776,
 		Encapsulate: "bar",
 		Name:        "foo",
@@ -31,6 +32,7 @@ func TestDHCPOptionInterface(t *testing.T) {
 	}
 	// Validate returned values.
 	require.True(t, option.IsAlwaysSend())
+	require.True(t, option.IsNeverSend())
 	require.EqualValues(t, 1776, option.GetCode())
 	require.Equal(t, "bar", option.GetEncapsulate())
 	require.Equal(t, "foo", option.GetName())
@@ -75,6 +77,7 @@ func TestNewDHCPOptionFromKea(t *testing.T) {
 	optionData := keaconfig.SingleOptionData{
 		SingleOptionDataKnownParameters: keaconfig.SingleOptionDataKnownParameters{
 			AlwaysSend: true,
+			NeverSend:  true,
 			Code:       23,
 			CSVFormat:  true,
 			Data:       "8",
@@ -88,6 +91,7 @@ func TestNewDHCPOptionFromKea(t *testing.T) {
 	require.NotNil(t, option)
 
 	require.True(t, option.IsAlwaysSend())
+	require.True(t, option.IsNeverSend())
 	require.EqualValues(t, 23, option.GetCode())
 	require.Equal(t, dhcpmodel.DHCPv4OptionSpace, option.GetSpace())
 	require.Equal(t, "option-foo", option.GetName())

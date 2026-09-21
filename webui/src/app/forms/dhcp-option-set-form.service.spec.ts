@@ -19,6 +19,7 @@ describe('DhcpOptionSetFormService', () => {
         formArray = formBuilder.array([
             formBuilder.group({
                 alwaysSend: formBuilder.control(true),
+                neverSend: formBuilder.control(false),
                 clientClasses: formBuilder.control(['FOOBAR']),
                 optionCode: formBuilder.control(1024),
                 optionFields: formBuilder.array([
@@ -38,12 +39,12 @@ describe('DhcpOptionSetFormService', () => {
                     }),
                 ]),
                 unknown: formBuilder.record<any>({
-                    'never-send': formBuilder.control(true),
                     'client-classes': formBuilder.control(['KNOWN']),
                 }),
             }),
             formBuilder.group({
                 alwaysSend: formBuilder.control(false),
+                neverSend: formBuilder.control(false),
                 clientClasses: formBuilder.control(['FOO', 'BAR']),
                 optionCode: formBuilder.control(2024),
                 optionFields: formBuilder.array([
@@ -57,11 +58,13 @@ describe('DhcpOptionSetFormService', () => {
             }),
             formBuilder.group({
                 alwaysSend: formBuilder.control(true),
+                neverSend: formBuilder.control(true),
                 clientClasses: formBuilder.control(['FOO', 'BAR', 'BAZ']),
                 optionCode: formBuilder.control(3087),
                 suboptions: formBuilder.array([
                     formBuilder.group({
                         alwaysSend: formBuilder.control(false),
+                        neverSend: formBuilder.control(false),
                         optionCode: formBuilder.control(1),
                         optionFields: formBuilder.array([
                             new DhcpOptionFieldFormGroup(DhcpOptionFieldType.Uint16, {
@@ -71,6 +74,7 @@ describe('DhcpOptionSetFormService', () => {
                     }),
                     formBuilder.group({
                         alwaysSend: formBuilder.control(false),
+                        neverSend: formBuilder.control(false),
                         clientClasses: formBuilder.control([]),
                         optionCode: formBuilder.control(0),
                         optionFields: formBuilder.array([
@@ -81,6 +85,7 @@ describe('DhcpOptionSetFormService', () => {
                         suboptions: formBuilder.array([
                             formBuilder.group({
                                 alwaysSend: formBuilder.control(false),
+                                neverSend: formBuilder.control(false),
                                 optionCode: formBuilder.control(5),
                                 optionFields: formBuilder.array([
                                     new DhcpOptionFieldFormGroup(DhcpOptionFieldType.String, {
@@ -107,11 +112,13 @@ describe('DhcpOptionSetFormService', () => {
 
         // Option 1024.
         expect(clonedArray.at(0).get('alwaysSend')).toBeTruthy()
+        expect(clonedArray.at(0).get('neverSend')).toBeTruthy()
         expect(clonedArray.at(0).get('clientClasses')).toBeTruthy()
         expect(clonedArray.at(0).get('optionCode')).toBeTruthy()
         expect(clonedArray.at(0).get('optionFields')).toBeTruthy()
 
         expect(clonedArray.at(0).get('alwaysSend').value).toBeTrue()
+        expect(clonedArray.at(0).get('neverSend').value).toBeFalse()
         expect(clonedArray.at(0).get('clientClasses').value).toEqual(['FOOBAR'])
         expect(clonedArray.at(0).get('optionCode').value).toBe(1024)
 
@@ -150,17 +157,18 @@ describe('DhcpOptionSetFormService', () => {
 
         expect(clonedArray.at(0).get('unknown')).toBeTruthy()
         expect(clonedArray.at(0).get('unknown').value).toEqual({
-            'never-send': true,
             'client-classes': ['KNOWN'],
         })
 
         // Option 2024.
         expect(clonedArray.at(1).get('alwaysSend')).toBeTruthy()
+        expect(clonedArray.at(1).get('neverSend')).toBeTruthy()
         expect(clonedArray.at(1).get('clientClasses')).toBeTruthy()
         expect(clonedArray.at(1).get('optionCode')).toBeTruthy()
         expect(clonedArray.at(1).get('optionFields')).toBeTruthy()
 
         expect(clonedArray.at(1).get('alwaysSend').value).toBeFalse()
+        expect(clonedArray.at(1).get('neverSend').value).toBeFalse()
         expect(clonedArray.at(1).get('clientClasses').value).toEqual(['FOO', 'BAR'])
         expect(clonedArray.at(1).get('optionCode').value).toBe(2024)
 
@@ -183,11 +191,13 @@ describe('DhcpOptionSetFormService', () => {
 
         // Option 3087.
         expect(clonedArray.at(2).get('alwaysSend')).toBeTruthy()
+        expect(clonedArray.at(2).get('neverSend')).toBeTruthy()
         expect(clonedArray.at(2).get('clientClasses')).toBeTruthy()
         expect(clonedArray.at(2).get('optionCode')).toBeTruthy()
         expect(clonedArray.at(2).get('suboptions')).toBeTruthy()
 
         expect(clonedArray.at(2).get('alwaysSend').value).toBeTrue()
+        expect(clonedArray.at(2).get('neverSend').value).toBeTrue()
         expect(clonedArray.at(2).get('clientClasses').value).toEqual(['FOO', 'BAR', 'BAZ'])
         expect(clonedArray.at(2).get('optionCode').value).toBe(3087)
 
@@ -197,6 +207,7 @@ describe('DhcpOptionSetFormService', () => {
 
         // Option 3087.1.
         expect(clonedArray.at(2).get('suboptions.0.alwaysSend')).toBeTruthy()
+        expect(clonedArray.at(2).get('suboptions.0.neverSend')).toBeTruthy()
         expect(clonedArray.at(2).get('suboptions.0.optionCode')).toBeTruthy()
         expect(clonedArray.at(2).get('suboptions.0.optionFields')).toBeTruthy()
 
@@ -210,11 +221,13 @@ describe('DhcpOptionSetFormService', () => {
 
         // Option 3087.0.
         expect(clonedArray.at(2).get('suboptions.1.alwaysSend')).toBeTruthy()
+        expect(clonedArray.at(2).get('suboptions.1.neverSend')).toBeTruthy()
         expect(clonedArray.at(2).get('suboptions.1.clientClasses')).toBeTruthy()
         expect(clonedArray.at(2).get('suboptions.1.optionCode')).toBeTruthy()
         expect(clonedArray.at(2).get('suboptions.1.optionFields')).toBeTruthy()
 
         expect(clonedArray.at(2).get('suboptions.1.alwaysSend').value).toBeFalse()
+        expect(clonedArray.at(2).get('suboptions.1.neverSend').value).toBeFalse()
         expect(clonedArray.at(2).get('suboptions.1.clientClasses').value).toEqual([])
         expect(clonedArray.at(2).get('suboptions.1.optionCode').value).toBe(0)
 
@@ -234,14 +247,19 @@ describe('DhcpOptionSetFormService', () => {
         expect(serialized.length).toBe(3)
 
         expect(serialized[0].hasOwnProperty('alwaysSend')).toBeTrue()
+        expect(serialized[0].hasOwnProperty('neverSend')).toBeTrue()
         expect(serialized[0].hasOwnProperty('clientClasses')).toBeTrue()
         expect(serialized[0].hasOwnProperty('code')).toBeTrue()
         expect(serialized[0].hasOwnProperty('encapsulate')).toBeTrue()
         expect(serialized[0].hasOwnProperty('fields')).toBeTrue()
         expect(serialized[0].hasOwnProperty('options')).toBeTrue()
         expect(serialized[0].alwaysSend).toBeTrue()
+        expect(serialized[0].neverSend).toBeFalse()
         expect(serialized[0].code).toBe(1024)
         expect(serialized[0].encapsulate.length).toBe(0)
+        expect(serialized[0].unknown).toEqual({
+            'client-classes': ['KNOWN'],
+        })
         // It should have 4 option fields of different types.
         expect(serialized[0].fields.length).toBe(4)
         expect(serialized[0].fields[0].fieldType).toBe(DhcpOptionFieldType.IPv6Prefix)
@@ -260,12 +278,14 @@ describe('DhcpOptionSetFormService', () => {
         expect(serialized[0].fields[3].values[0]).toBe('foobar')
 
         expect(serialized[1].hasOwnProperty('alwaysSend')).toBeTrue()
+        expect(serialized[1].hasOwnProperty('neverSend')).toBeTrue()
         expect(serialized[1].hasOwnProperty('clientClasses')).toBeTrue()
         expect(serialized[1].hasOwnProperty('code')).toBeTrue()
         expect(serialized[1].hasOwnProperty('encapsulate')).toBeTrue()
         expect(serialized[1].hasOwnProperty('fields')).toBeTrue()
         expect(serialized[1].hasOwnProperty('options')).toBeTrue()
         expect(serialized[1].alwaysSend).toBeFalse()
+        expect(serialized[1].neverSend).toBeFalse()
         expect(serialized[1].code).toBe(2024)
         expect(serialized[1].encapsulate.length).toBe(0)
         expect(serialized[1].fields.length).toBe(2)
@@ -276,12 +296,14 @@ describe('DhcpOptionSetFormService', () => {
         expect(serialized[1].hasOwnProperty('options')).toBeTrue()
 
         expect(serialized[2].hasOwnProperty('alwaysSend')).toBeTrue()
+        expect(serialized[2].hasOwnProperty('neverSend')).toBeTrue()
         expect(serialized[2].hasOwnProperty('clientClasses')).toBeTrue()
         expect(serialized[2].hasOwnProperty('code')).toBeTrue()
         expect(serialized[2].hasOwnProperty('encapsulate')).toBeTrue()
         expect(serialized[2].hasOwnProperty('fields')).toBeTrue()
         expect(serialized[2].hasOwnProperty('options')).toBeTrue()
         expect(serialized[2].alwaysSend).toBeTrue()
+        expect(serialized[2].neverSend).toBeTrue()
         expect(serialized[2].code).toBe(3087)
         expect(serialized[2].encapsulate).toBe('option-3087')
         expect(serialized[2].fields.length).toBe(0)
@@ -425,6 +447,7 @@ describe('DhcpOptionSetFormService', () => {
         let options: Array<DHCPOption> = [
             {
                 alwaysSend: true,
+                neverSend: true,
                 code: 1024,
                 fields: [
                     {
@@ -446,9 +469,6 @@ describe('DhcpOptionSetFormService', () => {
                 ],
                 options: [],
                 clientClasses: ['KNOWN'],
-                unknown: {
-                    'never-send': true,
-                },
             },
             {
                 alwaysSend: false,
@@ -518,6 +538,7 @@ describe('DhcpOptionSetFormService', () => {
 
             // Option 1024.
             expect(formArray.at(0).get('alwaysSend')).toBeTruthy()
+            expect(formArray.at(0).get('neverSend')).toBeTruthy()
             if (keaVersion === '2.7.3') {
                 expect(formArray.at(0).get('clientClasses')).toBeNull()
             } else {
@@ -528,6 +549,7 @@ describe('DhcpOptionSetFormService', () => {
             expect(formArray.at(0).get('suboptions')).toBeTruthy()
 
             expect(formArray.at(0).get('alwaysSend').value).toBeTrue()
+            expect(formArray.at(0).get('neverSend').value).toBeTrue()
             if (keaVersion === '2.7.3') {
                 expect(formArray.at(0).get('clientClasses')).toBeNull()
             } else {
@@ -569,11 +591,8 @@ describe('DhcpOptionSetFormService', () => {
             expect(fields.at(3).get('control').value).toBe('foobar')
 
             // Option 1024 unknown parameters.
-            console.info(formArray.at(0))
             expect(formArray.at(0).get('unknown')).toBeTruthy()
-            expect(formArray.at(0).get('unknown').value).toEqual({
-                'never-send': true,
-            })
+            expect(formArray.at(0).get('unknown').value).toEqual({})
             if (keaVersion === '2.7.3') {
                 expect(formArray.at(0).get('clientClasses')).toBeFalsy()
             } else {
@@ -587,6 +606,7 @@ describe('DhcpOptionSetFormService', () => {
 
             // Option 2024.
             expect(formArray.at(1).get('alwaysSend')).toBeTruthy()
+            expect(formArray.at(1).get('neverSend')).toBeTruthy()
             if (keaVersion === '2.7.3') {
                 expect(formArray.at(1).get('clientClasses')).toBeNull()
             } else {
@@ -597,6 +617,7 @@ describe('DhcpOptionSetFormService', () => {
             expect(formArray.at(1).get('suboptions')).toBeTruthy()
 
             expect(formArray.at(1).get('alwaysSend').value).toBeFalse()
+            expect(formArray.at(1).get('neverSend').value).toBeFalse()
             if (keaVersion === '2.7.3') {
                 expect(formArray.at(1).get('clientClasses')).toBeNull()
             } else {
@@ -623,6 +644,7 @@ describe('DhcpOptionSetFormService', () => {
 
             // Option 3087.
             expect(formArray.at(2).get('alwaysSend')).toBeTruthy()
+            expect(formArray.at(2).get('neverSend')).toBeTruthy()
             if (keaVersion === '2.7.3') {
                 expect(formArray.at(2).get('clientClasses')).toBeNull()
             } else {
@@ -633,6 +655,7 @@ describe('DhcpOptionSetFormService', () => {
             expect(formArray.at(2).get('suboptions')).toBeTruthy()
 
             expect(formArray.at(2).get('alwaysSend').value).toBeTrue()
+            expect(formArray.at(2).get('neverSend').value).toBeFalse()
             if (keaVersion === '2.7.3') {
                 expect(formArray.at(2).get('clientClasses')).toBeNull()
             } else {
@@ -651,6 +674,7 @@ describe('DhcpOptionSetFormService', () => {
 
             // Option 3087.1.
             expect(formArray.at(2).get('suboptions.0.alwaysSend')).toBeTruthy()
+            expect(formArray.at(2).get('suboptions.0.neverSend')).toBeTruthy()
             if (keaVersion === '2.7.3') {
                 expect(formArray.at(2).get('suboptions.0.clientClasses')).toBeNull()
             } else {
@@ -661,6 +685,7 @@ describe('DhcpOptionSetFormService', () => {
             expect(formArray.at(2).get('suboptions.0.suboptions')).toBeTruthy()
 
             expect(formArray.at(2).get('suboptions.0.alwaysSend').value).toBeFalse()
+            expect(formArray.at(2).get('suboptions.0.neverSend').value).toBeFalse()
             if (keaVersion === '2.7.3') {
                 expect(formArray.at(2).get('suboptions.0.clientClasses')).toBeNull()
             } else {
@@ -679,6 +704,7 @@ describe('DhcpOptionSetFormService', () => {
             // Option 3087.1.2
             expect((formArray.at(2).get('suboptions.0.suboptions') as UntypedFormArray).controls.length).toBe(1)
             expect(formArray.at(2).get('suboptions.0.suboptions.0.alwaysSend')).toBeTruthy()
+            expect(formArray.at(2).get('suboptions.0.suboptions.0.neverSend')).toBeTruthy()
             if (keaVersion === '2.7.3') {
                 expect(formArray.at(2).get('suboptions.0.suboptions.0.clientClasses')).toBeNull()
             } else {
@@ -689,6 +715,7 @@ describe('DhcpOptionSetFormService', () => {
             expect(formArray.at(2).get('suboptions.0.suboptions.0.suboptions')).toBeTruthy()
 
             expect(formArray.at(2).get('suboptions.0.suboptions.0.alwaysSend').value).toBeFalse()
+            expect(formArray.at(2).get('suboptions.0.suboptions.0.neverSend').value).toBeFalse()
             if (keaVersion === '2.7.3') {
                 expect(formArray.at(2).get('suboptions.0.suboptions.0.clientClasses')).toBeNull()
             } else {
@@ -704,6 +731,7 @@ describe('DhcpOptionSetFormService', () => {
 
             // Option 3087.0.
             expect(formArray.at(2).get('suboptions.1.alwaysSend')).toBeTruthy()
+            expect(formArray.at(2).get('suboptions.1.neverSend')).toBeTruthy()
             if (keaVersion === '2.7.3') {
                 expect(formArray.at(2).get('suboptions.1.clientClasses')).toBeNull()
             } else {
@@ -714,6 +742,7 @@ describe('DhcpOptionSetFormService', () => {
             expect(formArray.at(2).get('suboptions.1.suboptions')).toBeTruthy()
 
             expect(formArray.at(2).get('suboptions.1.alwaysSend').value).toBeFalse()
+            expect(formArray.at(2).get('suboptions.1.neverSend').value).toBeFalse()
             if (keaVersion === '2.7.3') {
                 expect(formArray.at(2).get('suboptions.1.clientClasses')).toBeNull()
             } else {

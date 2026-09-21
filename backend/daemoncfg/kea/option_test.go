@@ -24,6 +24,7 @@ type testDHCPOptionField struct {
 // DHCP option used in the tests implementing the DHCPOption interface.
 type testDHCPOption struct {
 	alwaysSend        bool
+	neverSend         bool
 	code              uint16
 	encapsulate       string
 	fields            []testDHCPOptionField
@@ -54,6 +55,11 @@ func (field testDHCPOptionField) GetValues() []interface{} {
 // if the client has requested it or not.
 func (option testDHCPOption) IsAlwaysSend() bool {
 	return option.alwaysSend
+}
+
+// Checks if the option should never be returned to a DHCP client.
+func (option testDHCPOption) IsNeverSend() bool {
+	return option.neverSend
 }
 
 // Returns option code.
@@ -104,6 +110,7 @@ func TestUnmarshalSingleOptionData(t *testing.T) {
 	jsonInput := `
 	{
 		"always-send": true,
+		"never-send": true,
 		"code": 1600,
 		"csv-format": true,
 		"data": "foo.example.org",
@@ -115,6 +122,7 @@ func TestUnmarshalSingleOptionData(t *testing.T) {
 	err := json.Unmarshal([]byte(jsonInput), &option)
 	require.NoError(t, err)
 	require.True(t, option.AlwaysSend)
+	require.True(t, option.NeverSend)
 	require.EqualValues(t, 1600, option.Code)
 	require.True(t, option.CSVFormat)
 	require.Equal(t, "foo.example.org", option.Data)
@@ -130,6 +138,7 @@ func TestMarshalSingleOptionData(t *testing.T) {
 	option := keaconfig.SingleOptionData{
 		SingleOptionDataKnownParameters: keaconfig.SingleOptionDataKnownParameters{
 			AlwaysSend: true,
+			NeverSend:  true,
 			Code:       1600,
 			CSVFormat:  true,
 			Data:       "foo.example.org",
@@ -145,6 +154,7 @@ func TestMarshalSingleOptionData(t *testing.T) {
 	require.JSONEq(t, `
 	{
 		"always-send": true,
+		"never-send": true,
 		"code": 1600,
 		"csv-format": true,
 		"data": "foo.example.org",
@@ -160,6 +170,7 @@ func TestMarshalSingleOptionData(t *testing.T) {
 func TestCreateSingleOptionDataMultipleFields(t *testing.T) {
 	option := &testDHCPOption{
 		alwaysSend:  true,
+		neverSend:   true,
 		code:        1600,
 		encapsulate: "foo",
 		fields: []testDHCPOptionField{
@@ -235,6 +246,7 @@ func TestCreateSingleOptionDataMultipleFields(t *testing.T) {
 
 	// Make sure that the conversion was correct.
 	require.True(t, data.AlwaysSend)
+	require.True(t, data.NeverSend)
 	require.EqualValues(t, 1600, data.Code)
 	require.True(t, data.CSVFormat)
 	require.Equal(t, "foobar", data.Space)
@@ -288,6 +300,7 @@ func TestCreateSingleOptionDataBinaryField(t *testing.T) {
 func TestCreateSingleOptionDataNoDefinition(t *testing.T) {
 	option := &testDHCPOption{
 		alwaysSend:  true,
+		neverSend:   true,
 		code:        16,
 		encapsulate: "foobar",
 		fields: []testDHCPOptionField{
@@ -360,6 +373,7 @@ func TestCreateSingleOptionDataNoDefinition(t *testing.T) {
 
 	// Make sure that the conversion was correct.
 	require.True(t, data.AlwaysSend)
+	require.True(t, data.NeverSend)
 	require.EqualValues(t, 16, data.Code)
 	require.False(t, data.CSVFormat)
 	require.Equal(t, "foo", data.Space)
@@ -375,6 +389,7 @@ func TestCreateDHCPOptionCSV(t *testing.T) {
 	optionData := keaconfig.SingleOptionData{
 		SingleOptionDataKnownParameters: keaconfig.SingleOptionDataKnownParameters{
 			AlwaysSend: true,
+			NeverSend:  true,
 			Code:       244,
 			CSVFormat:  true,
 			Data:       "192.0.2.1, xyz, true, 1020, 3000::/64, 90/2, foobar.example.com., 2001:db8:1::12, -5",
@@ -392,6 +407,7 @@ func TestCreateDHCPOptionCSV(t *testing.T) {
 	option, err := keaconfig.CreateDHCPOption(optionData, storkutil.IPv4, lookup)
 	require.NoError(t, err)
 	require.True(t, option.IsAlwaysSend())
+	require.True(t, option.IsNeverSend())
 	require.EqualValues(t, 244, option.GetCode())
 	require.Equal(t, "foo", option.GetName())
 	require.Equal(t, "bar", option.GetSpace())
@@ -492,6 +508,7 @@ func TestCreateDHCPOptionHex(t *testing.T) {
 	optionData := keaconfig.SingleOptionData{
 		SingleOptionDataKnownParameters: keaconfig.SingleOptionDataKnownParameters{
 			AlwaysSend: false,
+			NeverSend:  false,
 			Code:       2048,
 			CSVFormat:  false,
 			Data:       "01 02 03 04 05 06 07 08 09 0A",
@@ -509,6 +526,7 @@ func TestCreateDHCPOptionHex(t *testing.T) {
 	option, err := keaconfig.CreateDHCPOption(optionData, storkutil.IPv6, lookup)
 	require.NoError(t, err)
 	require.False(t, option.IsAlwaysSend())
+	require.False(t, option.IsNeverSend())
 	require.EqualValues(t, 2048, option.GetCode())
 	require.Equal(t, "foobar", option.GetName())
 	require.Equal(t, "baz", option.GetSpace())
@@ -543,6 +561,7 @@ func TestCreateDHCPOptionEmpty(t *testing.T) {
 	option, err := keaconfig.CreateDHCPOption(optionData, storkutil.IPv6, lookup)
 	require.NoError(t, err)
 	require.False(t, option.IsAlwaysSend())
+	require.False(t, option.IsNeverSend())
 	require.EqualValues(t, 333, option.GetCode())
 	require.Equal(t, "foobar", option.GetName())
 	require.Equal(t, "baz", option.GetSpace())

@@ -754,6 +754,7 @@ describe('HostFormComponent', () => {
             formBuilder.group({
                 optionCode: [5],
                 alwaysSend: true,
+                neverSend: false,
                 clientClasses: [[]],
                 optionFields: formBuilder.array([
                     new DhcpOptionFieldFormGroup(DhcpOptionFieldType.IPv4Address, {
@@ -800,6 +801,7 @@ describe('HostFormComponent', () => {
                     options: [
                         {
                             alwaysSend: true,
+                            neverSend: false,
                             code: 5,
                             encapsulate: '',
                             fields: [
@@ -1016,6 +1018,7 @@ describe('HostFormComponent', () => {
             formBuilder.group({
                 optionCode: [23],
                 alwaysSend: true,
+                neverSend: false,
                 clientClasses: [[]],
                 optionFields: formBuilder.array([
                     new DhcpOptionFieldFormGroup(DhcpOptionFieldType.IPv6Address, {
@@ -1030,6 +1033,7 @@ describe('HostFormComponent', () => {
             formBuilder.group({
                 optionCode: [23],
                 alwaysSend: true,
+                neverSend: false,
                 clientClasses: [[]],
                 optionFields: formBuilder.array([
                     new DhcpOptionFieldFormGroup(DhcpOptionFieldType.IPv6Address, {
@@ -1074,6 +1078,7 @@ describe('HostFormComponent', () => {
                     options: [
                         {
                             alwaysSend: true,
+                            neverSend: false,
                             code: 23,
                             encapsulate: '',
                             fields: [
@@ -1094,6 +1099,7 @@ describe('HostFormComponent', () => {
                     options: [
                         {
                             alwaysSend: true,
+                            neverSend: false,
                             code: 23,
                             encapsulate: '',
                             fields: [
@@ -1130,6 +1136,7 @@ describe('HostFormComponent', () => {
             formBuilder.group({
                 optionCode: ['abc'],
                 alwaysSend: false,
+                neverSend: false,
                 clientClasses: [[]],
                 optionFields: formBuilder.array([
                     new DhcpOptionFieldFormGroup(DhcpOptionFieldType.IPv4Address, {
@@ -1378,6 +1385,7 @@ describe('HostFormComponent', () => {
             formBuilder.group({
                 optionCode: [5],
                 alwaysSend: true,
+                neverSend: false,
                 clientClasses: [[]],
                 optionFields: formBuilder.array([
                     new DhcpOptionFieldFormGroup(DhcpOptionFieldType.IPv4Address, {
@@ -1459,6 +1467,7 @@ describe('HostFormComponent', () => {
                     options: [
                         {
                             alwaysSend: true,
+                            neverSend: false,
                             code: 5,
                             encapsulate: '',
                             fields: [
@@ -1486,6 +1495,7 @@ describe('HostFormComponent', () => {
                     options: [
                         {
                             alwaysSend: true,
+                            neverSend: false,
                             code: 5,
                             encapsulate: '',
                             fields: [
@@ -1586,6 +1596,7 @@ describe('HostFormComponent', () => {
                     options: [
                         {
                             alwaysSend: true,
+                            neverSend: false,
                             code: 5,
                             encapsulate: '',
                             fields: [
@@ -1612,6 +1623,7 @@ describe('HostFormComponent', () => {
                     options: [
                         {
                             alwaysSend: true,
+                            neverSend: false,
                             code: 5,
                             encapsulate: '',
                             fields: [
@@ -1671,6 +1683,7 @@ describe('HostFormComponent', () => {
                     options: [
                         {
                             alwaysSend: true,
+                            neverSend: false,
                             code: 5,
                             encapsulate: '',
                             fields: [
@@ -1706,6 +1719,7 @@ describe('HostFormComponent', () => {
                     options: [
                         {
                             alwaysSend: true,
+                            neverSend: false,
                             code: 5,
                             encapsulate: '',
                             fields: [
@@ -1821,6 +1835,7 @@ describe('HostFormComponent', () => {
                     options: [
                         {
                             alwaysSend: true,
+                            neverSend: false,
                             code: 5,
                             encapsulate: '',
                             fields: [
@@ -1855,6 +1870,7 @@ describe('HostFormComponent', () => {
                     options: [
                         {
                             alwaysSend: true,
+                            neverSend: false,
                             code: 5,
                             encapsulate: '',
                             fields: [

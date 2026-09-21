@@ -120,6 +120,8 @@
         format: uint16
       alwaysSend:
         type: boolean
+      neverSend:
+        type: boolean
       encapsulate:
         type: string
       fields:

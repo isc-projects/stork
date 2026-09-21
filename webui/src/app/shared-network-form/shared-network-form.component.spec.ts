@@ -454,6 +454,7 @@ describe('SharedNetworkFormComponent', () => {
                             options: [
                                 {
                                     alwaysSend: true,
+                                    neverSend: false,
                                     code: 5,
                                     encapsulate: '',
                                     fields: [
@@ -478,6 +479,7 @@ describe('SharedNetworkFormComponent', () => {
                             options: [
                                 {
                                     alwaysSend: true,
+                                    neverSend: false,
                                     code: 5,
                                     encapsulate: '',
                                     fields: [
@@ -546,6 +548,7 @@ describe('SharedNetworkFormComponent', () => {
                             options: [
                                 {
                                     alwaysSend: true,
+                                    neverSend: false,
                                     code: 23,
                                     encapsulate: '',
                                     fields: [
@@ -571,6 +574,7 @@ describe('SharedNetworkFormComponent', () => {
                             options: [
                                 {
                                     alwaysSend: true,
+                                    neverSend: false,
                                     code: 23,
                                     encapsulate: '',
                                     fields: [

@@ -179,6 +179,11 @@ export class DhcpOptionFormComponent implements OnInit {
     alwaysSendCheckboxId: string
 
     /**
+     * A unique id of the Never Send checkbox.
+     */
+    neverSendCheckboxId: string
+
+    /**
      * Option definition of a currently selected option.
      *
      * It is null if the option definition doesn't exist for the selected
@@ -300,6 +305,7 @@ export class DhcpOptionFormComponent implements OnInit {
         this.lastFieldCommand = this.addBinaryField
         this.codeInputId = generateUUID()
         this.alwaysSendCheckboxId = generateUUID()
+        this.neverSendCheckboxId = generateUUID()
         this.fieldTypes = [
             {
                 label: DhcpOptionFieldType.Binary,

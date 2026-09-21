@@ -62,6 +62,7 @@ type DHCPOptionField struct {
 // Represents a DHCP option.
 type DHCPOption struct {
 	AlwaysSend        bool
+	NeverSend         bool
 	Code              uint16
 	Encapsulate       string
 	Fields            []DHCPOptionField
@@ -86,6 +87,11 @@ func (field DHCPOptionField) GetValues() []interface{} {
 // if the client has requested it or not.
 func (option DHCPOption) IsAlwaysSend() bool {
 	return option.AlwaysSend
+}
+
+// Checks if the option should never be returned to a DHCP client.
+func (option DHCPOption) IsNeverSend() bool {
+	return option.NeverSend
 }
 
 // Returns option code.
@@ -139,6 +145,7 @@ func NewDHCPOptionFromKea(optionData keaconfig.SingleOptionData, universe storku
 	}
 	option := &DHCPOption{
 		AlwaysSend:        optionAccessor.IsAlwaysSend(),
+		NeverSend:         optionAccessor.IsNeverSend(),
 		Code:              optionAccessor.GetCode(),
 		Encapsulate:       optionAccessor.GetEncapsulate(),
 		Name:              optionAccessor.GetName(),

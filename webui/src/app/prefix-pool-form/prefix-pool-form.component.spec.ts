@@ -55,6 +55,7 @@ describe('PrefixPoolFormComponent', () => {
                     new UntypedFormArray([
                         new FormGroup({
                             alwaysSend: new FormControl(false),
+                            neverSend: new FormControl(false),
                             optionCode: new FormControl(5),
                             clientClasses: new FormControl<string[]>([]),
                             optionFields: new UntypedFormArray([]),
@@ -64,6 +65,7 @@ describe('PrefixPoolFormComponent', () => {
                     new UntypedFormArray([
                         new FormGroup({
                             alwaysSend: new FormControl(false),
+                            neverSend: new FormControl(false),
                             optionCode: new FormControl(6),
                             clientClasses: new FormControl<string[]>([]),
                             optionFields: new UntypedFormArray([]),
