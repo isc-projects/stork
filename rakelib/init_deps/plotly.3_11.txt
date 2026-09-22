@@ -8,5 +8,5 @@ narwhals==2.26.0
     # via plotly
 packaging==26.3
     # via plotly
-plotly==7.0.0
+plotly==7.1.0
     # via -r rakelib/init_deps/plotly.in
