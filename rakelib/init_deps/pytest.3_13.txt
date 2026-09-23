@@ -4,41 +4,41 @@
 #
 #    pip-compile --output-file=rakelib/init_deps/pytest.3_11.txt --strip-extras rakelib/init_deps/pytest.in
 #
-annotated-types==0.7.0
+annotated-types==0.8.0
     # via pydantic
 asyncio==4.0.0
     # via -r rakelib/init_deps/pytest.in
 grpclib==0.4.9
     # via -r rakelib/init_deps/pytest.in
-h2==4.3.0
+h2==4.4.1
     # via grpclib
-hpack==4.1.0
+hpack==4.2.0
     # via h2
 hyperframe==6.1.0
     # via h2
 iniconfig==2.3.0
     # via pytest
-multidict==6.7.1
+multidict==6.9.1
     # via grpclib
-narwhals==2.20.0
+narwhals==2.26.0
     # via plotly
-packaging==26.2
+packaging==26.3
     # via
     #   plotly
     #   pytest
-plotly==6.7.0
+plotly==7.1.0
     # via -r rakelib/init_deps/pytest.in
 pluggy==1.6.0
     # via pytest
-protobuf==7.34.1
+protobuf==7.36.2
     # via -r rakelib/init_deps/pytest.in
-pydantic==2.13.3
+pydantic==2.13.5
     # via -r rakelib/init_deps/pytest.in
-pydantic-core==2.46.3
+pydantic-core==2.46.5
     # via pydantic
-pygments==2.20.0
+pygments==2.21.0
     # via pytest
-pytest==9.0.3
+pytest==9.1.1
     # via
     #   -r rakelib/init_deps/pytest.in
     #   pytest-timeout
@@ -50,12 +50,12 @@ pyyaml==6.0.3
     # via -r rakelib/init_deps/pytest.in
 six==1.17.0
     # via python-dateutil
-typing-extensions==4.15.0
+typing-extensions==4.16.0
     # via
     #   pydantic
     #   pydantic-core
     #   typing-inspection
-typing-inspection==0.4.2
+typing-inspection==0.4.4
     # via pydantic
-urllib3==2.6.3
+urllib3==2.8.0
     # via -r rakelib/init_deps/pytest.in
