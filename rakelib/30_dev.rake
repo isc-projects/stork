@@ -429,6 +429,10 @@ namespace :unittest do
 
                     # Skip hook boilerplate,
                     'backend/hooksutil/boilerplate',
+
+                    # Untestable code. It encapsulates the low-level LDAP
+                    # operations and provides an interface for mocking.
+                    'backend/ldap/driver.go'
                 ]
 
                 unused_ignore_rules = ignore_list.dup
