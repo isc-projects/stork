@@ -92,6 +92,8 @@ func (ctl *Controller) Configure(serverURL url.URL, dbSessionManager *dbsession.
 	inMemorySessionMgr := scs.New()
 	inMemorySessionMgr.Lifetime = authSessionTimeout
 	inMemorySessionMgr.Cookie.Name = "auth_session"
+	// Mark the cookie Secure only when the server is actually reachable over HTTPS.
+	inMemorySessionMgr.Cookie.Secure = serverURL.Scheme == "https"
 	inMemorySessionMgr.ErrorFunc = func(w http.ResponseWriter, r *http.Request, err error) {
 		// Use logrus instead of the standard logger.
 		log.WithError(err).Error("an error occurred in the OIDC session manager")
