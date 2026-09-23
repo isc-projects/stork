@@ -794,6 +794,7 @@ func TestDetectBind9Step1ProcessCmdLine(t *testing.T) {
 	absolutePath := path.Join(sandbox.BasePath, "named")
 	process.EXPECT().getCmdlineSlice().Return([]string{absolutePath, "-c", config1Path}, nil)
 	process.EXPECT().getCwd().Return("", nil)
+	process.EXPECT().getExe().Return(absolutePath, nil)
 
 	namedBinaryDir, defaultLogFile, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 	require.NoError(t, err)
@@ -833,6 +834,7 @@ func TestDetectBind9ChrootStep1ProcessCmdLine(t *testing.T) {
 	absolutePath := path.Join(sandbox.BasePath, "named")
 	process.EXPECT().getCmdlineSlice().Return([]string{absolutePath, "-t", chrootPath, "-c", config1Path}, nil)
 	process.EXPECT().getCwd().Return("", nil)
+	process.EXPECT().getExe().Return(absolutePath, nil)
 	namedBinaryDir, defaultLogFile, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 	require.NoError(t, err)
 	require.Empty(t, defaultLogFile)
@@ -870,6 +872,7 @@ func TestDetectBind9Step1ProcessCmdLineNamedInPath(t *testing.T) {
 	absolutePath := path.Join(sandbox.BasePath, "named", "sbin", "named")
 	process.EXPECT().getCmdlineSlice().Return([]string{absolutePath, "-c", config1Path}, nil)
 	process.EXPECT().getCwd().Return("", nil)
+	process.EXPECT().getExe().Return(absolutePath, nil)
 
 	// Act
 	namedBinaryDir, defaultLogFile, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
@@ -911,6 +914,7 @@ func TestDetectBind9ChrootStep1ProcessCmdLineNamedInPath(t *testing.T) {
 	absolutePath := path.Join(sandbox.BasePath, "named", "sbin", "named")
 	process.EXPECT().getCmdlineSlice().Return([]string{absolutePath, "-t", chrootPath, "-c", config1Path}, nil)
 	process.EXPECT().getCwd().Return("", nil)
+	process.EXPECT().getExe().Return(absolutePath, nil)
 
 	// Act
 	namedBinaryDir, defaultLogFile, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
@@ -950,6 +954,7 @@ func TestDetectBind9Step1ProcessCmdLinePathWithSpaces(t *testing.T) {
 	absolutePath := path.Join(sandbox.BasePath, "bind9 build", "sbin", "named")
 	process.EXPECT().getCmdlineSlice().Return([]string{absolutePath, "-c", config1Path}, nil)
 	process.EXPECT().getCwd().Return("", nil)
+	process.EXPECT().getExe().Return(absolutePath, nil)
 
 	// Act
 	namedBinaryDir, defaultLogFile, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
@@ -988,6 +993,7 @@ func TestDetectBind9Step1ProcessCmdLineNamedInConfigPath(t *testing.T) {
 	absolutePath := path.Join(sandbox.BasePath, "named")
 	process.EXPECT().getCmdlineSlice().Return([]string{absolutePath, "-c", config1Path}, nil)
 	process.EXPECT().getCwd().Return("", nil)
+	process.EXPECT().getExe().Return(absolutePath, nil)
 
 	// Act
 	namedBinaryDir, defaultLogFile, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
@@ -1027,6 +1033,7 @@ func TestDetectBind9Step1ProcessCmdLineNamedInChrootPath(t *testing.T) {
 	absolutePath := path.Join(sandbox.BasePath, "sbin", "named")
 	process.EXPECT().getCmdlineSlice().Return([]string{absolutePath, "-t", chrootPath, "-c", config1Path}, nil)
 	process.EXPECT().getCwd().Return("", nil)
+	process.EXPECT().getExe().Return(absolutePath, nil)
 
 	// Act
 	namedBinaryDir, defaultLogFile, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
@@ -1066,6 +1073,7 @@ func TestDetectBind9Step1ProcessCmdLineNamedInConfigPathWithExtraFlags(t *testin
 	absolutePath := path.Join(sandbox.BasePath, "named")
 	process.EXPECT().getCmdlineSlice().Return([]string{absolutePath, "-4", "-c", config1Path, "-f"}, nil)
 	process.EXPECT().getCwd().Return("", nil)
+	process.EXPECT().getExe().Return(absolutePath, nil)
 
 	// Act
 	namedBinaryDir, defaultLogFile, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
@@ -1110,6 +1118,7 @@ func TestDetectBind9Step2ExplicitPath(t *testing.T) {
 	absolutePath := path.Join(sandbox.BasePath, "usr", "sbin", "named")
 	process.EXPECT().getCmdlineSlice().Return([]string{absolutePath, "-some", "-params"}, nil)
 	process.EXPECT().getCwd().Return("", nil)
+	process.EXPECT().getExe().Return(absolutePath, nil)
 
 	namedBinaryDir, defaultLogFile, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 	require.NoError(t, err)
@@ -1155,6 +1164,7 @@ func TestDetectBind9ChrootStep2ExplicitPath(t *testing.T) {
 	absolutePath := path.Join(sandbox.BasePath, "named")
 	process.EXPECT().getCmdlineSlice().Return([]string{absolutePath, "-t", chrootPath, "-some", "-params"}, nil)
 	process.EXPECT().getCwd().Return("", nil)
+	process.EXPECT().getExe().Return(absolutePath, nil)
 
 	namedBinaryDir, defaultLogFile, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 	require.NoError(t, err)
@@ -1200,6 +1210,7 @@ func TestDetectBind9ChrootStep2ExplicitPathNotPrefixed(t *testing.T) {
 	absolutePath := path.Join(sandbox.BasePath, "named")
 	process.EXPECT().getCmdlineSlice().Return([]string{absolutePath, "-t", chrootPath, "-some", "-params"}, nil)
 	process.EXPECT().getCwd().Return("", nil)
+	process.EXPECT().getExe().Return(absolutePath, nil)
 	namedBinaryDir, defaultLogFile, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 	require.ErrorContains(t, err, "BIND 9 config file not found")
 	require.Empty(t, defaultLogFile)
@@ -1237,6 +1248,7 @@ func TestDetectBind9Step3BindVOutput(t *testing.T) {
 	absolutePath := path.Join(sandbox.BasePath, "named")
 	process.EXPECT().getCmdlineSlice().Return([]string{absolutePath, "-some", "-params"}, nil)
 	process.EXPECT().getCwd().Return("", nil)
+	process.EXPECT().getExe().Return(absolutePath, nil)
 	namedBinaryDir, defaultLogFile, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 	require.NoError(t, err)
 	require.Empty(t, defaultLogFile)
@@ -1282,6 +1294,7 @@ func TestDetectBind9ChrootStep3BindVOutput(t *testing.T) {
 	absolutePath := path.Join(sandbox.BasePath, "named")
 	process.EXPECT().getCmdlineSlice().Return([]string{absolutePath, "-t", chrootPath, "-some", "-params"}, nil)
 	process.EXPECT().getCwd().Return("", nil)
+	process.EXPECT().getExe().Return(absolutePath, nil)
 
 	namedBinaryDir, defaultLogFile, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 	require.NoError(t, err)
@@ -1330,6 +1343,7 @@ func TestDetectBind9Step4TypicalLocations(t *testing.T) {
 			absolutePath := path.Join(sandbox.BasePath, "named")
 			process.EXPECT().getCmdlineSlice().Return([]string{absolutePath, "-some", "-params"}, nil)
 			process.EXPECT().getCwd().Return("", nil)
+			process.EXPECT().getExe().Return(absolutePath, nil)
 			namedBinaryDir, defaultLogFile, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 
 			// Assert
@@ -1381,6 +1395,7 @@ func TestDetectBind9ChrootStep4TypicalLocations(t *testing.T) {
 			absolutePath := path.Join(sandbox.BasePath, "named")
 			process.EXPECT().getCmdlineSlice().Return([]string{absolutePath, "-t", chrootPath, "-some", "-params"}, nil)
 			process.EXPECT().getCwd().Return("", nil)
+			process.EXPECT().getExe().Return(absolutePath, nil)
 			namedBinaryDir, defaultLogFile, detectedFiles, err := monitor.detectBind9ConfigPaths(process)
 
 			// Assert
@@ -1420,6 +1435,7 @@ func TestDetectBind9DaemonGetFileInfoError(t *testing.T) {
 	process.EXPECT().getCmdlineSlice().Return([]string{absolutePath, "-c", configPath}, nil)
 	process.EXPECT().getCwd().Return("", nil)
 	process.EXPECT().getPid().Times(0)
+	process.EXPECT().getExe().Return(absolutePath, nil)
 
 	// Create the command executor without adding an expectation for
 	// GetFileInfo call. It should return an error when this call is
@@ -2144,6 +2160,7 @@ func TestDetectBind9DetectOrder(t *testing.T) {
 	absolutePath := path.Join(sandbox.BasePath, "named")
 	process.EXPECT().getCmdlineSlice().Return([]string{absolutePath, "-c", config1Path}, nil)
 	process.EXPECT().getCwd().Return("", nil)
+	process.EXPECT().getExe().Return(absolutePath, nil)
 	process.EXPECT().getPid().Return(int32(1234))
 	daemon, err := monitor.detectBind9Daemon(process)
 	require.NoError(t, err)

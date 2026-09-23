@@ -1053,6 +1053,7 @@ func TestDetectKeaCAPrior3_0(t *testing.T) {
 		[]string{exePath, "-c", configPath},
 		nil,
 	)
+	process.EXPECT().getExe().Return(exePath, nil)
 
 	// System calls mock.
 	commander := NewMockCommandExecutor(ctrl)
@@ -1129,6 +1130,7 @@ func TestDetectKeaCAPost3_0(t *testing.T) {
 		[]string{exePath, "-c", configPath},
 		nil,
 	)
+	process.EXPECT().getExe().Return(exePath, nil)
 
 	// System calls mock.
 	commander := NewMockCommandExecutor(ctrl)
@@ -1180,6 +1182,7 @@ func TestDetectKeaDHCPPrior3_0(t *testing.T) {
 		[]string{exePath, "-c", configPath},
 		nil,
 	)
+	process.EXPECT().getExe().Return(exePath, nil)
 
 	// System calls mock.
 	commander := NewMockCommandExecutor(ctrl)
@@ -1224,6 +1227,7 @@ func TestDetectKeaDHCPOnSocketPost3_0(t *testing.T) {
 		[]string{exePath, "-c", configPath},
 		nil,
 	)
+	process.EXPECT().getExe().Return(exePath, nil)
 
 	// System calls mock.
 	commander := NewMockCommandExecutor(ctrl)
@@ -1282,6 +1286,7 @@ func TestDetectKeaDHCPOnSocketNameOnly(t *testing.T) {
 		[]string{exePath, "-c", configPath},
 		nil,
 	)
+	process.EXPECT().getExe().Return(exePath, nil)
 	// First time called for calling -v. Second time called for figuring out socket path..Times(2)
 
 	// System calls mock.
@@ -1337,6 +1342,7 @@ func TestDetectKeaDHCPOnHTTPPost3_0(t *testing.T) {
 		[]string{exePath, "-c", configPath},
 		nil,
 	)
+	process.EXPECT().getExe().Return(exePath, nil)
 
 	// System calls mock.
 	commander := NewMockCommandExecutor(ctrl)
@@ -1416,6 +1422,7 @@ func TestDetectKeaCAWithCredentials(t *testing.T) {
 		[]string{exePath, "-c", configPath},
 		nil,
 	)
+	process.EXPECT().getExe().Return(exePath, nil)
 
 	// System calls mock.
 	commander := NewMockCommandExecutor(ctrl)
@@ -1473,6 +1480,7 @@ func TestDetectKeaDHCPWithCredentials(t *testing.T) {
 		[]string{exePath, "-c", configPath},
 		nil,
 	)
+	process.EXPECT().getExe().Return(exePath, nil)
 
 	// System calls mock.
 	commander := NewMockCommandExecutor(ctrl)
@@ -1603,6 +1611,7 @@ func TestDetectKeaCwdUnavailable(t *testing.T) {
 		nil,
 	)
 	process.EXPECT().getCwd().Return("", errors.New("unable to get the cwd"))
+	process.EXPECT().getExe().Return(exePath, nil)
 
 	commander := NewMockCommandExecutor(ctrl)
 	commander.EXPECT().Output(exePath, "-v").Return([]byte("3.0.0\n"), nil)
@@ -1677,6 +1686,7 @@ func TestDetectKeaUnparsableVersion(t *testing.T) {
 		[]string{exePath, "-c", configPath},
 		nil,
 	)
+	process.EXPECT().getExe().Return(exePath, nil)
 
 	// System calls mock.
 	commander := NewMockCommandExecutor(ctrl)
@@ -1736,6 +1746,7 @@ func TestDetectKeaWithRelativeConfigurationPath(t *testing.T) {
 		nil,
 	)
 	process.EXPECT().getCwd().Return(sb.BasePath, nil)
+	process.EXPECT().getExe().Return(exePath, nil)
 
 	// System calls mock.
 	commander := NewMockCommandExecutor(ctrl)
@@ -1828,6 +1839,7 @@ func TestDetectKeaCommunicationError(t *testing.T) {
 		[]string{exePath, "-c", configPath},
 		nil,
 	)
+	process.EXPECT().getExe().Return(exePath, nil)
 
 	// System calls mock.
 	commander := NewMockCommandExecutor(ctrl)
