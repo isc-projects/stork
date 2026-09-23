@@ -23,14 +23,16 @@ type SessionMgr struct {
 	teardown      func()
 }
 
-// Creates new session manager instance.
-func NewSessionMgr(db pg.DBI) (*SessionMgr, error) {
+// Creates new session manager instance. The secureCookie argument
+// controls the Secure attribute of the session cookie.
+func NewSessionMgr(db pg.DBI, secureCookie bool) (*SessionMgr, error) {
 	s := scs.New()
 	s.ErrorFunc = func(w http.ResponseWriter, r *http.Request, err error) {
 		// Use logrus instead of the standard logger.
 		logrus.WithError(err).Error("an error occurred in the session manager")
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
+	s.Cookie.Secure = secureCookie
 	store := NewStore(db)
 	s.Store = store
 	teardown := func() { store.StopCleanup() }

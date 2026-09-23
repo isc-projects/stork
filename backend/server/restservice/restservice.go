@@ -237,7 +237,7 @@ func NewRestAPI(args ...interface{}) (*RestAPI, error) {
 	}
 
 	// Instantiate the session manager.
-	sm, err := dbsession.NewSessionMgr(api.DB)
+	sm, err := dbsession.NewSessionMgr(api.DB, isTLSEnabled(api.Settings))
 	if err != nil {
 		return nil, pkgerrors.Wrap(err, "unable to establish connection to the session database")
 	}
@@ -245,6 +245,11 @@ func NewRestAPI(args ...interface{}) (*RestAPI, error) {
 
 	// All ok.
 	return api, nil
+}
+
+// Helper returning true if the server has TLS configured.
+func isTLSEnabled(s *RestAPISettings) bool {
+	return s != nil && s.TLSCertificate != ""
 }
 
 func prepareTLS(httpServer *http.Server, s *RestAPISettings) error {
@@ -595,11 +600,7 @@ func (r *RestAPI) Listen() error {
 
 	s := r.Settings
 
-	if s.TLSCertificate == "" {
-		r.TLS = false
-	} else {
-		r.TLS = true
-	}
+	r.TLS = isTLSEnabled(s)
 
 	if !r.TLS {
 		// TLS disabled
