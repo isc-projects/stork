@@ -17,6 +17,7 @@ import (
 	"isc.org/stork/ldap"
 	"isc.org/stork/server/certs"
 	dbops "isc.org/stork/server/database"
+	dbmodel "isc.org/stork/server/database/model"
 	storkutil "isc.org/stork/util"
 )
 
@@ -81,8 +82,7 @@ type loginScreenWelcomeUndeploySettings struct {
 // The CLI flags for the migrate-ldap-system-users command.
 type migrateLDAPSystemUsersSettings struct {
 	cli.CommandSettings
-	OldUniqueIdentifier string `long:"old-unique-identifier" description:"The old unique identifier property in the user object class" env:"STORK_TOOL_LDAP_OLD_UNIQUE_IDENTIFIER" default:"dn"`
-	DatabaseSettings    dbops.DatabaseCLIFlags
+	DatabaseSettings dbops.DatabaseCLIFlags
 	// Use the same namespace as the LDAP hook to ensure consistency in environment variable parsing.
 	LDAPSettings ldap.Settings `group:"LDAP server settings" namespace:"ldap" env-namespace:"STORK_SERVER_HOOK_LDAP"`
 }
@@ -370,8 +370,55 @@ func runStaticViewUndeploy(settings *loginScreenWelcomeUndeploySettings, filenam
 }
 
 // Migrates the stale system users based on the old unique identifier.
-func runMigrateLDAPSystemUsers(settings *migrateLDAPSystemUsersSettings) error {
-	// Implementation goes here.
+func runMigrateLDAPSystemUsers(settings *migrateLDAPSystemUsersSettings, ldapDriver ldap.LDAPDriver) error {
+	// Run the authentication flow.
+	controller := ldap.NewLDAPController(settings.LDAPSettings, ldapDriver)
+	// Establish connection to the LDAP server.
+	if err := controller.Connect(); err != nil {
+		return err
+	}
+	defer controller.Close()
+
+	// Authenticate as a bind user (usually readonly).
+	if err := controller.BindAsMaintenanceUser(); err != nil {
+		return err
+	}
+
+	// Connect to the database
+	db := getDBConn(settings.DatabaseSettings)
+	defer db.Close()
+
+	// Fetch all LDAP system users.
+	limit := int64(100)
+	count := int64(100)
+	var users []dbmodel.SystemUser
+	var err error
+	successCount := 0
+	failedCount := 0
+	for offset := int64(0); offset < count; offset += limit {
+		users, count, err = dbmodel.GetUsersByPage(db, offset, limit, nil, "ldap", "", dbmodel.SortDirDesc)
+		if err != nil {
+			return err
+		}
+
+		for _, user := range users {
+			externalUser, err := controller.SearchForUserProfile(user.Login)
+			if err != nil {
+				log.WithError(err).Warnf("Cannot find an LDAP profile for user '%s'", user.Login)
+				continue
+			}
+
+			user.ExternalID = externalUser.ID
+			_, err = dbmodel.UpdateUserExternalID(db, &user)
+			if err != nil {
+				log.WithError(err).Warnf("Failed to update user '%s' with external ID", user.Login)
+				failedCount++
+				continue
+			}
+			successCount++
+		}
+	}
+	log.Infof("Migration completed: %d succeeded, %d failed", successCount, failedCount)
 	return nil
 }
 
@@ -585,11 +632,14 @@ func newApp() *cli.App {
 		},
 	)
 
+	// LDAP system users migration command.
 	migrateLDAPSystemUsers := &migrateLDAPSystemUsersSettings{}
 	app.RegisterCommand(
 		"migrate-ldap-system-users", "Migrate stale LDAP system users",
 		migrateLDAPSystemUsers, func() {
-			err := runMigrateLDAPSystemUsers(migrateLDAPSystemUsers)
+			err := runMigrateLDAPSystemUsers(migrateLDAPSystemUsers, ldap.NewLDAPLibraryDriver(
+				migrateLDAPSystemUsers.LDAPSettings.Debug,
+			))
 			if err != nil {
 				log.WithError(err).Fatal("Failed to migrate stale LDAP system users")
 			}

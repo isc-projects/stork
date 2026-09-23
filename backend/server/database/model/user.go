@@ -204,6 +204,34 @@ func UpdateUser(db *pg.DB, user *SystemUser) (conflict bool, err error) {
 	return conflict, err
 }
 
+// Updates only the external ID of the user in the database. The returned
+// conflict value indicates if the updated data is in conflict with some other
+// user information or the updated user doesn't exist.
+func UpdateUserExternalID(db *pg.DB, user *SystemUser) (conflict bool, err error) {
+	result, err := db.
+		Model(user).
+		Column("external_id").
+		WherePK().
+		Update()
+	if err == nil {
+		if result.RowsAffected() <= 0 {
+			conflict = true
+			err = pkgerrors.Wrapf(ErrNotExists, "user with ID %s does not exist", user.Identity())
+			return
+		}
+	}
+
+	if err != nil {
+		var pgError pg.Error
+		if errors.As(err, &pgError) {
+			conflict = pgError.IntegrityViolation()
+		}
+		err = pkgerrors.Wrapf(err, "database operation error while trying to update external ID for user %s", user.Identity())
+	}
+
+	return conflict, err
+}
+
 // Deletes existing user from the database. The returned error value indicates if
 // the deleted user information does not match any existing user in the
 // database.

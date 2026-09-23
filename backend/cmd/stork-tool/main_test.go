@@ -14,10 +14,15 @@ import (
 	"strings"
 	"testing"
 
+	goldap "github.com/go-ldap/ldap/v3"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 
 	"isc.org/stork"
+	"isc.org/stork/ldap"
 	"isc.org/stork/server/certs"
+	dbops "isc.org/stork/server/database"
+	dbmodel "isc.org/stork/server/database/model"
 	dbtest "isc.org/stork/server/database/test"
 	"isc.org/stork/testutil"
 )
@@ -60,6 +65,8 @@ func getExpectedMainFragments() []string {
 
 // Location of the stork-agent binary.
 const ToolBin = "./stork-tool"
+
+//go:generate mockgen -package=main -destination=ldapdrivermock_test.go isc.org/stork/ldap LDAPDriver
 
 // This test checks if all expected text fragments are documented in the man page.
 func TestCommandLineSwitchesDoc(t *testing.T) {
@@ -191,6 +198,283 @@ func TestRunDBMigrate(t *testing.T) {
 		"--db-port", strconv.Itoa(settings.Port),
 	}
 	main()
+}
+
+// Tests that migrating LDAP users updates external IDs only for LDAP users and
+// keeps processing when one of the updates fails due to duplicated external ID.
+func TestRunMigrateLDAPSystemUsers(t *testing.T) {
+	// Arrange
+	db, settings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	// Create 5 test users.
+	// - internalUser: an internal user without LDAP authentication.
+	// - ldapUserToUpdate: an LDAP user whose external ID will be updated.
+	// - ldapUserToKeep: an LDAP user whose external ID should remain unchanged.
+	// - ldapUserConflict: an LDAP user that will cause a conflict when
+	//   updating external IDs.
+	// - ldapUserToUpdateSecond: another LDAP user whose external ID will be
+	//   updated to verify the migration is continued after the conflict error.
+	internalUser := &dbmodel.SystemUser{
+		Login:    "internal-user",
+		Email:    "internal-user@example.org",
+		Lastname: "Internal",
+		Name:     "User",
+	}
+	_, err := dbmodel.CreateUser(db, internalUser)
+	require.NoError(t, err)
+
+	ldapUserToUpdate := &dbmodel.SystemUser{
+		Login:                  "ldap-user-update",
+		Email:                  "ldap-user-update@example.org",
+		Lastname:               "LDAP",
+		Name:                   "Update",
+		AuthenticationMethodID: "ldap",
+		ExternalID:             "ldap-old-id-1",
+	}
+	_, err = dbmodel.CreateUser(db, ldapUserToUpdate)
+	require.NoError(t, err)
+
+	ldapUserToKeep := &dbmodel.SystemUser{
+		Login:                  "ldap-user-keep",
+		Email:                  "ldap-user-keep@example.org",
+		Lastname:               "LDAP",
+		Name:                   "Keep",
+		AuthenticationMethodID: "ldap",
+		ExternalID:             "ldap-shared-id",
+	}
+	_, err = dbmodel.CreateUser(db, ldapUserToKeep)
+	require.NoError(t, err)
+
+	ldapUserConflict := &dbmodel.SystemUser{
+		Login:                  "ldap-user-conflict",
+		Email:                  "ldap-user-conflict@example.org",
+		Lastname:               "LDAP",
+		Name:                   "Conflict",
+		AuthenticationMethodID: "ldap",
+		ExternalID:             "ldap-old-id-2",
+	}
+	_, err = dbmodel.CreateUser(db, ldapUserConflict)
+	require.NoError(t, err)
+
+	ldapUserToUpdateSecond := &dbmodel.SystemUser{
+		Login:                  "ldap-user-update-second",
+		Email:                  "ldap-user-update-second@example.org",
+		Lastname:               "LDAP",
+		Name:                   "UpdateSecond",
+		AuthenticationMethodID: "ldap",
+		ExternalID:             "ldap-old-id-3",
+	}
+	_, err = dbmodel.CreateUser(db, ldapUserToUpdateSecond)
+	require.NoError(t, err)
+
+	controller := gomock.NewController(t)
+	defer controller.Finish()
+
+	ldapDriver := NewMockLDAPDriver(controller)
+	ldapDriver.EXPECT().Dial("ldap://127.0.0.1:1389", gomock.Nil(), gomock.Any()).Return(nil)
+	ldapDriver.EXPECT().SimpleBind("cn=bind,dc=example,dc=org", "bind-password", false).Return(nil)
+	ldapDriver.EXPECT().Search(gomock.Any()).DoAndReturn(func(request *goldap.SearchRequest) (*goldap.SearchResult, error) {
+		var uniqueID string
+		switch {
+		case strings.Contains(request.Filter, "(uid=ldap-user-update)"):
+			uniqueID = "ldap-new-id"
+		case strings.Contains(request.Filter, "(uid=ldap-user-keep)"):
+			uniqueID = "ldap-shared-id"
+		case strings.Contains(request.Filter, "(uid=ldap-user-conflict)"):
+			uniqueID = "ldap-shared-id"
+		case strings.Contains(request.Filter, "(uid=ldap-user-update-second)"):
+			uniqueID = "ldap-new-id-2"
+		default:
+			return nil, fmt.Errorf("unexpected LDAP filter: %s", request.Filter)
+		}
+
+		return &goldap.SearchResult{
+			Entries: []*goldap.Entry{
+				{
+					Attributes: []*goldap.EntryAttribute{
+						{Name: "entryUUID", Values: []string{uniqueID}},
+					},
+				},
+			},
+		}, nil
+	}).Times(4)
+	ldapDriver.EXPECT().Close()
+
+	migrateSettings := &migrateLDAPSystemUsersSettings{
+		DatabaseSettings: dbops.DatabaseCLIFlags{
+			DBName:       settings.DBName,
+			User:         settings.User,
+			Password:     settings.Password,
+			Host:         settings.Host,
+			Port:         settings.Port,
+			SSLMode:      settings.SSLMode,
+			SSLCert:      settings.SSLCert,
+			SSLKey:       settings.SSLKey,
+			SSLRootCert:  settings.SSLRootCert,
+			TLS12Enabled: settings.TLS12Enabled,
+			TraceSQL:     "none",
+			ReadTimeout:  settings.ReadTimeout,
+			WriteTimeout: settings.WriteTimeout,
+		},
+		LDAPSettings: ldap.Settings{
+			DialURL:      "ldap://127.0.0.1:1389",
+			Root:         "dc=example,dc=org",
+			BindUserDN:   "cn=bind,dc=example,dc=org",
+			BindPassword: "bind-password",
+			AttributeNames: ldap.LDAPAttributeNames{
+				ObjectClassUser:  "organizationalPerson",
+				UserID:           "uid",
+				FirstName:        "givenName",
+				LastName:         "sn",
+				Email:            "mail",
+				UniqueIdentifier: "entryUUID",
+			},
+		},
+	}
+
+	// Act
+	err = runMigrateLDAPSystemUsers(migrateSettings, ldapDriver)
+
+	// Assert
+	require.NoError(t, err)
+
+	// Untouched.
+	internalUserAfter, err := dbmodel.GetUserByID(db, internalUser.ID)
+	require.NoError(t, err)
+	require.NotNil(t, internalUserAfter)
+	require.Equal(t, dbmodel.AuthenticationMethodIDInternal, internalUserAfter.AuthenticationMethodID)
+	require.Empty(t, internalUserAfter.ExternalID)
+
+	// Updated. Got new external ID from LDAP.
+	ldapUserToUpdateAfter, err := dbmodel.GetUserByID(db, ldapUserToUpdate.ID)
+	require.NoError(t, err)
+	require.NotNil(t, ldapUserToUpdateAfter)
+	require.Equal(t, "ldap-new-id", ldapUserToUpdateAfter.ExternalID)
+
+	// Updated. The external ID remains the same.
+	ldapUserToKeepAfter, err := dbmodel.GetUserByID(db, ldapUserToKeep.ID)
+	require.NoError(t, err)
+	require.NotNil(t, ldapUserToKeepAfter)
+	require.Equal(t, "ldap-shared-id", ldapUserToKeepAfter.ExternalID)
+
+	// Updated. Got new external ID from LDAP.
+	ldapUserToUpdateSecondAfter, err := dbmodel.GetUserByID(db, ldapUserToUpdateSecond.ID)
+	require.NoError(t, err)
+	require.NotNil(t, ldapUserToUpdateSecondAfter)
+	require.Equal(t, "ldap-new-id-2", ldapUserToUpdateSecondAfter.ExternalID)
+
+	// Untouched due to conflict.
+	ldapUserConflictAfter, err := dbmodel.GetUserByID(db, ldapUserConflict.ID)
+	require.NoError(t, err)
+	require.NotNil(t, ldapUserConflictAfter)
+	require.Equal(t, "ldap-old-id-2", ldapUserConflictAfter.ExternalID)
+}
+
+// Tests that LDAP migration processes more than one page of users.
+func TestRunMigrateLDAPSystemUsersOver100(t *testing.T) {
+	// Arrange
+	db, settings, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	_, initialUserCount, err := dbmodel.GetUsersByPage(db, 0, 1, nil, "", "", dbmodel.SortDirAny)
+	require.NoError(t, err)
+
+	controller := gomock.NewController(t)
+	defer controller.Finish()
+
+	ldapDriver := NewMockLDAPDriver(controller)
+	ldapDriver.EXPECT().Dial("ldap://127.0.0.1:1389", gomock.Nil(), gomock.Any()).Return(nil)
+	ldapDriver.EXPECT().SimpleBind("cn=bind,dc=example,dc=org", "bind-password", false).Return(nil)
+
+	const totalLDAPUsers = 101
+	for i := 0; i < totalLDAPUsers; i++ {
+		login := fmt.Sprintf("ldap-%03d", i)
+		user := &dbmodel.SystemUser{
+			Login:                  login,
+			Email:                  fmt.Sprintf("%s@example.org", login),
+			Lastname:               "Bulk",
+			Name:                   "LDAP",
+			AuthenticationMethodID: "ldap",
+			ExternalID:             fmt.Sprintf("%s-old", login),
+		}
+		_, err := dbmodel.CreateUser(db, user)
+		require.NoError(t, err)
+	}
+
+	uidFromFilterRegexp := regexp.MustCompile(`\(uid=([^\)]+)\)`)
+	ldapDriver.EXPECT().Search(gomock.Any()).DoAndReturn(func(request *goldap.SearchRequest) (*goldap.SearchResult, error) {
+		matches := uidFromFilterRegexp.FindStringSubmatch(request.Filter)
+		if len(matches) != 2 {
+			return nil, fmt.Errorf("unexpected LDAP filter: %s", request.Filter)
+		}
+
+		login := matches[1]
+		uniqueID := fmt.Sprintf("%s-new", login)
+
+		return &goldap.SearchResult{
+			Entries: []*goldap.Entry{
+				{
+					Attributes: []*goldap.EntryAttribute{
+						{Name: "entryUUID", Values: []string{uniqueID}},
+					},
+				},
+			},
+		}, nil
+	}).Times(totalLDAPUsers)
+	ldapDriver.EXPECT().Close()
+
+	migrateSettings := &migrateLDAPSystemUsersSettings{
+		DatabaseSettings: dbops.DatabaseCLIFlags{
+			DBName:       settings.DBName,
+			User:         settings.User,
+			Password:     settings.Password,
+			Host:         settings.Host,
+			Port:         settings.Port,
+			SSLMode:      settings.SSLMode,
+			SSLCert:      settings.SSLCert,
+			SSLKey:       settings.SSLKey,
+			SSLRootCert:  settings.SSLRootCert,
+			TLS12Enabled: settings.TLS12Enabled,
+			TraceSQL:     "none",
+			ReadTimeout:  settings.ReadTimeout,
+			WriteTimeout: settings.WriteTimeout,
+		},
+		LDAPSettings: ldap.Settings{
+			DialURL:      "ldap://127.0.0.1:1389",
+			Root:         "dc=example,dc=org",
+			BindUserDN:   "cn=bind,dc=example,dc=org",
+			BindPassword: "bind-password",
+			AttributeNames: ldap.LDAPAttributeNames{
+				ObjectClassUser:  "organizationalPerson",
+				UserID:           "uid",
+				FirstName:        "givenName",
+				LastName:         "sn",
+				Email:            "mail",
+				UniqueIdentifier: "entryUUID",
+			},
+		},
+	}
+
+	// Act
+	err = runMigrateLDAPSystemUsers(migrateSettings, ldapDriver)
+
+	// Assert
+	require.NoError(t, err)
+
+	// Verify a user expected to be handled on the second page was updated.
+	secondPageLogin := "ldap-000"
+	secondPageUser, err := dbmodel.GetUserByID(db, initialUserCount+1)
+	require.NoError(t, err)
+	require.NotNil(t, secondPageUser)
+	require.Equal(t, fmt.Sprintf("%s-new", secondPageLogin), secondPageUser.ExternalID)
+
+	// Verify a user from the first page was also updated.
+	firstPageLogin := "ldap-100"
+	firstPageUser, err := dbmodel.GetUserByID(db, initialUserCount+101)
+	require.NoError(t, err)
+	require.NotNil(t, firstPageUser)
+	require.Equal(t, fmt.Sprintf("%s-new", firstPageLogin), firstPageUser.ExternalID)
 }
 
 // Check if cert-export can be invoked.

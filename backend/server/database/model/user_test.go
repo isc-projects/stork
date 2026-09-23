@@ -141,6 +141,71 @@ func TestUpdateUserFixedMembers(t *testing.T) {
 	require.EqualValues(t, "foo", user.ExternalID)
 }
 
+// Tests that updating only external ID works and reports a conflict on
+// duplicated external ID.
+func TestUpdateUserExternalID(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+
+	user1 := &SystemUser{
+		Login:                  "ldap-ext-id-1",
+		Email:                  "ldap-ext-id-1@example.org",
+		Lastname:               "One",
+		Name:                   "LDAP",
+		AuthenticationMethodID: "ldap",
+		ExternalID:             "ldap-external-id-1",
+	}
+	_, err := CreateUser(db, user1)
+	require.NoError(t, err)
+
+	user2 := &SystemUser{
+		Login:                  "ldap-ext-id-2",
+		Email:                  "ldap-ext-id-2@example.org",
+		Lastname:               "Two",
+		Name:                   "LDAP",
+		AuthenticationMethodID: "ldap",
+		ExternalID:             "ldap-external-id-2",
+	}
+	_, err = CreateUser(db, user2)
+	require.NoError(t, err)
+
+	t.Run("Successful update", func(t *testing.T) {
+		// Act
+		user1.ExternalID = "ldap-external-id-1-new"
+		conflict, err := UpdateUserExternalID(db, user1)
+
+		// Assert
+		require.NoError(t, err)
+		require.False(t, conflict)
+
+		user1Updated, err := GetUserByID(db, user1.ID)
+		require.NoError(t, err)
+		require.NotNil(t, user1Updated)
+		require.EqualValues(t, "ldap-external-id-1-new", user1Updated.ExternalID)
+
+		user2Updated, err := GetUserByID(db, user2.ID)
+		require.NoError(t, err)
+		require.NotNil(t, user2Updated)
+		require.EqualValues(t, "ldap-external-id-2", user2Updated.ExternalID)
+	})
+
+	t.Run("Conflicting update", func(t *testing.T) {
+		// Act
+		user2.ExternalID = "ldap-external-id-1-new"
+		conflict, err := UpdateUserExternalID(db, user2)
+
+		// Assert.
+		require.Error(t, err)
+		require.True(t, conflict)
+
+		user2AfterConflict, err := GetUserByID(db, user2.ID)
+		require.NoError(t, err)
+		require.NotNil(t, user2AfterConflict)
+		require.EqualValues(t, "ldap-external-id-2", user2AfterConflict.ExternalID)
+	})
+}
+
 // Test that the user is created properly.
 func TestCreateUser(t *testing.T) {
 	// Arrange
