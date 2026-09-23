@@ -2,12 +2,12 @@ package ldap
 
 import (
 	"crypto/tls"
-	"errors"
 	"fmt"
 	"log"
 	"strings"
 
 	goldap "github.com/go-ldap/ldap/v3"
+	"github.com/pkg/errors"
 	"isc.org/stork/server/authdata"
 )
 
@@ -80,7 +80,7 @@ func (c *LDAPController) searchForAttributes(filter string, attributes []string)
 
 	searchResponse, err := c.driver.Search(searchRequest)
 	if err != nil {
-		return nil, fmt.Errorf(
+		return nil, errors.Errorf(
 			"searching for attributes (%s) failed: %w",
 			strings.Join(attributes, ","),
 			err,
@@ -101,16 +101,16 @@ func (c *LDAPController) searchForAttributesByUsername(username string, attribut
 		attributes,
 	)
 	if err != nil {
-		return nil, fmt.Errorf(
+		return nil, errors.Errorf(
 			"failed search for user (%s) attributes: %w",
 			username, err,
 		)
 	}
 	if len(entries) == 0 {
-		return nil, fmt.Errorf("no data found: %w", errLDAPSearchUnexpectedEntries)
+		return nil, errors.Errorf("no data found: %w", errLDAPSearchUnexpectedEntries)
 	}
 	if len(entries) > 1 {
-		return nil, fmt.Errorf(
+		return nil, errors.Errorf(
 			"too many user entries returned for a user (%s), got %d: %w",
 			username, len(entries), errLDAPSearchUnexpectedEntries,
 		)
@@ -122,7 +122,7 @@ func (c *LDAPController) searchForAttributesByUsername(username string, attribut
 func (c *LDAPController) SearchForUserDN(username string) (string, error) {
 	entry, err := c.searchForAttributesByUsername(username, []string{"dn"})
 	if err != nil {
-		err = fmt.Errorf("searching for user DN failed: %w", err)
+		err = errors.Errorf("searching for user DN failed: %w", err)
 		return "", err
 	}
 
@@ -150,13 +150,13 @@ func (c *LDAPController) SearchForUserProfile(username string) (*authdata.User, 
 
 	entry, err := c.searchForAttributesByUsername(username, attributes)
 	if err != nil {
-		err = fmt.Errorf("searching for user profile failed: %w", err)
+		err = errors.Errorf("searching for user profile failed: %w", err)
 		return nil, err
 	}
 
 	id := c.getAttributeValue(entry, c.settings.AttributeNames.UniqueIdentifier)
 	if id == "" {
-		return nil, fmt.Errorf(
+		return nil, errors.Errorf(
 			"missing unique identifier attribute (%s): %w",
 			c.settings.AttributeNames.UniqueIdentifier,
 			errLDAPMissingUserAttribute,
@@ -194,7 +194,7 @@ func (c *LDAPController) SearchForUserGroupMembership(userDN string) ([]authdata
 		[]string{c.settings.AttributeNames.GroupCommonName},
 	)
 	if err != nil {
-		return nil, false, fmt.Errorf(
+		return nil, false, errors.Errorf(
 			"searching for group membership failed: %w",
 			err,
 		)

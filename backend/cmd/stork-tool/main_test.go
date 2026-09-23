@@ -15,6 +15,7 @@ import (
 	"testing"
 
 	goldap "github.com/go-ldap/ldap/v3"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 
@@ -286,7 +287,7 @@ func TestRunMigrateLDAPSystemUsers(t *testing.T) {
 		case strings.Contains(request.Filter, "(uid=ldap-user-update-second)"):
 			uniqueID = "ldap-new-id-2"
 		default:
-			return nil, fmt.Errorf("unexpected LDAP filter: %s", request.Filter)
+			return nil, errors.Errorf("unexpected LDAP filter: %s", request.Filter)
 		}
 
 		return &goldap.SearchResult{
@@ -406,7 +407,7 @@ func TestRunMigrateLDAPSystemUsersOver100(t *testing.T) {
 	ldapDriver.EXPECT().Search(gomock.Any()).DoAndReturn(func(request *goldap.SearchRequest) (*goldap.SearchResult, error) {
 		matches := uidFromFilterRegexp.FindStringSubmatch(request.Filter)
 		if len(matches) != 2 {
-			return nil, fmt.Errorf("unexpected LDAP filter: %s", request.Filter)
+			return nil, errors.Errorf("unexpected LDAP filter: %s", request.Filter)
 		}
 
 		login := matches[1]

@@ -599,14 +599,14 @@ func TestGetUsersSortByLogin(t *testing.T) {
 
 	generateTestUsers(t, db)
 
-	users, total, err := GetUsersByPage(db, 0, 1000, nil, "login", "", SortDirAsc)
+	users, total, err := GetUsersByPage(db, 0, 1000, nil, "", "login", SortDirAsc)
 	require.NoError(t, err)
 	require.Len(t, users, 101)
 	require.EqualValues(t, 101, total)
 
 	prevLogin := ""
 	for _, u := range users {
-		// Make sure that by default the users are ordered by ID.
+		// Make sure that the users are ordered by login.
 		require.Greater(t, u.Login, prevLogin)
 		prevLogin = u.Login
 	}
@@ -662,7 +662,7 @@ func TestGetUsersPageByText(t *testing.T) {
 	generateTestUsers(t, db)
 
 	text := "3"
-	users, total, err := GetUsersByPage(db, 0, 100, &text, "login", "", SortDirAsc)
+	users, total, err := GetUsersByPage(db, 0, 100, &text, "", "login", SortDirAsc)
 	require.NoError(t, err)
 	require.Len(t, users, 19)
 	require.EqualValues(t, 19, total)

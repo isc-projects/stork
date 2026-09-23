@@ -2,10 +2,10 @@ package ldap
 
 import (
 	"crypto/tls"
-	"fmt"
 	"time"
 
 	goldap "github.com/go-ldap/ldap/v3"
+	"github.com/pkg/errors"
 )
 
 // The go-ldap proxy interface for the mocking purposes.
@@ -38,7 +38,7 @@ func (d *libraryDriver) Dial(url string, tls *tls.Config, timeout time.Duration)
 
 	connection, err := goldap.DialURL(url, opts...)
 	if err != nil {
-		err = fmt.Errorf("cannot establish connection to the LDAP server (%s): %w", url, err)
+		err = errors.Errorf("cannot establish connection to the LDAP server (%s): %w", url, err)
 		return err
 	}
 
@@ -65,7 +65,7 @@ func (d *libraryDriver) SimpleBind(userDN, password string, allowEmptyPassword b
 		AllowEmptyPassword: allowEmptyPassword,
 	})
 	if err != nil {
-		return fmt.Errorf("cannot bind the '%s' user: %w", userDN, err)
+		return errors.Errorf("cannot bind the '%s' user: %w", userDN, err)
 	}
 	return nil
 }
