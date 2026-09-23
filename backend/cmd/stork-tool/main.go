@@ -418,7 +418,7 @@ func runMigrateLDAPSystemUsers(settings *migrateLDAPSystemUsersSettings, ldapDri
 			successCount++
 		}
 	}
-	log.Infof("Migration completed: %d succeeded, %d failed", successCount, failedCount)
+	log.Infof("Migration completed: %d users updated successfully, %d failed", successCount, failedCount)
 	return nil
 }
 
