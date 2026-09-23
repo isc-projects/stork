@@ -38,7 +38,7 @@ func (d *libraryDriver) Dial(url string, tls *tls.Config, timeout time.Duration)
 
 	connection, err := goldap.DialURL(url, opts...)
 	if err != nil {
-		err = errors.Errorf("cannot establish connection to the LDAP server (%s): %w", url, err)
+		err = errors.Wrapf(err, "cannot establish connection to the LDAP server (%s)", url)
 		return err
 	}
 
@@ -65,12 +65,16 @@ func (d *libraryDriver) SimpleBind(userDN, password string, allowEmptyPassword b
 		AllowEmptyPassword: allowEmptyPassword,
 	})
 	if err != nil {
-		return errors.Errorf("cannot bind the '%s' user: %w", userDN, err)
+		return errors.Wrapf(err, "cannot bind the '%s' user", userDN)
 	}
 	return nil
 }
 
 // Performs searching in the LDAP server.
 func (d *libraryDriver) Search(request *goldap.SearchRequest) (*goldap.SearchResult, error) {
-	return d.connection.Search(request)
+	result, err := d.connection.Search(request)
+	if err != nil {
+		return nil, errors.Wrapf(err, "cannot perform search with base DN '%s'", request.BaseDN)
+	}
+	return result, nil
 }
