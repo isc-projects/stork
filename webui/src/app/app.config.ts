@@ -1,5 +1,5 @@
-import Aura from '@primeng/themes/aura'
-import { definePreset } from '@primeng/themes'
+import { definePreset } from '@primeuix/themes'
+import Aura from '@primeuix/themes/aura'
 
 // Generated API modules
 import { Configuration, ConfigurationParameters } from './backend'
@@ -28,11 +28,12 @@ const AuraBluePreset = definePreset(Aura, {
             900: '{blue.900}',
             950: '{blue.950}',
         },
-    },
-    // Custom inverted scale (old surface-like light↔dark). Must live under extend;
-    // semantic.colorScheme only allows known tokens (surface, primary, …).
-    extend: {
         colorScheme: {
+            // Adding custom 'inverted' color scheme which mimics old PrimeNG 'surface' color scheme,
+            // which for light scheme was changing from white to dark colors, and for
+            // dark scheme it was changing from dark colors to white.
+            // In new PrimeNG (v18 and following), the 'surface' color scheme behaves similarly for both light and dark mode,
+            // i.e. it changes from white to darker colors.
             dark: {
                 inverted: {
                     0: '{zinc.900}',
