@@ -113,7 +113,7 @@ func TestMiddlewareIsTransparent2(t *testing.T) {
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Hello", "world")
 	})
-	testSM, err := dbsession.NewSessionMgr(db)
+	testSM, err := dbsession.NewSessionMgr(db, false)
 	require.NoError(t, err)
 
 	// Act
@@ -147,7 +147,7 @@ func TestSessionStorage(t *testing.T) {
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx = r.Context()
 	})
-	testSM, err := dbsession.NewSessionMgr(db)
+	testSM, err := dbsession.NewSessionMgr(db, false)
 	require.NoError(t, err)
 	err = controller.Configure(url.URL{Scheme: "https"}, testSM)
 	require.NoError(t, err)
@@ -258,7 +258,7 @@ func TestGetMappedGroups(t *testing.T) {
 	}
 	controller := NewController(settings, db)
 	require.NotNil(t, controller)
-	testSM, err := dbsession.NewSessionMgr(db)
+	testSM, err := dbsession.NewSessionMgr(db, false)
 	require.NoError(t, err)
 	err = controller.Configure(url.URL{Scheme: "https"}, testSM)
 	require.NoError(t, err)
@@ -395,7 +395,7 @@ func TestMiddlewareHandlesLoginEndpoint(t *testing.T) {
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Hello", "world")
 	})
-	testSM, err := dbsession.NewSessionMgr(db)
+	testSM, err := dbsession.NewSessionMgr(db, false)
 	require.NoError(t, err)
 
 	// Act
@@ -466,7 +466,7 @@ func TestMiddlewareHandlesCallbackEndpoint(t *testing.T) {
 	defer srvTeardown()
 	controller := NewController(Settings{IssuerURL: issuerURL, ClientID: "clientID"}, db)
 	require.NotNil(t, controller)
-	testSM, err := dbsession.NewSessionMgr(db)
+	testSM, err := dbsession.NewSessionMgr(db, false)
 	require.NoError(t, err)
 	err = controller.Configure(url.URL{Scheme: "http", Path: "localhost"}, testSM)
 	require.NoError(t, err)
@@ -513,7 +513,7 @@ func TestCallbackEndpointHandlesError(t *testing.T) {
 	defer srvTeardown()
 	controller := NewController(Settings{IssuerURL: issuerURL, ClientID: "clientID"}, db)
 	require.NotNil(t, controller)
-	testSM, err := dbsession.NewSessionMgr(db)
+	testSM, err := dbsession.NewSessionMgr(db, false)
 	require.NoError(t, err)
 	err = controller.Configure(url.URL{Scheme: "http", Path: "localhost"}, testSM)
 	require.NoError(t, err)
@@ -579,7 +579,7 @@ func TestCallbackEndpointHandlesTokenExchangeError(t *testing.T) {
 	defer srvTeardown()
 	controller := NewController(Settings{IssuerURL: issuerURL, ClientID: "clientID"}, db)
 	require.NotNil(t, controller)
-	testSM, err := dbsession.NewSessionMgr(db)
+	testSM, err := dbsession.NewSessionMgr(db, false)
 	require.NoError(t, err)
 	err = controller.Configure(url.URL{Scheme: "http", Path: "localhost"}, testSM)
 	require.NoError(t, err)
@@ -633,7 +633,7 @@ func TestCallbackEndpointHandlesTokenRespVerificationError(t *testing.T) {
 	// This should cause token response verification error.
 	controller := NewController(Settings{IssuerURL: issuerURL, ClientID: "wrongClientID"}, db)
 	require.NotNil(t, controller)
-	testSM, err := dbsession.NewSessionMgr(db)
+	testSM, err := dbsession.NewSessionMgr(db, false)
 	require.NoError(t, err)
 	err = controller.Configure(url.URL{Scheme: "http", Path: "localhost"}, testSM)
 	require.NoError(t, err)
@@ -683,7 +683,7 @@ func TestCallbackEndpointHandlesWrongNonce(t *testing.T) {
 	defer srvTeardown()
 	controller := NewController(Settings{IssuerURL: issuerURL, ClientID: "clientID"}, db)
 	require.NotNil(t, controller)
-	testSM, err := dbsession.NewSessionMgr(db)
+	testSM, err := dbsession.NewSessionMgr(db, false)
 	require.NoError(t, err)
 	err = controller.Configure(url.URL{Scheme: "http", Path: "localhost"}, testSM)
 	require.NoError(t, err)
@@ -734,7 +734,7 @@ func TestCallbackEndpointHandlesUnauthorizedUser(t *testing.T) {
 	defer srvTeardown()
 	controller := NewController(Settings{IssuerURL: issuerURL, ClientID: "clientID", GroupsClaim: "groups", MandatoryAllowGroup: "bar"}, db)
 	require.NotNil(t, controller)
-	testSM, err := dbsession.NewSessionMgr(db)
+	testSM, err := dbsession.NewSessionMgr(db, false)
 	require.NoError(t, err)
 	err = controller.Configure(url.URL{Scheme: "http", Path: "localhost"}, testSM)
 	require.NoError(t, err)
@@ -795,7 +795,7 @@ func TestCallbackEndpointAuthorizesUser(t *testing.T) {
 	}
 	controller := NewController(settings, db)
 	require.NotNil(t, controller)
-	testSM, err := dbsession.NewSessionMgr(db)
+	testSM, err := dbsession.NewSessionMgr(db, false)
 	require.NoError(t, err)
 	err = controller.Configure(url.URL{Scheme: "http", Path: "localhost"}, testSM)
 	require.NoError(t, err)
@@ -863,7 +863,7 @@ func TestCallbackEndpointAuthorizesUserGroupMappingDisabled(t *testing.T) {
 	}
 	controller := NewController(settings, db)
 	require.NotNil(t, controller)
-	testSM, err := dbsession.NewSessionMgr(db)
+	testSM, err := dbsession.NewSessionMgr(db, false)
 	require.NoError(t, err)
 	err = controller.Configure(url.URL{Scheme: "http", Path: "localhost"}, testSM)
 	require.NoError(t, err)
@@ -990,7 +990,7 @@ func TestCallbackEndpointHandlesEmptyState(t *testing.T) {
 	defer srvTeardown()
 	controller := NewController(Settings{IssuerURL: issuerURL, ClientID: "clientID"}, db)
 	require.NotNil(t, controller)
-	testSM, err := dbsession.NewSessionMgr(db)
+	testSM, err := dbsession.NewSessionMgr(db, false)
 	require.NoError(t, err)
 	err = controller.Configure(url.URL{Scheme: "http", Path: "localhost"}, testSM)
 	require.NoError(t, err)
@@ -1029,7 +1029,7 @@ func TestCallbackEndpointHandlesEmptyCode(t *testing.T) {
 	defer srvTeardown()
 	controller := NewController(Settings{IssuerURL: issuerURL, ClientID: "clientID"}, db)
 	require.NotNil(t, controller)
-	testSM, err := dbsession.NewSessionMgr(db)
+	testSM, err := dbsession.NewSessionMgr(db, false)
 	require.NoError(t, err)
 	err = controller.Configure(url.URL{Scheme: "http", Path: "localhost"}, testSM)
 	require.NoError(t, err)
@@ -1167,7 +1167,7 @@ func TestCallbackEndpointAuthorizesUserNoDiscovery(t *testing.T) {
 	}
 	controller := NewController(settings, db)
 	require.NotNil(t, controller)
-	testSM, err := dbsession.NewSessionMgr(db)
+	testSM, err := dbsession.NewSessionMgr(db, false)
 	require.NoError(t, err)
 	err = controller.Configure(url.URL{Scheme: "http", Path: "localhost"}, testSM)
 	require.NoError(t, err)

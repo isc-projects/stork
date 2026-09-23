@@ -170,7 +170,7 @@ func TestInnerMiddleware(t *testing.T) {
 	defer teardown()
 	rapi, err := NewRestAPI(db, settings)
 	require.NoError(t, err)
-	sm, err := dbsession.NewSessionMgr(db)
+	sm, err := dbsession.NewSessionMgr(db, false)
 	require.NoError(t, err)
 	defer sm.Close()
 	rapi.SessionManager = sm
