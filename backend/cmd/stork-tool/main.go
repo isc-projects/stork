@@ -14,6 +14,7 @@ import (
 
 	"isc.org/stork/cli"
 	"isc.org/stork/hooksutil"
+	"isc.org/stork/ldap"
 	"isc.org/stork/server/certs"
 	dbops "isc.org/stork/server/database"
 	storkutil "isc.org/stork/util"
@@ -75,6 +76,15 @@ type loginScreenWelcomeDeploySettings struct {
 type loginScreenWelcomeUndeploySettings struct {
 	cli.CommandSettings
 	RestStaticFilesDir string `long:"rest-static-files-dir" short:"d" description:"The directory with static files for the UI; if not provided the tool will try to use default locations" env:"STORK_TOOL_REST_STATIC_FILES_DIR"`
+}
+
+// The CLI flags for the migrate-ldap-system-users command.
+type migrateLDAPSystemUsersSettings struct {
+	cli.CommandSettings
+	OldUniqueIdentifier string `long:"old-unique-identifier" description:"The old unique identifier property in the user object class" env:"STORK_TOOL_LDAP_OLD_UNIQUE_IDENTIFIER" default:"dn"`
+	DatabaseSettings    dbops.DatabaseCLIFlags
+	// Use the same namespace as the LDAP hook to ensure consistency in environment variable parsing.
+	LDAPSettings ldap.Settings `group:"LDAP server settings" namespace:"ldap" env-namespace:"STORK_SERVER_HOOK_LDAP"`
 }
 
 // Establish connection to a database with opts from command line.
@@ -359,6 +369,12 @@ func runStaticViewUndeploy(settings *loginScreenWelcomeUndeploySettings, filenam
 	return errors.Wrapf(err, "failed to remove file '%s'", filename)
 }
 
+// Migrates the stale system users based on the old unique identifier.
+func runMigrateLDAPSystemUsers(settings *migrateLDAPSystemUsersSettings) error {
+	// Implementation goes here.
+	return nil
+}
+
 // Reads the location of the static files from the settings and returns
 // the path to assets/static-page-content relative to this path. If the
 // path is not specified it tries to locate the static-page-content path
@@ -565,6 +581,17 @@ func newApp() *cli.App {
 			if err != nil {
 				log.WithError(err).
 					Fatal("Failed to undeploy the custom welcome message")
+			}
+		},
+	)
+
+	migrateLDAPSystemUsers := &migrateLDAPSystemUsersSettings{}
+	app.RegisterCommand(
+		"migrate-ldap-system-users", "Migrate stale LDAP system users",
+		migrateLDAPSystemUsers, func() {
+			err := runMigrateLDAPSystemUsers(migrateLDAPSystemUsers)
+			if err != nil {
+				log.WithError(err).Fatal("Failed to migrate stale LDAP system users")
 			}
 		},
 	)

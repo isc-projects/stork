@@ -1,8 +1,9 @@
 package ldap
 
 import (
-	"strings"
 	"time"
+
+	storkutil "isc.org/stork/util"
 )
 
 // LDAP has no strict user structure, and it can use various schemas. The
@@ -48,51 +49,6 @@ type Settings struct {
 // Implementation of go-flags Unmarshaler interface. Unmarshals a comma-separated values in a string into a slice of strings.
 // Supports backslash comma escaping.
 func (flags *CommaSeparatedStrings) UnmarshalFlag(value string) error {
-	var (
-		backslash bool
-		current   []rune
-	)
-	for _, c := range value {
-		switch c {
-		case '\\':
-			if !backslash {
-				// The backslash has not been seen yet. Count it.
-				backslash = true
-			} else {
-				// The backslash has been already seen. Add a single backslash
-				// to the current string.
-				current = append(current, c)
-			}
-		case ',':
-			if backslash {
-				// Escaped comma. Add it to the current string.
-				current = append(current, c)
-				backslash = false
-			} else {
-				// Unescaped comma. Split on it.
-				if token := strings.TrimSpace(string(current)); token != "" {
-					*flags = append(*flags, token)
-				}
-				current = []rune{}
-			}
-		default:
-			if backslash {
-				current = append(current, '\\')
-				backslash = false
-			}
-
-			// Neither backslash nor comma. Add the character to the current
-			// string.
-			current = append(current, c)
-		}
-	}
-
-	if backslash {
-		current = append(current, '\\')
-	}
-
-	if token := strings.TrimSpace(string(current)); token != "" {
-		*flags = append(*flags, token)
-	}
+	*flags = append(*flags, storkutil.SplitByComma(value)...)
 	return nil
 }
