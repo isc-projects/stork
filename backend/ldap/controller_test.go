@@ -46,11 +46,13 @@ func TestConnectWithoutTLS(t *testing.T) {
 		dialTimeout = timeout
 		return nil
 	})
+	mock.EXPECT().Close()
 	settings := ldap.Settings{
 		DialURL: "ldap://foobar:42",
 		Timeout: 24 * time.Hour,
 	}
 	controller := ldap.NewLDAPController(settings, mock)
+	defer controller.Close()
 
 	// Act
 	err := controller.Connect()
@@ -70,11 +72,13 @@ func TestConnectWithError(t *testing.T) {
 	defer ctrl.Finish()
 	mock := NewMockLDAPDriver(ctrl)
 	mock.EXPECT().Dial("ldap://foobar:42", gomock.Nil(), 24*time.Hour).Return(errTest)
+	mock.EXPECT().Close()
 	settings := ldap.Settings{
 		DialURL: "ldap://foobar:42",
 		Timeout: 24 * time.Hour,
 	}
 	controller := ldap.NewLDAPController(settings, mock)
+	defer controller.Close()
 
 	// Act
 	err := controller.Connect()
@@ -95,12 +99,14 @@ func TestConnectWithTLSSkipVerification(t *testing.T) {
 		dialTLS = tlsConfig
 		return nil
 	})
+	mock.EXPECT().Close()
 	settings := ldap.Settings{
 		DialURL:                   "ldaps://foobar:42",
 		Timeout:                   24 * time.Hour,
 		TLSSkipServerVerification: true,
 	}
 	controller := ldap.NewLDAPController(settings, mock)
+	defer controller.Close()
 
 	// Act
 	err := controller.Connect()
@@ -123,12 +129,14 @@ func TestConnectWithTLS(t *testing.T) {
 		dialTLS = tlsConfig
 		return nil
 	})
+	mock.EXPECT().Close()
 	settings := ldap.Settings{
 		DialURL:                   "ldaps://foobar:42",
 		Timeout:                   24 * time.Hour,
 		TLSSkipServerVerification: false,
 	}
 	controller := ldap.NewLDAPController(settings, mock)
+	defer controller.Close()
 
 	// Act
 	err := controller.Connect()
@@ -146,12 +154,14 @@ func TestBindAsMaintenanceUser(t *testing.T) {
 	defer ctrl.Finish()
 	mock := NewMockLDAPDriver(ctrl)
 	mock.EXPECT().SimpleBind("cn=bar", "boz", false).Return(nil)
+	mock.EXPECT().Close()
 	settings := ldap.Settings{
 		Root:         "foo",
 		BindUserDN:   "cn=bar",
 		BindPassword: "boz",
 	}
 	controller := ldap.NewLDAPController(settings, mock)
+	defer controller.Close()
 
 	// Act
 	err := controller.BindAsMaintenanceUser()
@@ -166,12 +176,14 @@ func TestBindAsMaintenanceUserWithEmptyPassword(t *testing.T) {
 	defer ctrl.Finish()
 	mock := NewMockLDAPDriver(ctrl)
 	mock.EXPECT().SimpleBind("cn=bar", "", true).Return(nil)
+	mock.EXPECT().Close()
 	settings := ldap.Settings{
 		Root:         "foo",
 		BindUserDN:   "cn=bar",
 		BindPassword: "",
 	}
 	controller := ldap.NewLDAPController(settings, mock)
+	defer controller.Close()
 
 	// Act
 	err := controller.BindAsMaintenanceUser()
@@ -188,8 +200,10 @@ func TestBindAsMaintenanceUserWithError(t *testing.T) {
 	defer ctrl.Finish()
 	mock := NewMockLDAPDriver(ctrl)
 	mock.EXPECT().SimpleBind("", "", true).Return(errTest)
+	mock.EXPECT().Close()
 	settings := ldap.Settings{}
 	controller := ldap.NewLDAPController(settings, mock)
+	defer controller.Close()
 
 	// Act
 	err := controller.BindAsMaintenanceUser()
@@ -214,6 +228,7 @@ func TestSearchForUserDN(t *testing.T) {
 		request = r
 		return searchResult, nil
 	})
+	mock.EXPECT().Close()
 	settings := ldap.Settings{
 		Root: "root",
 		AttributeNames: ldap.LDAPAttributeNames{
@@ -222,6 +237,7 @@ func TestSearchForUserDN(t *testing.T) {
 		},
 	}
 	controller := ldap.NewLDAPController(settings, mock)
+	defer controller.Close()
 
 	// Act
 	userDN, err := controller.SearchForUserDN("bar")
@@ -250,8 +266,10 @@ func TestSearchForUserDNErrorIfNoEntries(t *testing.T) {
 	mock.EXPECT().Search(gomock.Any()).Return(&goldap.SearchResult{
 		Entries: []*goldap.Entry{},
 	}, nil)
+	mock.EXPECT().Close()
 	settings := ldap.Settings{}
 	controller := ldap.NewLDAPController(settings, mock)
+	defer controller.Close()
 
 	// Act
 	userDN, err := controller.SearchForUserDN("bar")
@@ -275,8 +293,10 @@ func TestSearchForUserDNErrorIfTooManyEntries(t *testing.T) {
 			{DN: "boz"},
 		},
 	}, nil)
+	mock.EXPECT().Close()
 	settings := ldap.Settings{}
 	controller := ldap.NewLDAPController(settings, mock)
+	defer controller.Close()
 
 	// Act
 	userDN, err := controller.SearchForUserDN("bar")
@@ -317,6 +337,7 @@ func TestSearchForUserProfile(t *testing.T) {
 			},
 		},
 	}, nil)
+	mock.EXPECT().Close()
 	settings := ldap.Settings{
 		Root: "root",
 		AttributeNames: ldap.LDAPAttributeNames{
@@ -329,6 +350,7 @@ func TestSearchForUserProfile(t *testing.T) {
 		},
 	}
 	controller := ldap.NewLDAPController(settings, mock)
+	defer controller.Close()
 
 	// Act
 	userProfile, err := controller.SearchForUserProfile("username")
@@ -376,6 +398,7 @@ func TestSearchForUserProfileWithDNAsUniqueIdentifier(t *testing.T) {
 			},
 		},
 	}, nil)
+	mock.EXPECT().Close()
 	settings := ldap.Settings{
 		Root: "root",
 		AttributeNames: ldap.LDAPAttributeNames{
@@ -388,6 +411,7 @@ func TestSearchForUserProfileWithDNAsUniqueIdentifier(t *testing.T) {
 		},
 	}
 	controller := ldap.NewLDAPController(settings, mock)
+	defer controller.Close()
 
 	// Act
 	userProfile, err := controller.SearchForUserProfile("username")
@@ -423,6 +447,7 @@ func TestSearchForUserProfileMissingOptionalAttributes(t *testing.T) {
 			},
 		},
 	}, nil)
+	mock.EXPECT().Close()
 	settings := ldap.Settings{
 		Root: "root",
 		AttributeNames: ldap.LDAPAttributeNames{
@@ -435,6 +460,7 @@ func TestSearchForUserProfileMissingOptionalAttributes(t *testing.T) {
 		},
 	}
 	controller := ldap.NewLDAPController(settings, mock)
+	defer controller.Close()
 
 	// Act
 	userProfile, err := controller.SearchForUserProfile("username")
@@ -465,6 +491,7 @@ func TestSearchForUserProfileMissingMandatoryAttributes(t *testing.T) {
 			},
 		},
 	}, nil)
+	mock.EXPECT().Close()
 	settings := ldap.Settings{
 		Root: "root",
 		AttributeNames: ldap.LDAPAttributeNames{
@@ -477,6 +504,7 @@ func TestSearchForUserProfileMissingMandatoryAttributes(t *testing.T) {
 		},
 	}
 	controller := ldap.NewLDAPController(settings, mock)
+	defer controller.Close()
 
 	// Act
 	userProfile, err := controller.SearchForUserProfile("username")
@@ -496,8 +524,10 @@ func TestSearchForUserProfileMissingProfile(t *testing.T) {
 	mock.EXPECT().Search(gomock.Any()).Return(&goldap.SearchResult{
 		Entries: []*goldap.Entry{},
 	}, nil)
+	mock.EXPECT().Close()
 	settings := ldap.Settings{}
 	controller := ldap.NewLDAPController(settings, mock)
+	defer controller.Close()
 
 	// Act
 	userProfile, err := controller.SearchForUserProfile("username")
@@ -515,8 +545,10 @@ func TestSearchForUserProfileError(t *testing.T) {
 	defer ctrl.Finish()
 	mock := NewMockLDAPDriver(ctrl)
 	mock.EXPECT().Search(gomock.Any()).Return(nil, errTest)
+	mock.EXPECT().Close()
 	settings := ldap.Settings{}
 	controller := ldap.NewLDAPController(settings, mock)
+	defer controller.Close()
 
 	// Act
 	userProfile, err := controller.SearchForUserProfile("username")
@@ -533,8 +565,10 @@ func TestBindAsUser(t *testing.T) {
 	defer ctrl.Finish()
 	mock := NewMockLDAPDriver(ctrl)
 	mock.EXPECT().SimpleBind("foo", "bar", false).Return(nil)
+	mock.EXPECT().Close()
 	settings := ldap.Settings{}
 	controller := ldap.NewLDAPController(settings, mock)
+	defer controller.Close()
 
 	// Act
 	err := controller.BindAsUser("foo", "bar")
@@ -550,8 +584,10 @@ func TestBindAsUserWithEmptyPassword(t *testing.T) {
 	defer ctrl.Finish()
 	mock := NewMockLDAPDriver(ctrl)
 	mock.EXPECT().SimpleBind("foo", "", false).Return(nil)
+	mock.EXPECT().Close()
 	settings := ldap.Settings{}
 	controller := ldap.NewLDAPController(settings, mock)
+	defer controller.Close()
 
 	// Act
 	err := controller.BindAsUser("foo", "")
@@ -568,8 +604,10 @@ func TestBindAsUserWithError(t *testing.T) {
 	defer ctrl.Finish()
 	mock := NewMockLDAPDriver(ctrl)
 	mock.EXPECT().SimpleBind("", "", true).Return(errTest)
+	mock.EXPECT().Close()
 	settings := ldap.Settings{}
 	controller := ldap.NewLDAPController(settings, mock)
+	defer controller.Close()
 
 	// Act
 	err := controller.BindAsMaintenanceUser()
@@ -586,8 +624,10 @@ func TestSearchForUserGroupMembershipWithError(t *testing.T) {
 	defer ctrl.Finish()
 	mock := NewMockLDAPDriver(ctrl)
 	mock.EXPECT().Search(gomock.Any()).Return(nil, errTest)
+	mock.EXPECT().Close()
 	settings := ldap.Settings{}
 	controller := ldap.NewLDAPController(settings, mock)
+	defer controller.Close()
 
 	// Act
 	groups, isAllowed, err := controller.SearchForUserGroupMembership("foo")
@@ -625,6 +665,7 @@ func TestSearchForUserGroupMembershipHasAllowGroup(t *testing.T) {
 			},
 		},
 	}, nil)
+	mock.EXPECT().Close()
 	settings := ldap.Settings{
 		AttributeNames: ldap.LDAPAttributeNames{
 			GroupCommonName: "groupName",
@@ -632,6 +673,7 @@ func TestSearchForUserGroupMembershipHasAllowGroup(t *testing.T) {
 		MandatoryAllowGroup: "mandatory",
 	}
 	controller := ldap.NewLDAPController(settings, mock)
+	defer controller.Close()
 
 	// Act
 	groups, isAllowed, err := controller.SearchForUserGroupMembership("foo")
@@ -661,6 +703,7 @@ func TestSearchForUserGroupMembershipHasNoAllowGroup(t *testing.T) {
 			},
 		},
 	}, nil)
+	mock.EXPECT().Close()
 	settings := ldap.Settings{
 		AttributeNames: ldap.LDAPAttributeNames{
 			GroupCommonName: "groupName",
@@ -668,6 +711,7 @@ func TestSearchForUserGroupMembershipHasNoAllowGroup(t *testing.T) {
 		MandatoryAllowGroup: "mandatory",
 	}
 	controller := ldap.NewLDAPController(settings, mock)
+	defer controller.Close()
 
 	// Act
 	groups, isAllowed, err := controller.SearchForUserGroupMembership("foo")
@@ -698,7 +742,9 @@ func TestSearchForUserGroupMembershipMapping(t *testing.T) {
 
 			mock := NewMockLDAPDriver(ctrl)
 			mock.EXPECT().Search(gomock.Any()).Return(&goldap.SearchResult{Entries: entries}, nil)
+			mock.EXPECT().Close()
 			controller := ldap.NewLDAPController(settings, mock)
+			defer controller.Close()
 
 			// Act
 			groups, isAllowed, err := controller.SearchForUserGroupMembership("foo")
