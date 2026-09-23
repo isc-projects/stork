@@ -1010,7 +1010,9 @@ describe('SubnetFormComponent', () => {
         fixture.detectChanges()
 
         const submittedSubnet = (dhcpApi.updateSubnetSubmit as jasmine.Spy).calls.mostRecent().args[2] as Subnet
-        expect(submittedSubnet.localSubnets[0].keaConfigSubnetParameters.subnetLevelParameters.options[0].neverSend).toBeTrue()
+        expect(
+            submittedSubnet.localSubnets[0].keaConfigSubnetParameters.subnetLevelParameters.options[0].neverSend
+        ).toBeTrue()
     }))
 
     it('should open a form for updating IPv6 subnet', fakeAsync(() => {
