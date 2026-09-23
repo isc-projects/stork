@@ -1,8 +1,13 @@
 const config = {
     stories: ['../src/**/*.stories.@(js|jsx|ts|tsx)'],
 
-    addons: [// is this used?
-    '@storybook/addon-links', '@storybook/addon-themes', 'storybook-addon-mock', '@storybook/addon-docs'],
+    addons: [
+        // is this used?
+        '@storybook/addon-links',
+        '@storybook/addon-themes',
+        'storybook-addon-mock',
+        '@storybook/addon-docs',
+    ],
 
     framework: '@storybook/angular',
 

@@ -11,11 +11,11 @@
     [binary]="true"
     [name]="name()"
 >
-<ng-template #icon>
-    @if (value() === true) {
-        <svg data-p-icon="check" />
-    } @else if (value() === false) {
-        <svg data-p-icon="times" />
-    }
-</ng-template>
+    <ng-template #icon>
+        @if (value() === true) {
+            <svg data-p-icon="check" />
+        } @else if (value() === false) {
+            <svg data-p-icon="times" />
+        }
+    </ng-template>
 </p-checkbox>

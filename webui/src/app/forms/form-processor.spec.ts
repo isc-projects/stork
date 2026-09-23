@@ -19,8 +19,7 @@ describe('FormProcessor', () => {
             return null
         }
         let validator2: AsyncValidatorFn = ():
-            | Promise<ValidationErrors | null>
-            | Observable<ValidationErrors | null> => {
+            Promise<ValidationErrors | null> | Observable<ValidationErrors | null> => {
             return new Promise(null)
         }
         let formArray = formBuilder.array([
