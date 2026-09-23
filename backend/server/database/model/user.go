@@ -308,9 +308,11 @@ func Authenticate(db *pg.DB, user *SystemUser, password string) (bool, error) {
 // page. If these values are set to 0, all users are returned. Limit
 // has to be greater then 0, otherwise error is returned. sortField
 // allows indicating sort column in database and sortDir allows
-// selection the order of sorting. If sortField is empty then id is
-// used for sorting.  in SortDirAny is used then ASC order is used.
-func GetUsersByPage(db *dbops.PgDB, offset, limit int64, filterText *string, sortField string, sortDir SortDirEnum) ([]SystemUser, int64, error) {
+// selection the order of sorting. If the authentication method is not empty,
+// only users with the specified authentication method are returned.
+// If sortField is empty then id is used for sorting.  in SortDirAny is used
+// then ASC order is used.
+func GetUsersByPage(db *dbops.PgDB, offset, limit int64, filterText *string, authenticationMethod string, sortField string, sortDir SortDirEnum) ([]SystemUser, int64, error) {
 	if limit == 0 {
 		return nil, 0, pkgerrors.New("limit should be greater than 0")
 	}
@@ -327,6 +329,10 @@ func GetUsersByPage(db *dbops.PgDB, offset, limit int64, filterText *string, sor
 			qq = qq.WhereOr("name ILIKE ?", text)
 			return qq, nil
 		})
+	}
+
+	if authenticationMethod != "" {
+		q = q.Where("auth_method = ?", authenticationMethod)
 	}
 
 	// prepare sorting expression, offset and limit

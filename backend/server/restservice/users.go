@@ -199,7 +199,7 @@ func (r *RestAPI) DeleteSession(ctx context.Context, params users.DeleteSessionP
 }
 
 func (r *RestAPI) getUsers(offset, limit int64, filterText *string, sortField string, sortDir dbmodel.SortDirEnum) (*models.Users, error) {
-	dbUsers, total, err := dbmodel.GetUsersByPage(r.DB, offset, limit, filterText, sortField, sortDir)
+	dbUsers, total, err := dbmodel.GetUsersByPage(r.DB, offset, limit, filterText, "", sortField, sortDir)
 	if err != nil {
 		return nil, err
 	}
