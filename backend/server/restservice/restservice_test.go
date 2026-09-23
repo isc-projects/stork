@@ -430,3 +430,10 @@ func TestSetBaseURLForInsufficientWritePermissionExistingValue(t *testing.T) {
 	content, _ := os.ReadFile(filepath)
 	require.EqualValues(t, `<base href="/foo/">`, string(content))
 }
+
+// Test that isTLSEnabled works as expected.
+func TestIsTLSEnabled(t *testing.T) {
+	require.True(t, isTLSEnabled(&RestAPISettings{TLSCertificate: "cert.pem"}))
+	require.False(t, isTLSEnabled(&RestAPISettings{}))
+	require.False(t, isTLSEnabled(nil))
+}
