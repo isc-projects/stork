@@ -20,7 +20,7 @@ func TestSSEBroker(t *testing.T) {
 
 	ec := NewEventCenter(db)
 
-	req := httptest.NewRequest("GET", "http://localhost/sse?stream=message", nil)
+	req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost/sse?stream=message", nil)
 	w := httptest.NewRecorder()
 	context, cancel := context.WithCancel(context.Background())
 	req = req.WithContext(context)
@@ -58,7 +58,7 @@ func TestSSEBrokerShutdown(t *testing.T) {
 	ec := NewEventCenter(db)
 
 	// Serve the request in background.
-	req := httptest.NewRequest("GET", "http://localhost/sse?stream=message", nil)
+	req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost/sse?stream=message", nil)
 	w := httptest.NewRecorder()
 	go ec.ServeHTTP(w, req)
 
@@ -83,7 +83,7 @@ func TestSSEBrokerNonMainStream(t *testing.T) {
 
 	ec := NewEventCenter(db)
 
-	req := httptest.NewRequest("GET", "http://localhost/sse?stream=connectivity", nil)
+	req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost/sse?stream=connectivity", nil)
 	w := httptest.NewRecorder()
 	context, cancel := context.WithCancel(context.Background())
 	req = req.WithContext(context)
@@ -118,7 +118,7 @@ func TestSSEBrokerWithDifferentStreams(t *testing.T) {
 
 	ec := NewEventCenter(db)
 
-	req := httptest.NewRequest("GET", "http://localhost/sse?stream=message&stream=connectivity&stream=ha", nil)
+	req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost/sse?stream=message&stream=connectivity&stream=ha", nil)
 	w := httptest.NewRecorder()
 	context, cancel := context.WithCancel(context.Background())
 	req = req.WithContext(context)

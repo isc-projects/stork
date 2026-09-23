@@ -56,7 +56,7 @@ func validateGetLeasesResponse(commandName keactrl.CommandName, result keactrl.R
 		return errors.Errorf("%s command unsupported", commandName)
 	}
 	argumentsType := reflect.TypeOf(arguments)
-	if argumentsType != nil && argumentsType.Kind() == reflect.Ptr {
+	if argumentsType != nil && argumentsType.Kind() == reflect.Pointer {
 		if reflect.ValueOf(arguments).IsNil() {
 			return errors.Errorf("response to %s command lacks arguments", commandName)
 		}

@@ -414,7 +414,7 @@ func (agents *connectedAgentsImpl) GetState(ctx context.Context, machine dbmodel
 				switch {
 				case daemonName == daemonname.Bind9 && point.Type == string(dbmodel.AccessPointControl):
 					accessPoint.Protocol = protocoltype.RNDC
-				case point.UseSecureProtocol: //nolint:staticcheck,deprecated
+				case point.UseSecureProtocol: //nolint:staticcheck
 					accessPoint.Protocol = protocoltype.HTTPS
 				default:
 					accessPoint.Protocol = protocoltype.HTTP
@@ -895,7 +895,15 @@ func (agents *connectedAgentsImpl) ForwardToKeaOverHTTP(ctx context.Context, dae
 			// the Kea CA and Kea daemon.
 			continue
 		}
-		commandResponse := cmdResponses[idx]
+
+		var commandResponse any
+		if idx < len(cmdResponses) {
+			commandResponse = cmdResponses[idx]
+		} else {
+			// This should never happen because the number of responses should match
+			// the number of commands sent.
+			continue
+		}
 
 		// Try to parse the json response from the on-wire format.
 		err = json.Unmarshal(response.Response, commandResponse)

@@ -33,7 +33,7 @@ func TestMiddlewareNewSession(t *testing.T) {
 	require.NoError(t, err)
 	defer mgr.Close()
 
-	req := httptest.NewRequest("GET", "http://example.com/foo", nil)
+	req := httptest.NewRequestWithContext(t.Context(), "GET", "http://example.com/foo", nil)
 	w := httptest.NewRecorder()
 
 	// Create user to be logged to the system.
@@ -126,7 +126,7 @@ func TestLogOutUser(t *testing.T) {
 
 	ctx := context.Background()
 
-	req := httptest.NewRequest("GET", "http://example.com/foo", nil)
+	req := httptest.NewRequestWithContext(t.Context(), "GET", "http://example.com/foo", nil)
 	w := httptest.NewRecorder()
 
 	// Create user to be logged to the system.
@@ -230,7 +230,7 @@ func TestUpdateUser(t *testing.T) {
 
 	ctx := context.Background()
 
-	req := httptest.NewRequest("GET", "http://example.com/foo", nil)
+	req := httptest.NewRequestWithContext(t.Context(), "GET", "http://example.com/foo", nil)
 	w := httptest.NewRecorder()
 
 	// Create user to be logged to the system.

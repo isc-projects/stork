@@ -135,7 +135,7 @@ func (s *CertStore) write(path string, content []byte) error {
 		return err
 	}
 
-	err := os.WriteFile(path, content, 0o600)
+	err := os.WriteFile(path, content, 0o600) // #nosec G703
 	if err != nil {
 		return errors.Wrapf(err, "could not write the file: %s", path)
 	}

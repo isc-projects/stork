@@ -78,7 +78,12 @@ type Triggers []Trigger
 
 // Indicates if the slice of triggers is corresponding to internal review run.
 func (ts Triggers) isInternalRun() bool {
-	return len(ts) == 1 && ts[0] == internalRun
+	// The gosec linter complains about the access to the slice element
+	// out of range. However, it is not true. Seems to me to be an
+	// implementation limitation of the linter.
+	// TODO: Verify it this issue is fixed in the future versions of the linter
+	// and remove the comment.
+	return len(ts) == 1 && ts[0] == internalRun // #nosec G602
 }
 
 // Returns default config review triggers. They are by default used by

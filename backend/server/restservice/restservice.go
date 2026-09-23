@@ -144,7 +144,7 @@ func NewRestAPI(args ...interface{}) (*RestAPI, error) {
 		}
 
 		// Make sure that the specified argument is a pointer.
-		if argType.Kind() != reflect.Ptr {
+		if argType.Kind() != reflect.Pointer {
 			return nil, pkgerrors.Errorf("non-pointer argument specified for NewRestAPI at position %d", i)
 		}
 
@@ -421,7 +421,10 @@ func setBaseURLInIndexFile(baseURL, staticFilesDir string) error {
 
 	// Edit the index file.
 	indexFileContent = baseHrefPattern.ReplaceAll(indexFileContent, []byte(baseHrefReplacement))
-	err = os.WriteFile(indexFilePath, indexFileContent, 0)
+	// It is a configuration step. The administrator can provide any path
+	// that it wants. There is no way to validate it or limit it to specific
+	// directories.
+	err = os.WriteFile(indexFilePath, indexFileContent, 0) // #nosec G703
 
 	if errors.Is(err, os.ErrPermission) {
 		// The backend doesn't have the permission to operate on index.file.
