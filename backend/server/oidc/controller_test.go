@@ -1217,3 +1217,35 @@ func TestCallbackEndpointAuthorizesUserNoDiscovery(t *testing.T) {
 	require.Len(t, dbUser.Groups, 1)
 	require.Equal(t, dbmodel.SuperAdminGroupID, dbUser.Groups[0].ID)
 }
+
+// Test that the auth_session cookie's Secure attribute is set correctly.
+func TestConfigureAuthSessionCookieSecure(t *testing.T) {
+	// Arrange
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	issuerURL, srvTeardown, err := oidctest.PrepareTestOIDCServer()
+	require.NoError(t, err)
+	defer srvTeardown()
+	controller := NewController(Settings{IssuerURL: issuerURL, ClientID: "clientID", ClientSecret: "client-secret"}, db)
+	require.NotNil(t, controller)
+
+	t.Run("without TLS", func(t *testing.T) {
+		// Act
+		err = controller.Configure(url.URL{Scheme: "http", Host: "localhost:8080"}, &dbsession.SessionMgr{})
+
+		// Assert
+		require.NoError(t, err)
+		require.NotNil(t, controller.authSessionManager)
+		require.False(t, controller.authSessionManager.Cookie.Secure)
+	})
+
+	t.Run("with TLS", func(t *testing.T) {
+		// Act
+		err = controller.Configure(url.URL{Scheme: "https", Host: "localhost:8080"}, &dbsession.SessionMgr{})
+
+		// Assert
+		require.NoError(t, err)
+		require.NotNil(t, controller.authSessionManager)
+		require.True(t, controller.authSessionManager.Cookie.Secure)
+	})
+}
