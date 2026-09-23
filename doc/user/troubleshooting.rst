@@ -573,6 +573,39 @@ This section describes the solutions for some common issues with the Stork serve
                 };
 
 
+---------------
+
+:Issue:       After upgrading the Stork server from a version 2.4.0 to a newer
+              version, the users cannot log in via LDAP.
+:Solution 1:  Use the Stork Tool command ``migrate-ldap-system-users`` to
+              re-fetch the users' unique identifiers (external IDs) from the
+              LDAP server.
+:Solution 2:  Set the environment variable ``STORK_SERVER_HOOK_LDAP_OBJECT_CLASS_USER_UNIQUE_IDENTIFIER`` / the ``--ldap.object-class-user-unique-identifier`` CLI argument
+              to ``dn``.
+:Explanation: The Stork LDAP hook, before version 2.5.0, used the DN
+              (distinguished name) attribute as a unique identifier to match
+              LDAP server authentication responses to entries in the Stork
+              database. We discovered that DN is not a correct attribute for it,
+              as it can be changed. In larger organizations, it often changes
+              in Stork 2.5.0,
+              we recommend using fixed, unique UUID-based identifiers as
+              ``entryUUID``, ``uniqueIdentifier``, or ``objectGUID`` (depending
+              on the LDAP distribution). We changed the default value to
+              ``entryUUID``. The side effect is that users who logged in to the
+              Stork UI before this version already have a unique identifier in
+              the Stork database: their DN. It doesn't match ``entryUUID``. The
+              administrator should migrate the users using the dedicated Stork
+              Tool command: ``migrate-ldap-system-users``. It updates the
+              unique identifier in the Stork database by fetching a new value
+              from the LDAP server. It is a one-time operation.
+
+              Alternatively, the administrator can revert to the unique
+              identifier's previous value. It can be achieved by running the
+              Stork server with the ``--ldap.object-class-user-unique-identifier=dn``
+              CLI argument or with the environment variable ``STORK_SERVER_HOOK_LDAP_OBJECT_CLASS_USER_UNIQUE_IDENTIFIER``
+              set to ``dn``. It is not recommended unless the distinguished
+              name (DN) never changes or is reused in the organization.
+
 High Virtual Memory Usage
 =========================
 
