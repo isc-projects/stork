@@ -16,6 +16,7 @@ import (
 	"isc.org/stork/server/auth"
 	"isc.org/stork/server/eventcenter"
 	"isc.org/stork/server/metrics"
+	storkutil "isc.org/stork/util"
 )
 
 var (
@@ -400,6 +401,43 @@ func securityHeadersMiddleware(next http.Handler) http.Handler {
 	})
 }
 
+// Name of the cookie and header used for CSRF protection.
+const (
+	csrfCookieName = "XSRF-TOKEN"
+	csrfHeaderName = "X-XSRF-TOKEN"
+)
+
+// Middleware that makes sure that every response contains a XSRF-TOKEN cookie.
+// New token is generated when incoming request doesn't already have one.
+// The secureCookie argument controls the Secure attribute of the cookie.
+func csrfCookieMiddleware(next http.Handler, secureCookie bool) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, err := r.Cookie(csrfCookieName)
+		if errors.Is(err, http.ErrNoCookie) {
+			token, err := storkutil.Base64URLRandom(32)
+			if err != nil {
+				log.WithError(err).Error("Cannot generate CSRF token")
+				w.WriteHeader(http.StatusInternalServerError)
+				fmt.Fprint(w, "Internal server error")
+				return
+			}
+			// gosec complains about insecure Cookie attributes:
+			// HttpOnly - we must set it to false so that the cookie can be readable by Angular JavaScript code
+			// Secure - we must set it depending on TLS configured
+			http.SetCookie(w, &http.Cookie{ // #nosec: G124
+				Name:     csrfCookieName,
+				Value:    token,
+				HttpOnly: false,
+				Secure:   secureCookie,
+				SameSite: http.SameSiteLaxMode,
+				Path:     "/",
+			})
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 // Global middleware function provides a common place to setup middlewares for
 // the server. It is invoked before everything.
 func (r *RestAPI) GlobalMiddleware(handler http.Handler, serverAddress url.URL, staticFilesDir string, eventCenter eventcenter.EventCenter, maxBodySize int64) http.Handler {
@@ -412,6 +450,7 @@ func (r *RestAPI) GlobalMiddleware(handler http.Handler, serverAddress url.URL, 
 	handler = trimBaseURLMiddleware(handler, serverAddress.Path)
 	handler = bodySizeLimiterMiddleware(handler, maxBodySize)
 	handler = securityHeadersMiddleware(handler)
+	handler = csrfCookieMiddleware(handler, isTLSEnabled(r.Settings))
 	handler = loggingMiddleware(handler)
 	return handler
 }
