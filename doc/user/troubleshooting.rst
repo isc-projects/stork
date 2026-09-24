@@ -521,7 +521,8 @@ This section describes the solutions for some common issues with the Stork serve
               this level and other events at less verbose levels. It is best to log zone transfer
               events into separate files, so the Stork agent does not have to parse unrelated
               logs among the zone transfer logs. Finally, the administrator must ensure proper
-              permissions on the log files, so the Stork agent can read them.
+              permissions on the log files, so the Stork agent can read them. This is typically
+              achieved by assigning the ``stork-agent`` user to a ``named`` or ``bind`` group.
 
 ---------------
 
@@ -545,7 +546,9 @@ This section describes the solutions for some common issues with the Stork serve
                 $ journalctl -o short-iso-precise -f -u named.service --since "1 days ago"
 
               To troubleshoot the problems with the journal monitoring, the administrator can
-              run this command manually and check the output.
+              run this command manually and check the output. Make sure that the user running
+              the Stork agent (typically ``stork-agent``) belongs to the group that can access
+              the systemd journal. It is often the ``systemd-journal`` group.
 
 
 ---------------

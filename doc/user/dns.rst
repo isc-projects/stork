@@ -295,6 +295,14 @@ For example:
 
 In that case, the Stork agent runs the ``journalctl`` command to track the logs from ``systemd`` service.
 
+.. note::
+    When Stork agent is parsing log files to track zone transfers, the administrator must ensure that the
+    Stork agent's user has read permissions to the BIND log directory and the log files. This is typically
+    achieved by assigning the ``stork-agent`` user to a ``named`` or ``bind`` group. When Stork agent is parsing
+    ``systemd`` logs to track zone transfers, the ``stork-agent`` user must be added to the administrator
+    group (e.g., ``wheel``, ``adm``) or ``systemd-journal`` group.
+
+
 
 PowerDNS
 ~~~~~~~~
