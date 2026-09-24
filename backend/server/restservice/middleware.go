@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"regexp"
 	"strings"
 	"text/template"
 	"time"
@@ -438,11 +439,36 @@ func csrfCookieMiddleware(next http.Handler, secureCookie bool) http.Handler {
 	})
 }
 
+// Helper function checking if given request URL path is exempt from the CSRF protection.
+func isCSRFExemptPath(r *http.Request) bool {
+	csrfExemptPaths := []struct {
+		method  string
+		pattern string
+	}{
+		{http.MethodPost, `^/api/machines$`},            // POST /machines endpoint may be called by stork-agent
+		{http.MethodPost, `^/api/machines/[^/]+/ping$`}, // POST /machines/{id}/ping endpoint may be called by stork-agent
+	}
+	for _, exempt := range csrfExemptPaths {
+		if match, _ := regexp.MatchString(exempt.pattern, r.URL.Path); r.Method == exempt.method && match {
+			return true
+		}
+	}
+	return false
+}
+
+// Middleware that provides CSRF protection. Checks if the CSRF token sent in the header matches the token stored in cookie.
+// Not all requests are subject to this protection. GET, HEAD, OPTIONS requests are considered safe.
+// Some REST API endpoints are exempt from the CSRF protection. They must be added in the isCSRFExemptPath helper.
 func csrfProtectionMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet, http.MethodHead, http.MethodOptions:
 			// We don't need to apply CSRF protection for HTTP methods GET, HEAD or OPTIONS.
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		if isCSRFExemptPath(r) {
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -469,10 +495,10 @@ func (r *RestAPI) GlobalMiddleware(handler http.Handler, serverAddress url.URL, 
 	handler = sseMiddleware(handler, eventCenter)
 	handler = metricsMiddleware(handler, r.MetricsCollector)
 	handler = r.OIDCControl.Middleware(handler)
+	handler = csrfProtectionMiddleware(handler)
 	handler = trimBaseURLMiddleware(handler, serverAddress.Path)
 	handler = bodySizeLimiterMiddleware(handler, maxBodySize)
 	handler = securityHeadersMiddleware(handler)
-	handler = csrfProtectionMiddleware(handler)
 	handler = csrfCookieMiddleware(handler, isTLSEnabled(r.Settings))
 	handler = loggingMiddleware(handler)
 	return handler
