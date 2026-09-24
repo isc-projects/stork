@@ -161,7 +161,7 @@ func GetLeasesByPage(dbi dbops.DBI, offset, limit int64, filters LeasesByPageFil
 		q = q.Where("lease.subnet_id = ?", *filters.SubnetID)
 	}
 
-	if filters.State != nil && *filters.State != 0 {
+	if filters.State != nil {
 		q = q.Where("lease.state = ?", *filters.State)
 	}
 

@@ -549,23 +549,40 @@ func TestGetLeasesByPageFilteredByMachine(t *testing.T) {
 
 // Verify that [GetLeasesByPage] correctly filters the list of leases by lease state.
 func TestGetLeasesByPageFilteredByState(t *testing.T) {
+	// Arrange
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 	daemons, subnets := addTestLeaseDaemons(t, db)
 	leases := testHelperAddMockLeases(t, db, daemons, subnets)
 
-	state := int64(keadata.LeaseStateExpiredReclaimed)
-	filters := LeasesByPageFilters{
-		State: &state,
+	stateExpired := int64(keadata.LeaseStateExpiredReclaimed)
+	filtersExpired := LeasesByPageFilters{
+		State: &stateExpired,
 	}
-	returned, total, err := GetLeasesByPage(db, 0, 10, filters, "", SortDirAsc)
+	stateValid := int64(keadata.LeaseStateDefault)
+	filtersValid := LeasesByPageFilters{
+		State: &stateValid,
+	}
 
-	require.NoError(t, err)
-	require.EqualValues(t, 1, total)
-	require.Len(t, returned, 1)
-	require.NotNil(t, returned[0])
-	require.Equal(t, leases[1].ID, returned[0].ID)
-	require.EqualValues(t, state, returned[0].State)
+	// Act
+	returnedExpired, totalExpired, errExpired := GetLeasesByPage(db, 0, 10, filtersExpired, "", SortDirAsc)
+	returnedValid, totalValid, errValid := GetLeasesByPage(db, 0, 10, filtersValid, "", SortDirAsc)
+
+	// Assert
+	require.NoError(t, errExpired)
+	require.EqualValues(t, 1, totalExpired)
+	require.Len(t, returnedExpired, 1)
+	require.NotNil(t, returnedExpired[0])
+	require.Equal(t, leases[1].ID, returnedExpired[0].ID)
+	require.EqualValues(t, stateExpired, returnedExpired[0].State)
+
+	require.NoError(t, errValid)
+	require.EqualValues(t, 4, totalValid)
+	require.Len(t, returnedValid, 4)
+	for _, lease := range returnedValid {
+		require.NotNil(t, lease)
+		require.EqualValues(t, stateValid, lease.State)
+	}
 }
 
 // Verify that [GetLeasesByPage] correctly filters the list of leases by text.
