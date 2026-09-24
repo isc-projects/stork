@@ -2,7 +2,6 @@ package oidc
 
 import (
 	"context"
-	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/gob"
@@ -23,6 +22,7 @@ import (
 	dbops "isc.org/stork/server/database"
 	dbmodel "isc.org/stork/server/database/model"
 	dbsession "isc.org/stork/server/database/session"
+	storkutil "isc.org/stork/util"
 )
 
 // High-level component controlling OpenID Connect authentication.
@@ -237,16 +237,14 @@ func (ctl *Controller) cleanupSessions(ctx context.Context) {
 	ctl.putAuthSessionMap(ctx, sessionMap)
 }
 
-// Generates and returns base64-encoded 32 random bytes as string.
+// Generates and returns base64url-encoded 32 random bytes as string.
 // In case of io.ReadFull error, it returns empty string and an error.
 func generateRandBase64Str() (result string, err error) {
-	bytes := make([]byte, 32)
-	_, err = rand.Read(bytes)
+	result, err = storkutil.Base64URLRandom(32)
 	if err != nil {
 		err = errors.Wrap(err, "error while generating slice of random bytes")
 		return
 	}
-	result = base64.RawURLEncoding.EncodeToString(bytes)
 	return
 }
 

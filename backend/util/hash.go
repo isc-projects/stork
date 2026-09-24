@@ -29,3 +29,16 @@ func Base64Random(length int) (hash string, err error) {
 	hash = base64.StdEncoding.EncodeToString(b)
 	return
 }
+
+// Convenience function generating random bytes of the specified
+// length and encoding them with the alternate base64url
+// defined in RFC4648. It's meant for URLs and file names.
+func Base64URLRandom(length int) (hash string, err error) {
+	b := make([]byte, length)
+	_, err = rand.Read(b)
+	if err != nil {
+		return
+	}
+	hash = base64.RawURLEncoding.EncodeToString(b)
+	return
+}

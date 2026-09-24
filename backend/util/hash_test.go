@@ -52,3 +52,29 @@ func TestBase64Random(t *testing.T) {
 
 	require.NotEqual(t, hash2, hash3)
 }
+
+// Test that the random hash is generated and encoded with base64url.
+func TestURLBase64Random(t *testing.T) {
+	hash1, err := Base64URLRandom(12)
+	require.NoError(t, err)
+	require.Len(t, hash1, 16)
+	rnd, err := base64.RawURLEncoding.DecodeString(hash1)
+	require.NoError(t, err)
+	require.Len(t, rnd, 12)
+
+	hash2, err := Base64URLRandom(24)
+	require.NoError(t, err)
+	require.Len(t, hash2, 32)
+	rnd, err = base64.RawURLEncoding.DecodeString(hash2)
+	require.NoError(t, err)
+	require.Len(t, rnd, 24)
+
+	hash3, err := Base64URLRandom(24)
+	require.NoError(t, err)
+	require.Len(t, hash3, 32)
+	rnd, err = base64.RawURLEncoding.DecodeString(hash3)
+	require.NoError(t, err)
+	require.Len(t, rnd, 24)
+
+	require.NotEqual(t, hash2, hash3)
+}
