@@ -55,3 +55,4 @@ We have received the following contributions:
   - 2026-07: Add support for allocation statistics.
 - Wojciech Lipiński
   - 2026-09: Fixed updating DHCP options with numeric values and no option definitions
+  - 2026-09: Fixed a bug in DHCP record options handling with variable number of fields
