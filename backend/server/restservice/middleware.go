@@ -438,6 +438,28 @@ func csrfCookieMiddleware(next http.Handler, secureCookie bool) http.Handler {
 	})
 }
 
+func csrfProtectionMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet, http.MethodHead, http.MethodOptions:
+			// We don't need to apply CSRF protection for HTTP methods GET, HEAD or OPTIONS.
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		cookie, err := r.Cookie(csrfCookieName)
+		headerToken := r.Header.Get(csrfHeaderName)
+		if err != nil || len(headerToken) == 0 || headerToken != cookie.Value {
+			log.Error("missing or invalid CSRF token")
+			w.WriteHeader(http.StatusForbidden)
+			fmt.Fprint(w, "missing or invalid CSRF token")
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 // Global middleware function provides a common place to setup middlewares for
 // the server. It is invoked before everything.
 func (r *RestAPI) GlobalMiddleware(handler http.Handler, serverAddress url.URL, staticFilesDir string, eventCenter eventcenter.EventCenter, maxBodySize int64) http.Handler {
@@ -450,6 +472,7 @@ func (r *RestAPI) GlobalMiddleware(handler http.Handler, serverAddress url.URL, 
 	handler = trimBaseURLMiddleware(handler, serverAddress.Path)
 	handler = bodySizeLimiterMiddleware(handler, maxBodySize)
 	handler = securityHeadersMiddleware(handler)
+	handler = csrfProtectionMiddleware(handler)
 	handler = csrfCookieMiddleware(handler, isTLSEnabled(r.Settings))
 	handler = loggingMiddleware(handler)
 	return handler
