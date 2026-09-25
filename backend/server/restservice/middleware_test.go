@@ -1023,3 +1023,124 @@ func TestIsCSRFExemptPath(t *testing.T) {
 		})
 	}
 }
+
+// Check that CSRFProtectionMiddleware skips CSRF token check for secure HTTP methods.
+func TestCSRFProtectionMiddlewarePassesSafeMethods(t *testing.T) {
+	// Arrange
+	var nextCalled bool
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		nextCalled = true
+	})
+	handler := csrfProtectionMiddleware(nextHandler)
+	w := httptest.NewRecorder()
+
+	// Act + Assert
+	req1 := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/api/subnets", nil)
+	handler.ServeHTTP(w, req1)
+	require.True(t, nextCalled)
+	resp1 := w.Result()
+	defer resp1.Body.Close()
+	require.NotEqual(t, http.StatusForbidden, resp1.StatusCode)
+
+	nextCalled = false
+	req2 := httptest.NewRequestWithContext(t.Context(), http.MethodHead, "http://localhost/api/subnets", nil)
+	handler.ServeHTTP(w, req2)
+	require.True(t, nextCalled)
+	resp2 := w.Result()
+	defer resp2.Body.Close()
+	require.NotEqual(t, http.StatusForbidden, resp2.StatusCode)
+
+	nextCalled = false
+	req3 := httptest.NewRequestWithContext(t.Context(), http.MethodOptions, "http://localhost/api/subnets", nil)
+	handler.ServeHTTP(w, req3)
+	require.True(t, nextCalled)
+	resp3 := w.Result()
+	defer resp3.Body.Close()
+	require.NotEqual(t, http.StatusForbidden, resp3.StatusCode)
+}
+
+// Check that CSRFProtectionMiddleware skips CSRF token check for exempt paths.
+func TestCSRFProtectionMiddlewarePassesExemptPaths(t *testing.T) {
+	// Arrange
+	var nextCalled bool
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		nextCalled = true
+	})
+	handler := csrfProtectionMiddleware(nextHandler)
+	w := httptest.NewRecorder()
+
+	// Act + Assert
+	req1 := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "http://localhost/api/machines", nil)
+	handler.ServeHTTP(w, req1)
+	require.True(t, nextCalled)
+	resp1 := w.Result()
+	defer resp1.Body.Close()
+	require.NotEqual(t, http.StatusForbidden, resp1.StatusCode)
+
+	nextCalled = false
+	req2 := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "http://localhost/api/machines/1/ping", nil)
+	handler.ServeHTTP(w, req2)
+	require.True(t, nextCalled)
+	resp2 := w.Result()
+	defer resp2.Body.Close()
+	require.NotEqual(t, http.StatusForbidden, resp2.StatusCode)
+}
+
+// Check that CSRFProtectionMiddleware blocks insecure method when CSRF token is missing or invalid.
+func TestCSRFProtectionMiddlewareBlockInsecureMethod(t *testing.T) {
+	// Arrange
+	var nextCalled bool
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		nextCalled = true
+	})
+	handler := csrfProtectionMiddleware(nextHandler)
+	w := httptest.NewRecorder()
+
+	// Act + Assert
+	req1 := httptest.NewRequestWithContext(t.Context(), http.MethodDelete, "http://localhost/api/subnets", nil)
+	handler.ServeHTTP(w, req1)
+	require.False(t, nextCalled)
+	resp1 := w.Result()
+	defer resp1.Body.Close()
+	require.Equal(t, http.StatusForbidden, resp1.StatusCode)
+
+	nextCalled = false
+	req2 := httptest.NewRequestWithContext(t.Context(), http.MethodDelete, "http://localhost/api/subnets", nil)
+	req2.AddCookie(&http.Cookie{Name: csrfCookieName, Value: "abc"})
+	handler.ServeHTTP(w, req2)
+	require.False(t, nextCalled)
+	resp2 := w.Result()
+	defer resp2.Body.Close()
+	require.Equal(t, http.StatusForbidden, resp2.StatusCode)
+
+	nextCalled = false
+	req3 := httptest.NewRequestWithContext(t.Context(), http.MethodDelete, "http://localhost/api/subnets", nil)
+	req3.AddCookie(&http.Cookie{Name: csrfCookieName, Value: "abc"})
+	req3.Header.Set(csrfHeaderName, "xyz")
+	handler.ServeHTTP(w, req3)
+	require.False(t, nextCalled)
+	resp3 := w.Result()
+	defer resp3.Body.Close()
+	require.Equal(t, http.StatusForbidden, resp3.StatusCode)
+}
+
+// Check that CSRFProtectionMiddleware passes insecure method when CSRF token check is okay.
+func TestCSRFProtectionMiddlewarePassesInsecureMethod(t *testing.T) {
+	// Arrange
+	var nextCalled bool
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		nextCalled = true
+	})
+	handler := csrfProtectionMiddleware(nextHandler)
+	w := httptest.NewRecorder()
+
+	// Act + Assert
+	req1 := httptest.NewRequestWithContext(t.Context(), http.MethodDelete, "http://localhost/api/subnets", nil)
+	req1.AddCookie(&http.Cookie{Name: csrfCookieName, Value: "abc"})
+	req1.Header.Set(csrfHeaderName, "abc")
+	handler.ServeHTTP(w, req1)
+	require.True(t, nextCalled)
+	resp1 := w.Result()
+	defer resp1.Body.Close()
+	require.NotEqual(t, http.StatusForbidden, resp1.StatusCode)
+}
