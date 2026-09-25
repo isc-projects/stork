@@ -1,0 +1,11 @@
+<div class="flex flex-wrap px-2 border-1 border-round surface-border">
+    <p-button
+        routerLink="/dns/zones"
+        [queryParams]="{ daemonId: daemonId }"
+        label="Zones"
+        icon="pi pi-sitemap"
+        class="mr-2 my-2"
+        severity="secondary"
+        appAccessEntity="zone"
+    ></p-button>
+</div>
