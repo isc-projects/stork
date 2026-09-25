@@ -1,15 +1,16 @@
 import { Component, Input } from '@angular/core'
-import { ButtonModule } from '@openng/optimus-ui/button'
+import { Button } from '@openng/optimus-ui/button'
 import { DialogModule } from '@openng/optimus-ui/dialog'
 import { Bind9ConfigPreviewComponent } from '../bind9-config-preview/bind9-config-preview.component'
 import { CommonModule } from '@angular/common'
+import { RouterLink } from '@angular/router'
 
 /**
  * A component that displays the control buttons for a BIND 9 daemon.
  */
 @Component({
     selector: 'app-bind9-daemon-controls',
-    imports: [ButtonModule, Bind9ConfigPreviewComponent, CommonModule, DialogModule],
+    imports: [Button, Bind9ConfigPreviewComponent, CommonModule, DialogModule, RouterLink],
     templateUrl: './bind9-daemon-controls.component.html',
     styleUrl: './bind9-daemon-controls.component.sass',
 })

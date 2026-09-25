@@ -4,6 +4,7 @@ import { Bind9DaemonControlsComponent } from './bind9-daemon-controls.component'
 import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { MessageService } from '@openng/optimus-ui/api'
 import { provideHttpClientTesting } from '@angular/common/http/testing'
+import { provideRouter } from '@angular/router'
 
 describe('Bind9DaemonControlsComponent', () => {
     let component: Bind9DaemonControlsComponent
@@ -11,7 +12,12 @@ describe('Bind9DaemonControlsComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            providers: [MessageService, provideHttpClientTesting(), provideHttpClient(withInterceptorsFromDi())],
+            providers: [
+                MessageService,
+                provideHttpClientTesting(),
+                provideHttpClient(withInterceptorsFromDi()),
+                provideRouter([]),
+            ],
         }).compileComponents()
 
         fixture = TestBed.createComponent(Bind9DaemonControlsComponent)

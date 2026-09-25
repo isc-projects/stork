@@ -31,4 +31,13 @@
         class="mr-2 my-2"
         (click)="setDialogVisibility('rndc-key', true)"
     ></p-button>
+    <p-button
+        routerLink="/dns/zones"
+        [queryParams]="{ daemonId: daemonId }"
+        label="Zones"
+        icon="pi pi-sitemap"
+        class="mr-2 my-2"
+        severity="secondary"
+        appAccessEntity="zone"
+    ></p-button>
 </div>
