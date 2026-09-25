@@ -413,7 +413,7 @@
                             [icon]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
                         />
                     </td>
-                    <td>{{ zoneTransfer.startedAt | localtime }}</td>
+                    <td>{{ zoneTransfer.startedAt | localtime: true }}</td>
                     <td>{{ zoneTransfer.zoneName | unroot }}</td>
                     <td>{{ zoneTransfer.viewName | placeholder: 'N/A' }}</td>
                     <td>{{ zoneTransfer.serial | placeholder: 'N/A' }}</td>
@@ -494,16 +494,18 @@
                                     <table>
                                         <tr>
                                             <td class="pr-3">Created at:</td>
-                                            <td class="monospace">{{ zoneTransfer.createdAt | localtime }}</td>
+                                            <td class="monospace">{{ zoneTransfer.createdAt | localtime: true }}</td>
                                         </tr>
                                         <tr>
                                             <td class="pr-3">Started at:</td>
-                                            <td class="monospace">{{ zoneTransfer.startedAt | localtime }}</td>
+                                            <td class="monospace">{{ zoneTransfer.startedAt | localtime: true }}</td>
                                         </tr>
                                         @if (zoneTransfer.completedAt) {
                                             <tr>
                                                 <td class="pr-3">Completed at:</td>
-                                                <td class="monospace">{{ zoneTransfer.completedAt | localtime }}</td>
+                                                <td class="monospace">
+                                                    {{ zoneTransfer.completedAt | localtime: true }}
+                                                </td>
                                             </tr>
                                         }
                                     </table>

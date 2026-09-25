@@ -51,8 +51,8 @@ const allZoneTransfers: ZoneTransferState[] = [
         server: '192.0.2.2',
         serial: 1234567890,
         status: 'completed',
-        startedAt: '2026-01-01T10:40:27Z',
-        completedAt: '2026-01-01T10:45:11Z',
+        startedAt: '2026-01-01T10:40:27.213Z',
+        completedAt: '2026-01-01T10:45:11.322Z',
         duration: '2h3m10.451s',
         bytesPerSecond: 12,
         message:
@@ -63,15 +63,15 @@ const allZoneTransfers: ZoneTransferState[] = [
     },
     {
         id: 2,
-        createdAt: '2026-01-01T10:48:01Z',
+        createdAt: '2026-01-01T10:48:01.456Z',
         viewName: '_default',
         zoneName: 'zone2.example.org',
         client: '2001:db8::1',
         server: '2001:db8::2',
         serial: 234567891,
         status: 'completed',
-        startedAt: '2026-01-01T10:47:30Z',
-        completedAt: '2026-01-01T10:49:30Z',
+        startedAt: '2026-01-01T10:47:30.567Z',
+        completedAt: '2026-01-01T10:49:30.678Z',
         duration: '2h3m10.451s',
         bytesPerSecond: 122304,
         clientMachineID: 1,
@@ -86,14 +86,14 @@ const allZoneTransfers: ZoneTransferState[] = [
     },
     {
         id: 3,
-        createdAt: '2026-01-01T10:49:41Z',
+        createdAt: '2026-01-01T10:49:41.789Z',
         viewName: 'public',
         zoneName: 'zone3.example.org',
         client: '2001:db8::1',
         server: '2001:db8::2',
         serial: 3456789012,
         status: 'started',
-        startedAt: '2026-01-01T10:49:42Z',
+        startedAt: '2026-01-01T10:49:42.890Z',
         duration: '0.351s',
         bytesPerSecond: 20234434234,
         message: 'AXFR started',
@@ -105,14 +105,14 @@ const allZoneTransfers: ZoneTransferState[] = [
     },
     {
         id: 4,
-        createdAt: '2026-01-01T10:55:22Z',
+        createdAt: '2026-01-01T10:55:22.901Z',
         viewName: 'public',
         zoneName: '.',
         client: '::1',
         server: '2001:db8::2',
         serial: 4567890123,
         status: 'message',
-        startedAt: '2026-01-01T10:49:39Z',
+        startedAt: '2026-01-01T10:49:39.123Z',
         message: 'AXFR failed with timeout',
         messagesCount: 0,
         recordsCount: 0,
@@ -307,7 +307,7 @@ export const TestListAllZoneTransfers: Story = {
             const zoneTransfer = allZoneTransfers[i - 1]
 
             // First column should display the local transfer local start time.
-            await expect(within(row).getByText(datetimeToLocal(zoneTransfer.startedAt))).toBeInTheDocument()
+            await expect(within(row).getByText(datetimeToLocal(zoneTransfer.startedAt, true))).toBeInTheDocument()
             if (zoneTransfer.zoneName !== '.') {
                 // Non-root zone name is displayed as is.
                 await expect(within(row).getByText(zoneTransfer.zoneName)).toBeInTheDocument()
@@ -361,8 +361,10 @@ export const TestListAllZoneTransfers: Story = {
         await userEvent.click(expandBtn)
 
         // Validate that the expanded row displays the correct information.
-        await expect(within(table).getByText(datetimeToLocal(allZoneTransfers[1].createdAt))).toBeInTheDocument()
-        await expect(within(table).getByText(datetimeToLocal(allZoneTransfers[1].completedAt))).toBeInTheDocument()
+        await expect(within(table).getByText(datetimeToLocal(allZoneTransfers[1].createdAt, true))).toBeInTheDocument()
+        await expect(
+            within(table).getByText(datetimeToLocal(allZoneTransfers[1].completedAt, true))
+        ).toBeInTheDocument()
         await expect(within(table).getByText(allZoneTransfers[1].messagesCount)).toBeInTheDocument()
         await expect(within(table).getByText(allZoneTransfers[1].recordsCount)).toBeInTheDocument()
         await expect(within(table).getByText(allZoneTransfers[1].bytesCount)).toBeInTheDocument()

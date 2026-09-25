@@ -13,4 +13,11 @@ describe('LocaltimePipe', () => {
         const date = new Date(1616149050000)
         expect(converted).toEqual(datetimeToLocal(date))
     })
+
+    it('should convert epoch time to local time with milliseconds', () => {
+        const pipe = new LocaltimePipe()
+        const converted = pipe.transform(1616149050, true)
+        const date = new Date(1616149050000)
+        expect(converted).toEqual(datetimeToLocal(date, true))
+    })
 })

@@ -19,6 +19,7 @@ import {
     durationToString,
     generateUUID,
     getAuthenticationMethodLabel,
+    epochToLocal,
 } from './utils'
 
 describe('utils', () => {
@@ -346,11 +347,24 @@ describe('utils', () => {
 
     it('should parse string to datetime', () => {
         const date = '1353-10-31T12:34:56Z'
-        expect(datetimeToLocal(date)).not.toBeNull()
+        expect(datetimeToLocal(date)).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)
+    })
+
+    it('should parse string to datetime with milliseconds', () => {
+        const date = '1353-10-31T12:34:56.123Z'
+        expect(datetimeToLocal(date, true)).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}$/)
     })
 
     it('should not parse null to datetime', () => {
         expect(datetimeToLocal(null)).toBeNull()
+    })
+
+    it('should convert epoch time to local time', () => {
+        expect(epochToLocal(1716796800, false)).toBe(datetimeToLocal(new Date(1716796800000)))
+    })
+
+    it('should convert epoch time to local time with milliseconds', () => {
+        expect(epochToLocal(1716796800, true)).toBe(datetimeToLocal(new Date(1716796800000), true))
     })
 
     it('should not change the non-relative API path', () => {

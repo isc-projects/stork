@@ -7,9 +7,10 @@ import { Severity } from './version.service'
 /**
  * Formats the date-like object as local date-time string.
  * @param d Date
+ * @param milliseconds boolean flag indicating if the milliseconds should be included in the formatted string
  * @returns formatted string on success, otherwise stringified @d
  */
-export function datetimeToLocal(d: moment.MomentInput): string | null {
+export function datetimeToLocal(d: moment.MomentInput, milliseconds = false): string | null {
     if (d == null) {
         return null
     }
@@ -29,7 +30,11 @@ export function datetimeToLocal(d: moment.MomentInput): string | null {
             tz = ' UTC'
         }
 
-        return md.format('YYYY-MM-DD HH:mm:ss') + tz
+        let format = 'YYYY-MM-DD HH:mm:ss'
+        if (milliseconds) {
+            format += '.SSS'
+        }
+        return md.format(format) + tz
     } catch {
         return d.toString()
     }
@@ -39,12 +44,13 @@ export function datetimeToLocal(d: moment.MomentInput): string | null {
  * Converts epoch time to local time.
  *
  * @param epochTime epoch time in seconds.
+ * @param milliseconds boolean flag indicating if the milliseconds should be included in the formatted string
  * @returns Human readable local time.
  */
-export function epochToLocal(epochTime) {
+export function epochToLocal(epochTime: number, milliseconds = false) {
     // Date constructor takes epoch time in milliseconds.
     const d = new Date(epochTime * 1000)
-    return datetimeToLocal(d)
+    return datetimeToLocal(d, milliseconds)
 }
 
 /**

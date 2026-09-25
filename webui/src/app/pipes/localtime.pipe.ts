@@ -9,11 +9,11 @@ export class LocaltimePipe implements PipeTransform {
      *              Otherwise, it is parsed to get date object.
      * @returns Formatted date or stringified value.
      */
-    transform(value: moment.MomentInput) {
+    transform(value: moment.MomentInput, milliseconds = false) {
         // If this is an integer we guess that it is an epoch time.
-        if (Number.isInteger(value)) {
-            return epochToLocal(value)
+        if (typeof value === 'number' && Number.isInteger(value)) {
+            return epochToLocal(value, milliseconds)
         }
-        return datetimeToLocal(value)
+        return datetimeToLocal(value, milliseconds)
     }
 }
