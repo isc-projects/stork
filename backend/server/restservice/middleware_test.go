@@ -918,3 +918,108 @@ func TestSecurityHeadersMiddleware(t *testing.T) {
 	require.Contains(t, resp.Header.Get("Strict-Transport-Security"), "includeSubdomains")
 	require.Contains(t, resp.Header.Get("Content-Security-Policy"), "frame-ancestors 'none'")
 }
+
+// Check that csrfCookieMiddleware sets an XSRF-TOKEN cookie with the
+// expected attributes.
+func TestCSRFCookieMiddlewareSetsCookie(t *testing.T) {
+	// Arrange
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+	req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost/api/version", nil)
+	w := httptest.NewRecorder()
+	handler := csrfCookieMiddleware(nextHandler, true)
+
+	// Act
+	handler.ServeHTTP(w, req)
+	resp := w.Result()
+	defer resp.Body.Close()
+
+	// Assert
+	cookies := resp.Cookies()
+	require.Len(t, cookies, 1)
+	cookie := cookies[0]
+	require.Equal(t, csrfCookieName, cookie.Name)
+	require.NotEmpty(t, cookie.Value)
+	require.False(t, cookie.HttpOnly)
+	require.True(t, cookie.Secure)
+	require.Equal(t, http.SameSiteLaxMode, cookie.SameSite)
+	require.Equal(t, "/", cookie.Path)
+}
+
+// Check that csrfCookieMiddleware doesn't overwrite an existing XSRF-TOKEN
+// cookie with a new one.
+func TestCSRFCookieMiddlewareKeepsExistingCookie(t *testing.T) {
+	// Arrange
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+	handler := csrfCookieMiddleware(nextHandler, false)
+	req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost/api/version", nil)
+	req.AddCookie(&http.Cookie{Name: csrfCookieName, Value: "existing-token"})
+	w := httptest.NewRecorder()
+
+	// Act
+	handler.ServeHTTP(w, req)
+	resp := w.Result()
+	defer resp.Body.Close()
+
+	// Assert
+	require.Empty(t, resp.Cookies())
+}
+
+// Check that two consecutive calls (simulating two different requests with
+// no cookie yet) generate different tokens.
+func TestCSRFCookieMiddlewareGeneratesUniqueTokens(t *testing.T) {
+	// Arrange
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+	handler := csrfCookieMiddleware(nextHandler, false)
+
+	// Act + Assert
+	req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost/api/version", nil)
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	resp := w.Result()
+	defer resp.Body.Close()
+	cookies := resp.Cookies()
+	require.Len(t, cookies, 1)
+	token1 := cookies[0].Value
+
+	req2 := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost/api/version", nil)
+	w2 := httptest.NewRecorder()
+	handler.ServeHTTP(w2, req2)
+	resp2 := w2.Result()
+	defer resp2.Body.Close()
+	cookies2 := resp2.Cookies()
+	require.Len(t, cookies2, 1)
+	token2 := cookies2[0].Value
+
+	// Assert
+	require.NotEqual(t, token1, token2)
+}
+
+// Check that isCSRFExemptPath correctly identifies the machine
+// registration/ping routes and rejects everything else.
+func TestIsCSRFExemptPath(t *testing.T) {
+	tests := []struct {
+		name           string
+		method         string
+		path           string
+		expectedResult bool
+	}{
+		{"create machine", http.MethodPost, "/api/machines", true},
+		{"ping machine numeric id", http.MethodPost, "/api/machines/5/ping", true},
+		{"ping machine non-numeric id", http.MethodPost, "/api/machines/abc-123/ping", true},
+		{"get machines", http.MethodGet, "/api/machines", false},
+		{"ping machine wrong method", http.MethodPut, "/api/machines/5/ping", false},
+		{"create machine trailing slash", http.MethodPost, "/api/machines/", false},
+		{"ping machine extra path segment", http.MethodPost, "/api/machines/5/6/ping", false},
+		{"ping machine bad suffix", http.MethodPost, "/api/machines/5/pingx", false},
+		{"ping machine missing id", http.MethodPost, "/api/machines//ping", false},
+		{"create session", http.MethodPost, "/api/sessions", false},
+		{"create user", http.MethodPost, "/api/users", false},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequestWithContext(t.Context(), tc.method, "http://localhost"+tc.path, nil)
+			require.Equal(t, tc.expectedResult, isCSRFExemptPath(req))
+		})
+	}
+}

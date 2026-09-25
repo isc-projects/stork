@@ -442,8 +442,8 @@ func csrfCookieMiddleware(next http.Handler, secureCookie bool) http.Handler {
 // Helper function checking if given request URL path is exempt from the CSRF protection.
 func isCSRFExemptPath(r *http.Request) bool {
 	csrfExemptPaths := []struct {
-		method  string
-		pattern string
+		method  string // HTTP method type
+		pattern string // valid regex pattern
 	}{
 		{http.MethodPost, `^/api/machines$`},            // POST /machines endpoint may be called by stork-agent
 		{http.MethodPost, `^/api/machines/[^/]+/ping$`}, // POST /machines/{id}/ping endpoint may be called by stork-agent
@@ -456,7 +456,8 @@ func isCSRFExemptPath(r *http.Request) bool {
 	return false
 }
 
-// Middleware that provides CSRF protection. Checks if the CSRF token sent in the header matches the token stored in cookie.
+// Middleware that provides CSRF protection. Checks if the CSRF token sent in the request's header
+// matches the token stored in cookie.
 // Not all requests are subject to this protection. GET, HEAD, OPTIONS requests are considered safe.
 // Some REST API endpoints are exempt from the CSRF protection. They must be added in the isCSRFExemptPath helper.
 func csrfProtectionMiddleware(next http.Handler) http.Handler {
