@@ -35,8 +35,16 @@ def _login_session():
         return app.stored_session
 
     requests_session = requests.Session()
+
+    # Query /api/version endpoint first to retrieve CSRF token from a cookie.
+    requests_session.get(f"{STORK_SERVER_URL}/api/version", timeout=10)
+    xsrf_token = requests_session.cookies.get("XSRF-TOKEN")
+
     post_session_resp = requests_session.post(
-        f"{STORK_SERVER_URL}/api/sessions", json=app.credentials, timeout=10
+        f"{STORK_SERVER_URL}/api/sessions",
+        json=app.credentials,
+        headers={"X-XSRF-TOKEN": xsrf_token} if xsrf_token else {},
+        timeout=10,
     )
     if post_session_resp.status_code == 200:
         log.info("successfully logged in")
