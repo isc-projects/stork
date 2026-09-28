@@ -655,7 +655,6 @@ func TestParseNamedCommandLine(t *testing.T) {
 			name: "absolute path with flags",
 			args: []string{"/usr/sbin/named", "-c", "/etc/bind/named.conf", "-t", "/var/named/chroot", "-L", "/var/log/bind9/named.log"},
 			expected: &namedCommandLine{
-				binaryPath:     "/usr/sbin/named",
 				chrootDir:      "/var/named/chroot",
 				configPath:     "/etc/bind/named.conf",
 				defaultLogFile: "/var/log/bind9/named.log",
@@ -665,7 +664,6 @@ func TestParseNamedCommandLine(t *testing.T) {
 			name: "absolute path with flags with equal signs",
 			args: []string{"/usr/sbin/named", "-c=/etc/bind/named.conf", "-t=/var/named/chroot", "-L=/var/log/bind9/named.log"},
 			expected: &namedCommandLine{
-				binaryPath:     "/usr/sbin/named",
 				chrootDir:      "/var/named/chroot",
 				configPath:     "/etc/bind/named.conf",
 				defaultLogFile: "/var/log/bind9/named.log",
@@ -675,22 +673,18 @@ func TestParseNamedCommandLine(t *testing.T) {
 			name: "bare named with flags",
 			args: []string{"named", "-c", "/etc/bind/named.conf"},
 			expected: &namedCommandLine{
-				binaryPath: "named",
 				configPath: "/etc/bind/named.conf",
 			},
 		},
 		{
-			name: "absolute path without flags",
-			args: []string{"/usr/local/bin/named"},
-			expected: &namedCommandLine{
-				binaryPath: "/usr/local/bin/named",
-			},
+			name:     "absolute path without flags",
+			args:     []string{"/usr/local/bin/named"},
+			expected: &namedCommandLine{},
 		},
 		{
 			name: "relative path with flags",
 			args: []string{"bin/named", "-c", "/etc/bind/named.conf", "-t", "/var/named/chroot"},
 			expected: &namedCommandLine{
-				binaryPath: "bin/named",
 				chrootDir:  "/var/named/chroot",
 				configPath: "/etc/bind/named.conf",
 			},
@@ -699,8 +693,7 @@ func TestParseNamedCommandLine(t *testing.T) {
 			name: "root-relative path with flags",
 			args: []string{"/named", "-t", "/var/named/chroot"},
 			expected: &namedCommandLine{
-				binaryPath: "/named",
-				chrootDir:  "/var/named/chroot",
+				chrootDir: "/var/named/chroot",
 			},
 		},
 		{
@@ -717,7 +710,6 @@ func TestParseNamedCommandLine(t *testing.T) {
 			name: "relative named running by another binary",
 			args: []string{"rosetta", "named", "-c", "/etc/bind/named.conf"},
 			expected: &namedCommandLine{
-				binaryPath: "named",
 				configPath: "/etc/bind/named.conf",
 			},
 		},
@@ -725,7 +717,6 @@ func TestParseNamedCommandLine(t *testing.T) {
 			name: "absolute named running by another binary",
 			args: []string{"rosetta", "/usr/sbin/named", "-c", "/etc/bind/named.conf"},
 			expected: &namedCommandLine{
-				binaryPath: "/usr/sbin/named",
 				configPath: "/etc/bind/named.conf",
 			},
 		},
@@ -733,7 +724,6 @@ func TestParseNamedCommandLine(t *testing.T) {
 			name: "path with named as directory component",
 			args: []string{"/var/lib/named/sbin/named", "-c", "/etc/named.conf"},
 			expected: &namedCommandLine{
-				binaryPath: "/var/lib/named/sbin/named",
 				configPath: "/etc/named.conf",
 			},
 		},
@@ -741,7 +731,6 @@ func TestParseNamedCommandLine(t *testing.T) {
 			name: "path with spaces in directory name",
 			args: []string{"/home/marcin/devel/bind9 build/sbin/named", "-c", "/etc/bind/named.conf"},
 			expected: &namedCommandLine{
-				binaryPath: "/home/marcin/devel/bind9 build/sbin/named",
 				configPath: "/etc/bind/named.conf",
 			},
 		},

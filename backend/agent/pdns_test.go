@@ -221,22 +221,18 @@ func TestParsePDNSServerCommandLine(t *testing.T) {
 			name: "absolute path with config-dir",
 			args: []string{"/usr/sbin/pdns_server", "--config-dir=/etc"},
 			expected: &pdnsServerCommandLine{
-				binaryPath: "/usr/sbin/pdns_server",
-				configDir:  "/etc",
+				configDir: "/etc",
 			},
 		},
 		{
-			name: "bare binary without flags",
-			args: []string{"pdns_server"},
-			expected: &pdnsServerCommandLine{
-				binaryPath: "pdns_server",
-			},
+			name:     "bare binary without flags",
+			args:     []string{"pdns_server"},
+			expected: &pdnsServerCommandLine{},
 		},
 		{
 			name: "all three flags",
 			args: []string{"/dir/pdns_server", "--chroot=/chroot", "--config-dir=/chroot/etc", "--config-name=foo"},
 			expected: &pdnsServerCommandLine{
-				binaryPath: "/dir/pdns_server",
 				chrootDir:  "/chroot",
 				configDir:  "/chroot/etc",
 				configName: "foo",
@@ -246,7 +242,6 @@ func TestParsePDNSServerCommandLine(t *testing.T) {
 			name: "all three flags without equal signs",
 			args: []string{"/dir/pdns_server", "--chroot", "/chroot", "--config-dir", "/chroot/etc", "--config-name", "foo"},
 			expected: &pdnsServerCommandLine{
-				binaryPath: "/dir/pdns_server",
 				chrootDir:  "/chroot",
 				configDir:  "/chroot/etc",
 				configName: "foo",
@@ -256,64 +251,56 @@ func TestParsePDNSServerCommandLine(t *testing.T) {
 			name: "chroot with trailing slash is trimmed",
 			args: []string{"/dir/pdns_server", "--chroot=/var/chroot/"},
 			expected: &pdnsServerCommandLine{
-				binaryPath: "/dir/pdns_server",
-				chrootDir:  "/var/chroot",
+				chrootDir: "/var/chroot",
 			},
 		},
 		{
 			name: "chroot with trailing slash is trimmed without equal sign",
 			args: []string{"/dir/pdns_server", "--chroot", "/var/chroot/"},
 			expected: &pdnsServerCommandLine{
-				binaryPath: "/dir/pdns_server",
-				chrootDir:  "/var/chroot",
+				chrootDir: "/var/chroot",
 			},
 		},
 		{
 			name: "config-dir with trailing slash is trimmed",
 			args: []string{"/dir/pdns_server", "--config-dir=/etc/powerdns/"},
 			expected: &pdnsServerCommandLine{
-				binaryPath: "/dir/pdns_server",
-				configDir:  "/etc/powerdns",
+				configDir: "/etc/powerdns",
 			},
 		},
 		{
 			name: "config-dir with trailing slash is trimmed without equal sign",
 			args: []string{"/dir/pdns_server", "--config-dir", "/etc/powerdns/"},
 			expected: &pdnsServerCommandLine{
-				binaryPath: "/dir/pdns_server",
-				configDir:  "/etc/powerdns",
+				configDir: "/etc/powerdns",
 			},
 		},
 		{
 			name: "relative chroot",
 			args: []string{"/dir/pdns_server", "--chroot=chroot"},
 			expected: &pdnsServerCommandLine{
-				binaryPath: "/dir/pdns_server",
-				chrootDir:  "chroot",
+				chrootDir: "chroot",
 			},
 		},
 		{
 			name: "relative path to binary",
 			args: []string{"bin/pdns_server", "--config-dir=/etc"},
 			expected: &pdnsServerCommandLine{
-				binaryPath: "bin/pdns_server",
-				configDir:  "/etc",
+				configDir: "/etc",
 			},
 		},
 		{
 			name: "path with spaces in directory name",
 			args: []string{"/home/user/pdns build/sbin/pdns_server", "--config-dir=/etc"},
 			expected: &pdnsServerCommandLine{
-				binaryPath: "/home/user/pdns build/sbin/pdns_server",
-				configDir:  "/etc",
+				configDir: "/etc",
 			},
 		},
 		{
 			name: "binary running by another binary",
 			args: []string{"rosetta", "/usr/sbin/pdns_server", "--config-dir=/etc"},
 			expected: &pdnsServerCommandLine{
-				binaryPath: "/usr/sbin/pdns_server",
-				configDir:  "/etc",
+				configDir: "/etc",
 			},
 		},
 		{
@@ -330,40 +317,35 @@ func TestParsePDNSServerCommandLine(t *testing.T) {
 			name: "unknown flags are ignored",
 			args: []string{"/dir/pdns_server", "--daemon", "--config-dir=/etc", "--guardian=yes"},
 			expected: &pdnsServerCommandLine{
-				binaryPath: "/dir/pdns_server",
-				configDir:  "/etc",
+				configDir: "/etc",
 			},
 		},
 		{
 			name: "pdns_server directory in binary path",
 			args: []string{"/opt/pdns_server/sbin/pdns_server", "--config-dir=/etc"},
 			expected: &pdnsServerCommandLine{
-				binaryPath: "/opt/pdns_server/sbin/pdns_server",
-				configDir:  "/etc",
+				configDir: "/etc",
 			},
 		},
 		{
 			name: "pdns_server directory in config-dir path",
 			args: []string{"/usr/sbin/pdns_server", "--config-dir=/opt/pdns_server/etc"},
 			expected: &pdnsServerCommandLine{
-				binaryPath: "/usr/sbin/pdns_server",
-				configDir:  "/opt/pdns_server/etc",
+				configDir: "/opt/pdns_server/etc",
 			},
 		},
 		{
 			name: "pdns_server directory in chroot path",
 			args: []string{"/usr/sbin/pdns_server", "--chroot=/var/pdns_server", "--config-dir=/var/pdns_server/etc"},
 			expected: &pdnsServerCommandLine{
-				binaryPath: "/usr/sbin/pdns_server",
-				chrootDir:  "/var/pdns_server",
-				configDir:  "/var/pdns_server/etc",
+				chrootDir: "/var/pdns_server",
+				configDir: "/var/pdns_server/etc",
 			},
 		},
 		{
 			name: "pdns_server directory in all paths",
 			args: []string{"/opt/pdns_server/sbin/pdns_server", "--chroot=/opt/pdns_server", "--config-dir=/opt/pdns_server/etc", "--config-name=custom"},
 			expected: &pdnsServerCommandLine{
-				binaryPath: "/opt/pdns_server/sbin/pdns_server",
 				chrootDir:  "/opt/pdns_server",
 				configDir:  "/opt/pdns_server/etc",
 				configName: "custom",
