@@ -363,6 +363,10 @@ describe('utils', () => {
         expect(epochToLocal(1716796800, false)).toBe(datetimeToLocal(new Date(1716796800000)))
     })
 
+    it('should convert epoch time to local time with fractional part', () => {
+        expect(epochToLocal(1716796800.123, false)).toBe(datetimeToLocal(new Date(1716796800123)))
+    })
+
     it('should convert epoch time to local time with milliseconds', () => {
         expect(epochToLocal(1716796800, true)).toBe(datetimeToLocal(new Date(1716796800000), true))
     })

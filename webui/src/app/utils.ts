@@ -43,13 +43,13 @@ export function datetimeToLocal(d: moment.MomentInput, milliseconds = false): st
 /**
  * Converts epoch time to local time.
  *
- * @param epochTime epoch time in seconds.
+ * @param epochTime epoch time in seconds. If the value is a float, the fractional part is treated as milliseconds
  * @param milliseconds boolean flag indicating if the milliseconds should be included in the formatted string
  * @returns Human readable local time.
  */
 export function epochToLocal(epochTime: number, milliseconds = false) {
     // Date constructor takes epoch time in milliseconds.
-    const d = new Date(epochTime * 1000)
+    const d = new Date(Math.floor(epochTime * 1000))
     return datetimeToLocal(d, milliseconds)
 }
 

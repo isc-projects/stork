@@ -20,4 +20,11 @@ describe('LocaltimePipe', () => {
         const date = new Date(1616149050000)
         expect(converted).toEqual(datetimeToLocal(date, true))
     })
+
+    it('should convert datetime to local time', () => {
+        const pipe = new LocaltimePipe()
+        const converted = pipe.transform(1616149050.123, true)
+        const date = new Date(1616149050123)
+        expect(converted).toEqual(datetimeToLocal(date, true))
+    })
 })
