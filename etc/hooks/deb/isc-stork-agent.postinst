@@ -22,6 +22,12 @@ setup_user () {
         usermod -aG _kea stork-agent
     fi
 
+    # Add stork-agent user to systemd-journal so it can read the logs
+    # for zone transfers tracking.
+    if getent group systemd-journal > /dev/null; then
+        usermod -aG systemd-journal stork-agent
+    fi
+
     # Change ownership of all folders and files in home dir to stork-agent user.
     chown -R stork-agent "${home_dir}"
 }
