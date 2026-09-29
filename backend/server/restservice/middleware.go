@@ -430,7 +430,7 @@ func csrfCookieMiddleware(next http.Handler, secureCookie bool) http.Handler {
 				Value:    token,
 				HttpOnly: false,
 				Secure:   secureCookie,
-				SameSite: http.SameSiteLaxMode,
+				SameSite: http.SameSiteStrictMode,
 				Path:     "/",
 			})
 		}
