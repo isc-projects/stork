@@ -941,7 +941,7 @@ func TestCSRFCookieMiddlewareSetsCookie(t *testing.T) {
 	require.NotEmpty(t, cookie.Value)
 	require.False(t, cookie.HttpOnly)
 	require.True(t, cookie.Secure)
-	require.Equal(t, http.SameSiteLaxMode, cookie.SameSite)
+	require.Equal(t, http.SameSiteStrictMode, cookie.SameSite)
 	require.Equal(t, "/", cookie.Path)
 }
 
