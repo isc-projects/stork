@@ -1024,7 +1024,7 @@ func TestIsCSRFExemptPath(t *testing.T) {
 	}
 }
 
-// Check that CSRFProtectionMiddleware skips CSRF token check for secure HTTP methods.
+// Check that CSRFProtectionMiddleware skips CSRF token check for HTTP endpoints with no adverse effects.
 func TestCSRFProtectionMiddlewarePassesSafeMethods(t *testing.T) {
 	// Arrange
 	var nextCalled bool
