@@ -56,4 +56,25 @@ describe('KeaGlobalConfigurationViewComponent', () => {
         expect(fieldset).toBeTruthy()
         expect(fieldset.nativeElement.innerText).toContain('No options configured')
     })
+
+    it('should exclude different parameters', () => {
+        const excludedParameters = [
+            'clientClasses',
+            'configControl',
+            'controlSockets',
+            'hostsDatabases',
+            'hooksLibraries',
+            'loggers',
+            'optionData',
+            'optionDef',
+            'optionsHash',
+            'reservations',
+            'subnet4',
+            'subnet6',
+            'sharedNetworks',
+        ]
+        excludedParameters.forEach((parameter) => {
+            expect(component.excludedParameters.includes(parameter)).toBe(true)
+        })
+    })
 })

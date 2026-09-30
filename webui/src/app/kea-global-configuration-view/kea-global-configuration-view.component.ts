@@ -50,6 +50,7 @@ export class KeaGlobalConfigurationViewComponent {
     excludedParameters: Array<string> = [
         'clientClasses',
         'configControl',
+        'controlSockets',
         'hostsDatabases',
         'hooksLibraries',
         'loggers',
