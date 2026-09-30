@@ -587,7 +587,7 @@ This section describes the solutions for some common issues with the Stork serve
               LDAP server authentication responses to entries in the Stork
               database. We discovered that DN is not a correct attribute for it,
               as it can be changed. In larger organizations, it often changes
-              in Stork 2.5.0,
+              when users are moved between organizational units. Therefore,
               we recommend using fixed, unique UUID-based identifiers as
               ``entryUUID``, ``uniqueIdentifier``, or ``objectGUID`` (depending
               on the LDAP distribution). We changed the default value to
