@@ -369,7 +369,7 @@ func runStaticViewUndeploy(settings *loginScreenWelcomeUndeploySettings, filenam
 	return errors.Wrapf(err, "failed to remove file '%s'", filename)
 }
 
-// Migrates the stale system users based on the old unique identifier.
+// Migrates the stale system users based on the login.
 func runMigrateLDAPSystemUsers(settings *migrateLDAPSystemUsersSettings, ldapDriver ldap.LDAPDriver) error {
 	// Run the authentication flow.
 	controller := ldap.NewLDAPController(settings.LDAPSettings, ldapDriver)
