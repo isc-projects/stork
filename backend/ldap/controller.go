@@ -118,17 +118,6 @@ func (c *LDAPController) searchForAttributesByUsername(username string, attribut
 	return entries[0], nil
 }
 
-// Searches for a given user DN in LDAP.
-func (c *LDAPController) SearchForUserDN(username string) (string, error) {
-	entry, err := c.searchForAttributesByUsername(username, []string{"dn"})
-	if err != nil {
-		err = errors.WithMessagef(err, "searching for user DN failed")
-		return "", err
-	}
-
-	return entry.DN, nil
-}
-
 // Extract the value of a given attribute from the LDAP entry. It returns an
 // empty string if the attribute is missing.
 // Handles the special case for the "dn" attribute, which is not returned along
