@@ -635,7 +635,7 @@ namespace :fuzz do
 
         Dir.chdir('backend') do
             checked_pipeline(
-                [GO, "fuzz", "-run", "^$", "-json", *opts, "-race", scope],
+                [GO, "test", "-run", "^$", "-json", *opts, "-race", scope],
                 [GO_JUNIT_REPORT, "-iocopy", "-out", "./junit.xml"],
                 [TPARSE, "-progress", *tparse_otps]
             )
