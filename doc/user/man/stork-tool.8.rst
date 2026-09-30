@@ -21,7 +21,7 @@ Synopsis
 Description
 ~~~~~~~~~~~
 
-``stork-tool`` provides four features:
+``stork-tool`` provides some features:
 
 - Certificate management - The tool allows the Stork server to export keys, certificates,
   and tokens that are used to secure communication between the Stork server
@@ -37,6 +37,11 @@ Description
 
 - Static views deployment - The tool allows custom content to be set in selected
   Stork views (e.g. a custom welcome message on the login page).
+
+- Migration of the LDAP-managed users to the new unique identifier attribute -
+  The tool allows the migration of the External ID value of the users
+  authenticated via LDAP to a new unique identifier attribute, which is used to
+  match LDAP server authentication responses to entries in the Stork database.
 
 Certificate Management
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -290,6 +295,33 @@ In a typical installation, there is no need to specify the directory with
 the UI static files; ``stork-tool``  assumes the directory relative to its
 location. For example, if ``stork-tool`` is installed in the ``/usr/bin`` directory,
 it assumes that the directory for UI files is ``/usr/share/stork/www``.
+
+Migration of the LDAP-managed users to the new unique identifier attribute
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The unique identifier changed in Stork versions 2.5.0. You need to migrate the
+External ID value if you have existing users in your Stork database who were
+logged in via LDAP before this version.
+
+The Stork LDAP hook, before version 2.5.0, used the DN (distinguished name)
+attribute as a unique identifier to match LDAP server authentication responses
+to entries in the Stork database. We discovered that DN is not a correct
+attribute for it, as it can be changed. In larger organizations, it often
+changes when users are moved between organizational units. We recommend using
+fixed, unique UUID-based identifiers as ``entryUUID``, ``uniqueIdentifier``, or
+``objectGUID`` (depending on the LDAP distribution). We changed the default
+value to ``entryUUID``.
+
+The side effect is that users who logged in to the Stork UI before this version
+already have a unique identifier in the Stork database: their DN. It doesn't
+match ``entryUUID``. The administrator should migrate the users using the
+dedicated Stork Tool command: ``migrate-ldap-system-users``. It updates the
+unique identifier in the Stork database by fetching a new value from the LDAP
+server.
+
+The command takes the database connection parameters and the LDAP connection
+parameters. The LDAP connection parameters are the same as for the Stork LDAP
+hook.
 
 Mailing Lists and Support
 ~~~~~~~~~~~~~~~~~~~~~~~~~
