@@ -17,7 +17,7 @@ type LDAPAttributeNames struct {
 	FirstName        string `long:"object-class-user-first-name" description:"The name of the first name property in the user object class, optional" env:"OBJECT_CLASS_USER_FIRST_NAME" default:"givenName"`
 	LastName         string `long:"object-class-user-last-name" description:"The name of the last name property in the user object class, optional" env:"OBJECT_CLASS_USER_LAST_NAME" default:"sn"`
 	Email            string `long:"object-class-user-email" description:"The name of the email property in the user object class, optional" env:"OBJECT_CLASS_USER_EMAIL" default:"mail"`
-	UniqueIdentifier string `long:"object-class-user-unique-identifier" description:"The name of the unique, persistent identifier property in the user object class, optional" env:"OBJECT_CLASS_USER_UNIQUE_IDENTIFIER" default:"entryUUID"`
+	UniqueIdentifier string `long:"object-class-user-unique-identifier" description:"The name of the unique, persistent identifier property in the user object class" env:"OBJECT_CLASS_USER_UNIQUE_IDENTIFIER" default:"entryUUID"`
 }
 
 // Specifies a list of comma-separated flags.
