@@ -378,7 +378,7 @@ func TestRunMigrateLDAPSystemUsersOver100(t *testing.T) {
 	db, settings, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
 
-	_, initialUserCount, err := dbmodel.GetUsersByPage(db, 0, 1, nil, "", "", dbmodel.SortDirAny)
+	_, initialUserCount, err := dbmodel.GetUsersByPage(db, 0, 1, nil, "", dbmodel.SortDirAny)
 	require.NoError(t, err)
 
 	controller := gomock.NewController(t)

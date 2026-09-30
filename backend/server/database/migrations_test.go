@@ -672,7 +672,7 @@ func TestMigrateFromDemoV2_3_0ToLatest(t *testing.T) {
 
 	// The data must be preserved after the migration.
 	// Users.
-	users, _, err := dbmodel.GetUsersByPage(db, 0, 10, nil, "", "", dbmodel.SortDirAsc)
+	users, _, err := dbmodel.GetUsersByPage(db, 0, 10, nil, "", dbmodel.SortDirAsc)
 	require.NoError(t, err)
 	require.Len(t, users, 2)
 	require.Equal(t, "admin", users[0].Login)

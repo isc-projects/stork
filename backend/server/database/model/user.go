@@ -331,16 +331,25 @@ func Authenticate(db *pg.DB, user *SystemUser, password string) (bool, error) {
 	return true, err
 }
 
+// Container for values filtering users fetched by page.
+type UsersByPageFilters struct {
+	Text *string
+	// If the authentication method is not empty, only users with the specified
+	// authentication method are returned.
+	AuthenticationMethod string
+}
+
 // Fetches a collection of users from the database. The offset and
 // limit specify the beginning of the page and the maximum size of the
 // page. If these values are set to 0, all users are returned. Limit
 // has to be greater then 0, otherwise error is returned. sortField
 // allows indicating sort column in database and sortDir allows
-// selection the order of sorting. If the authentication method is not empty,
-// only users with the specified authentication method are returned.
+// selection the order of sorting.
+// Accepts optional filters to select only users matching the specified
+// criteria.
 // If sortField is empty then id is used for sorting.  in SortDirAny is used
 // then ASC order is used.
-func GetUsersByPage(db *dbops.PgDB, offset, limit int64, filterText *string, authenticationMethod string, sortField string, sortDir SortDirEnum) ([]SystemUser, int64, error) {
+func GetUsersByPage(db *dbops.PgDB, offset, limit int64, filters *UsersByPageFilters, sortField string, sortDir SortDirEnum) ([]SystemUser, int64, error) {
 	if limit == 0 {
 		return nil, 0, pkgerrors.New("limit should be greater than 0")
 	}
@@ -348,8 +357,8 @@ func GetUsersByPage(db *dbops.PgDB, offset, limit int64, filterText *string, aut
 	var users []SystemUser
 	q := db.Model(&users).Relation("Groups")
 
-	if filterText != nil {
-		text := "%" + *filterText + "%"
+	if filters != nil && filters.Text != nil {
+		text := "%" + *filters.Text + "%"
 		q = q.WhereGroup(func(qq *orm.Query) (*orm.Query, error) {
 			qq = qq.WhereOr("login ILIKE ?", text)
 			qq = qq.WhereOr("email ILIKE ?", text)
@@ -359,8 +368,8 @@ func GetUsersByPage(db *dbops.PgDB, offset, limit int64, filterText *string, aut
 		})
 	}
 
-	if authenticationMethod != "" {
-		q = q.Where("auth_method = ?", authenticationMethod)
+	if filters != nil && filters.AuthenticationMethod != "" {
+		q = q.Where("auth_method = ?", filters.AuthenticationMethod)
 	}
 
 	// prepare sorting expression, offset and limit

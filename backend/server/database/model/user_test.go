@@ -371,7 +371,7 @@ func TestCreateUsersWithDuplicatedUserAndEmailFromNonInternalAuthentication(t *t
 	// Assert
 	require.NoError(t, errLogin)
 	require.NoError(t, errEmail)
-	users, _, err := GetUsersByPage(db, 0, 10, nil, "", "", SortDirAny)
+	users, _, err := GetUsersByPage(db, 0, 10, nil, "", SortDirAny)
 	require.NoError(t, err)
 	require.Len(t, users, 3)
 }
@@ -579,7 +579,7 @@ func TestGetUsers(t *testing.T) {
 
 	generateTestUsers(t, db)
 
-	users, total, err := GetUsersByPage(db, 0, 1000, nil, "", "", SortDirAny)
+	users, total, err := GetUsersByPage(db, 0, 1000, nil, "", SortDirAny)
 	require.NoError(t, err)
 	require.Len(t, users, 101)
 	require.EqualValues(t, 101, total)
@@ -599,7 +599,7 @@ func TestGetUsersSortByLogin(t *testing.T) {
 
 	generateTestUsers(t, db)
 
-	users, total, err := GetUsersByPage(db, 0, 1000, nil, "", "login", SortDirAsc)
+	users, total, err := GetUsersByPage(db, 0, 1000, nil, "login", SortDirAsc)
 	require.NoError(t, err)
 	require.Len(t, users, 101)
 	require.EqualValues(t, 101, total)
@@ -619,7 +619,7 @@ func TestGetUsersPage(t *testing.T) {
 
 	generateTestUsers(t, db)
 
-	users, total, err := GetUsersByPage(db, 50, 10, nil, "", "", SortDirAny)
+	users, total, err := GetUsersByPage(db, 50, 10, nil, "", SortDirAny)
 	require.NoError(t, err)
 	require.Len(t, users, 10)
 	require.EqualValues(t, 51, users[0].ID)
@@ -640,7 +640,7 @@ func TestGetUsersLastPage(t *testing.T) {
 
 	generateTestUsers(t, db)
 
-	users, total, err := GetUsersByPage(db, 90, 20, nil, "", "", SortDirAny)
+	users, total, err := GetUsersByPage(db, 90, 20, nil, "", SortDirAny)
 	require.NoError(t, err)
 	require.Len(t, users, 11)
 	require.EqualValues(t, 91, users[0].ID)
@@ -662,7 +662,11 @@ func TestGetUsersPageByText(t *testing.T) {
 	generateTestUsers(t, db)
 
 	text := "3"
-	users, total, err := GetUsersByPage(db, 0, 100, &text, "", "login", SortDirAsc)
+	users, total, err := GetUsersByPage(
+		db, 0, 100,
+		&UsersByPageFilters{Text: &text},
+		"login", SortDirAsc,
+	)
 	require.NoError(t, err)
 	require.Len(t, users, 19)
 	require.EqualValues(t, 19, total)
@@ -709,7 +713,11 @@ func TestGetUsersPageByAuthenticationMethod(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("no other filters", func(t *testing.T) {
-		ldapUsers, total, err := GetUsersByPage(db, 0, 100, nil, "ldap", "", SortDirAny)
+		ldapUsers, total, err := GetUsersByPage(
+			db, 0, 100,
+			&UsersByPageFilters{AuthenticationMethod: "ldap"},
+			"", SortDirAny,
+		)
 		require.NoError(t, err)
 		require.Len(t, ldapUsers, 2)
 		require.EqualValues(t, 2, total)
@@ -720,7 +728,11 @@ func TestGetUsersPageByAuthenticationMethod(t *testing.T) {
 
 	t.Run("filter by text and authentication method", func(t *testing.T) {
 		text := "auth-filter-ldap-1"
-		filteredUsers, filteredTotal, err := GetUsersByPage(db, 0, 100, &text, "ldap", "", SortDirAny)
+		filteredUsers, filteredTotal, err := GetUsersByPage(
+			db, 0, 100,
+			&UsersByPageFilters{Text: &text, AuthenticationMethod: "ldap"},
+			"", SortDirAny,
+		)
 		require.NoError(t, err)
 		require.Len(t, filteredUsers, 1)
 		require.EqualValues(t, 1, filteredTotal)
@@ -730,7 +742,9 @@ func TestGetUsersPageByAuthenticationMethod(t *testing.T) {
 
 	t.Run("unknown authentication method", func(t *testing.T) {
 		nonExistingMethodUsers, nonExistingMethodTotal, err := GetUsersByPage(
-			db, 0, 100, nil, "non-existing-auth-method", "", SortDirAny,
+			db, 0, 100,
+			&UsersByPageFilters{AuthenticationMethod: "non-existing-auth-method"},
+			"", SortDirAny,
 		)
 		require.NoError(t, err)
 		require.Empty(t, nonExistingMethodUsers)
@@ -745,7 +759,7 @@ func TestGetUserByID(t *testing.T) {
 
 	generateTestUsers(t, db)
 
-	users, total, err := GetUsersByPage(db, 0, 1000, nil, "", "", SortDirAny)
+	users, total, err := GetUsersByPage(db, 0, 1000, nil, "", SortDirAny)
 	require.NoError(t, err)
 	require.EqualValues(t, 101, total)
 

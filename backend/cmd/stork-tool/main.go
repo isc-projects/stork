@@ -396,7 +396,11 @@ func runMigrateLDAPSystemUsers(settings *migrateLDAPSystemUsersSettings, ldapDri
 	successCount := 0
 	failedCount := 0
 	for offset := int64(0); offset < count; offset += limit {
-		users, count, err = dbmodel.GetUsersByPage(db, offset, limit, nil, "ldap", "", dbmodel.SortDirDesc)
+		users, count, err = dbmodel.GetUsersByPage(
+			db, offset, limit,
+			&dbmodel.UsersByPageFilters{AuthenticationMethod: "ldap"},
+			"", dbmodel.SortDirDesc,
+		)
 		if err != nil {
 			return err
 		}
