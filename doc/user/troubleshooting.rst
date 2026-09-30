@@ -575,7 +575,7 @@ This section describes the solutions for some common issues with the Stork serve
 
 ---------------
 
-:Issue:       After upgrading the Stork server from a version 2.4.0 to a newer
+:Issue:       After upgrading the Stork server from a version prior to 2.5.0 to a newer
               version, the users cannot log in via LDAP.
 :Solution 1:  Use the Stork Tool command ``migrate-ldap-system-users`` to
               re-fetch the users' unique identifiers (external IDs) from the
