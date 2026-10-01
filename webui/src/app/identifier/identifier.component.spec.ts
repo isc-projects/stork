@@ -175,8 +175,18 @@ describe('IdentifierComponent', () => {
         component.ngOnInit()
         fixture.detectChanges()
 
-        let identifierEl = fixture.debugElement.query(By.css('div'))
+        let identifierEl = fixture.debugElement.query(By.css('.identifier__content'))
         expect(identifierEl).toBeTruthy()
-        expect(identifierEl.nativeElement.textContent.trim()).toContain('s0mEVaLue')
+        expect(identifierEl.nativeElement.textContent.trim()).toBe('s0mEVaLue')
+    })
+
+    it('should parse identifier with 0X prefix', () => {
+        component.hexValue = '0X73306d4556614c7565'
+        component.ngOnInit()
+        fixture.detectChanges()
+
+        let identifierEl = fixture.debugElement.query(By.css('.identifier__content'))
+        expect(identifierEl).toBeTruthy()
+        expect(identifierEl.nativeElement.textContent.trim()).toBe('s0mEVaLue')
     })
 })
