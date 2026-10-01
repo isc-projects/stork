@@ -147,7 +147,7 @@ export class IdentifierComponent implements OnInit {
 
     /**
      * Normalizes the hex identifier. Replace spaces with colons or add them
-     * if they are missing. Trims the "0x" prefix if it is present.
+     * if they are missing. Trims the "0x" or "0X" prefix if it is present.
      */
     private normalizeHexString(hexValue: string): string {
         if (!hexValue) {
