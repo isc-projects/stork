@@ -18,7 +18,7 @@ hyperframe==6.1.0
     # via h2
 iniconfig==2.3.0
     # via pytest
-multidict==6.9.1
+multidict==7.0.0
     # via grpclib
 narwhals==2.26.0
     # via plotly
