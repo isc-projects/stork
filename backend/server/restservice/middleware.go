@@ -6,7 +6,6 @@ import (
 	"net/url"
 	"os"
 	"path"
-	"regexp"
 	"strings"
 	"text/template"
 	"time"
@@ -17,7 +16,6 @@ import (
 	"isc.org/stork/server/auth"
 	"isc.org/stork/server/eventcenter"
 	"isc.org/stork/server/metrics"
-	storkutil "isc.org/stork/util"
 )
 
 var (
@@ -341,7 +339,7 @@ func metricsMiddleware(next http.Handler, collector metrics.Collector) http.Hand
 	})
 }
 
-// Middelware that trims the base URL from the request URL.
+// Middleware that trims the base URL from the request URL.
 func trimBaseURLMiddleware(next http.Handler, baseURL string) http.Handler {
 	if baseURL == "" || baseURL == "/" {
 		// Nothing to do.
@@ -402,89 +400,20 @@ func securityHeadersMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// Name of the cookie and header used for CSRF protection.
-const (
-	csrfCookieName = "XSRF-TOKEN"
-	csrfHeaderName = "X-XSRF-TOKEN"
-)
-
-// Middleware that makes sure that every response contains a XSRF-TOKEN cookie.
-// New token is generated when incoming request doesn't already have one.
-// The secureCookie argument controls the Secure attribute of the cookie.
-func csrfCookieMiddleware(next http.Handler, secureCookie bool) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, err := r.Cookie(csrfCookieName)
-		if errors.Is(err, http.ErrNoCookie) {
-			token, err := storkutil.Base64URLRandom(32)
-			if err != nil {
-				log.WithError(err).Error("Cannot generate CSRF token")
-				w.WriteHeader(http.StatusInternalServerError)
-				fmt.Fprint(w, "Internal server error")
-				return
-			}
-			// gosec complains about insecure Cookie attributes:
-			// HttpOnly - we must set it to false so that the cookie can be readable by Angular JavaScript code
-			// Secure - we must set it depending on TLS configured
-			http.SetCookie(w, &http.Cookie{ // #nosec: G124
-				Name:     csrfCookieName,
-				Value:    token,
-				HttpOnly: false,
-				Secure:   secureCookie,
-				SameSite: http.SameSiteStrictMode,
-				Path:     "/",
-			})
-		}
-
-		next.ServeHTTP(w, r)
-	})
-}
-
-// Helper function checking if given request URL path is exempt from the CSRF protection.
-func isCSRFExemptPath(r *http.Request) bool {
-	csrfExemptPaths := []struct {
-		method  string // HTTP method type
-		pattern string // valid regex pattern
-	}{
-		{http.MethodPost, `^/api/machines$`},            // POST /machines endpoint may be called by stork-agent
-		{http.MethodPost, `^/api/machines/[^/]+/ping$`}, // POST /machines/{id}/ping endpoint may be called by stork-agent
-	}
-	for _, exempt := range csrfExemptPaths {
-		if match, _ := regexp.MatchString(exempt.pattern, r.URL.Path); r.Method == exempt.method && match {
-			return true
-		}
-	}
-	return false
-}
-
-// Middleware that provides CSRF protection. Checks if the CSRF token sent in the request's header
-// matches the token stored in cookie.
-// Not all requests are subject to this protection. GET, HEAD, OPTIONS requests are considered safe.
-// Some REST API endpoints are exempt from the CSRF protection. They must be added in the isCSRFExemptPath helper.
-func csrfProtectionMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet, http.MethodHead, http.MethodOptions:
-			// We don't need to apply CSRF protection for HTTP methods GET, HEAD or OPTIONS.
-			next.ServeHTTP(w, r)
-			return
-		}
-
-		if isCSRFExemptPath(r) {
-			next.ServeHTTP(w, r)
-			return
-		}
-
-		cookie, err := r.Cookie(csrfCookieName)
-		headerToken := r.Header.Get(csrfHeaderName)
-		if err != nil || len(headerToken) == 0 || headerToken != cookie.Value {
-			log.Error("missing or invalid CSRF token")
-			w.WriteHeader(http.StatusForbidden)
-			fmt.Fprint(w, "missing or invalid CSRF token")
-			return
-		}
-
-		next.ServeHTTP(w, r)
-	})
+// Middleware that provides cross-site/cross-origin request forgery (CSRF/CORF) protection
+// using the builtin http.CrossOriginProtection from the Go standard library.
+func crossOriginProtectionMiddleware(next http.Handler) http.Handler {
+	cop := http.NewCrossOriginProtection()
+	cop.SetDenyHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		msg := "CSRF/cross-origin protection check failed - request was blocked"
+		log.WithFields(log.Fields{
+			"origin":         r.Header.Get("Origin"),
+			"sec-fetch-site": r.Header.Get("Sec-Fetch-Site"),
+		}).Error(msg)
+		w.WriteHeader(http.StatusForbidden)
+		fmt.Fprint(w, msg)
+	}))
+	return cop.Handler(next)
 }
 
 // Global middleware function provides a common place to setup middlewares for
@@ -496,11 +425,10 @@ func (r *RestAPI) GlobalMiddleware(handler http.Handler, serverAddress url.URL, 
 	handler = sseMiddleware(handler, eventCenter)
 	handler = metricsMiddleware(handler, r.MetricsCollector)
 	handler = r.OIDCControl.Middleware(handler)
-	handler = csrfProtectionMiddleware(handler)
+	handler = crossOriginProtectionMiddleware(handler)
 	handler = trimBaseURLMiddleware(handler, serverAddress.Path)
 	handler = bodySizeLimiterMiddleware(handler, maxBodySize)
 	handler = securityHeadersMiddleware(handler)
-	handler = csrfCookieMiddleware(handler, isTLSEnabled(r.Settings))
 	handler = loggingMiddleware(handler)
 	return handler
 }
