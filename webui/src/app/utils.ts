@@ -871,8 +871,8 @@ const relayAgentSubOptionNames: { [code: number]: string } = {
 }
 
 /**
- * Decodes the hex-encoded DHCP options in the user-context. Modifies the input
- * object in place and returns it.
+ * Decodes the hex-encoded DHCP Relay Agent Info (82) sub-options in the
+ * user-context. Modifies the input object in place.
  */
 export function decodeUserContextOptions(userContext: Record<string, any> | null | undefined) {
     let suboptions = userContext?.['ISC']?.['relay-agent-info']?.['sub-options']
