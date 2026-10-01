@@ -919,228 +919,191 @@ func TestSecurityHeadersMiddleware(t *testing.T) {
 	require.Contains(t, resp.Header.Get("Content-Security-Policy"), "frame-ancestors 'none'")
 }
 
-// Check that csrfCookieMiddleware sets an XSRF-TOKEN cookie with the
-// expected attributes.
-func TestCSRFCookieMiddlewareSetsCookie(t *testing.T) {
-	// Arrange
-	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-	req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost/api/version", nil)
-	w := httptest.NewRecorder()
-	handler := csrfCookieMiddleware(nextHandler, true)
-
-	// Act
-	handler.ServeHTTP(w, req)
-	resp := w.Result()
-	defer resp.Body.Close()
-
-	// Assert
-	cookies := resp.Cookies()
-	require.Len(t, cookies, 1)
-	cookie := cookies[0]
-	require.Equal(t, csrfCookieName, cookie.Name)
-	require.NotEmpty(t, cookie.Value)
-	require.False(t, cookie.HttpOnly)
-	require.True(t, cookie.Secure)
-	require.Equal(t, http.SameSiteStrictMode, cookie.SameSite)
-	require.Equal(t, "/", cookie.Path)
-}
-
-// Check that csrfCookieMiddleware doesn't overwrite an existing XSRF-TOKEN
-// cookie with a new one.
-func TestCSRFCookieMiddlewareKeepsExistingCookie(t *testing.T) {
-	// Arrange
-	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-	handler := csrfCookieMiddleware(nextHandler, false)
-	req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost/api/version", nil)
-	req.AddCookie(&http.Cookie{Name: csrfCookieName, Value: "existing-token"})
-	w := httptest.NewRecorder()
-
-	// Act
-	handler.ServeHTTP(w, req)
-	resp := w.Result()
-	defer resp.Body.Close()
-
-	// Assert
-	require.Empty(t, resp.Cookies())
-}
-
-// Check that two consecutive calls (simulating two different requests with
-// no cookie yet) generate different tokens.
-func TestCSRFCookieMiddlewareGeneratesUniqueTokens(t *testing.T) {
-	// Arrange
-	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-	handler := csrfCookieMiddleware(nextHandler, false)
-
-	// Act + Assert
-	req := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost/api/version", nil)
-	w := httptest.NewRecorder()
-	handler.ServeHTTP(w, req)
-	resp := w.Result()
-	defer resp.Body.Close()
-	cookies := resp.Cookies()
-	require.Len(t, cookies, 1)
-	token1 := cookies[0].Value
-
-	req2 := httptest.NewRequestWithContext(t.Context(), "GET", "http://localhost/api/version", nil)
-	w2 := httptest.NewRecorder()
-	handler.ServeHTTP(w2, req2)
-	resp2 := w2.Result()
-	defer resp2.Body.Close()
-	cookies2 := resp2.Cookies()
-	require.Len(t, cookies2, 1)
-	token2 := cookies2[0].Value
-
-	// Assert
-	require.NotEqual(t, token1, token2)
-}
-
-// Check that isCSRFExemptPath correctly identifies the machine
-// registration/ping routes and rejects everything else.
-func TestIsCSRFExemptPath(t *testing.T) {
-	tests := []struct {
-		name           string
-		method         string
-		path           string
-		expectedResult bool
-	}{
-		{"create machine", http.MethodPost, "/api/machines", true},
-		{"ping machine numeric id", http.MethodPost, "/api/machines/5/ping", true},
-		{"ping machine non-numeric id", http.MethodPost, "/api/machines/abc-123/ping", true},
-		{"get machines", http.MethodGet, "/api/machines", false},
-		{"ping machine wrong method", http.MethodPut, "/api/machines/5/ping", false},
-		{"create machine trailing slash", http.MethodPost, "/api/machines/", false},
-		{"ping machine extra path segment", http.MethodPost, "/api/machines/5/6/ping", false},
-		{"ping machine bad suffix", http.MethodPost, "/api/machines/5/pingx", false},
-		{"ping machine missing id", http.MethodPost, "/api/machines//ping", false},
-		{"create session", http.MethodPost, "/api/sessions", false},
-		{"create user", http.MethodPost, "/api/users", false},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			req := httptest.NewRequestWithContext(t.Context(), tc.method, "http://localhost"+tc.path, nil)
-			require.Equal(t, tc.expectedResult, isCSRFExemptPath(req))
-		})
-	}
-}
-
-// Check that CSRFProtectionMiddleware skips CSRF token check for HTTP endpoints with no adverse effects.
-func TestCSRFProtectionMiddlewarePassesSafeMethods(t *testing.T) {
+// Check if crossOriginProtectionMiddleware works as expected for different Sec-Fetch-Site header combinations.
+func TestCrossOriginProtectionMiddleware(t *testing.T) {
 	// Arrange
 	var nextCalled bool
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		nextCalled = true
 	})
-	handler := csrfProtectionMiddleware(nextHandler)
+	handler := crossOriginProtectionMiddleware(nextHandler)
+
+	t.Run("Sec-Fetch-Site same-origin in POST is allowed", func(t *testing.T) {
+		// Arrange
+		nextCalled = false
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "http://localhost/api/subnets", nil)
+		req.Header.Set("Sec-Fetch-Site", "same-origin")
+		w := httptest.NewRecorder()
+
+		// Act
+		handler.ServeHTTP(w, req)
+
+		// Assert
+		require.True(t, nextCalled)
+		resp := w.Result()
+		defer resp.Body.Close()
+		require.NotEqual(t, http.StatusForbidden, resp.StatusCode)
+	})
+
+	t.Run("Sec-Fetch-Site none in POST is allowed", func(t *testing.T) {
+		// Arrange
+		nextCalled = false
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "http://localhost/api/subnets", nil)
+		req.Header.Set("Sec-Fetch-Site", "none")
+		w := httptest.NewRecorder()
+
+		// Act
+		handler.ServeHTTP(w, req)
+
+		// Assert
+		require.True(t, nextCalled)
+		resp := w.Result()
+		defer resp.Body.Close()
+		require.NotEqual(t, http.StatusForbidden, resp.StatusCode)
+	})
+
+	t.Run("cross-site POST is blocked", func(t *testing.T) {
+		// Arrange
+		nextCalled = false
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "http://localhost/api/subnets", nil)
+		req.Header.Set("Sec-Fetch-Site", "cross-site")
+		w := httptest.NewRecorder()
+
+		// Act
+		handler.ServeHTTP(w, req)
+
+		// Assert
+		require.False(t, nextCalled)
+		resp := w.Result()
+		defer resp.Body.Close()
+		require.Equal(t, http.StatusForbidden, resp.StatusCode)
+	})
+
+	t.Run("same-site (different subdomain) POST is blocked", func(t *testing.T) {
+		// Arrange
+		nextCalled = false
+		req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "http://localhost/api/subnets", nil)
+		req.Header.Set("Sec-Fetch-Site", "same-site")
+		w := httptest.NewRecorder()
+
+		// Act
+		handler.ServeHTTP(w, req)
+
+		// Assert
+		require.False(t, nextCalled)
+		resp := w.Result()
+		defer resp.Body.Close()
+		require.Equal(t, http.StatusForbidden, resp.StatusCode)
+	})
+}
+
+// Check that safe HTTP methods (GET, HEAD, OPTIONS) are always allowed by crossOriginProtectionMiddleware
+// even for a cross-site request, since they are never supposed to perform any state changing action.
+func TestCrossOriginProtectionMiddlewareAllowsSafeMethods(t *testing.T) {
+	// Arrange
+	var nextCalled bool
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		nextCalled = true
+	})
+	handler := crossOriginProtectionMiddleware(nextHandler)
 	w := httptest.NewRecorder()
 
 	// Act + Assert
 	req1 := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "http://localhost/api/subnets", nil)
+	req1.Header.Set("Sec-Fetch-Site", "cross-site")
 	handler.ServeHTTP(w, req1)
 	require.True(t, nextCalled)
-	resp1 := w.Result()
-	defer resp1.Body.Close()
-	require.NotEqual(t, http.StatusForbidden, resp1.StatusCode)
 
 	nextCalled = false
 	req2 := httptest.NewRequestWithContext(t.Context(), http.MethodHead, "http://localhost/api/subnets", nil)
+	req2.Header.Set("Sec-Fetch-Site", "cross-site")
 	handler.ServeHTTP(w, req2)
 	require.True(t, nextCalled)
-	resp2 := w.Result()
-	defer resp2.Body.Close()
-	require.NotEqual(t, http.StatusForbidden, resp2.StatusCode)
 
 	nextCalled = false
 	req3 := httptest.NewRequestWithContext(t.Context(), http.MethodOptions, "http://localhost/api/subnets", nil)
+	req3.Header.Set("Sec-Fetch-Site", "cross-site")
 	handler.ServeHTTP(w, req3)
 	require.True(t, nextCalled)
-	resp3 := w.Result()
-	defer resp3.Body.Close()
-	require.NotEqual(t, http.StatusForbidden, resp3.StatusCode)
 }
 
-// Check that CSRFProtectionMiddleware skips CSRF token check for exempt paths.
-func TestCSRFProtectionMiddlewarePassesExemptPaths(t *testing.T) {
+// Check the Origin/Host fallback used by crossOriginProtectionMiddleware
+// when the Sec-Fetch-Site header is absent (older browsers).
+func TestCrossOriginProtectionMiddlewareOriginHostFallback(t *testing.T) {
 	// Arrange
 	var nextCalled bool
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		nextCalled = true
 	})
-	handler := csrfProtectionMiddleware(nextHandler)
+	handler := crossOriginProtectionMiddleware(nextHandler)
+	w := httptest.NewRecorder()
+
+	// Act + Assert
+
+	// No Sec-Fetch-Site, Origin matches Host, is allowed.
+	req1 := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "http://localhost/api/subnets", nil)
+	req1.Header.Set("Origin", "http://localhost")
+	handler.ServeHTTP(w, req1)
+	require.True(t, nextCalled)
+
+	// No Sec-Fetch-Site, Origin doesn't match Host, is blocked.
+	nextCalled = false
+	req2 := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "http://localhost/api/subnets", nil)
+	req2.Header.Set("Origin", "http://evil.example.org")
+	handler.ServeHTTP(w, req2)
+	require.False(t, nextCalled)
+	resp := w.Result()
+	defer resp.Body.Close()
+	require.Equal(t, http.StatusForbidden, resp.StatusCode)
+}
+
+// Check that a non-browser client (no Sec-Fetch-Site, no Origin headers in the request),
+// e.g., stork-agent plain net/http client or cURL is allowed through to any endpoint.
+func TestCrossOriginProtectionMiddlewareAllowsNonBrowserClients(t *testing.T) {
+	// Arrange
+	var nextCalled bool
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		nextCalled = true
+	})
+	handler := crossOriginProtectionMiddleware(nextHandler)
 	w := httptest.NewRecorder()
 
 	// Act + Assert
 	req1 := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "http://localhost/api/machines", nil)
 	handler.ServeHTTP(w, req1)
 	require.True(t, nextCalled)
-	resp1 := w.Result()
-	defer resp1.Body.Close()
-	require.NotEqual(t, http.StatusForbidden, resp1.StatusCode)
 
 	nextCalled = false
 	req2 := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "http://localhost/api/machines/1/ping", nil)
 	handler.ServeHTTP(w, req2)
 	require.True(t, nextCalled)
-	resp2 := w.Result()
-	defer resp2.Body.Close()
-	require.NotEqual(t, http.StatusForbidden, resp2.StatusCode)
-}
-
-// Check that CSRFProtectionMiddleware blocks insecure method when CSRF token is missing or invalid.
-func TestCSRFProtectionMiddlewareBlockInsecureMethod(t *testing.T) {
-	// Arrange
-	var nextCalled bool
-	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		nextCalled = true
-	})
-	handler := csrfProtectionMiddleware(nextHandler)
-	w := httptest.NewRecorder()
-
-	// Act + Assert
-	req1 := httptest.NewRequestWithContext(t.Context(), http.MethodDelete, "http://localhost/api/subnets", nil)
-	handler.ServeHTTP(w, req1)
-	require.False(t, nextCalled)
-	resp1 := w.Result()
-	defer resp1.Body.Close()
-	require.Equal(t, http.StatusForbidden, resp1.StatusCode)
 
 	nextCalled = false
-	req2 := httptest.NewRequestWithContext(t.Context(), http.MethodDelete, "http://localhost/api/subnets", nil)
-	req2.AddCookie(&http.Cookie{Name: csrfCookieName, Value: "abc"})
-	handler.ServeHTTP(w, req2)
-	require.False(t, nextCalled)
-	resp2 := w.Result()
-	defer resp2.Body.Close()
-	require.Equal(t, http.StatusForbidden, resp2.StatusCode)
-
-	nextCalled = false
-	req3 := httptest.NewRequestWithContext(t.Context(), http.MethodDelete, "http://localhost/api/subnets", nil)
-	req3.AddCookie(&http.Cookie{Name: csrfCookieName, Value: "abc"})
-	req3.Header.Set(csrfHeaderName, "xyz")
+	req3 := httptest.NewRequestWithContext(t.Context(), http.MethodDelete, "http://localhost/api/daemons/1", nil)
 	handler.ServeHTTP(w, req3)
-	require.False(t, nextCalled)
-	resp3 := w.Result()
-	defer resp3.Body.Close()
-	require.Equal(t, http.StatusForbidden, resp3.StatusCode)
+	require.True(t, nextCalled)
 }
 
-// Check that CSRFProtectionMiddleware passes insecure method when CSRF token check is okay.
-func TestCSRFProtectionMiddlewarePassesInsecureMethod(t *testing.T) {
+// Check that path that stork-agent calls is still protected by crossOriginProtectionMiddleware
+// against an actual cross-site browser request.
+func TestCrossOriginProtectionMiddlewareStillBlocksBrowserCrossSiteOnAgentPaths(t *testing.T) {
 	// Arrange
 	var nextCalled bool
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		nextCalled = true
 	})
-	handler := csrfProtectionMiddleware(nextHandler)
+	handler := crossOriginProtectionMiddleware(nextHandler)
+	// POST /machines endpoint may be normally called by stork-agent plain net/http client.
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodPost, "http://localhost/api/machines", nil)
+	req.Header.Set("Sec-Fetch-Site", "cross-site")
 	w := httptest.NewRecorder()
 
-	// Act + Assert
-	req1 := httptest.NewRequestWithContext(t.Context(), http.MethodDelete, "http://localhost/api/subnets", nil)
-	req1.AddCookie(&http.Cookie{Name: csrfCookieName, Value: "abc"})
-	req1.Header.Set(csrfHeaderName, "abc")
-	handler.ServeHTTP(w, req1)
-	require.True(t, nextCalled)
-	resp1 := w.Result()
-	defer resp1.Body.Close()
-	require.NotEqual(t, http.StatusForbidden, resp1.StatusCode)
+	// Act
+	handler.ServeHTTP(w, req)
+
+	// Assert
+	require.False(t, nextCalled)
+	resp := w.Result()
+	defer resp.Body.Close()
+	require.Equal(t, http.StatusForbidden, resp.StatusCode)
 }
