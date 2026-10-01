@@ -1019,7 +1019,7 @@ describe('HostFormComponent', () => {
                 optionCode: [23],
                 alwaysSend: true,
                 neverSend: false,
-                clientClasses: [[]],
+                clientClasses: [['one', 'two']],
                 optionFields: formBuilder.array([
                     new DhcpOptionFieldFormGroup(DhcpOptionFieldType.IPv6Address, {
                         control: formBuilder.control('2001:db8:1::1'),
@@ -1080,6 +1080,7 @@ describe('HostFormComponent', () => {
                             alwaysSend: true,
                             neverSend: false,
                             code: 23,
+                            clientClasses: ['one', 'two'],
                             encapsulate: '',
                             fields: [
                                 {
@@ -1386,7 +1387,7 @@ describe('HostFormComponent', () => {
                 optionCode: [5],
                 alwaysSend: true,
                 neverSend: false,
-                clientClasses: [[]],
+                clientClasses: [['three', 'four']],
                 optionFields: formBuilder.array([
                     new DhcpOptionFieldFormGroup(DhcpOptionFieldType.IPv4Address, {
                         control: formBuilder.control('192.0.2.1'),

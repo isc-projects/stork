@@ -57,7 +57,7 @@ describe('PrefixPoolFormComponent', () => {
                             alwaysSend: new FormControl(false),
                             neverSend: new FormControl(false),
                             optionCode: new FormControl(5),
-                            clientClasses: new FormControl<string[]>([]),
+                            clientClasses: new FormControl<string[]>(['one', 'two']),
                             optionFields: new UntypedFormArray([]),
                             suboptions: new UntypedFormArray([]),
                         }),
