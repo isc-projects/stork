@@ -33,6 +33,7 @@ func NewSessionMgr(db pg.DBI, secureCookie bool) (*SessionMgr, error) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
 	s.Cookie.Secure = secureCookie
+	s.Cookie.SameSite = http.SameSiteStrictMode
 	store := NewStore(db)
 	s.Store = store
 	teardown := func() { store.StopCleanup() }
