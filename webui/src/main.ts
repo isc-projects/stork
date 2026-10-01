@@ -2,12 +2,7 @@ import { enableProdMode, importProvidersFrom, provideZoneChangeDetection } from 
 
 import AuraBluePreset, { cfgFactory } from './app/app.config'
 import { environment } from './environments/environment'
-import {
-    HTTP_INTERCEPTORS,
-    provideHttpClient,
-    withInterceptorsFromDi,
-    withXsrfConfiguration,
-} from '@angular/common/http'
+import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { AuthInterceptor } from './app/auth-interceptor'
 import { BASE_PATH, ApiModule } from './app/backend'
 import { getBaseApiPath } from './app/utils'
@@ -126,10 +121,7 @@ bootstrapApplication(AppComponent, {
         },
         ConfirmationService,
         MessageService,
-        provideHttpClient(
-            withInterceptorsFromDi(),
-            withXsrfConfiguration({ cookieName: 'XSRF-TOKEN', headerName: 'X-XSRF-TOKEN' })
-        ),
+        provideHttpClient(withInterceptorsFromDi()),
         provideOptimus({
             theme: {
                 preset: AuraBluePreset,
