@@ -186,10 +186,13 @@ export class JsonTreeComponent {
      * Default values match rules for host reservation identifiers.
      */
     private _identifierRules: { defaultHexFormat: boolean; key: string | RegExp }[] = [
+        // Rules for standard Kea identifiers.
         { defaultHexFormat: true, key: 'hw-address' },
         { defaultHexFormat: true, key: 'duid' },
         { defaultHexFormat: true, key: 'client-id' },
+        // Rule for other ID-ish identifiers than client-id, e.g., flex-id.
         { defaultHexFormat: false, key: /.*-id/ },
+        // Rule for any hexadecimal strings.
         { defaultHexFormat: false, key: /0[xX][0-9a-fA-F]+/ },
     ]
 
