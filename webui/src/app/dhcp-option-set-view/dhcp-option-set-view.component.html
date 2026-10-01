@@ -27,14 +27,29 @@
             }
             <div>
                 <app-help-tip subject="DHCP Option View">
-                    Option fields and suboptions are displayed for the option {{ node.data.code }}. Hover the cursor
-                    over the option fields to see their types. If the "always sent" tag is shown next to the option
-                    code, the option is configured to always be returned to the DHCP client, even when it is not
-                    requested. If the "never sent" tag is shown, the option is configured to never be returned to the
-                    DHCP client, even when it is requested. The "empty option" and "empty suboption" tags indicate that
-                    the configured DHCP option contains no payload. The "{{ node.data.level }}" tag is shown when DHCP
-                    options are inherited from multiple configuration levels; it indicates that the option has been
-                    defined at the level presented by the tag.
+                    <p>
+                        Option fields and suboptions are displayed for the option {{ node.data.code }}. Hover the cursor
+                        over the option fields to see their types.
+                    </p>
+                    <p>
+                        If the "always sent" tag is shown next to the option code, the option is configured to always be
+                        returned to the DHCP client, even when it is not requested. If the "never sent" tag is shown,
+                        the option is configured to never be returned to the DHCP client, even when it is requested. The
+                        "empty option" and "empty suboption" tags indicate that the configured DHCP option contains no
+                        payload.
+                    </p>
+                    <p>
+                        The "{{ node.data.level }}" tag is shown when DHCP options are inherited from multiple
+                        configuration levels; it indicates that the option has been defined at the level presented by
+                        the tag.
+                    </p>
+                    <p *ngIf="node.data.hasFields">
+                        The subsequent <i class="fa fa fa-ellipsis-h"></i> icons show the fields and suboptions
+                        associated with the option.
+                    </p>
+                    <p *ngIf="node.data.hasClientClasses">
+                        The <i class="fa fa-users"></i> icon shows the client classes associated with the option.
+                    </p>
                 </app-help-tip>
             </div>
         </div>
@@ -56,6 +71,12 @@
             <div pTooltip="{{ node.data.fieldType }} field" class="field-value-icon ml-2 monospace">
                 {{ node.data.value }}
             </div>
+        </div>
+    </ng-template>
+    <ng-template let-node pTemplate="client-classes">
+        <div class="flex align-items-center">
+            <i class="tree-icon fa fa-users mr-1"></i>
+            <app-dhcp-client-class-set-view [clientClasses]="node.data.clientClasses"></app-dhcp-client-class-set-view>
         </div>
     </ng-template>
 </p-tree>

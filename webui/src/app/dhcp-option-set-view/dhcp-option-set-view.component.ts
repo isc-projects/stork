@@ -11,6 +11,7 @@ import { Tooltip } from '@openng/optimus-ui/tooltip'
 import { Divider } from '@openng/optimus-ui/divider'
 import { Checkbox } from '@openng/optimus-ui/checkbox'
 import { FormsModule } from '@angular/forms'
+import { DhcpClientClassSetViewComponent } from '../dhcp-client-class-set-view/dhcp-client-class-set-view.component'
 
 /**
  * A node of the displayed option holding its basic description.
@@ -40,6 +41,14 @@ export interface OptionNode {
      * Name of the configuration level at which the option has been configured.
      */
     level: string
+    /**
+     * Indicates if the option has fields or suboptions.
+     */
+    hasFields: boolean
+    /**
+     * Indicates if the option has client classes.
+     */
+    hasClientClasses: boolean
 }
 
 /**
@@ -52,13 +61,30 @@ export interface OptionFieldNode {
 }
 
 /**
+ * A node of the displayed option comprising information for client classes.
+ */
+export interface OptionClientClassesNode {
+    clientClasses: string[]
+}
+
+/**
  * A component displaying configured DHCP options as a tree.
  */
 @Component({
     selector: 'app-dhcp-option-set-view',
     templateUrl: './dhcp-option-set-view.component.html',
     styleUrls: ['./dhcp-option-set-view.component.sass'],
-    imports: [Tree, PrimeTemplate, Tag, HelpTipComponent, Tooltip, Divider, Checkbox, FormsModule],
+    imports: [
+        Tree,
+        PrimeTemplate,
+        Tag,
+        HelpTipComponent,
+        Tooltip,
+        Divider,
+        Checkbox,
+        FormsModule,
+        DhcpClientClassSetViewComponent,
+    ],
 })
 export class DhcpOptionSetViewComponent implements OnInit {
     optionsService = inject(DhcpOptionsService)
@@ -92,7 +118,7 @@ export class DhcpOptionSetViewComponent implements OnInit {
      *
      * The array holds the options specified at each configuration level.
      */
-    optionNodes: Array<Array<TreeNode<OptionNode | OptionFieldNode>>> = []
+    optionNodes: Array<Array<TreeNode<OptionNode | OptionFieldNode | OptionClientClassesNode>>> = []
 
     /**
      * A flat collection of the converted options into the nodes that can be
@@ -102,7 +128,7 @@ export class DhcpOptionSetViewComponent implements OnInit {
      * tree. The options from the lower configuration levels take precedence over the
      * same options specified at the higher configuration levels.
      */
-    combinedOptionNodes: Array<TreeNode<OptionNode | OptionFieldNode>> = []
+    combinedOptionNodes: Array<TreeNode<OptionNode | OptionFieldNode | OptionClientClassesNode>> = []
 
     /**
      * A collection of currently displayed options.
@@ -110,7 +136,7 @@ export class DhcpOptionSetViewComponent implements OnInit {
      * This collection points to one of the @link combinedOptionNodes or @link optionNodes,
      * depending on the @link currentLevelOnlyMode state.
      */
-    displayedOptionNodes: Array<TreeNode<OptionNode | OptionFieldNode>> = []
+    displayedOptionNodes: Array<TreeNode<OptionNode | OptionFieldNode | OptionClientClassesNode>> = []
 
     /**
      * A flag indicating whether all (combined) options should be displayed or the ones
@@ -171,14 +197,14 @@ export class DhcpOptionSetViewComponent implements OnInit {
         options: DHCPOption[],
         level: string,
         recursionLevel: number = 0
-    ): TreeNode<OptionNode | OptionFieldNode>[] {
-        let optionNodes: TreeNode<OptionNode | OptionFieldNode>[] = []
+    ): TreeNode<OptionNode | OptionFieldNode | OptionClientClassesNode>[] {
+        let optionNodes: TreeNode<OptionNode | OptionFieldNode | OptionClientClassesNode>[] = []
         if (!options || recursionLevel >= 3) {
             return optionNodes
         }
         for (let option of options) {
             // Parse option code and other parameters that don't belong to option payload.
-            let optionNode: TreeNode<OptionNode | OptionFieldNode> = {
+            let optionNode: TreeNode<OptionNode | OptionFieldNode | OptionClientClassesNode> = {
                 type: recursionLevel === 0 ? 'option' : 'suboption',
                 expanded: true,
                 data: {
@@ -187,6 +213,8 @@ export class DhcpOptionSetViewComponent implements OnInit {
                     code: option.code,
                     universe: option.universe,
                     level: level,
+                    hasFields: !!option.fields?.length || !!option.options?.length,
+                    hasClientClasses: !!option.clientClasses?.length,
                 },
                 children: [],
             }
@@ -194,7 +222,7 @@ export class DhcpOptionSetViewComponent implements OnInit {
             if (option.fields) {
                 for (let field of option.fields) {
                     // Parse option field type and values.
-                    let fieldNode: TreeNode<OptionNode | OptionFieldNode> = {
+                    let fieldNode: TreeNode<OptionFieldNode> = {
                         type: 'field',
                         expanded: true,
                         data: {
@@ -205,6 +233,18 @@ export class DhcpOptionSetViewComponent implements OnInit {
                     optionNode.children.push(fieldNode)
                 }
             }
+            // Add a node for client classes if they are specified.
+            if (option.clientClasses) {
+                let clientClassesNode: TreeNode<OptionClientClassesNode> = {
+                    type: 'client-classes',
+                    expanded: true,
+                    data: {
+                        clientClasses: option.clientClasses,
+                    },
+                }
+                optionNode.children.push(clientClassesNode)
+            }
+
             // Parse suboptions recursively.
             optionNode.children = optionNode.children.concat(
                 this.convertOptionsToNodes(option.options, level, recursionLevel + 1)

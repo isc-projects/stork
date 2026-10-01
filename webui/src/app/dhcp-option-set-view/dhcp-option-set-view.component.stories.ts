@@ -56,6 +56,7 @@ export const CombinedOptions: Story = {
                             values: ['true'],
                         },
                     ],
+                    clientClasses: ['access-point', 'router', 'DROP', 'custom'],
                     universe: 6,
                 },
                 {

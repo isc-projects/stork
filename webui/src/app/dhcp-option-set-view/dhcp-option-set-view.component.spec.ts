@@ -2,7 +2,12 @@ import { ComponentFixture, TestBed } from '@angular/core/testing'
 import { By } from '@angular/platform-browser'
 import { provideNoopAnimations } from '@angular/platform-browser/animations'
 import { TreeNode } from '@openng/optimus-ui/api'
-import { DhcpOptionSetViewComponent, OptionFieldNode, OptionNode } from './dhcp-option-set-view.component'
+import {
+    DhcpOptionSetViewComponent,
+    OptionClientClassesNode,
+    OptionFieldNode,
+    OptionNode,
+} from './dhcp-option-set-view.component'
 import { DHCPOption } from '../backend/model/dHCPOption'
 import { IPType } from '../iptype'
 
@@ -72,6 +77,7 @@ describe('DhcpOptionSetViewComponent', () => {
                             values: ['true'],
                         },
                     ],
+                    clientClasses: ['access-point', 'router', 'DROP', 'custom'],
                     universe: 6,
                 },
                 {
@@ -151,11 +157,16 @@ describe('DhcpOptionSetViewComponent', () => {
         // Option 1027.
         expect((component.optionNodes[0][1] as TreeNode<OptionNode>).data.alwaysSend).toBeFalsy()
         expect((component.optionNodes[0][1] as TreeNode<OptionNode>).data.code).toBe(1027)
-        expect(component.optionNodes[0][1].children.length).toBe(1)
+        expect(component.optionNodes[0][1].children.length).toBe(2)
         expect(component.optionNodes[0][1].children[0].type).toBe('field')
         expect(component.optionNodes[0][1].children[0].expanded).toBeTrue()
         expect((component.optionNodes[0][1].children[0] as TreeNode<OptionFieldNode>).data.fieldType).toBe('bool')
         expect((component.optionNodes[0][1].children[0] as TreeNode<OptionFieldNode>).data.value).toBe('true')
+        expect(component.optionNodes[0][1].children[1].type).toBe('client-classes')
+        expect(component.optionNodes[0][1].children[1].expanded).toBeTrue()
+        expect(
+            (component.optionNodes[0][1].children[1] as TreeNode<OptionClientClassesNode>).data.clientClasses
+        ).toEqual(['access-point', 'router', 'DROP', 'custom'])
 
         // Option 1028.
         expect((component.optionNodes[0][2] as TreeNode<OptionNode>).data.alwaysSend).toBeFalsy()
@@ -385,6 +396,8 @@ describe('DhcpOptionSetViewComponent', () => {
                 code: 1,
                 universe: IPType.IPv4,
                 level: 'subnet',
+                hasClientClasses: false,
+                hasFields: false,
             },
         }
         expect(component.getLevelTagSeverity(node)).toBe('success')
