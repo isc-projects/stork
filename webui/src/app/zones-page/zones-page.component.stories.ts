@@ -1322,6 +1322,7 @@ export const TestFiltersToolbar: Story = {
         // Arrange
         const canvas = within(canvasElement)
         const body = within(canvasElement.parentElement)
+        const someFilter = await canvas.findByLabelText('Daemon')
 
         // Act + Assert
         const showFiltersToolbarToggle = await canvas.findByLabelText('Show Filters')
@@ -1335,11 +1336,17 @@ export const TestFiltersToolbar: Story = {
         const toolbar = await canvas.findByRole('toolbar')
         await expect(toolbar).toBeInTheDocument()
         await waitFor(() => expect(toolbar).toBeVisible())
+        await waitFor(() => expect(toolbar.checkVisibility()).toEqual(true))
 
         await userEvent.click(showFiltersToolbarToggle)
         await waitFor(() => expect(toolbar).not.toBeVisible())
+        // As it turns out, @testing-library/jest-dom toBeVisible() is not effective enough. It returned "false" even when the element under test was still visible.
+        // Hence, we must double-check the visibility with checkVisibility().
+        await waitFor(() => expect(toolbar.checkVisibility()).toEqual(false))
+        await waitFor(() => expect(someFilter.checkVisibility()).toEqual(false)) // A filer input inside the toolbar should be also hidden.
         await userEvent.click(showFiltersToolbarToggle)
         await waitFor(() => expect(toolbar).toBeVisible())
+        await waitFor(() => expect(toolbar.checkVisibility()).toEqual(true))
 
         const refreshButton = await canvas.findByRole('button', { name: 'Refresh List' })
         const internalButtonElements = await within(refreshButton.parentElement).findAllByRole('button')
@@ -1382,11 +1389,14 @@ export const TestFiltersToolbarResponsive: Story = {
         const toolbar = await canvas.findByRole('toolbar')
         await expect(toolbar).toBeInTheDocument()
         await waitFor(() => expect(toolbar).toBeVisible())
+        await waitFor(() => expect(toolbar.checkVisibility()).toEqual(true))
 
         await userEvent.click(showFiltersToolbarToggle)
         await waitFor(() => expect(toolbar).not.toBeVisible())
+        await waitFor(() => expect(toolbar.checkVisibility()).toEqual(false))
         await userEvent.click(showFiltersToolbarToggle)
         await waitFor(() => expect(toolbar).toBeVisible())
+        await waitFor(() => expect(toolbar.checkVisibility()).toEqual(true))
 
         const refreshButton = await canvas.findByRole('button', { name: 'Refresh List' })
 
