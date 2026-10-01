@@ -194,24 +194,6 @@ export class JsonTreeComponent {
     ]
 
     /**
-     * Set list of rules to display values as identifiers.
-     * Each rule contains a key or regular expression to match keys and a
-     * boolean value indicating if the value should be displayed in hex format
-     * by default.
-     */
-    @Input()
-    set identifierRules(rules: { defaultHexFormat: boolean; key: string | RegExp }[]) {
-        this._identifierRules = rules
-    }
-
-    /**
-     * Get list of rules to display values as identifiers.
-     */
-    get identifierRules() {
-        return this._identifierRules
-    }
-
-    /**
      * Enable/disable showing a secret value after a click on the placeholder
      */
     @Input()
@@ -631,7 +613,7 @@ export class JsonTreeComponent {
      */
     get identifierRule(): { defaultHexFormat: boolean; key: string | RegExp } | null {
         return (
-            this.identifierRules.find(({ key }) => {
+            this._identifierRules.find(({ key }) => {
                 if (typeof key === 'string') {
                     return key === this.key
                 } else {

@@ -88,18 +88,10 @@ export class IdentifierComponent implements OnInit {
     @Input() defaultHexFormat = false
 
     /**
-     * Specifies the hex value separator (the default is a colon).
-     */
-    @Input() displaySeparator = ':'
-
-    /**
      * Returns the hex value formatted for display, with a proper separator.
      */
     get displayHexValue(): string {
-        if (this.displaySeparator === ':') {
-            return this._hexValue
-        }
-        return this._hexValue.replace(/:/g, this.displaySeparator)
+        return this._hexValue
     }
 
     /**
