@@ -950,6 +950,16 @@ Unlike with :ref:`register-agent-token-cloudsmith`, this registration method
 does not require approval via the web UI. The machine should
 already be listed among the authorized machines.
 
+.. note::
+
+   The installation script tries to start the registered agent using the ``systemd``
+   service manager (on Debian and RPM-based systems), or the ``rc`` service manager
+   (on Alpine Linux). If the agent is installed for the first time, this step may fail.
+   That is because the default agent configuration in ``/etc/stork/agent.env`` file
+   does not specify some of the required settings (``STORK_AGENT_SERVER_URL``,
+   ``STORK_AGENT_HOST``, and ``STORK_AGENT_PORT``). In that case, the administrator
+   should open the file, set the required settings, and manually restart the agent.
+
 .. _register-agent-token-script:
 
 Installation With a Script and Registration With an Agent Token
