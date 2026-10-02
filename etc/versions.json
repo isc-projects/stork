@@ -2,53 +2,47 @@
   "bind9": {
     "currentStable": [
       {
-        "version": "9.20.22",
-        "releaseDate": "2026-04-01",
+        "version": "9.20.29",
+        "releaseDate": "2026-09-16",
         "eolDate": "2028-07-01",
-        "ESV": "true"
-      },
-      {
-        "version": "9.18.48",
-        "releaseDate": "2026-04-01",
-        "eolDate": "2026-07-01",
         "ESV": "true"
       }
     ],
     "latestDev": {
-      "version": "9.21.21",
-      "releaseDate": "2026-04-01"
+      "version": "9.21.26",
+      "releaseDate": "2026-09-16"
     },
     "latestSecure": [
       {
-        "version": "9.20.21",
-        "releaseDate": "2026-03-25"
+        "version": "9.20.29",
+        "releaseDate": "2026-09-16"
       },
       {
-        "version": "9.18.47",
-        "releaseDate": "2026-03-25"
+        "version": "9.18.49",
+        "releaseDate": "2026-05-20"
       },
       {
-        "version": "9.21.20",
-        "releaseDate": "2026-03-25"
+        "version": "9.21.26",
+        "releaseDate": "2026-09-16"
       }
     ]
   },
   "kea": {
     "currentStable": [
       {
-        "version": "3.0.3",
-        "releaseDate": "2026-03-25",
-        "eolDate": "2028-06-01"
+        "version": "3.2.1",
+        "releaseDate": "2026-09-30",
+        "eolDate": "2027-07-01"
       },
       {
-        "version": "2.6.5",
-        "releaseDate": "2026-03-25",
-        "eolDate": "2026-07-01"
+        "version": "3.0.4",
+        "releaseDate": "2026-07-29",
+        "eolDate": "2028-06-01"
       }
     ],
     "latestDev": {
-      "version": "3.1.8",
-      "releaseDate": "2026-04-29"
+      "version": "3.3.2",
+      "releaseDate": "2026-09-30"
     },
     "latestSecure": [
       {
@@ -72,14 +66,14 @@
   "stork": {
     "currentStable": [
       {
-        "version": "2.4.1",
-        "releaseDate": "2026-05-13",
-        "eolDate": "2027-01-01"
+        "version": "2.4.2",
+        "releaseDate": "2026-10-07",
+        "eolDate": "2027-07-07"
       }
     ],
     "latestDev": {
-      "version": "2.3.2",
-      "releaseDate": "2025-12-10"
+      "version": "2.5.1",
+      "releaseDate": "2026-08-12"
     },
     "latestSecure": [
       {
@@ -92,5 +86,5 @@
       }
     ]
   },
-  "date": "2026-05-08"
+  "date": "2026-10-02"
 }

@@ -1,3 +1,11 @@
+Stork 2.4.2 released on 2026-10-07.
+
+* 624 [build] marcin
+
+    Updated project dependencies including Golang upgrade to version
+    1.26.8, Angular to version 20.3.31, and PrimeNG 20.4.0.
+    (Gitlab #2668)
+
 Stork 2.4.1 released on 2026-05-13.
 
 * 623 [bug] marcin

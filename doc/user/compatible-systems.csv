@@ -5,16 +5,16 @@ System Family,System Version,Architecture,Unit Tests,System Tests,Build Binaries
        Alpine,          3.22,       amd64,         X,            ,              ,              ,                              ,                                                    X
        Alpine,          3.23,     aarch64,         X,            ,              ,              ,                              ,                                                    X
        Alpine,          3.23,       amd64,         X,            ,              ,              ,                              ,                                                    X
+       Alpine,          3.24,     aarch64,         X,            ,              ,              ,                              ,                                                    X
+       Alpine,          3.24,       amd64,         X,            ,              ,              ,                              ,                                                    X
        Debian,     12.1-slim,     aarch64,          ,            ,             X,             X,                             X,
        Debian,     12.1-slim,       amd64,         X,           X,             X,             X,                             X,
-       Debian,            11,     aarch64,         X,            ,              ,              ,                              ,                                                    X
-       Debian,            11,       amd64,         X,            ,              ,              ,                              ,                                                    X
        Debian,            12,     aarch64,         X,            ,              ,              ,                              ,                                                    X
        Debian,            12,       amd64,         X,            ,              ,              ,                              ,                                                    X
        Debian,            13,     aarch64,         X,            ,              ,              ,                              ,                                                    X
        Debian,            13,       amd64,         X,            ,              ,              ,                              ,                                                    X
-       Fedora,            43,     aarch64,         X,            ,              ,              ,                              ,                                                    X
-       Fedora,            43,       amd64,         X,            ,              ,              ,                              ,                                                    X
+       Fedora,            44,     aarch64,         X,            ,              ,              ,                              ,                                                    X
+       Fedora,            44,       amd64,         X,            ,              ,              ,                              ,                                                    X
       FreeBSD,          15.0,       amd64,         X,            ,              ,              ,                              ,
       OpenBSD,             ?,       amd64,         U,            ,             U,              ,                             U,
          RHEL,       UBI 8.8,     aarch64,          ,            ,             X,             X,                             X,
@@ -28,4 +28,6 @@ System Family,System Version,Architecture,Unit Tests,System Tests,Build Binaries
        Ubuntu,         22.04,       amd64,         X,           D,             D,             D,                              ,                                                    X
        Ubuntu,         24.04,     aarch64,         X,            ,              ,              ,                              ,                                                    X
        Ubuntu,         24.04,       amd64,         X,            ,              ,              ,                              ,                                                    X
+       Ubuntu,         26.04,     aarch64,         X,            ,              ,              ,                              ,                                                    X
+       Ubuntu,         26.04,       amd64,         X,            ,              ,              ,                              ,                                                    X
         MacOS,            14,     aarch64,         D,           D,             D,             D,                              ,                                                    D
