@@ -215,7 +215,7 @@ fi
 {{ if .ApkPath }}
 if [ -e /etc/alpine-release ]; then
 	wget -O /tmp/isc-stork-agent.apk "{{.ServerAddress}}/{{.ApkPath}}"
-	apk add --no-cache --no-network /tmp/isc-stork-agent.apk
+	apk add --allow-untrusted --no-cache --no-network /tmp/isc-stork-agent.apk
 fi
 {{ end }}
 {{ if .RpmPath }}
@@ -225,13 +225,22 @@ if [ -e /etc/redhat-release ]; then
 fi
 {{ end }}
 
-systemctl daemon-reload
-systemctl enable isc-stork-agent
-systemctl restart isc-stork-agent
-systemctl status isc-stork-agent
+if [ -e /etc/debian_version ] || [ -e /etc/redhat-release ]; then
+	systemctl daemon-reload
+	systemctl enable isc-stork-agent
+	systemctl stop isc-stork-agent
+	su stork-agent -s /bin/sh -c 'stork-agent register -u {{.ServerAddress}}'
+	systemctl start isc-stork-agent
+	systemctl status isc-stork-agent
+fi
 
-su stork-agent -s /bin/sh -c 'stork-agent register -u {{.ServerAddress}}'
-
+if [ -e /etc/alpine-release ]; then
+	rc-update add isc-stork-agent
+	rc-service --ifstarted isc-stork-agent stop
+	su stork-agent -s /bin/sh -c 'stork-agent register -u {{.ServerAddress}}'
+	rc-service isc-stork-agent start
+	rc-service isc-stork-agent status
+fi
 `
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
