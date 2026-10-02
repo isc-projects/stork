@@ -208,7 +208,7 @@ rm -f /tmp/isc-stork-agent.{deb,rpm,apk}
 
 {{ if .DebPath }}
 if [ -e /etc/debian_version ]; then
-    curl -o /tmp/isc-stork-agent.deb "{{.ServerAddress}}/{{.DebPath}}"
+    curl -fsS -o /tmp/isc-stork-agent.deb "{{.ServerAddress}}/{{.DebPath}}"
     DEBIAN_FRONTEND=noninteractive dpkg -i --force-confold /tmp/isc-stork-agent.deb
 fi
 {{ end }}
@@ -220,7 +220,7 @@ fi
 {{ end }}
 {{ if .RpmPath }}
 if [ -e /etc/redhat-release ]; then
-    curl -o /tmp/isc-stork-agent.rpm "{{.ServerAddress}}/{{.RpmPath}}"
+    curl -fsS -o /tmp/isc-stork-agent.rpm "{{.ServerAddress}}/{{.RpmPath}}"
     yum install -y /tmp/isc-stork-agent.rpm
 fi
 {{ end }}
@@ -289,7 +289,9 @@ su stork-agent -s /bin/sh -c 'stork-agent register -u {{.ServerAddress}}'
 			}
 
 			data := map[string]string{
-				"ServerAddress": serverAddress.String(),
+				// The template already contains the trailing slash, so we need to remove
+				// any trailing slash in the server address.
+				"ServerAddress": strings.TrimRight(serverAddress.String(), "/"),
 			}
 
 			for extension, path := range packageFiles {
