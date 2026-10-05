@@ -5,7 +5,6 @@ import (
 	"fmt"
 	iter "iter"
 	"math"
-	"sync"
 	"testing"
 	"testing/synctest"
 	"time"
@@ -178,9 +177,7 @@ func TestXFRCollectorStartStopDuringReconnect(t *testing.T) {
 	})
 }
 
-// Test the reconnect logic (backoff) of the xfrCollector. This test cannot use
-// the synctest package because it would make it impossible to measure the time
-// between the reconnect attempts - synctest uses fake time.
+// Test the reconnect logic (backoff) of the xfrCollector.
 func TestXFRCollectorReconnect(t *testing.T) {
 	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
 	defer teardown()
@@ -205,78 +202,72 @@ func TestXFRCollectorReconnect(t *testing.T) {
 	err = dbmodel.AddDaemon(db, daemon)
 	require.NoError(t, err)
 
-	controller := gomock.NewController(t)
-	defer controller.Finish()
+	// Run the rest of the test in the synctest bubble to use fake time.
+	synctest.Test(t, func(t *testing.T) {
+		controller := gomock.NewController(t)
+		defer controller.Finish()
 
-	agents := NewMockConnectedAgents(controller)
+		agents := NewMockConnectedAgents(controller)
 
-	var (
-		ts    []time.Time
-		mutex sync.Mutex
-	)
-	for i := 0; i < 7; i++ {
-		// Simulate an error from the agent, so the collector enters the reconnect loop.
-		// Record the timestamps of the reconnect attempts, so we can  ensure
-		// that the correct intervals are used.
+		ts := make([]time.Time, 0, 8)
+		for range 8 {
+			// Simulate an error from the agent, so the collector enters the reconnect loop.
+			// Record the timestamps of the reconnect attempts, so we can ensure
+			// that the correct intervals are used.
+			agents.EXPECT().ReceiveZoneTransfers(gomock.Any(), gomock.Any(), true).
+				Return(func(yield func(*bind9xfr.State, error) bool) {
+					ts = append(ts, time.Now())
+					_ = yield(nil, &testError{})
+				})
+		}
+
+		// Last attempt should not return an error to cause the goroutine to exit.
 		agents.EXPECT().ReceiveZoneTransfers(gomock.Any(), gomock.Any(), true).
-			Return(func(yield func(*bind9xfr.State, error) bool) {
-				mutex.Lock()
-				ts = append(ts, time.Now())
-				mutex.Unlock()
-				_ = yield(nil, &testError{})
-			})
-	}
+			Return(func(yield func(*bind9xfr.State, error) bool) {})
 
-	// Last attempt should not return an error to cause the goroutine to exit.
-	waitChan := make(chan struct{})
-	agents.EXPECT().ReceiveZoneTransfers(gomock.Any(), gomock.Any(), true).
-		Return(func(yield func(*bind9xfr.State, error) bool) {
-			close(waitChan)
-		})
+		// Create the collector instance.
+		xfrCollector := newXFRCollector(daemonstest.ManagerAccessorsWrapper{
+			DB:     db,
+			Agents: agents,
+		}, newMachineIPAddressCache(db), daemon)
 
-	// Create the collector instance.
-	xfrCollector := newXFRCollector(daemonstest.ManagerAccessorsWrapper{
-		DB:     db,
-		Agents: agents,
-	}, newMachineIPAddressCache(db), daemon)
+		// The collector should be initially inactive.
+		require.False(t, xfrCollector.isActive())
+		// Start the collector and make sure it is active.
+		xfrCollector.start()
+		synctest.Wait()
+		require.True(t, xfrCollector.isActive())
 
-	// Change the backoff factor to make sure the test runs faster.
-	xfrCollector.backoffFactor = time.Millisecond * 1
+		// The collector should now make 7 attempts to reconnect.
+		for i := range 7 {
+			synctest.Wait()
+			// We have to advance the time by the amount required by the backoff formula
+			// to unblock the collector to reconnect.
+			time.Sleep(xfrCollector.backoffFactor * time.Duration(math.Pow(2, float64(i))))
+		}
+		xfrCollector.stop()
+		// Make sure that the collector ends gracefully.
+		synctest.Wait()
 
-	// The collector should be initially inactive.
-	require.False(t, xfrCollector.isActive())
-	// Start the collector and make sure it is active.
-	xfrCollector.start()
-	require.Eventually(t, xfrCollector.isActive, 5*time.Second, 100*time.Millisecond)
-	// Make sure that the collector has made 7 attempts to reconnect. The 8-th attempt
-	// should return with no error.
-	require.Eventually(t, func() bool {
-		mutex.Lock()
-		defer mutex.Unlock()
-		return len(ts) == 7
-	}, 30*time.Second, 100*time.Millisecond)
-	// Make sure that the collector ends gracefully.
-	<-waitChan
+		// We should have recorded 8 timestamps starting from the first one at time 0.
+		require.Len(t, ts, 8)
 
-	// Suppose the backoff factor is 1s. The durations between the consecutive attempts
-	// should be: 1s, 2s, 4s, 8s, 16s, 30s, 30s. That's because the maximum duration
-	// is 30 times the backoff factor.
+		// Suppose the backoff factor is 1s. The durations between the consecutive attempts
+		// should be: 1s, 2s, 4s, 8s, 16s, 30s, 30s. That's because the maximum duration
+		// is 30 times the backoff factor.
 
-	// Let's test the ones growing.
-	for i := 1; i < 6; i++ {
-		sub := ts[i].Sub(ts[i-1])
-		require.GreaterOrEqual(t, sub, xfrCollector.backoffFactor*time.Duration(math.Pow(2, float64(i-1))))
-	}
+		// Let's test the ones growing.
+		for i := 1; i < 6; i++ {
+			sub := ts[i].Sub(ts[i-1])
+			require.Equal(t, sub, xfrCollector.backoffFactor*time.Duration(math.Pow(2, float64(i-1))))
+		}
 
-	// Let's now test the last two that should stabilize at the maximum duration.
-	// However, we expect that the actual duration may be slightly longer because
-	// of the time the code needs to execute the mock. Therefore, we merely test
-	// that the duration is now shorter than the one calculated using the exponential
-	// formula above.
-	for i := 6; i < 7; i++ {
-		sub := ts[i].Sub(ts[i-1])
-		require.Less(t, sub, xfrCollector.backoffFactor*time.Duration(math.Pow(2, float64(i-1))))
-	}
+		// Let's now test the last two that should stabilize at the maximum duration of 30 seconds.
+		for i := 6; i < 8; i++ {
+			sub := ts[i].Sub(ts[i-1])
+			require.Equal(t, sub, time.Second*30)
+		}
+	})
 }
 
 // Test that the XFR collector stops monitoring a daemon that doesn't exist in the database.
