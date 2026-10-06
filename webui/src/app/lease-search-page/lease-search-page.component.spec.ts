@@ -570,6 +570,7 @@ describe('LeaseSearchPageComponent', () => {
                     fqdnFwd: false,
                     fqdnRev: true,
                     subnetId: 123,
+                    localSubnetId: 123,
                     cltt: 1616149050,
                     validLifetime: 3600,
                     userContext: {

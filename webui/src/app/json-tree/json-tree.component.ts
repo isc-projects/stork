@@ -32,15 +32,7 @@ interface PageChangedEvent {
     selector: 'app-json-tree',
     templateUrl: './json-tree.component.html',
     styleUrls: ['./json-tree.component.sass'],
-    imports: [
-        NgClass,
-        NgTemplateOutlet,
-        Paginator,
-        InputText,
-        SlicePipe,
-        KeyValuePipe,
-        IdentifierComponent,
-    ],
+    imports: [NgClass, NgTemplateOutlet, Paginator, InputText, SlicePipe, KeyValuePipe, IdentifierComponent],
 })
 export class JsonTreeComponent {
     private _value: any = null
