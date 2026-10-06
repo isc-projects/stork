@@ -413,6 +413,28 @@ func TestAddLeaseUpdatesExistingLease(t *testing.T) {
 	})
 }
 
+// Verify that [AddLease] correctly inserts a lease with valid lifetime = 0.
+func TestAddLeaseWithZeroValidLifetime(t *testing.T) {
+	db, _, teardown := dbtest.SetupDatabaseTestCase(t)
+	defer teardown()
+	daemons, subnets := addTestLeaseDaemons(t, db)
+	originalLeases := testHelperAddMockLeases(t, db, daemons, subnets)
+
+	// Copy the lease so I can change bits of it and insert it.
+	newLease := *originalLeases[0]
+	newLease.CLTT = 0
+	newLease.ValidLifetime = 0
+
+	err := AddLease(db, &newLease)
+	addedLease, err2 := GetLeaseByID(db, newLease.ID)
+
+	require.NoError(t, err)
+	require.NoError(t, err2)
+
+	require.EqualValues(t, newLease.CLTT, addedLease.CLTT)
+	require.EqualValues(t, newLease.ValidLifetime, addedLease.ValidLifetime)
+}
+
 // Confirm that [GetLeaseByID] returns an error when there is a database issue *other*
 // than "there is no lease with that ID".
 func TestGetLeaseByIDDatabaseError(t *testing.T) {

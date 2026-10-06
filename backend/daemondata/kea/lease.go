@@ -39,10 +39,10 @@ type Lease struct {
 	DUID              *ColonSepHexStr `json:"duid,omitempty"`
 	IPAddress         string          `json:"ip-address,omitempty"`
 	Type              string          `json:"type,omitempty"`
-	CLTT              uint64          `json:"cltt,omitempty"`
+	CLTT              uint64          `json:"cltt,omitempty" pg:",use_zero"`
 	State             uint32          `json:"state,omitempty" pg:",use_zero"`
 	UserContext       map[string]any  `json:"user-context,omitempty"`
-	ValidLifetime     uint32          `json:"valid-lft,omitempty"`
+	ValidLifetime     uint32          `json:"valid-lft,omitempty" pg:",use_zero"`
 	IAID              uint32          `json:"iaid,omitempty"`
 	PreferredLifetime uint32          `json:"preferred-lft,omitempty"`
 	LocalSubnetID     uint32          `json:"subnet-id,omitempty"`
