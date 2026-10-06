@@ -83,8 +83,9 @@ func (r *RestAPI) internalAuthentication(params users.CreateSessionParams) (*dbm
 	return user, err
 }
 
-// The external authentication flow handled by the hooks.
-func (r *RestAPI) hookAuthentication(ctx context.Context, params users.CreateSessionParams) (*dbmodel.SystemUser, error) {
+// The external authentication flow handled by the hooks. The returned flag
+// indicates whether the external authenticator accepted the user credentials.
+func (r *RestAPI) hookAuthentication(ctx context.Context, params users.CreateSessionParams) (*dbmodel.SystemUser, bool, error) {
 	calloutUser, err := r.HookManager.Authenticate(
 		ctx,
 		params.HTTPRequest,
@@ -94,11 +95,11 @@ func (r *RestAPI) hookAuthentication(ctx context.Context, params users.CreateSes
 	)
 
 	if calloutUser == nil || err != nil {
-		return nil, errors.WithMessage(err, "cannot authenticate a user")
+		return nil, false, errors.WithMessage(err, "cannot authenticate a user")
 	}
 
 	systemUser, err := dbmodel.AddOrUpdateExternalUser(r.DB, calloutUser, *params.Credentials.AuthenticationMethodID)
-	return systemUser, err
+	return systemUser, true, err
 }
 
 // Attempts to login the user to the system.
@@ -119,10 +120,11 @@ func (r *RestAPI) CreateSession(ctx context.Context, params users.CreateSessionP
 		authenticationMethod = *params.Credentials.AuthenticationMethodID
 	}
 
+	credentialsAccepted := false
 	if authenticationMethod == dbmodel.AuthenticationMethodIDInternal {
 		systemUser, err = r.internalAuthentication(params)
 	} else {
-		systemUser, err = r.hookAuthentication(ctx, params)
+		systemUser, credentialsAccepted, err = r.hookAuthentication(ctx, params)
 	}
 
 	// The safe identifier is used for logging purposes. It prevents untrusted
@@ -150,6 +152,15 @@ func (r *RestAPI) CreateSession(ctx context.Context, params users.CreateSessionP
 			WithFields(logFields).
 			Debug("User not found, cannot authenticate")
 		return users.NewCreateSessionBadRequest()
+	} else if err != nil && credentialsAccepted {
+		// The external authenticator (e.g. LDAP server) accepted the authentication (i.e. user's credentials
+		// were correct), but authentication process failed due to server internal error (e.g. DB integrity violation when
+		// upserting external user data).
+		log.
+			WithFields(logFields).
+			WithError(err).
+			Error("Internal server error after successful external authentication, cannot authenticate a user")
+		return users.NewCreateSessionInternalServerError()
 	} else if err != nil {
 		log.
 			WithFields(logFields).

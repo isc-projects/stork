@@ -5,8 +5,14 @@ import { provideHttpClientTesting } from '@angular/common/http/testing'
 import { AuthenticationMethods, User, UsersService } from './backend'
 import { Router, provideRouter } from '@angular/router'
 import { MessageService } from '@openng/optimus-ui/api'
-import { from, of } from 'rxjs'
-import { HttpProgressEvent, provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
+import { from, of, throwError } from 'rxjs'
+import {
+    HttpErrorResponse,
+    HttpProgressEvent,
+    HttpStatusCode,
+    provideHttpClient,
+    withInterceptorsFromDi,
+} from '@angular/common/http'
 
 describe('AuthService', () => {
     beforeEach(() =>
@@ -114,5 +120,49 @@ describe('AuthService', () => {
 
         // Assert
         expect(service.currentUserValue.changePassword).toBeFalse()
+    })
+
+    it('should display authentication error when the server fails to complete the authentication', () => {
+        // Arrange
+        const authService: AuthService = TestBed.inject(AuthService)
+        const userService: UsersService = TestBed.inject(UsersService)
+        const msgService: MessageService = TestBed.inject(MessageService)
+        spyOn(msgService, 'add')
+        spyOn(userService, 'createSession').and.returnValue(
+            throwError(() => new HttpErrorResponse({ status: HttpStatusCode.InternalServerError }))
+        )
+
+        // Act
+        authService.login('ldap', 'user', 'password', '/')
+
+        // Assert
+        expect(msgService.add).toHaveBeenCalledOnceWith(
+            jasmine.objectContaining({
+                severity: 'error',
+                summary: 'Authentication error',
+                detail: 'Error during authentication process. Please contact Stork admin.',
+            })
+        )
+        expect(authService.currentUserValue).toBeNull()
+    })
+
+    it('should display invalid credentials error when the server rejects the credentials', () => {
+        // Arrange
+        const authService: AuthService = TestBed.inject(AuthService)
+        const userService: UsersService = TestBed.inject(UsersService)
+        const msgService: MessageService = TestBed.inject(MessageService)
+        spyOn(msgService, 'add')
+        spyOn(userService, 'createSession').and.returnValue(
+            throwError(() => new HttpErrorResponse({ status: HttpStatusCode.BadRequest }))
+        )
+
+        // Act
+        authService.login('ldap', 'user', 'password', '/')
+
+        // Assert
+        expect(msgService.add).toHaveBeenCalledOnceWith(
+            jasmine.objectContaining({ severity: 'error', summary: 'Invalid login or password' })
+        )
+        expect(authService.currentUserValue).toBeNull()
     })
 })

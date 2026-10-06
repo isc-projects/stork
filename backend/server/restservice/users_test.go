@@ -1918,7 +1918,9 @@ func TestCreateSessionOfExternalUserLoginConflict(t *testing.T) {
 
 	// Assert
 	require.IsType(t, &users.CreateSessionOK{}, rsp1)
-	require.IsType(t, &users.CreateSessionBadRequest{}, rsp2)
+	// The credentials were accepted by the external authenticator, but the auth process failed
+	// due to duplicated data. 500 error response is expected.
+	require.IsType(t, &users.CreateSessionInternalServerError{}, rsp2)
 	require.IsType(t, &users.CreateSessionOK{}, rsp3)
 	okRsp1 := rsp1.(*users.CreateSessionOK)
 	okRsp2 := rsp3.(*users.CreateSessionOK)
@@ -2014,7 +2016,9 @@ func TestCreateSessionOfExternalUserEmailConflict(t *testing.T) {
 
 	// Assert
 	require.IsType(t, &users.CreateSessionOK{}, rsp1)
-	require.IsType(t, &users.CreateSessionBadRequest{}, rsp2)
+	// The credentials were accepted by the external authenticator, but the auth process failed
+	// due to duplicated data. 500 error response is expected.
+	require.IsType(t, &users.CreateSessionInternalServerError{}, rsp2)
 	require.IsType(t, &users.CreateSessionOK{}, rsp3)
 	okRsp1 := rsp1.(*users.CreateSessionOK)
 	okRsp2 := rsp3.(*users.CreateSessionOK)

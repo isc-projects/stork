@@ -1,3 +1,4 @@
+import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http'
 import { Injectable, inject } from '@angular/core'
 import { Router } from '@angular/router'
 import { BehaviorSubject, defer, Observable, of, tap, timeout, timer } from 'rxjs'
@@ -202,7 +203,22 @@ export class AuthService {
                         this.router.navigateByUrl(returnUrl)
                     }
                 },
-                error: () => this.msgSrv.add({ severity: 'error', summary: 'Invalid login or password' }),
+                error: (err: HttpErrorResponse) => {
+                    if (err.status === HttpStatusCode.InternalServerError) {
+                        // The credentials were accepted by the external authenticator
+                        // but the authentication could not be completed due to server error
+                        // (e.g. DB unique constraints violation).
+                        this.msgSrv.add({
+                            severity: 'error',
+                            summary: 'Authentication error',
+                            sticky: true,
+                            detail: 'Error during authentication process. Please contact Stork admin.',
+                        })
+                        return
+                    }
+
+                    this.msgSrv.add({ severity: 'error', summary: 'Invalid login or password' })
+                },
             })
     }
 

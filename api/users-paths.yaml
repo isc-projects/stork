@@ -20,6 +20,10 @@
           description: Invalid user email or password supplied
           schema:
             $ref: "#/definitions/ApiError"
+        500:
+          description: The authentication could not be completed due to a server error
+          schema:
+            $ref: "#/definitions/ApiError"
     delete:
       summary: Logs out a user from the system
       operationId: deleteSession
