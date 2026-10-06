@@ -476,7 +476,7 @@ func AddOrUpdateExternalUser(db *dbops.PgDB, externalUser *authdata.User, method
 
 	tx, err := db.Begin()
 	if err != nil {
-		err = pkgerrors.Wrapf(err, "unable to begin transaction while trying to add or update external user with ID %s", externalUser.ID)
+		err = pkgerrors.Wrapf(err, "unable to begin transaction while trying to add or update external user with ID '%s'", externalUser.ID)
 		return nil, err
 	}
 	defer dbops.RollbackOnError(tx, &err)
@@ -509,12 +509,13 @@ func AddOrUpdateExternalUser(db *dbops.PgDB, externalUser *authdata.User, method
 	if err != nil {
 		var pgError pg.Error
 		if errors.As(err, &pgError) {
-			conflict := pgError.IntegrityViolation()
-			if conflict {
-				err = pkgerrors.WithMessagef(err, "conflicting data in the database for external user with login %s and email %s", externalUser.Login, externalUser.Email)
+			// In case a unique constraint on user's login or email is violated,
+			// wrap the err message with more details so it can be better understood by Stork admins.
+			if constraint := pgError.Field('n'); constraint == "system_user_login_unique_idx" || constraint == "system_user_email_unique_idx" {
+				err = pkgerrors.WithMessagef(err, "conflicting data in the database for external user with login '%s' and email '%s'", externalUser.Login, externalUser.Email)
 			}
 		}
-		err = pkgerrors.Wrapf(err, "database operation error while trying to add or update external user with ID %s", externalUser.ID)
+		err = pkgerrors.Wrapf(err, "database operation error while trying to add or update external user with ID '%s'", externalUser.ID)
 		return nil, err
 	}
 
@@ -552,12 +553,12 @@ func AddOrUpdateExternalUser(db *dbops.PgDB, externalUser *authdata.User, method
 		}
 	}
 	if err != nil {
-		err = pkgerrors.Wrapf(err, "database operation error while trying to add or update group associations for external user with ID %s", externalUser.ID)
+		err = pkgerrors.Wrapf(err, "database operation error while trying to add or update group associations for external user with ID '%s'", externalUser.ID)
 		return nil, err
 	}
 	err = tx.Commit()
 	if err != nil {
-		err = pkgerrors.Wrapf(err, "unable to commit transaction while trying to add or update external user with ID %s", externalUser.ID)
+		err = pkgerrors.Wrapf(err, "unable to commit transaction while trying to add or update external user with ID '%s'", externalUser.ID)
 		return nil, err
 	}
 	return systemUser, err
