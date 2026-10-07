@@ -1051,6 +1051,8 @@ export const TestZonesFiltering: Story = {
         await user.click(bindOption)
 
         // Assert
+        // Check if there is indication that filters are appied.
+        await canvas.findByRole('img', { name: 'Filters applied' })
         // 3 BIND9 zones are expected.
         await waitFor(() => expect(within(table).getAllByRole('row')).toHaveLength(4)) // All rows in tbody + one row in the thead.
         await expect(within(table).getByText('(root)')).toBeInTheDocument()
@@ -1325,7 +1327,7 @@ export const TestFiltersToolbar: Story = {
         const someFilter = await canvas.findByLabelText('Daemon')
 
         // Act + Assert
-        const showFiltersToolbarToggle = await canvas.findByLabelText('Show Filters')
+        const showFiltersToolbarToggle = await canvas.findByLabelText('Filters')
         await waitFor(() => expect(showFiltersToolbarToggle).toBeTruthy())
         const filtersVisible = showFiltersToolbarToggle.getAttribute('aria-checked')
         if (filtersVisible != 'true') {
@@ -1337,6 +1339,9 @@ export const TestFiltersToolbar: Story = {
         await expect(toolbar).toBeInTheDocument()
         await waitFor(() => expect(toolbar).toBeVisible())
         await waitFor(() => expect(toolbar.checkVisibility()).toEqual(true))
+
+        // Check if there is indication that filters are not appied.
+        await canvas.findByRole('img', {name: 'No filters applied'})
 
         await userEvent.click(showFiltersToolbarToggle)
         await waitFor(() => expect(toolbar).not.toBeVisible())
@@ -1378,7 +1383,7 @@ export const TestFiltersToolbarResponsive: Story = {
         const body = within(canvasElement.parentElement)
 
         // Act + Assert
-        const showFiltersToolbarToggle = await canvas.findByLabelText('Show Filters')
+        const showFiltersToolbarToggle = await canvas.findByLabelText('Filters')
         await waitFor(() => expect(showFiltersToolbarToggle).toBeTruthy())
         const filtersVisible = showFiltersToolbarToggle.getAttribute('aria-checked')
         if (filtersVisible != 'true') {

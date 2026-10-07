@@ -27,7 +27,24 @@
         [class.flex-wrap-reverse]="!splitButton()"
     >
         <div class="flex gap-2 flex-shrink-0 align-items-center">
-            <label for="filtersSwitch" class="font-medium">Show Filters</label>
+            @if (filters()) {
+                @if (tableHasFilter(tableElement())) {
+                    <i
+                        class="pi pi-filter text-primary"
+                        pTooltip="Filters applied"
+                        role="img"
+                        aria-label="Filters applied"
+                    ></i>
+                } @else {
+                    <i
+                        class="pi pi-filter-slash text-color-secondary"
+                        pTooltip="No filters applied"
+                        role="img"
+                        aria-label="No filters applied"
+                    ></i>
+                }
+            }
+            <label for="filtersSwitch" class="font-medium">Filters</label>
             <p-toggleswitch [(ngModel)]="filtersShown" inputId="filtersSwitch" />
         </div>
 

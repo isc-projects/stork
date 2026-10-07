@@ -8,6 +8,7 @@ import { Router } from '@angular/router'
 import { ToggleSwitch } from '@openng/optimus-ui/toggleswitch'
 import { FormsModule } from '@angular/forms'
 import { HelpTipComponent } from '../help-tip/help-tip.component'
+import { Tooltip } from '@openng/optimus-ui/tooltip'
 
 /**
  * This is a component that is supposed to be used in a Caption template of an OptimusUI table component.
@@ -18,7 +19,7 @@ import { HelpTipComponent } from '../help-tip/help-tip.component'
  */
 @Component({
     selector: 'app-table-caption',
-    imports: [Toolbar, NgTemplateOutlet, Button, ToggleSwitch, FormsModule, HelpTipComponent],
+    imports: [Toolbar, NgTemplateOutlet, Button, ToggleSwitch, FormsModule, HelpTipComponent, Tooltip],
     templateUrl: './table-caption.component.html',
     styleUrl: './table-caption.component.sass',
 })
