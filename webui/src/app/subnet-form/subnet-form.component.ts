@@ -820,6 +820,6 @@ export class SubnetFormComponent implements OnInit, OnDestroy {
      * for the configured daemons.
      */
     private get keaVersionRange(): [string, string] | null {
-        return getVersionRange(this.state.filteredDaemons.map((d) => d.version))
+        return getVersionRange(this.state.filteredDaemonGroups.flatMap((g) => g.daemons.map((d) => d.version)))
     }
 }

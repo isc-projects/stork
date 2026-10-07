@@ -43,13 +43,17 @@
                         configuration levels; it indicates that the option has been defined at the level presented by
                         the tag.
                     </p>
-                    <p *ngIf="node.data.hasFields">
-                        The subsequent <i class="fa fa fa-ellipsis-h"></i> icons show the fields and suboptions
-                        associated with the option.
-                    </p>
-                    <p *ngIf="node.data.hasClientClasses">
-                        The <i class="fa fa-users"></i> icon shows the client classes associated with the option.
-                    </p>
+                    @if (node.data.hasFields) {
+                        <p>
+                            The subsequent <i class="fa fa fa-ellipsis-h"></i> icons show the fields and suboptions
+                            associated with the option.
+                        </p>
+                    }
+                    @if (node.data.hasClientClasses) {
+                        <p>
+                            The <i class="fa fa-users"></i> icon shows the client classes associated with the option.
+                        </p>
+                    }
                 </app-help-tip>
             </div>
         </div>

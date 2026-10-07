@@ -227,7 +227,7 @@ export class AddressPoolFormComponent implements OnInit {
      * @param index server index in the {@link daemonGroupLabels} array.
      */
     onOptionAdd(index: number): void {
-        const keaVersionRange = getVersionRange(this.selectableDaemons.map((d) => d.version))
+        const keaVersionRange = getVersionRange(this.selectableGroups.flatMap((g) => g.daemons.map((d) => d.version)))
         this.getOptionsData(index).push(
             createDefaultDhcpOptionFormGroup(keaVersionRange, this.v6 ? IPType.IPv6 : IPType.IPv4)
         )

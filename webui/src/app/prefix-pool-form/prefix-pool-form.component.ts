@@ -234,6 +234,6 @@ export class PrefixPoolFormComponent implements OnInit {
      * for the configured daemons.
      */
     private get keaVersionRange(): [string, string] | null {
-        return getVersionRange(this.selectableDaemons.map((d) => d.version))
+        return getVersionRange(this.selectableGroups.flatMap((g) => g.daemons.map((d) => d.version)))
     }
 }
