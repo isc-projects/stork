@@ -37,7 +37,6 @@ describe('LeaseDetailBoxComponent', () => {
             hwAddress: '01:02:03:04:05:06',
             clientId: '51:52:53:54',
             hostname: 'faq.example.org',
-            fqdnFwd: false,
             fqdnRev: true,
             localSubnetId: 123,
             cltt: 1616149050,
