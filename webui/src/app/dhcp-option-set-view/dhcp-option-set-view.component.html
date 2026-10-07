@@ -39,14 +39,16 @@
                         payload.
                     </p>
                     <p>
-                        The "always sent" and "never sent" settings are sticky, meaning they do not follow the usual configuration
-                        inheritance rules. Instead, if they are enabled at least once along the configuration inheritance
-                        chain, they are applied - even if they are disabled in other places which would normally receive a
-                        higher priority. For instance, if one of the flags is enabled in the global scope, but disabled at
-                        the subnet level, it is enabled, disregarding the subnet-level setting.
+                        The "always sent" and "never sent" settings are sticky, meaning they do not follow the usual
+                        configuration inheritance rules. Instead, if they are enabled at least once along the
+                        configuration inheritance chain, they are applied - even if they are disabled in other places
+                        which would normally receive a higher priority. For instance, if one of the flags is enabled in
+                        the global scope, but disabled at the subnet level, it is enabled, disregarding the subnet-level
+                        setting.
                     </p>
                     <p>
-                        The "never sent" setting has precedence over "always sent", so if both are true the option is not added.
+                        The "never sent" setting has precedence over "always sent", so if both are true the option is
+                        not added.
                     </p>
                     <p>
                         The "{{ node.data.level }}" tag is shown when DHCP options are inherited from multiple
@@ -60,9 +62,7 @@
                         </p>
                     }
                     @if (node.data.hasClientClasses) {
-                        <p>
-                            The <i class="fa fa-users"></i> icon marks the client classes associated with the option.
-                        </p>
+                        <p>The <i class="fa fa-users"></i> icon marks the client classes associated with the option.</p>
                     }
                 </app-help-tip>
             </div>
