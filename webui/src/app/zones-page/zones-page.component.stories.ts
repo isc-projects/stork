@@ -1341,7 +1341,7 @@ export const TestFiltersToolbar: Story = {
         await waitFor(() => expect(toolbar.checkVisibility()).toEqual(true))
 
         // Check if there is indication that filters are not appied.
-        await canvas.findByRole('img', {name: 'No filters applied'})
+        await canvas.findByRole('img', { name: 'No filters applied' })
 
         await userEvent.click(showFiltersToolbarToggle)
         await waitFor(() => expect(toolbar).not.toBeVisible())
