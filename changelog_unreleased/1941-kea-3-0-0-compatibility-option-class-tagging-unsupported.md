@@ -1,5 +1,5 @@
 [func] slawek
 
-    Added support for option class tagging for DHCP options altogether
-    with the never-send attribute.
+    Added support for DHCP option class tagging including the
+    configuration of the never-send parameter.
     (Gitlab #1941)
