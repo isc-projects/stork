@@ -64,7 +64,9 @@ export const AddressPool4: Story = {
                     new UntypedFormArray([
                         new FormGroup({
                             alwaysSend: new FormControl(false),
+                            neverSend: new FormControl(false),
                             optionCode: new FormControl(5),
+                            clientClasses: new FormControl([]),
                             optionFields: new UntypedFormArray([]),
                             suboptions: new UntypedFormArray([]),
                         }),
@@ -72,7 +74,9 @@ export const AddressPool4: Story = {
                     new UntypedFormArray([
                         new FormGroup({
                             alwaysSend: new FormControl(false),
+                            neverSend: new FormControl(false),
                             optionCode: new FormControl(6),
+                            clientClasses: new FormControl([]),
                             optionFields: new UntypedFormArray([]),
                             suboptions: new UntypedFormArray([]),
                         }),

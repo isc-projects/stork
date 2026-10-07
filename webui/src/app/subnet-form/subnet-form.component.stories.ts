@@ -95,6 +95,7 @@ let mockUpdateSubnet4BeginData: UpdateSubnetBeginResponse = {
                             options: [
                                 {
                                     alwaysSend: true,
+                                    neverSend: true,
                                     code: 5,
                                     encapsulate: '',
                                     fields: [
@@ -157,6 +158,7 @@ let mockUpdateSubnet4BeginData: UpdateSubnetBeginResponse = {
                         options: [
                             {
                                 alwaysSend: true,
+
                                 code: 5,
                                 encapsulate: '',
                                 fields: [
@@ -417,28 +419,28 @@ export default {
     parameters: {
         mockData: [
             {
-                url: 'http://localhost/subnets/new/transaction',
+                url: 'http://localhost/api/subnets/new/transaction',
                 method: 'POST',
                 status: 200,
                 delay: 2000,
                 response: mockCreateSubnetBeginData,
             },
             {
-                url: 'http://localhost/subnets/123/transaction',
+                url: 'http://localhost/api/subnets/123/transaction',
                 method: 'POST',
                 status: 200,
                 delay: 2000,
                 response: mockUpdateSubnet4BeginData,
             },
             {
-                url: 'http://localhost/subnets/234/transaction',
+                url: 'http://localhost/api/subnets/234/transaction',
                 method: 'POST',
                 status: 200,
                 delay: 2000,
                 response: mockUpdateSubnet6BeginData,
             },
             {
-                url: 'http://localhost/subnets/345/transaction',
+                url: 'http://localhost/api/subnets/345/transaction',
                 method: 'POST',
                 status: 400,
                 delay: 2000,

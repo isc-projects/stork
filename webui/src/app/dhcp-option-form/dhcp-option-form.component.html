@@ -134,7 +134,7 @@
             (click)="deleteOption()"
         ></p-button>
     </div>
-    @if (topLevel) {
+    @if (topLevel && optionClientClassesControl) {
         <div class="ml-1 mt-2">
             <label class="block font-semibold mb-2">Client Classes</label>
             <app-dhcp-client-class-set-form
