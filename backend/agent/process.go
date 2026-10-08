@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"path/filepath"
 	"slices"
 
 	"github.com/pkg/errors"
@@ -89,19 +90,27 @@ func (impl *processListerImpl) listProcesses() ([]supportedProcess, error) {
 	}
 	var listedProcesses []supportedProcess
 	for _, p := range processes {
+		var names []string
 		name, err := p.Name()
-		if err != nil {
-			// No permission to get the process name.
-			continue
+		if err == nil {
+			names = append(names, name)
 		}
-		daemonName, isSupported := impl.supportedProcesses[name]
-		if !isSupported {
-			continue
+		exe, err := p.Exe()
+		if err == nil {
+			nameFromExe := filepath.Base(exe)
+			names = append(names, nameFromExe)
 		}
 
-		listedProcesses = append(listedProcesses, &processWrapper{
-			process: p, daemonName: daemonName,
-		})
+		for _, name := range names {
+			daemonName, isSupported := impl.supportedProcesses[name]
+			if isSupported {
+				listedProcesses = append(listedProcesses, &processWrapper{
+					process: p, daemonName: daemonName,
+				})
+				break
+			}
+		}
+
 	}
 	return listedProcesses, nil
 }
