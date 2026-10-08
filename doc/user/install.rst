@@ -1429,23 +1429,28 @@ common ``STORK_OIDC_`` prefix):
 
 - ``STORK_OIDC_ISSUER_URL`` (``oidc-issuer-url`` in CLI)
 
-    The OpenID Provider Issuer URL; it is a mandatory setting. Stork will try to do OIDC Discovery with the Issuer to retrieve
-    authorization and token endpoints of the OpenID Provider.
+    The OpenID Provider Issuer URL; it is a mandatory setting. Stork uses
+    `OpenID Connect Discovery <https://openid.net/specs/openid-connect-discovery-1_0.html#IssuerDiscovery>`_
+    with the Issuer to retrieve the authorization and token endpoints of the OpenID Provider.
 
 - ``STORK_OIDC_CLIENT_ID`` (``oidc-client-id`` in CLI)
 
     The Client ID registered at the OpenID Provider; it is a mandatory setting. You should get this from your OpenID
-    Provider administrator.
+    Provider administrator. It is sent as the ``client_id`` parameter of the
+    `authentication request <https://openid.net/specs/openid-connect-core-1_0.html#AuthRequest>`_.
 
 - ``STORK_OIDC_CLIENT_SECRET`` (``oidc-client-secret`` in CLI)
 
     The Client secret provided by the OpenID Provider. You should get this from your OpenID Provider administrator.
     Not all OpenID Providers require this. If left empty, Stork will not send the ``Client secret`` as part of the request
-    to OpenID Provider token endpoint.
+    to OpenID Provider token endpoint. The ``client_secret`` parameter is defined in
+    `section 2.3.1 of RFC 6749 <https://www.rfc-editor.org/rfc/rfc6749.html#section-2.3.1>`_.
 
 - ``STORK_OIDC_REDIRECT_URI`` (``oidc-redirect-uri`` in CLI)
 
-    The redirection URI to which the response to OIDC authentication request will be sent. If left empty, Stork will try to
+    The redirection URI to which the response to OIDC authentication request will be sent. It is sent as the
+    ``redirect_uri`` parameter of the
+    `authentication request <https://openid.net/specs/openid-connect-core-1_0.html#AuthRequest>`_. If left empty, Stork will try to
     construct this URI based on the Server address by joining server scheme, ``STORK_REST_HOST``, ``STORK_REST_PORT``,
     ``STORK_REST_BASE_URL`` settings with ``/oidc/callback`` path. It is useful when Stork UI is behind a Reverse Proxy.
     It must end with ``/oidc/callback`` URL path as this is how Stork server recognizes OIDC authentication response from
@@ -1471,16 +1476,19 @@ common ``STORK_OIDC_`` prefix):
 
 - ``STORK_OIDC_SCOPES`` (``oidc-scopes`` in CLI)
 
-    Comma-separated list of scopes sent in OIDC Authentication Request. Stork always sends ``openid`` scope and the list
+    Comma-separated list of `scopes <https://www.rfc-editor.org/rfc/rfc6749.html#section-3.3>`_
+    sent in OIDC Authentication Request. Stork always sends ``openid`` scope and the list
     from this setting is appended. It defaults to ``email,profile``. The scopes list may be OpenID Provider implementation
-    specific. Based on requested scopes, the OpenID Provider may include different claims in the token endpoint response.
+    specific. Based on requested scopes, the OpenID Provider may include different
+    `claims <https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims>`_ in the token endpoint response.
     Stork will try to extract such claims as user email, name or groups the user belongs to. Stork will use claim keys:
     ``email``, ``given_name``, ``family_name``, ``name`` and the value of ``STORK_OIDC_GROUPS_CLAIM`` setting. Consult this
     setting with your OpenID Provider administrator.
 
 - ``STORK_OIDC_GROUPS_CLAIM`` (``oidc-groups-claim`` in CLI)
 
-    Claim key used to retrieve user groups claim from OpenID Provider token endpoint response. It must be well configured if
+    Claim key used to retrieve user groups `claim <https://openid.net/specs/openid-connect-core-1_0.html#Claims>`_
+    from OpenID Provider token endpoint response. It must be well configured if
     ``STORK_OIDC_GROUP_ALLOW`` or ``STORK_OIDC_MAP_GROUPS`` setting is used.
     Defaults to ``groups``. Consult this setting with your OpenID Provider administrator.
 
