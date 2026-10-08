@@ -208,19 +208,19 @@ rm -f /tmp/isc-stork-agent.{deb,rpm,apk}
 
 {{ if .DebPath }}
 if [ -e /etc/debian_version ]; then
-    curl -fsS -o /tmp/isc-stork-agent.deb "{{.ServerAddress}}/{{.DebPath}}"
+    curl -fsS -o /tmp/isc-stork-agent.deb "{{.DebPath}}"
     DEBIAN_FRONTEND=noninteractive dpkg -i --force-confold /tmp/isc-stork-agent.deb
 fi
 {{ end }}
 {{ if .ApkPath }}
 if [ -e /etc/alpine-release ]; then
-	wget -O /tmp/isc-stork-agent.apk "{{.ServerAddress}}/{{.ApkPath}}"
+	wget -O /tmp/isc-stork-agent.apk "{{.ApkPath}}"
 	apk add --allow-untrusted --no-cache --no-network /tmp/isc-stork-agent.apk
 fi
 {{ end }}
 {{ if .RpmPath }}
 if [ -e /etc/redhat-release ]; then
-    curl -fsS -o /tmp/isc-stork-agent.rpm "{{.ServerAddress}}/{{.RpmPath}}"
+    curl -fsS -o /tmp/isc-stork-agent.rpm "{{.RpmPath}}"
     yum install -y /tmp/isc-stork-agent.rpm
 fi
 {{ end }}
@@ -298,15 +298,13 @@ fi
 			}
 
 			data := map[string]string{
-				// The template already contains the trailing slash, so we need to remove
-				// any trailing slash in the server address.
-				"ServerAddress": strings.TrimRight(serverAddress.String(), "/"),
+				"ServerAddress": serverAddress.String(),
 			}
 
 			for extension, path := range packageFiles {
 				key := strings.TrimLeft(extension, ".")
 				key = strings.ToUpper(key[0:1]) + key[1:] + "Path"
-				data[key] = path
+				data[key] = serverAddress.JoinPath(path).String()
 			}
 
 			t := template.Must(template.New("script").Parse(agentInstallerScript))
