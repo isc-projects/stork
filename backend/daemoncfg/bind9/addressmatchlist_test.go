@@ -1,6 +1,8 @@
 package bind9config
 
 import (
+	"slices"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -981,6 +983,12 @@ func TestAddressMatchListGetKeys(t *testing.T) {
 	keys, err := aml.GetKeys(globalConfig)
 	require.NoError(t, err)
 	require.Len(t, keys, 2)
+
+	// Make sure that the keys are in the expected order.
+	// The GetKeys function may return them in any order.
+	slices.SortFunc(keys, func(first, second *Key) int {
+		return strings.Compare(first.Name, second.Name)
+	})
 
 	require.Equal(t, keys[0].Name, "key1")
 	require.Equal(t, keys[0].Clauses[0].Algorithm, "hmac-sha256")
