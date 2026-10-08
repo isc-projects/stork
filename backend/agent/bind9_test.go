@@ -595,7 +595,7 @@ func (e *testCommandExecutor) Output(command string, args ...string) ([]byte, er
 		return []byte("unknown command"), nil
 	}
 
-	if strings.HasSuffix(command, "kea-ctrl-agent") && len(args) == 1 && args[0] == "-v" {
+	if (strings.HasSuffix(command, "kea-ctrl-agent") || strings.HasSuffix(command, "kea-dhcp4") || strings.HasSuffix(command, "kea-dhcp6")) && len(args) == 1 && args[0] == "-v" {
 		return []byte("3.0.1"), nil
 	}
 

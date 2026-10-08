@@ -362,6 +362,62 @@ func TestDetectDaemons(t *testing.T) {
 	require.True(t, daemons3[2].(*pdnsDaemon).zoneInventory.(*zoneInventoryImpl).isAXFRWorkersActive())
 }
 
+// Test that the daemon running through a proxy (e.g., chroot, rosetta, etc.) is detected properly.
+func TestDetectDaemonRunningThroughProxy(t *testing.T) {
+	// Arrange
+	sb := testutil.NewSandbox()
+	defer sb.Close()
+
+	// Prepare Kea config file.
+	keaConfPath, _ := sb.Write("kea-dhcp4.conf", `{ "Dhcp4": {
+		"control-sockets": [{
+            "socket-type": "unix",
+            "socket-name": "/var/run/kea/kea4-ctrl-socket"
+        }]
+	} }`)
+
+	// Prepare the command commander.
+	commander := newTestCommandExecutorDefault()
+
+	// Prepare process mocks.
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	keaProcess := NewMockSupportedProcess(ctrl)
+	keaProcess.EXPECT().getName().AnyTimes().Return("kea-dhcp4", nil)
+	keaProcess.EXPECT().getDaemonName().AnyTimes().Return(daemonname.DHCPv4)
+	keaProcess.EXPECT().getCmdlineSlice().AnyTimes().Return([]string{
+		"proxy", "/usr/bin/kea-dhcp4/kea-dhcp4", "-c", keaConfPath,
+	}, nil)
+	keaProcess.EXPECT().getCwd().AnyTimes().Return("/etc/kea", nil)
+	keaProcess.EXPECT().getExe().AnyTimes().Return("/usr/bin/proxy", nil)
+	keaProcess.EXPECT().getPid().AnyTimes().Return(int32(1234))
+	keaProcess.EXPECT().getParentPid().AnyTimes().Return(int32(2345), nil)
+
+	processManager := NewProcessManager()
+	lister := NewMockProcessLister(ctrl)
+	lister.EXPECT().listProcesses().AnyTimes().Return([]supportedProcess{
+		keaProcess,
+	}, nil)
+	processManager.lister = lister
+
+	monitor := &monitor{
+		processManager: processManager,
+		commander:      commander,
+	}
+
+	// Act
+	monitor.detectDaemons(t.Context())
+	daemons := monitor.daemons
+	sort.Slice(daemons, func(i, j int) bool {
+		return daemons[i].GetName() < daemons[j].GetName()
+	})
+
+	// Assert
+	require.Len(t, daemons, 1)
+	require.Equal(t, daemonname.DHCPv4, daemons[0].GetName())
+}
+
 // Test that verifies that when the zone inventory is not initialized
 // re-detecting the daemons does not cause an error.
 func TestDetectDaemonsConfigNoStatistics(t *testing.T) {
