@@ -640,11 +640,11 @@ go_junit_report_ver = 'v2.1.0'
 go_live_pprof_ver = 'v1.0.9'
 mockgen_ver = 'v0.6.0'
 dlv_ver = 'v1.26.3'
-gdlv_ver = 'v1.16.0'
-govulncheck_ver = 'v1.6.0'
-goswagger_ver = 'v0.35.3'
+gdlv_ver = 'v1.17.0'
+govulncheck_ver = 'v1.8.0'
+goswagger_ver = 'v0.36.6'
 protoc_ver = '31.1'
-protoc_gen_go_ver = 'v1.36.11'
+protoc_gen_go_ver = 'v1.36.12'
 protoc_gen_go_grpc_ver = 'v1.6.2'
 nfpm_ver = 'v2.47.0'
 # TODO: In case of a new release, check if the false-positive detection in
@@ -653,12 +653,12 @@ nfpm_ver = 'v2.47.0'
 golangcilint_ver = '2.12.2'
 
 # UI-related
-openapi_generator_ver = '7.24.0'
+openapi_generator_ver = '7.26.0'
 
 # Other
 bundler_ver = '2.6.9'
 shellcheck_ver = '0.11.0'
-pip_tools_ver = '7.6.1'
+pip_tools_ver = '7.6.2'
 pip_audit_ver = '2.10.1'
 
 # System-dependent variables
