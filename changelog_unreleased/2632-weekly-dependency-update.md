@@ -2,4 +2,4 @@
 
     Updated Go to 1.26.8 and dependencies for frontend, backend, Python,
     Ruby.
-    (Gitlab #2632, #2659, #2666)
+    (Gitlab #2632, #2659, #2666, #2700)
