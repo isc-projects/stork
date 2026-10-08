@@ -18,7 +18,6 @@ var (
 type supportedProcess interface {
 	getCmdlineSlice() ([]string, error)
 	getCwd() (string, error)
-	getExe() (string, error)
 	getName() (string, error)
 	getPid() int32
 	getParentPid() (int32, error)
@@ -45,20 +44,6 @@ func (p *processWrapper) getCwd() (string, error) {
 	return cwd, err
 }
 
-// Returns the process path to the executable.
-func (p *processWrapper) getExe() (string, error) {
-	exe, err := p.process.Exe()
-	err = errors.Wrapf(err, "failed to get process executable path for pid %d", p.getPid())
-	return exe, err
-}
-
-// Returns the process name.
-func (p *processWrapper) getName() (string, error) {
-	name, err := p.process.Name()
-	err = errors.Wrapf(err, "failed to get process name for pid %d", p.getPid())
-	return name, err
-}
-
 // Returns the process pid.
 func (p *processWrapper) getPid() int32 {
 	return p.process.Pid
@@ -69,6 +54,13 @@ func (p *processWrapper) getParentPid() (int32, error) {
 	ppid, err := p.process.Ppid()
 	err = errors.Wrapf(err, "failed to get process parent pid for pid %d", p.getPid())
 	return ppid, err
+}
+
+// Returns the process name.
+func (p *processWrapper) getName() (string, error) {
+	name, err := p.process.Name()
+	err = errors.Wrapf(err, "failed to get process name for pid %d", p.getPid())
+	return name, err
 }
 
 // Converts a process name to a daemon name. If the process name

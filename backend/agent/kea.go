@@ -327,11 +327,29 @@ func (sm *monitor) detectKeaDaemons(ctx context.Context, p supportedProcess) ([]
 
 	// Check the version of the Kea binary. We need to differentiate between
 	// Kea prior to 3.0 and Kea post 3.0.
-	exe, err := p.getExe()
-	if err != nil {
-		return nil, errors.WithMessage(err, "cannot get executable path of Kea process")
+	executablePath := parsedCommandLine.binaryPath
+	if !path.IsAbs(executablePath) {
+		if strings.Contains(executablePath, "/") {
+			// It is a relative path to the current working directory of the process.
+			// It isn't a command in PATH because it contains a slash.
+			cwd, err := p.getCwd()
+			if err != nil {
+				return nil, errors.WithMessage(err, "cannot get Kea process current working directory to resolve the path to the executable")
+			}
+
+			if cwd == "" {
+				return nil, errors.New("cannot resolve Kea executable path because the current working directory is unknown")
+			}
+			executablePath = path.Join(cwd, executablePath)
+		} else {
+			// It is a command in PATH.
+			// Look for the executable in PATH to get its full path. It is needed to correctly resolve the socket path later.
+			executablePath, err = sm.commander.LookPath(executablePath)
+			if err != nil {
+				return nil, errors.WithMessagef(err, "cannot find Kea executable in PATH: %s", executablePath)
+			}
+		}
 	}
-	executablePath := exe
 	versionRaw, err := sm.commander.Output(executablePath, "-v")
 	if err != nil {
 		return nil, errors.WithMessagef(err, "cannot get Kea version by executing %s -v", executablePath)

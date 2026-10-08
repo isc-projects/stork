@@ -359,9 +359,12 @@ func (sm *monitor) detectBind9ConfigPaths(p supportedProcess) (string, string, *
 
 	// STEP 3: If we still don't have anything, let's try to run named -V and
 	// parse its output.
-	binaryPath, err := p.getExe()
-	if err != nil {
-		log.Errorf("cannot get executable path of named process")
+	binaryPath := parsedCommandLine.binaryPath
+	if !filepath.IsAbs(binaryPath) {
+		// The binary path is read from the process info, so it should never
+		// be relative but just in case, let's resolve it against the CWD of
+		// the process.
+		binaryPath = filepath.Join(cwd, binaryPath)
 	}
 	binaryDir := filepath.Dir(binaryPath)
 
