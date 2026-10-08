@@ -21,7 +21,7 @@ Synopsis
 Description
 ~~~~~~~~~~~
 
-``stork-tool`` provides some features:
+``stork-tool`` provides the following features:
 
 - Certificate management - The tool allows the Stork server to export keys, certificates,
   and tokens that are used to secure communication between the Stork server
@@ -38,10 +38,9 @@ Description
 - Static views deployment - The tool allows custom content to be set in selected
   Stork views (e.g. a custom welcome message on the login page).
 
-- Migration of the LDAP-managed users to the new unique identifier attribute -
-  The tool allows the migration of the External ID value of the users
-  authenticated via LDAP to a new unique identifier attribute, which is used to
-  match LDAP server authentication responses to entries in the Stork database.
+- LDAP users migration - The tool updates the unique identifiers of the users
+  authenticated via LDAP, which are used to match the LDAP server responses
+  with the users in the Stork database.
 
 Certificate Management
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -197,7 +196,7 @@ To overwrite the current schema version to an arbitrary value:
 Common Options
 ~~~~~~~~~~~~~~
 
-The following options pertain to both the ``db-`` and ``cert-`` commands:
+The following options pertain to the ``db-``, ``cert-``, and ``migrate-ldap-system-users`` commands:
 
 ``--db-url=``
    Specifies the URL for the Stork PostgreSQL database; mutually exclusive with the host, port, username, and password. ``[$STORK_DATABASE_URL]``
@@ -296,32 +295,82 @@ the UI static files; ``stork-tool``  assumes the directory relative to its
 location. For example, if ``stork-tool`` is installed in the ``/usr/bin`` directory,
 it assumes that the directory for UI files is ``/usr/share/stork/www``.
 
-Migration of the LDAP-managed users to the new unique identifier attribute
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+LDAP Users Migration
+~~~~~~~~~~~~~~~~~~~~
 
-The unique identifier changed in Stork versions 2.5.0. You need to migrate the
-External ID value if you have existing users in your Stork database who were
-logged in via LDAP before this version.
+The default unique identifier attribute of the users authenticated via LDAP
+changed in Stork version 2.5.0. The users who logged in via LDAP while Stork
+was running a version earlier than 2.5.0 must be migrated after upgrading to
+version 2.5.0 or later.
 
-The Stork LDAP hook, before version 2.5.0, used the DN (distinguished name)
-attribute as a unique identifier to match LDAP server authentication responses
-to entries in the Stork database. We discovered that DN is not a correct
-attribute for it, as it can be changed. In larger organizations, it often
-changes when users are moved between organizational units. We recommend using
-fixed, unique UUID-based identifiers as ``entryUUID``, ``uniqueIdentifier``, or
-``objectGUID`` (depending on the LDAP distribution). We changed the default
-value to ``entryUUID``.
+Before version 2.5.0, the Stork LDAP hook used the DN (distinguished name) as
+the unique identifier to match the LDAP server authentication responses with
+the users in the Stork database. We found that the DN is not suitable for this
+purpose because it can change; in larger organizations, it often changes when
+users are moved between organizational units. We recommend using fixed, unique
+UUID-based identifiers such as ``entryUUID`` or ``objectGUID`` (depending on the
+LDAP distribution). Therefore, since version 2.5.0, the default is
+``entryUUID``.
 
-The side effect is that users who logged in to the Stork UI before this version
-already have a unique identifier in the Stork database: their DN. It doesn't
-match ``entryUUID``. The administrator should migrate the users using the
-dedicated Stork Tool command: ``migrate-ldap-system-users``. It updates the
-unique identifier in the Stork database by fetching a new value from the LDAP
-server.
+As a side effect, the Stork database stores the DN as the unique identifier of
+users who logged in while Stork was running a version earlier than 2.5.0, and
+it does not match their ``entryUUID``. Such users cannot log in; see the
+Troubleshooting chapter of the Stork Administrator Reference Manual (ARM) for
+details. Use the ``migrate-ldap-system-users`` command to migrate these users.
 
-The command takes the database connection parameters and the LDAP connection
-parameters. The LDAP connection parameters are the same as for the Stork LDAP
-hook.
+The command binds to the LDAP server as the bind user, looks up each user
+authenticated via LDAP by their login, and stores the value of the new unique
+identifier attribute in the Stork database. The users that cannot be found on
+the LDAP server are skipped with a warning. When the migration is completed,
+the command logs the number of successfully updated and failed users. It needs
+to be run only once.
+
+The command takes the database connection options described in the
+`Common Options`_ section and the following LDAP options. They are the same as
+for the Stork LDAP hook, so use the same values as configured for the Stork
+server:
+
+``--ldap.url=``
+   The LDAP server access URL (use ldaps:// protocol to connect over TLS) (default: ldap://127.0.0.1:1389). ``[$STORK_SERVER_HOOK_LDAP_URL]``
+
+``--ldap.root=``
+   The LDAP root for login user (default: dc=example,dc=org). ``[$STORK_SERVER_HOOK_LDAP_ROOT]``
+
+``--ldap.bind-userdn=``
+   The maintenance userdn used to bind to the server for reading user profiles (default: cn=admin,dc=example,dc=org). ``[$STORK_SERVER_HOOK_LDAP_BIND_USERDN]``
+
+``--ldap.bind-password=``
+   The maintenance password used to bind to the server for reading user profiles (default: adminpassword). ``[$STORK_SERVER_HOOK_LDAP_BIND_PASSWORD]``
+
+``--ldap.skip-tls-server-verification``
+   Skip the TLS server certificate verification - not recommended for the production environments. ``[$STORK_SERVER_HOOK_LDAP_SKIP_SERVER_TLS_VERIFICATION]``
+
+``--ldap.timeout=``
+   The LDAP server connection timeout (default: 30s). ``[$STORK_SERVER_HOOK_LDAP_TIMEOUT]``
+
+``--ldap.debug``
+   Enable additional debug information about connection to LDAP server. ``[$STORK_SERVER_HOOK_LDAP_DEBUG]``
+
+``--ldap.object-class-user=``
+   The name of the user object class in the user schema (default: organizationalPerson). ``[$STORK_SERVER_HOOK_LDAP_OBJECT_CLASS_USER]``
+
+``--ldap.object-class-user-id=``
+   The name of the ID property in the user object class (default: uid). ``[$STORK_SERVER_HOOK_LDAP_OBJECT_CLASS_USER_ID]``
+
+``--ldap.object-class-user-unique-identifier=``
+   Property name, in the user class, for a unique and persistent identifier for the user (default: entryUUID). ``[$STORK_SERVER_HOOK_LDAP_OBJECT_CLASS_USER_UNIQUE_IDENTIFIER]``
+
+The other options of the Stork LDAP hook (e.g., the group mapping settings)
+are accepted but not used by this command.
+
+An example of the command invocation:
+
+.. code-block:: console
+
+    $ stork-tool migrate-ldap-system-users --db-host=localhost --db-user=stork \
+        --ldap.url=ldap://ldap.example.org:389 --ldap.root=dc=example,dc=org \
+        --ldap.bind-userdn=cn=admin,dc=example,dc=org --ldap.bind-password=secret \
+        --ldap.object-class-user-unique-identifier=entryUUID
 
 Mailing Lists and Support
 ~~~~~~~~~~~~~~~~~~~~~~~~~

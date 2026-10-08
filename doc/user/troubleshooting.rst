@@ -575,36 +575,68 @@ This section describes the solutions for some common issues with the Stork serve
 
 ---------------
 
-:Issue:       After upgrading the Stork server from a version prior to 2.5.0 to a newer
-              version, the users cannot log in via LDAP.
-:Solution 1:  Use the Stork Tool command ``migrate-ldap-system-users`` to
-              re-fetch the users' unique identifiers (external IDs) from the
-              LDAP server.
-:Solution 2:  Set the environment variable ``STORK_SERVER_HOOK_LDAP_OBJECT_CLASS_USER_UNIQUE_IDENTIFIER`` / the ``--ldap.object-class-user-unique-identifier`` CLI argument
-              to ``dn``.
-:Explanation: The Stork LDAP hook, before version 2.5.0, used the DN
-              (distinguished name) attribute as a unique identifier to match
-              LDAP server authentication responses to entries in the Stork
-              database. We discovered that DN is not a correct attribute for it,
-              as it can be changed. In larger organizations, it often changes
-              when users are moved between organizational units. Therefore,
-              we recommend using fixed, unique UUID-based identifiers as
-              ``entryUUID``, ``uniqueIdentifier``, or ``objectGUID`` (depending
-              on the LDAP distribution). We changed the default value to
-              ``entryUUID``. The side effect is that users who logged in to the
-              Stork UI before this version already have a unique identifier in
-              the Stork database: their DN. It doesn't match ``entryUUID``. The
-              administrator should migrate the users using the dedicated Stork
-              Tool command: ``migrate-ldap-system-users``. It updates the
-              unique identifier in the Stork database by fetching a new value
-              from the LDAP server. It is a one-time operation.
+.. _troubleshooting-ldap-missing-unique-identifier:
 
-              Alternatively, the administrator can revert to the unique
-              identifier's previous value. It can be achieved by running the
-              Stork server with the ``--ldap.object-class-user-unique-identifier=dn``
-              CLI argument or with the environment variable ``STORK_SERVER_HOOK_LDAP_OBJECT_CLASS_USER_UNIQUE_IDENTIFIER``
-              set to ``dn``. It is not recommended unless the distinguished
-              name (DN) never changes or is reused in the organization.
+:Issue:       After upgrading the Stork server from a version earlier than
+              2.5.0 to version 2.5.0 or later, users cannot log in via LDAP.
+              The Stork UI displays the "Invalid login or password" message,
+              even though the credentials are correct, and the Stork server
+              logs an error like this:
+
+              .. code-block:: text
+
+                time="2026-10-08 11:25:01" level="error" msg="Cannot authenticate a user" file="            users.go:168  " error="cannot authenticate a user: error occurred in the Authenticate callout: missing unique identifier attribute (entryUUID): LDAP user entry is missing required attribute" identifier="alice" method="ldap"
+
+:Solution:    Set the ``--ldap.object-class-user-unique-identifier`` command-line
+              option or the ``STORK_SERVER_HOOK_LDAP_OBJECT_CLASS_USER_UNIQUE_IDENTIFIER``
+              environment variable to a unique, immutable attribute supported by
+              your LDAP server, e.g. ``objectGUID`` for Microsoft Active
+              Directory, and restart the Stork server.
+:Explanation: Since version 2.5.0, the Stork LDAP hook uses the ``entryUUID``
+              attribute by default to identify users. It is available in
+              OpenLDAP and other servers that implement RFC 4530, but not in
+              all LDAP servers. If the attribute is missing in the user entry,
+              the authentication fails. After the attribute is changed, the
+              users who logged in while Stork was running a version earlier
+              than 2.5.0 must be migrated; see the next issue.
+
+---------------
+
+.. _troubleshooting-ldap-conflicting-data:
+
+:Issue:       After upgrading the Stork server from a version earlier than
+              2.5.0 to version 2.5.0 or later, users who logged in via LDAP
+              before the upgrade cannot log in. Since Stork 2.6.0, the Stork UI
+              displays the "Error during authentication process. Please contact
+              Stork admin." message, and the Stork server logs an error like
+              this:
+
+              .. code-block:: text
+
+                time="2026-10-08 11:25:01" level="error" msg="Internal server error after successful external authentication, cannot authenticate a user" file="            users.go:162  " error="database operation error while trying to add or update external user with ID '1234-5678': conflicting data in the database for external user with login 'alice' and email 'alice@example.org': ERROR #23505 duplicate key value violates unique constraint \"system_user_login_unique_idx\"" identifier="alice" method="ldap"
+
+:Solution:    Use the ``stork-tool`` command ``migrate-ldap-system-users`` to
+              fetch the new unique identifiers of the users from the LDAP
+              server. Use the same LDAP settings as configured for the Stork
+              server, including the unique identifier attribute.
+:Explanation: Before version 2.5.0, the Stork LDAP hook used the DN
+              (distinguished name) as the unique identifier. We found that the
+              DN is not suitable for this purpose because it can change, e.g.
+              when users are moved between organizational units. Therefore,
+              since version 2.5.0, the default is ``entryUUID``. The Stork
+              database still stores the DN as the unique identifier of users
+              who logged in before the upgrade, so it does not match the new
+              identifier returned by the LDAP server. Stork then tries to
+              create a new account with the same login or email, which
+              conflicts with the existing one. If both the login and the email
+              of the user changed in LDAP, a new account is created instead,
+              and the old one is left unused. The migration needs to be run
+              only once.
+
+              Alternatively, set the unique identifier attribute to ``dn`` to
+              keep the previous behavior. This is not recommended unless
+              distinguished names never change and are never reused in your
+              organization.
 
 High Virtual Memory Usage
 =========================
