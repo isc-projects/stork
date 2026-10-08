@@ -259,13 +259,13 @@ func TestXFRCollectorReconnect(t *testing.T) {
 		// Let's test the ones growing.
 		for i := 1; i < 6; i++ {
 			sub := ts[i].Sub(ts[i-1])
-			require.Equal(t, sub, xfrCollectorBackoffFactor*time.Duration(math.Pow(2, float64(i-1))))
+			require.Equal(t, xfrCollectorBackoffFactor*time.Duration(math.Pow(2, float64(i-1))), sub)
 		}
 
 		// Let's now test the last two that should stabilize at the maximum duration of 30 seconds.
 		for i := 6; i < 8; i++ {
 			sub := ts[i].Sub(ts[i-1])
-			require.Equal(t, sub, time.Second*30)
+			require.Equal(t, time.Second*30, sub)
 		}
 	})
 }
