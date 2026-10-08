@@ -202,6 +202,7 @@ func parseNamedDefaultPath(output []byte) string {
 
 // Holds the parsed components of a named process command line.
 type namedCommandLine struct {
+	binaryPath     string
 	chrootDir      string
 	configPath     string
 	defaultLogFile string
@@ -228,6 +229,7 @@ func parseNamedCommandLine(args []string) *namedCommandLine {
 			break
 		}
 		if filepath.Base(arg) == namedExec {
+			result.binaryPath = filepath.Clean(arg)
 			found = true
 			flagsStart = i + 1
 			break
@@ -357,17 +359,17 @@ func (sm *monitor) detectBind9ConfigPaths(p supportedProcess) (string, string, *
 
 	// STEP 3: If we still don't have anything, let's try to run named -V and
 	// parse its output.
-	executablePath, err := p.getExe()
+	binaryPath, err := p.getExe()
 	if err != nil {
 		log.Errorf("cannot get executable path of named process")
 	}
-	exeDir := filepath.Dir(executablePath)
+	binaryDir := filepath.Dir(binaryPath)
 
 	if bind9ConfPath == "" {
 		log.Debugf("Looking for BIND 9 config file in output of `named -V`.")
-		out, err := sm.commander.Output(executablePath, "-V")
+		out, err := sm.commander.Output(binaryPath, "-V")
 		if err != nil {
-			return "", "", nil, errors.Wrapf(err, "failed to run '%s -V'", executablePath)
+			return "", "", nil, errors.Wrapf(err, "failed to run '%s -V'", binaryPath)
 		}
 		bind9ConfPath = parseNamedDefaultPath(out)
 	}
@@ -403,7 +405,7 @@ func (sm *monitor) detectBind9ConfigPaths(p supportedProcess) (string, string, *
 			return "", "", nil, err
 		}
 	}
-	return exeDir, parsedCommandLine.defaultLogFile, detectedFiles, nil
+	return binaryDir, parsedCommandLine.defaultLogFile, detectedFiles, nil
 }
 
 // Parses the BIND 9 config and rndc key files. It extracts the RNDC and statistics

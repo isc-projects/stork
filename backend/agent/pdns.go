@@ -23,6 +23,7 @@ const pdnsServerExec = "pdns_server"
 
 // Holds the parsed components of a pdns_server process command line.
 type pdnsServerCommandLine struct {
+	binaryPath string
 	chrootDir  string
 	configDir  string
 	configName string
@@ -49,6 +50,7 @@ func parsePDNSServerCommandLine(args []string) *pdnsServerCommandLine {
 			break
 		}
 		if filepath.Base(arg) == pdnsServerExec {
+			result.binaryPath = filepath.Clean(arg)
 			found = true
 			flagsStart = i + 1
 			break

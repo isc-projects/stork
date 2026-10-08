@@ -201,6 +201,7 @@ func resolveKeaSocketPath(socketFilename string, keaExecutablePath string) strin
 
 // Holds the parsed Kea command line arguments.
 type keaCommandLine struct {
+	binaryPath string
 	configPath string
 }
 
@@ -225,6 +226,7 @@ func parseKeaCommandLine(args []string, processName string) *keaCommandLine {
 			break
 		}
 		if filepath.Base(arg) == processName {
+			result.binaryPath = filepath.Clean(arg)
 			found = true
 			flagsStart = i + 1
 			break
