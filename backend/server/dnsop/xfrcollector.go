@@ -13,6 +13,10 @@ import (
 	dbmodel "isc.org/stork/server/database/model"
 )
 
+// The backoff factor used to calculate the backoff duration on re-connect.
+// The factor is set to 1 second.
+const xfrCollectorBackoffFactor = 1 * time.Second
+
 // xfrCollector maintains streaming communication with a single agent and collects
 // the zone transfer states the agent reports. The received zone transfer states
 // are inserted into the the Stork database. If the connection with the agent fails,
@@ -31,12 +35,6 @@ type xfrCollector struct {
 	stopChan chan struct{}
 	// The mutex to protect the collector state from concurrent access.
 	mutex sync.Mutex
-	// The backoff factor used to calculate the backoff duration on re-connect.
-	// The factor is set to 1 second by default. It is multiplied by power of two
-	// to calculate the backoff duration. So, initial backoff is 1s, then 2s,
-	// then 4s, etc. The factor can be decreased in the unit tests to shorten
-	// blocking time.
-	backoffFactor time.Duration
 	// The cache holding IP addresses to machines mappings.
 	machineIPAddressCache *machineIPAddressCache
 }
@@ -50,7 +48,6 @@ func newXFRCollector(owner ManagerAccessors, machineIPAddressCache *machineIPAdd
 		agents:                owner.GetConnectedAgents(),
 		daemon:                daemon,
 		stopChan:              nil,
-		backoffFactor:         1 * time.Second,
 		machineIPAddressCache: machineIPAddressCache,
 	}
 }
@@ -129,7 +126,7 @@ func (xfrCollector *xfrCollector) convertXFRStateToDBModel(xfr *bind9xfr.State) 
 // ends without an error, the function exits, as it indicates that the agent has
 // no more data to return, or the context was cancelled.
 func (xfrCollector *xfrCollector) collect(ctx context.Context) {
-	backoff := xfrCollector.backoffFactor
+	backoff := xfrCollectorBackoffFactor
 	for {
 		streamErred := false
 		for xfr, err := range xfrCollector.agents.ReceiveZoneTransfers(ctx, xfrCollector.daemon, true) {
@@ -148,7 +145,7 @@ func (xfrCollector *xfrCollector) collect(ctx context.Context) {
 				break
 			}
 			// The connection was successfully established. Let's restart the backoff.
-			backoff = xfrCollector.backoffFactor
+			backoff = xfrCollectorBackoffFactor
 
 			dbState := xfrCollector.convertXFRStateToDBModel(xfr)
 			err = dbmodel.AddOrUpdateZoneTransferState(xfrCollector.db, dbState)
@@ -172,7 +169,7 @@ func (xfrCollector *xfrCollector) collect(ctx context.Context) {
 			return
 		case <-time.After(backoff):
 			// Increase the backoff duration for the possible next attempt.
-			backoff = min(backoff*2, 30*xfrCollector.backoffFactor)
+			backoff = min(backoff*2, 30*xfrCollectorBackoffFactor)
 		}
 	}
 }

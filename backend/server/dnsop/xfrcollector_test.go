@@ -243,7 +243,7 @@ func TestXFRCollectorReconnect(t *testing.T) {
 			synctest.Wait()
 			// We have to advance the time by the amount required by the backoff formula
 			// to unblock the collector to reconnect.
-			time.Sleep(xfrCollector.backoffFactor * time.Duration(math.Pow(2, float64(i))))
+			time.Sleep(xfrCollectorBackoffFactor * time.Duration(math.Pow(2, float64(i))))
 		}
 		xfrCollector.stop()
 		// Make sure that the collector ends gracefully.
@@ -259,7 +259,7 @@ func TestXFRCollectorReconnect(t *testing.T) {
 		// Let's test the ones growing.
 		for i := 1; i < 6; i++ {
 			sub := ts[i].Sub(ts[i-1])
-			require.Equal(t, sub, xfrCollector.backoffFactor*time.Duration(math.Pow(2, float64(i-1))))
+			require.Equal(t, sub, xfrCollectorBackoffFactor*time.Duration(math.Pow(2, float64(i-1))))
 		}
 
 		// Let's now test the last two that should stabilize at the maximum duration of 30 seconds.
