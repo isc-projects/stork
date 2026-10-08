@@ -1,7 +1,7 @@
 GEM
   remote: https://rubygems.org/
   specs:
-    activesupport (8.1.3.1)
+    activesupport (8.1.4)
       base64
       bigdecimal
       concurrent-ruby (~> 1.0, >= 1.3.1)
@@ -68,7 +68,7 @@ GEM
       base64
       httparty (~> 0.20)
       terminal-table (>= 1.5.1)
-    httparty (0.24.2)
+    httparty (0.24.3)
       csv
       mini_mime (>= 1.0.0)
       multi_xml (>= 0.5.2)
@@ -87,8 +87,11 @@ GEM
     multi_xml (0.9.1)
       bigdecimal (>= 3.1, < 5)
     nap (1.1.0)
-    net-http (0.9.1)
+    net-http (0.10.0)
+      net-protocol (>= 0.3.0)
       uri (>= 0.11.1)
+    net-protocol (0.4.0)
+      timeout
     octokit (10.0.0)
       faraday (>= 1, < 3)
       sawyer (~> 0.9)
@@ -106,13 +109,14 @@ GEM
     securerandom (0.4.1)
     terminal-table (4.0.0)
       unicode-display_width (>= 1.1.1, < 4)
+    timeout (0.6.1)
     track_open_instances (0.1.15)
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
     unicode-display_width (3.3.0)
       unicode-emoji (~> 4.3)
     unicode-emoji (4.3.0)
-    uri (1.1.1)
+    uri (1.1.2)
 
 PLATFORMS
   arm64-darwin-23
