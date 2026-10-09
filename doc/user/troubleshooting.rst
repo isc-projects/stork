@@ -578,7 +578,7 @@ This section describes the solutions for some common issues with the Stork serve
 .. _troubleshooting-ldap-missing-unique-identifier:
 
 :Issue:       After upgrading the Stork server from a version earlier than
-              2.5.0 to version 2.5.0 or later, users cannot log in via LDAP.
+              2.5.0 to newer versions, users cannot log in via LDAP.
               The Stork UI displays the "Invalid login or password" message,
               even though the credentials are correct, and the Stork server
               logs an error like this:
