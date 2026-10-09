@@ -3,9 +3,9 @@ FROM redhat/ubi10:10.0
 # To update the Go version, go to https://go.dev/dl/, find suitable
 # version, also get the linux-amd64 and linux-arm64 SHA256 sums.
 # In the future, we could semi automate it using https://go.dev/dl/?mode=json
-ARG GO_VERSION=1.26.8
-ARG GO_SHA256_AMD64=d0f743b33e8d8945e6b1f432edd15785c70507121d6e2a723b21285eddf8b57b
-ARG GO_SHA256_ARM64=211ffced9dcb9633a55eac6364816ec0ddd951389a740e88fa8b3337971bdda0
+ARG GO_VERSION=1.26.9
+ARG GO_SHA256_AMD64=42d158b4d8f7b61ac0a830567c940a86098fb7aac52e467a5ebec03ef5cc2f8d
+ARG GO_SHA256_ARM64=4a97373d49fcacdcf3694fea368a500b00ee3e963974f3e7514132717632f052
 
 ENV PATH="/root/go/bin:/usr/local/go/bin:${PATH}"
 
@@ -13,7 +13,7 @@ WORKDIR /repo
 RUN dnf install -y \
     git-2.52.* \
     java-21-openjdk-headless-21.0.* \
-    tzdata-java-2026c \
+    tzdata-java-2026e \
     man-db-2.12.* \
     make-4.* \
     nodejs-22.23.* \

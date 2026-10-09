@@ -172,6 +172,24 @@ Changelog
 
 Below is the list of changes of CI images for particular tags.
 
+**Tag: 22**
+
+    - ``ci-base``:
+
+        Introduced in the #2700 ticket. Upgrades Golang to 1.26.9.
+
+    - ``pkgs-alpine``:
+
+        Introduced in the #2700 ticket. Upgrades Golang to 1.26.9.
+
+    - ``pkgs-debian-old-glibc``:
+
+        Introduced in the #2700 ticket. Upgrades Golang to 1.26.9.
+
+    - ``pkgs-redhat-ubi``:
+
+        Introduced in the #2700 ticket. Upgrades Golang to 1.26.9.
+
 **Tag: 21**
 
     - ``ci-base``:
