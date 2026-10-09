@@ -328,7 +328,7 @@ func (sm *monitor) detectKeaDaemons(ctx context.Context, p supportedProcess) ([]
 	// Check the version of the Kea binary. We need to differentiate between
 	// Kea prior to 3.0 and Kea post 3.0.
 	binaryPath := parsedCommandLine.binaryPath
-	if !path.IsAbs(binaryPath) {
+	if !filepath.IsAbs(binaryPath) {
 		if strings.Contains(binaryPath, "/") {
 			// It is a relative path to the current working directory of the process.
 			// It isn't a command in PATH because it contains a slash.
@@ -340,7 +340,7 @@ func (sm *monitor) detectKeaDaemons(ctx context.Context, p supportedProcess) ([]
 			if cwd == "" {
 				return nil, errors.New("cannot resolve Kea executable path because the current working directory is unknown")
 			}
-			binaryPath = path.Join(cwd, binaryPath)
+			binaryPath = filepath.Join(cwd, binaryPath)
 		} else {
 			// It does not contain slash. Try exe which can be more reliable, but only if it points to the same executable name
 			// parsed from the command line.

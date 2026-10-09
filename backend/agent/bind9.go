@@ -360,11 +360,11 @@ func (sm *monitor) detectBind9ConfigPaths(p supportedProcess) (string, string, *
 	// STEP 3: If we still don't have anything, let's try to run named -V and
 	// parse its output.
 	binaryPath := parsedCommandLine.binaryPath
-	if !path.IsAbs(binaryPath) {
+	if !filepath.IsAbs(binaryPath) {
 		if strings.Contains(binaryPath, "/") {
 			// It is a relative path to the current working directory of the process.
 			// It isn't a command in PATH because it contains a slash.
-			binaryPath = path.Join(cwd, binaryPath)
+			binaryPath = filepath.Join(cwd, binaryPath)
 		} else {
 			// It does not contain slash. Try exe which can be more reliable, but only if it points to the same executable name
 			// parsed from the command line.

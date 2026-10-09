@@ -109,8 +109,8 @@ func (impl *processListerImpl) listProcesses() ([]supportedProcess, error) {
 			names = append(names, nameFromExe)
 		}
 
-		for _, name := range names {
-			daemonName, isSupported := impl.supportedProcesses[name]
+		for _, collectedName := range names {
+			daemonName, isSupported := impl.supportedProcesses[collectedName]
 			if isSupported {
 				listedProcesses = append(listedProcesses, &processWrapper{
 					process: p, daemonName: daemonName,
