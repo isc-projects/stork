@@ -360,11 +360,26 @@ func (sm *monitor) detectBind9ConfigPaths(p supportedProcess) (string, string, *
 	// STEP 3: If we still don't have anything, let's try to run named -V and
 	// parse its output.
 	binaryPath := parsedCommandLine.binaryPath
-	if !filepath.IsAbs(binaryPath) {
-		// The binary path is read from the process info, so it should never
-		// be relative but just in case, let's resolve it against the CWD of
-		// the process.
-		binaryPath = filepath.Join(cwd, binaryPath)
+	if !path.IsAbs(binaryPath) {
+		if strings.Contains(binaryPath, "/") {
+			// It is a relative path to the current working directory of the process.
+			// It isn't a command in PATH because it contains a slash.
+			binaryPath = path.Join(cwd, binaryPath)
+		} else {
+			// It does not contain slash. Try exe which can be more reliable, but only if it points to the same executable name
+			// parsed from the command line.
+			// Some daemons are initially detected by a spoofed comm. In that case, exe can point to something else.
+			exe, err := p.getExe()
+			if err == nil && strings.HasSuffix(exe, filepath.Base(binaryPath)) {
+				binaryPath = exe
+			} else {
+				// Last resort: search in PATH.
+				binaryPath, err = sm.commander.LookPath(binaryPath)
+				if err != nil {
+					return "", "", nil, errors.WithMessagef(err, "cannot find named executable")
+				}
+			}
+		}
 	}
 	binaryDir := filepath.Dir(binaryPath)
 

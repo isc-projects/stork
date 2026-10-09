@@ -327,9 +327,9 @@ func (sm *monitor) detectKeaDaemons(ctx context.Context, p supportedProcess) ([]
 
 	// Check the version of the Kea binary. We need to differentiate between
 	// Kea prior to 3.0 and Kea post 3.0.
-	executablePath := parsedCommandLine.binaryPath
-	if !path.IsAbs(executablePath) {
-		if strings.Contains(executablePath, "/") {
+	binaryPath := parsedCommandLine.binaryPath
+	if !path.IsAbs(binaryPath) {
+		if strings.Contains(binaryPath, "/") {
 			// It is a relative path to the current working directory of the process.
 			// It isn't a command in PATH because it contains a slash.
 			cwd, err := p.getCwd()
@@ -340,19 +340,26 @@ func (sm *monitor) detectKeaDaemons(ctx context.Context, p supportedProcess) ([]
 			if cwd == "" {
 				return nil, errors.New("cannot resolve Kea executable path because the current working directory is unknown")
 			}
-			executablePath = path.Join(cwd, executablePath)
+			binaryPath = path.Join(cwd, binaryPath)
 		} else {
-			// It is a command in PATH.
-			// Look for the executable in PATH to get its full path. It is needed to correctly resolve the socket path later.
-			executablePath, err = sm.commander.LookPath(executablePath)
-			if err != nil {
-				return nil, errors.WithMessagef(err, "cannot find Kea executable in PATH: %s", executablePath)
+			// It does not contain slash. Try exe which can be more reliable, but only if it points to the same executable name
+			// parsed from the command line.
+			// Some daemons are initially detected by a spoofed comm. In that case, exe can point to something else.
+			exe, err := p.getExe()
+			if err == nil && strings.HasSuffix(exe, filepath.Base(binaryPath)) {
+				binaryPath = exe
+			} else {
+				// Last resort: search in PATH.
+				binaryPath, err = sm.commander.LookPath(binaryPath)
+				if err != nil {
+					return nil, errors.WithMessagef(err, "cannot find Kea executable")
+				}
 			}
 		}
 	}
-	versionRaw, err := sm.commander.Output(executablePath, "-v")
+	versionRaw, err := sm.commander.Output(binaryPath, "-v")
 	if err != nil {
-		return nil, errors.WithMessagef(err, "cannot get Kea version by executing %s -v", executablePath)
+		return nil, errors.WithMessagef(err, "cannot get Kea version by executing %s -v", binaryPath)
 	}
 	version, err := storkutil.ParseSemanticVersion(string(versionRaw))
 	if err != nil {
@@ -418,7 +425,7 @@ func (sm *monitor) detectKeaDaemons(ctx context.Context, p supportedProcess) ([]
 		// Normalize socket path if the socket type is unix. Translate into full path if only name is given.
 		socketAddress := controlSocket.GetAddress()
 		if controlSocket.GetProtocol() == protocoltype.Socket && !strings.Contains(socketAddress, "/") {
-			socketAddress = resolveKeaSocketPath(socketAddress, executablePath)
+			socketAddress = resolveKeaSocketPath(socketAddress, binaryPath)
 		}
 
 		accessPoint := AccessPoint{
