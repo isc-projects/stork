@@ -1488,7 +1488,7 @@ common ``STORK_OIDC_`` prefix):
 - ``STORK_OIDC_GROUPS_CLAIM`` (``oidc-groups-claim`` in CLI)
 
     Claim key used to retrieve user groups `claim <https://openid.net/specs/openid-connect-core-1_0.html#Claims>`_
-    from OpenID Provider token endpoint response. It must be well configured if
+    from OpenID Provider token endpoint response. It must be configured if
     ``STORK_OIDC_GROUP_ALLOW`` or ``STORK_OIDC_MAP_GROUPS`` setting is used.
     Defaults to ``groups``. Consult this setting with your OpenID Provider administrator.
 
