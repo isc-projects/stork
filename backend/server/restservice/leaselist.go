@@ -117,7 +117,7 @@ func (r *RestAPI) getLeases(offset, limit int64, filters dbmodel.LeasesByPageFil
 	return leasesResponse, nil
 }
 
-// GetLeaseList retreives a list of [dbmodel.Lease] from the database, converts
+// GetLeaseList retrieves a list of [dbmodel.Lease] from the database, converts
 // them all to [model.Lease], and supports several filtering and sorting
 // options.  It implements the /api/dhcp/lease-list endpoint.
 func (r *RestAPI) GetLeaseList(ctx context.Context, params dhcp.GetLeaseListParams) middleware.Responder {

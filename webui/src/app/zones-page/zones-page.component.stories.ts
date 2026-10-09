@@ -1051,7 +1051,7 @@ export const TestZonesFiltering: Story = {
         await user.click(bindOption)
 
         // Assert
-        // Check if there is indication that filters are appied.
+        // Check if there is indication that filters are applied.
         await canvas.findByRole('img', { name: 'Filters applied' })
         // 3 BIND9 zones are expected.
         await waitFor(() => expect(within(table).getAllByRole('row')).toHaveLength(4)) // All rows in tbody + one row in the thead.
@@ -1340,7 +1340,7 @@ export const TestFiltersToolbar: Story = {
         await waitFor(() => expect(toolbar).toBeVisible())
         await waitFor(() => expect(toolbar.checkVisibility()).toEqual(true))
 
-        // Check if there is indication that filters are not appied.
+        // Check if there is indication that filters are not applied.
         await canvas.findByRole('img', { name: 'No filters applied' })
 
         await userEvent.click(showFiltersToolbarToggle)

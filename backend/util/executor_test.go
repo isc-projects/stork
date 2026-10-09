@@ -40,7 +40,7 @@ func TestNewSystemCommandExecutor(t *testing.T) {
 	require.False(t, executor.IsFileExist(path.Join(sb.BasePath, "not-exists")))
 }
 
-// Test that the executor returns coorrect file info for a file.
+// Test that the executor returns the correct file info for a file.
 func TestGetFileInfo(t *testing.T) {
 	executor := NewSystemCommandExecutor()
 	sb := testutil.NewSandbox()

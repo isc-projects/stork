@@ -9,7 +9,7 @@ import { StorkValidators } from '../validators'
 import { By } from '@angular/platform-browser'
 
 /**
- * Intrface to the form used in the unit tests.
+ * Interface to the form used in the unit tests.
  */
 interface SubnetForm {
     allocator?: SharedParameterFormGroup<string>

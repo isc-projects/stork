@@ -265,7 +265,7 @@ export class VersionService {
         if (!isIscDaemon(daemonName) || !version) {
             return {
                 severity: Severity.secondary,
-                messages: ["Couldn't asses the software version."],
+                messages: ["Couldn't assess the software version."],
             }
         }
 
@@ -478,7 +478,7 @@ export class VersionService {
                 }
             }
 
-            throw new Error(`Couldn't asses the software version for ${appName} ${version}!`)
+            throw new Error(`Couldn't assess the software version for ${appName} ${version}!`)
         }
 
         // fail case

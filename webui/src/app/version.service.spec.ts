@@ -382,21 +382,21 @@ describe('VersionService', () => {
         // Assert
         expect(() => {
             service.getSoftwareVersionFeedback('2.7.1', 'dhcp4', data)
-        }).toThrowError("Couldn't asses the software version for Kea 2.7.1!")
+        }).toThrowError("Couldn't assess the software version for Kea 2.7.1!")
 
         // Stable release metadata is there, but sortedStableVersions is missing.
         // It is expected to throw an error here as well.
         data.kea = { currentStable: [{ version: '2.6.1', releaseDate: '2024-02-01', eolDate: '2026-02-01' }] }
         expect(() => {
             service.getSoftwareVersionFeedback('2.7.1', 'dhcp6', data)
-        }).toThrowError("Couldn't asses the software version for Kea 2.7.1!")
+        }).toThrowError("Couldn't assess the software version for Kea 2.7.1!")
 
         // Stable release metadata is missing.
         // It is expected to throw an error here as well.
         data.kea = { currentStable: [], sortedStableVersions: ['2.6.1'] }
         expect(() => {
             service.getSoftwareVersionFeedback('2.7.1', 'd2', data)
-        }).toThrowError("Couldn't asses the software version for Kea 2.7.1!")
+        }).toThrowError("Couldn't assess the software version for Kea 2.7.1!")
     })
 
     it('should throw error for version check for incomplete AppVersions data', () => {

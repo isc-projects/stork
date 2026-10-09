@@ -44,7 +44,7 @@ RUN apt-get update \
         # with a different UID than the one running the container.
         && git config --global --add safe.directory /app \
         # Install latest Go. We chose to install version from the upstream to
-        # ensure that we always can use the lastest version and not rely on
+        # ensure that we can always use the latest version and not rely on
         # the version that is available in Debian.
         && ARCH="${TARGETARCH:-$(dpkg --print-architecture)}" \
         && case "${ARCH}" in \

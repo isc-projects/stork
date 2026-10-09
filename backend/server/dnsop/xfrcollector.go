@@ -73,7 +73,7 @@ func (xfrCollector *xfrCollector) convertXFRStateToDBModel(xfr *bind9xfr.State) 
 		if len(clientMachines) > 0 {
 			clientMachineID = clientMachines[0].ID
 		}
-		// For an outgoing zone tranfser the server machine ID is the ID of the machine
+		// For an outgoing zone transfer the server machine ID is the ID of the machine
 		// where the zone transfer is captured.
 		serverMachineID = xfrCollector.daemon.MachineID
 	case xfr.Server != "":

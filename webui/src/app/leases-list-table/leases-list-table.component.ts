@@ -224,7 +224,7 @@ export class LeasesListTableComponent implements OnInit, OnDestroy {
     private _tableFilter$ = new Subject<{ value: any; filterConstraint: FilterMetadata }>()
 
     /**
-     * Apply the provited filter constraints to the table and redisplay the data.
+     * Apply the provided filter constraints to the table and redisplay the data.
      * @param value The filter value that was changed.
      * @param filterConstraint New filter constraints to change what data is shown.
      * @param debounceMode True to debounce quickly repeated requests, false to run each request as soon as it is made.

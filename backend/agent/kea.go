@@ -606,7 +606,7 @@ func (d *keaDaemon) RefreshState(ctx context.Context, agent agentManager) error 
 	return nil
 }
 
-// getLeasefileConfigSettings retreives all the pieces of configuration about the
+// getLeasefileConfigSettings retrieves all the pieces of configuration about the
 // lease memfile from the Kea daemon's config.
 func getLeasefileConfigSettings(config *keaconfig.Config) (leaseDBType string, persist bool, configPath string) {
 	if config == nil {
