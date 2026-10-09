@@ -1,3 +1,220 @@
+Stork 2.6.0 released on 2026-10-14.
+
+* 715 [ui] piotrek
+
+    Added an indicator of applied filters to the tables, which is
+    visible even when the filters toolbar is hidden.
+    (Gitlab #2358)
+
+* 714 [doc] piotrek
+
+    Added links to the OIDC specifications in the OIDC settings
+    description.
+    (Gitlab #2570)
+
+* 713 [build] piotrek, marcin
+
+    Updated Go to 1.26.9 and dependencies for frontend, backend, Python,
+    Ruby.
+    (Gitlab #2632, #2659, #2666, #2700)
+
+* 712 [func] slawek
+
+    Added a new utility to Stork Tool to migrate the external IDs of
+    the existing LDAP system users to new unique identifier.
+    (Gitlab #2434)
+
+* 711 [bug] marcin
+
+    Fixed the agent installation script returned in the
+    "Installing Stork Server on a New Machine" view. This
+    script could fail to download the Stork agent package
+    bundled in the server, due to an invalid Stork server URL.
+    The URL in the script is now properly sanitized. The
+    script was also updated to correctly handle registering
+    and starting the agent on Alpine Linux.
+    (Gitlab #2591)
+
+* 710 [func] jrickett, slawek
+
+    Added support for decoding of relay agent info sub-options in the
+    lease user context.
+    (Gitlab #2529)
+
+* 709 [func] slawek
+
+    Added support for DHCP option class tagging including the
+    configuration of the never-send parameter.
+    (Gitlab #1941)
+
+* 708 [sec] piotrek
+
+    Added CSRF protection mechanism in Stork server.
+    (Gitlab #2651)
+
+* 707 [ui] marcin
+
+    The `control-sockets` Kea parameter is not shown on the list
+    of global parameters until the support for displaying arrays
+    of maps is implemented. Previously this parameter was shown
+    but its contents were unreadable.
+    (Gitlab #2415)
+
+* 706 [bug] marcin
+
+    Fixed the fuzz:backend rake task which executes the fuzzing tests
+    for the specified package.
+    (Gitlab #2608)
+
+* 705 [sec] piotrek
+
+    Improved the security of the session cookies. When the Stork server
+    has TLS enabled, the cookies now have the Secure attribute set.
+    (Gitlab #2561)
+
+* 704 [bug] william
+
+    Fix a bug where sorting the Lease List table by lease state would
+    seemingly shuffle the rows randomly.
+    (Gitlab #2589)
+
+* 703 [bug] william
+
+    Fixed a bug which caused the Stork server to ignore certain fields
+    when fetching leases from the agents.
+    (Gitlab #2641)
+
+* 702 [ui] marcin
+
+    Link from the zones list now directs to a selected daemon
+    instead of filtering the zones by daemon.
+    (Gitlab #2518)
+
+* 701 [bug] marcin
+
+    Zone transfer timestamps are now displayed with milliseconds
+    precision in the UI.
+    (Gitlab #2662)
+
+* 700 [ui] william
+
+    Filtering the Lease List by 'Valid' now only shows valid leases,
+    instead of incorrectly showing all leases.
+    (Gitlab #2646)
+
+* 699 [doc] marcin
+
+    Documented zone transfer monitoring in the Stork ARM.
+    The stork-agent user is added to the systemd-journal
+    group, so it can read track zone transfers in the
+    systemd journal.
+    (Gitlab #2400)
+
+* 698 [func] marcin
+
+    Added buttons directing to zones from the daemons pages.
+    (Gitlab #2344)
+
+* 697 [bug] wlipinski
+
+    Fixed a bug where a DHCP option defined as a "record" with the
+    array flag set (e.g. slp-directory-agent, a mandatory flag
+    followed by one or more IPv4 addresses) misidentified any CSV
+    value beyond the record's fixed fields as belonging to the
+    record's first field type again, instead of repeating the
+    record's last field type. This caused the whole subnet
+    containing such an option to be silently dropped during a
+    periodic Kea configuration pull.
+    (Gitlab #2644)
+
+* 696 [bug] piotrek
+
+    Fixed the user filter on the Events page, which showed an empty
+    entry for users authenticated via OIDC. Displayed authentication
+    method is now consistent across Stork UI.
+    (Gitlab #2628)
+
+* 695 [bug] wlipinski
+
+    Fixed a bug causing Kea to reject updated subnet configuration sent
+    by Stork when option value was specified as numeric 1 or 0 in Kea,
+    and the definition was unspecified for that option. In that case,
+    Stork converted these values to "true" or "false". Kea rejected
+    these values because it could not determine whether they were
+    appropriate given that original values were numeric. If Stork does
+    not know option definition, it treats 1 and 0 as numeric values
+    and does not convert them to boolean. Conversion to boolean only
+    performed for known option formats containing explicit boolean
+    types.
+    (Gitlab #2652)
+
+* 694 [bug] slawek
+
+    Fixed support for generating UUID for UI served over HTTP.
+    (Gitlab #2593)
+
+* 693 [sec] piotrek
+
+    Improved the security of machines REST API endpoints. Machine's
+    Agent Token is now sent and displayed only for super-admin roles.
+    (Gitlab #2077)
+
+* 692 [bug] marcin
+
+    Fixed two bugs in the BIND 9 configuration parsing. The first bug
+    precluded the use of address match lists with negated embedded match
+    list or ACL. The second bug precluded the use of wildcard imports.
+    Both can now be used in BIND 9 configuration and Stork agent will
+    handle them properly.
+    (Gitlab #2322)
+
+* 691 [bug] slawek
+
+    Fixed displaying uptime for DNS daemons in dashboard.
+    (Gitlab #2626)
+
+* 690 [bug] marcin
+
+    Fixed DNS zone transfers tracking using systemd logs. Stork agent
+    enforces the use of RFC3339-compliant timestamp format in the
+    journalctl output that allows for correctly parsing the timestamps
+    pertaining to the zone transfers.
+    (Gitlab #2661)
+
+* 689 [func] marcin
+
+    Regular pruning old zone transfers according to the maximum age
+    configured in the UI.
+    (Gitlab #2540)
+
+* 688 [bug] slawek
+
+    Fixed initialization of the example DHCP options for the host
+    reservations defined in the demo's database.
+    (Gitlab #2351)
+
+* 687 [func] slawek
+
+    Added some Kea DHCPv6 daemons with the Config Backend hook loaded
+    to the demo.
+    (Gitlab #2597)
+
+* 686 [ui] slawek
+
+    Fixed DNS Zone Transfers tab links.
+    (Gitlab #2627)
+
+* 685 [ui] slawek
+
+    Migrated from PrimeNG to OptimusUI.
+    (Gitlab #2611)
+
+* 684 [bug] slawek
+
+    Resolving includes in the Kea configuration file now handles
+    commented lines.
+    (Gitlab #2573)
+
 Stork 2.5.1 released on 2026-08-12.
 
 * 683 [ui] william

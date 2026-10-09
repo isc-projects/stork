@@ -2,36 +2,36 @@
   "bind9": {
     "currentStable": [
       {
-        "version": "9.20.26",
-        "releaseDate": "2026-07-22",
+        "version": "9.20.29",
+        "releaseDate": "2026-09-16",
         "eolDate": "2028-07-01",
         "ESV": "true"
       }
     ],
     "latestDev": {
-      "version": "9.21.24",
-      "releaseDate": "2026-07-22"
+      "version": "9.21.26",
+      "releaseDate": "2026-09-16"
     },
     "latestSecure": [
       {
-        "version": "9.20.26",
-        "releaseDate": "2026-07-22"
+        "version": "9.20.29",
+        "releaseDate": "2026-09-16"
       },
       {
         "version": "9.18.49",
         "releaseDate": "2026-05-20"
       },
       {
-        "version": "9.21.24",
-        "releaseDate": "2026-07-22"
+        "version": "9.21.26",
+        "releaseDate": "2026-09-16"
       }
     ]
   },
   "kea": {
     "currentStable": [
       {
-        "version": "3.2.0",
-        "releaseDate": "2026-06-24",
+        "version": "3.2.1",
+        "releaseDate": "2026-09-30",
         "eolDate": "2027-07-01"
       },
       {
@@ -41,8 +41,8 @@
       }
     ],
     "latestDev": {
-      "version": "3.3.0",
-      "releaseDate": "2026-07-29"
+      "version": "3.3.2",
+      "releaseDate": "2026-09-30"
     },
     "latestSecure": [
       {
@@ -66,8 +66,13 @@
   "stork": {
     "currentStable": [
       {
-        "version": "2.4.1",
-        "releaseDate": "2026-05-13",
+        "version": "2.6.0",
+        "releaseDate": "2026-10-14",
+        "eolDate": "2027-07-14"
+      },
+      {
+        "version": "2.4.2",
+        "releaseDate": "2026-10-07",
         "eolDate": "2027-01-01"
       }
     ],
@@ -86,5 +91,5 @@
       }
     ]
   },
-  "date": "2026-08-06"
+  "date": "2026-10-09"
 }
