@@ -578,7 +578,7 @@ This section describes the solutions for some common issues with the Stork serve
 .. _troubleshooting-ldap-missing-unique-identifier:
 
 :Issue:       After upgrading the Stork server from a version earlier than
-              2.5.0 to newer versions, users cannot log in via LDAP.
+              2.5.0, users cannot log in via LDAP.
               The Stork UI displays the "Invalid login or password" message,
               even though the credentials are correct, and the Stork server
               logs an error like this:
@@ -605,7 +605,7 @@ This section describes the solutions for some common issues with the Stork serve
 .. _troubleshooting-ldap-conflicting-data:
 
 :Issue:       After upgrading the Stork server from a version earlier than
-              2.5.0 to version 2.5.0 or later, users who logged in via LDAP
+              2.5.0, users who logged in via LDAP
               before the upgrade cannot log in. Since Stork 2.6.0, the Stork UI
               displays the "Error during authentication process. Please contact
               Stork admin." message, and the Stork server logs an error like
@@ -631,7 +631,8 @@ This section describes the solutions for some common issues with the Stork serve
               conflicts with the existing one. If both the login and the email
               of the user changed in LDAP, a new account is created instead,
               and the old one is left unused. The migration needs to be run
-              only once.
+              once after upgrading from a version earlier than 2.5.0, and again
+              after each subsequent change of the unique identifier attribute.
 
               Alternatively, set the unique identifier attribute to ``dn`` to
               keep the previous behavior. This is not recommended unless

@@ -300,8 +300,7 @@ LDAP Users Migration
 
 The default unique identifier attribute of the users authenticated via LDAP
 changed in Stork version 2.5.0. The users who logged in via LDAP while Stork
-was running a version earlier than 2.5.0 must be migrated after upgrading to
-newer versions.
+was running a version earlier than 2.5.0 must be migrated after upgrading.
 
 Before version 2.5.0, the Stork LDAP hook used the DN (distinguished name) as
 the unique identifier to match the LDAP server authentication responses with
@@ -323,7 +322,9 @@ authenticated via LDAP by their login, and stores the value of the new unique
 identifier attribute in the Stork database. The users that cannot be found on
 the LDAP server are skipped with a warning. When the migration is completed,
 the command logs the number of successfully migrated users and the number of users
-for whom the migration failed. It needs to be run only once.
+for whom the migration failed. It needs to be run once after upgrading from
+a version earlier than 2.5.0, and again after each subsequent change of the
+unique identifier attribute.
 
 The command takes the database connection options described in the
 `Common Options`_ section and the following LDAP options. They are the same as
