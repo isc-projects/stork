@@ -35,7 +35,7 @@ requests==2.32.5
     # via -r tests/sim/../../rakelib/init_deps/flask.in
 urllib3==2.6.3
     # via requests
-werkzeug==3.1.8
+werkzeug==3.1.9
     # via flask
 zipp==3.23.1
     # via importlib-metadata
