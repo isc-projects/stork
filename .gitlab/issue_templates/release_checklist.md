@@ -1,5 +1,8 @@
 # Stork Release Checklist
 
+The Gitlab issue for this checklist can be created using QA script [create-release-checklist-gitlab-issue.py](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/release/create-release-checklist-gitlab-issue.py) with the advantage that it crosses out all the bullet points that do not apply to this release.
+   * Example command: `GITLAB_TOKEN='...' ./create-release-checklist-gitlab-issue.py --project stork --release 'stable,security' --version 1.2.3`.
+
 #### Legend
 
 - `A.B.C`: the version being released
@@ -25,9 +28,11 @@ Some of these checks and updates can be made before the actual freeze.
 1. [ ] <mark>🟥 Security</mark>: Should have been done when the CVE was discovered, but better late then never. Make sure mirroring is turned off for both Github and Gitlab [here](https://gitlab.isc.org/isc-projects/stork/-/settings/repository#js-push-remote-settings). To turn it off, run QA script [toggle-repo-mirroring.py](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/release/toggle-repo-mirroring.py) \
     Example command: `GITLAB_TOKEN='...' ./toggle-repo-mirroring.py --off isc-projects/stork`.
     Example command: `GITLAB_TOKEN='...' ./toggle-repo-mirroring.py --check-only isc-projects/stork`.
-1. [ ] Check Jenkins and Gitlab CI results:
-    1. [ ] Check Jenkins jobs report: [report](https://jenkins.aws.isc.org/job/stork/job/tests-report/Stork_20Tests_20Report/).
-    1. [ ] Check [the latest pipeline](https://gitlab.isc.org/isc-projects/stork/-/pipelines/latest). <mark>🟨 Maintenance</mark>: check [the stable pipeline](https://gitlab.isc.org/isc-projects/stork/-/pipelines/stork_vA_B/latest) instead (draft link, edit).
+1. Check Jenkins and Gitlab CI results:
+    1. [ ] Check [the latest Jenkins report](https://jenkins.aws.isc.org/job/stork/job/tests-report/Stork_20Tests_20Report/).
+        * [ ] <mark>🟨 Maintenance</mark>: check [the stable Jenkins report](https://jenkins.aws.isc.org/job/stork-A.B/job/tests-report/Stork_20Tests_20Report/) instead (draft link, edit).
+    1. [ ] Check [the latest pipeline](https://gitlab.isc.org/isc-projects/stork/-/pipelines/latest).
+        * [ ] <mark>🟨 Maintenance</mark>: check [the stable pipeline](https://gitlab.isc.org/isc-projects/stork/-/pipelines/stork_vA_B/latest) instead (draft link, edit).
         - Sometimes, some jobs fail because of infrastructure problems. You can click Retry on the pipeline page, or retry jobs individually to see if the errors go away.
     1. [ ] Upload necessary changes and fixes.
 1. [ ] Do some quick checks on <https://demo.stork.isc.org/>. There should be an old version deployed at this time, but there may be bugs worth pointing out to the Stork team, or other bugs that affect the normal release workflow to fix.
@@ -37,10 +42,11 @@ Some of these checks and updates can be made before the actual freeze.
     - Hover over the logo in the top left corner, and check that the tooltip shows the expected version and build date.
     - Check that the page is loading outside VPN.
 1. Check if ReadTheDocs can build Stork documentation.
-    1. [ ] Check if [the latest build](https://app.readthedocs.org/projects/stork/builds/?version__slug=latest) was successful and if its time matches the merge time of the release changes. <mark>Stable and Maintenance Releases</mark>: check [the stable build](https://app.readthedocs.org/projects/stork/builds/?version__slug=v2.4.6) instead (draft link, edit).
+    1. [ ] Check if [the latest build](https://app.readthedocs.org/projects/stork/builds/?version__slug=latest) was successful and if its time matches the merge time of the release changes.
+        * [ ] <mark>🟨 Maintenance</mark>: check [the branch build](https://app.readthedocs.org/projects/stork/builds/?version__slug=stork_vA_B) instead (draft link, edit).
     1. If not, trigger rebuilding docs on [readthedocs.org](https://app.readthedocs.org/projects/stork/builds) and wait for the build to complete.
 1. [ ] Create a draft of the release notes on [the Stork GitLab wiki](https://gitlab.isc.org/isc-projects/stork/-/wikis/home). It should be created under [the Releases directory](https://gitlab.isc.org/isc-projects/stork/-/wikis/Releases), like this one: <https://gitlab.isc.org/isc-projects/stork/-/wikis/Releases/Release-notes-2.0.0>.
-    1. <mark>🟥 Security</mark>: Use the private Stork Gitlab wiki instead: <https://gitlab.isc.org/isc-private/stork/-/wikis/Releases>.
+    1. [ ] <mark>🟥 Security</mark>: Use the private Stork Gitlab wiki instead: <https://gitlab.isc.org/isc-private/stork/-/wikis/Releases>.
 1. [ ] Notify Tomek that the draft is ready to be redacted.
 
 The following steps may involve changing files in the repository.
@@ -50,34 +56,39 @@ The following steps may involve changing files in the repository.
 1. [ ] Prepare release changes. Run QA script [stork/release/update-code-for-release.py](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/stork/release/update-code-for-release.py).
     * e.g. `GITLAB_TOKEN='...' ./update-code-for-release.py --release-date 'Feb 07, 2030' --repo-dir=/home/wlodek/stork`
     * [ ] <mark>🟩 Stable</mark>: please run with the `--version=vA_B` flag.
-    * [ ] <mark>🟨 Maintenance</mark>: please run from `stork_vA_B` branch of `qa-dhcp`.
+    * [ ] <mark>🟨 Maintenance</mark>: please run from `stork_vA_B` branch of `qa-dhcp`. \
    The script makes the following changes:
       - Adds release entries in `ChangeLog.md`.
       - Bumps up Stork versions.
       - Merges changelog entries.
       - Updates `doc/user/compatible-systems.csv`.
       - Updates `etc/versions.json`.
-1. [ ] Check correctness of changes applied.
-1. [ ] Run the script again with the `--upload-only` flag, which creates a branch, issue and MR for the release changes, and pushes the previously done changes to the branch.
-1. [ ] Conduct review process on release changes and merge the MR.
-1. [ ] Wait for Jenkins jobs and pipelines to conclude, check their status:
-    1. [ ] Check Jenkins jobs report: [report](https://jenkins.aws.isc.org/job/stork/job/tests-report/Stork_20Tests_20Report/).
+    * [ ] Check correctness of changes applied.
+    * [ ] Run the script again with the `--upload-only` flag, which creates a branch, issue and MR for the release changes, and pushes the previously done changes to the branch.
+    * [ ] Conduct review process on release changes and merge the MR.
+1. Wait for Jenkins jobs and pipelines to conclude, check their status:
+    1. [ ] Check [the latest Jenkins report](https://jenkins.aws.isc.org/job/stork/job/tests-report/Stork_20Tests_20Report/).
+        * [ ] <mark>🟨 Maintenance</mark>: check [the stable Jenkins report](https://jenkins.aws.isc.org/job/stork-A.B/job/tests-report/Stork_20Tests_20Report/) instead (draft link, edit).
     1. [ ] Check [the latest pipeline](https://gitlab.isc.org/isc-projects/stork/-/pipelines/latest).
+        * [ ] <mark>🟨 Maintenance</mark>: check [the stable pipeline](https://gitlab.isc.org/isc-projects/stork/-/pipelines/stork_vA_B/latest) instead (draft link, edit).
         - Sometimes, some jobs fail because of infrastructure problems. You can click Retry on the pipeline page, or retry jobs individually to see if the errors go away.
         - If packaging jobs failed, it is likely that the `pkg` Jenkins job also failed. Re-run it in that case. It is responsible for uploading packages to Nexus. Released packages in Nexus are required for testing.
 1. [ ] Test that uploading to Cloudsmith works.
-    1. Go to [the latest pipeline](https://gitlab.isc.org/isc-projects/stork/-/pipelines/latest).
+    1. [ ] Go to [the latest pipeline](https://gitlab.isc.org/isc-projects/stork/-/pipelines/latest).
+        * [ ] <mark>🟨 Maintenance</mark>: go to [the stable pipeline](https://gitlab.isc.org/isc-projects/stork/-/pipelines/stork_vA_B/latest) instead (draft link, edit).
     1. Run `upload_test_packages`.
     1. Run `upload_test_packages_hooks`.
     1. Wait for the jobs to complete.
     1. Check that the packages were uploaded to Cloudsmith: <https://app.cloudsmith.com/isc/stork-testing/>. There should be `18 == 2 (amd + arm) * 3 (apk + deb + rpm) * 3 (agent + server + ldap)` total packages.
     1. If there were any errors, investigate and fix.
-1. [ ] Request sanity checks from the team. Run QA script [stork/release/request-sanity-checks.py](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/stork/release/request-sanity-checks.py).
-    * Example command: `GITLAB_TOKEN='...' ./request-sanity-checks.py`
-    * Fallback if it does not work:
-        1. Go to [the latest pipeline](https://gitlab.isc.org/isc-projects/stork/-/pipelines/latest).
-        1. Get the job IDs from `tarball`, `tarball_hooks`, `packages`, `packages_hooks` jobs.
-        1. Create an issue with the following text after filling `{var}`s. Artifact `{var}`s are of the form `https://gitlab.isc.org/isc-projects/stork/-/jobs/{id}/artifacts/browse`.
+1. [ ] Request sanity checks from the team. Run Jenkins job [stork/request-sanity-checks](https://jenkins.aws.isc.org/job/stork/job/request-sanity-checks/).
+    * Fallback if it does not work: Run QA script [stork/release/request-sanity-checks.py](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/stork/release/request-sanity-checks.py).
+        * Example command: `GITLAB_TOKEN='...' ./request-sanity-checks.py`
+        * Fallback if it does not work:
+        1. [ ] Go to [the latest pipeline](https://gitlab.isc.org/isc-projects/stork/-/pipelines/latest).
+            * [ ] <mark>🟨 Maintenance</mark>: go to [the stable pipeline](https://gitlab.isc.org/isc-projects/stork/-/pipelines/stork_vA_B/latest) instead (draft link, edit).
+            1. Get the job IDs from `tarball`, `tarball_hooks`, `packages`, `packages_hooks` jobs.
+            1. Create an issue with the following text after filling `{var}`s. Artifact `{var}`s are of the form `https://gitlab.isc.org/isc-projects/stork/-/jobs/{id}/artifacts/browse`.
 ```
 We are now at step SANITY CHECKS of Stork {stork_version} rc{rc}.
 
@@ -101,7 +112,7 @@ Hooks:
 
 Release notes: {release_notes}
 ```
-1. [ ] If reported issues require fixes and respin:
+1. If reported issues require fixes and respin:
     1. [ ] Wait for developers to merge all the fixes.
     1. [ ] Run QA script [stork/release/update-code-for-release.py](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/stork/release/update-code-for-release.py) again. There might be changelog_unreleased entries that need merging, versions.json might need updating if there were releases of other software in the meantime, etc. Conduct review process on release changes and merge the MR.
     1. [ ] Request sanity checks from the team again. Run QA script [stork/release/request-sanity-checks.py](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/stork/release/request-sanity-checks.py).
@@ -114,18 +125,19 @@ Release notes: {release_notes}
 1. [ ] Confirm with Tomek that the release notes are ready.
 1. [ ] Notify Marketing that the release notes are ready for review.
 1. [ ] Create a signed tag. Run QA script [sign-tag.py](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/release/sign-tag.py) for project `isc-projects/stork`.
-    1. [ ] <mark>Security Release Only</mark>: Run it for project `isc-private/stork` instead.
+    1. [ ] <mark>🟥 Security</mark>: Run it for project `isc-private/stork` instead.
     * It will create tags automatically for other repos of interest too.
-    * <mark>🟩 Stable</mark>: It will also create stable branches.
+    * [ ] <mark>🟩 Stable</mark>: It will also create stable branches.
     * Example command: `./sign-tag.py --project isc-projects/stork --tag v1.2.0 --branch master --key 0259A33B5F5A3A4466CF345C7A5E084CACA51884`
     * To get the fingerprint, run `gpg --list-keys wlodek@isc.org`.
 1. Deploy source tarball & release notes to repo.isc.org.
-   1. Go to [the latest pipeline](https://gitlab.isc.org/isc-projects/stork/-/pipelines/latest).
-   1. Run `upload_to_repo`.
-   1. Run `upload_to_repo_hooks`.
-   1. Wait for the jobs to complete.
-   1. [ ] Check that the tarballs were uploaded to repo.isc.org:/data/shared/sweng/stork/releases/.
-   1. [ ] Check that release notes in repo.isc.org:/data/shared/sweng/stork/releases/ were sanitized with [kea.wiki's sanitize-release-notes.sh](https://gitlab.isc.org/isc-projects/kea/-/wikis/Release-Notes/sanitize-release-notes.sh) by upload job. It is also advised to sanitize release notes inside stork.wiki with mentioned script.
+    1. [ ] Go to [the latest pipeline](https://gitlab.isc.org/isc-projects/stork/-/pipelines/latest).
+        * [ ] <mark>🟨 Maintenance</mark>: go to [the stable pipeline](https://gitlab.isc.org/isc-projects/stork/-/pipelines/stork_vA_B/latest) instead (draft link, edit).
+    1. Run `upload_to_repo`.
+    1. Run `upload_to_repo_hooks`.
+    1. Wait for the jobs to complete.
+    1. [ ] Check that the tarballs were uploaded to repo.isc.org:/data/shared/sweng/stork/releases/.
+    1. [ ] Check that release notes in repo.isc.org:/data/shared/sweng/stork/releases/ were sanitized with [kea.wiki's sanitize-release-notes.sh](https://gitlab.isc.org/isc-projects/kea/-/wikis/Release-Notes/sanitize-release-notes.sh) by upload job. It is also advised to sanitize release notes inside stork.wiki with mentioned script.
 1. [ ] Sign the tarballs. Run QA script [stork/release/sign-tarballs.sh](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/stork/release/sign-tarballs.sh).
     * Example command: `./sign-tarballs.sh 1.2.0 wlodek 0259A33B5F5A3A4466CF345C7A5E084CACA51884`
     * To get the fingerprint, run `gpg --list-keys wlodek@isc.org`.
@@ -143,20 +155,26 @@ Release notes: {release_notes}
 1. [ ] <mark>🟥 Security</mark>: Wait for public disclosure. Confirm with the Incident Manager that the disclosure is done.
 1. [ ] <mark>🟥 Security</mark>: Run make-available again with `--public` instead of `--private`.
 1. Upload packages to Cloudsmith.
-    1. Go to [the latest pipeline](https://gitlab.isc.org/isc-projects/stork/-/pipelines/latest).
+    1. [ ] Go to [the latest pipeline](https://gitlab.isc.org/isc-projects/stork/-/pipelines/latest).
+        * [ ] <mark>🟨 Maintenance</mark>: go to [the stable pipeline](https://gitlab.isc.org/isc-projects/stork/-/pipelines/stork_vA_B/latest) instead (draft link, edit).
     1. Run `upload_packages`.
     1. Run `upload_packages_hooks`.
     1. Wait for the jobs to complete.
-    1. [ ] Check that the packages were uploaded to Cloudsmith: <https://app.cloudsmith.com/isc/stork-dev/>. There should be `18 == 2 (amd + arm) * 3 (apk + deb + rpm) * 3 (agent + server + ldap)` total packages. <mark>🟩 Stable or 🟨 Maintenance</mark>: check <https://app.cloudsmith.com/isc/stork> instead.
-1. [ ] Check that the latest build on the [stork/pkg](https://jenkins.aws.isc.org/job/stork/job/pkg/) Jenkins job passed. This is important for packages to exist on Nexus. Some tests use those packages. If it fails, try to make it work.
+    1. [ ] Check that the packages were uploaded to Cloudsmith: <https://app.cloudsmith.com/isc/stork-dev/>. There should be `18 == 2 (amd + arm) * 3 (apk + deb + rpm) * 3 (agent + server + ldap)` total packages.
+        * [ ] <mark>🟩 Stable or 🟨 Maintenance</mark>: check <https://app.cloudsmith.com/isc/stork> instead.
+1. [ ] Check that the latest build passed on the [stork/pkg](https://jenkins.aws.isc.org/job/stork/job/pkg/) Jenkins pipeline. This is important for packages to exist on Nexus. Some tests use those packages. If it fails, try to make it work.
+    * [ ] <mark>🟨 Maintenance</mark>: check [stork-A.B/pkg](https://jenkins.aws.isc.org/job/stork-A.B/job/pkg/) instead.
 1. [ ] <mark>🟥 Security</mark>: Wait for public disclosure.
 1. [ ] <mark>🟥 Security</mark>: Sync release branches from private repository into public. Run QA script [sync-repos.py](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/release/sync-repos.py) \
    Example command: `GITLAB_TOKEN='...' ./sync-repos.py --source-project isc-private/stork --target-project isc-projects/stork --branch master`.
-1. [ ] Create the Gitlab release. Run QA script [stork/release/create-gitlab-release-and-announce-on-mattermost.py](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/stork/release/create-gitlab-release-and-announce-on-mattermost.py). (Connection to repo.isc.org will be required.)
-    * Example command: `GITLAB_TOKEN='...' ./create-gitlab-release-and-announce-on-mattermost.py`
+1. [ ] Create the Gitlab release. Run Jenkins job [stork/create-gitlab-release-and-announce-on-zulip](https://jenkins.aws.isc.org/job/stork/job/create-gitlab-release-and-announce-on-zulip/).
+    * [ ] <mark>🟨 Maintenance</mark>: run [stork-A.B/create-gitlab-release-and-announce-on-zulip](https://jenkins.aws.isc.org/job/stork-A.B/job/create-gitlab-release-and-announce-on-zulip/) instead.
     * Fallback if it does not work:
+      * Run QA script [stork/release/create-gitlab-release-and-announce-on-zulip.py](https://gitlab.isc.org/isc-private/qa-dhcp/-/blob/master/stork/release/create-gitlab-release-and-announce-on-zulip.py). (Connection to repo.isc.org will be required.)
+      * Example command: `GITLAB_TOKEN='...' ./create-gitlab-release-and-announce-on-zulip.py`
+      * Fallback if it does not work:
         1. Go to <https://gitlab.isc.org/isc-projects/stork/-/releases>. Click on `New release`. Put there a link to the release notes page (e.g. <https://gitlab.isc.org/isc-projects/stork/-/wikis/releases/Release-notes-1.2.0>) and a link to the ARM (e.g. <https://stork.readthedocs.io/en/v1.2.0/>). Then click on `Create release`. Do the same for <https://gitlab.isc.org/isc-projects/stork-hook-ldap/-/releases>.
-        1. Send a message to [the Stork channel](https://mattermost.isc.org/isc/channels/stork). Include the path to the release artifacts and a checklist. Here is a template:
+        1. Send a message to [the Stork Zulip channel](https://zulip.isc.org/#narrow/channel/9-stork/topic/Releases/with/102599). Include the path to the release artifacts and a checklist. Here is a template:
             ```
             #### Stork 1.2.0 is ready to be published.
 
@@ -181,14 +199,14 @@ Release notes: {release_notes}
 
             Code freeze is over.
             ```
-1. [ ] <mark>Latest 🟩 Stable</mark>: Recreate the `stable` tag. Go to [the stable tag](https://gitlab.isc.org/isc-projects/stork/-/tags/stable), click `Delete tag`, then `New tag`, `Tag name`: `stable`, `Create from`: `stork_vA_B`.
-1. [ ] Update docs on <https://app.readthedocs.org/projects/stork/>.
-    1. Click `Add version` -> click `Resync versions` at the bottom -> click on the `Search versions` search bar -> find the tag name in the dropdown menu -> toggle `Active` -> click `Update version`. Wait for the build to complete.
-    1. [ ] <mark>Latest 🟩 Stable</mark>: Rebuild the `stable` version. Go to [the stable build](https://app.readthedocs.org/projects/stork/builds/?version__slug=stable), click `Rebuild version`.
+1. [ ] <mark>🟩 Stable or latest 🟨 Maintenance</mark>: Recreate the `stable` tag. Go to [the stable tag](https://gitlab.isc.org/isc-projects/stork/-/tags/stable), click `Delete tag`, then `New tag`, `Tag name`: `stable`, `Create from`: `stork_vA_B`.
+1. Update docs on <https://app.readthedocs.org/projects/stork/>.
+    1. [ ] Click `Add version` -> click `Resync versions` at the bottom -> click on the `Search versions` search bar -> find the tag name in the dropdown menu -> toggle `Active` -> click `Update version`. Wait for the build to complete.
+    1. [ ] <mark>🟩 Stable or latest 🟨 Maintenance</mark>: Rebuild the `stable` version. Go to [the stable build](https://app.readthedocs.org/projects/stork/builds/?version__slug=stable), click `Rebuild version`.
 
 1. [ ] <mark>🟥 Security</mark>: Copy release notes from the private Stork wiki to the public Stork wiki.
 
-1. [ ] <mark>🟩 Stable or 🟨 Maintenance</mark>: follow [these instructions](https://gitlab.isc.org/isc-private/stork/-/wikis/Release-Procedure#update-the-public-stork-demo) to update the public demo.
+1. [ ] <mark>🟩 Stable or 🟨 Maintenance</mark>: Update the public demo. Follow [these instructions](https://gitlab.isc.org/isc-private/stork/-/wikis/Release-Procedure#update-the-public-stork-demo).
 
 1. [ ] <mark>🟩 Stable</mark>: Update the [the Stork Quickstart Guide](https://kb.isc.org/docs/stork-quickstart-guide).
 
@@ -197,8 +215,8 @@ Release notes: {release_notes}
 ## Marketing
 
 1. [ ] Publish links to downloads on the ISC website.
-1. [ ] <mark>🟩 Stable or 🟨 Maintenance</mark>: Write release email to [kea-announce](https://lists.isc.org/pipermail/kea-announce/).
 1. [ ] <mark>🟩 Stable or 🟨 Maintenance</mark>: Announce release to support subscribers using the read-only Kea Announce queue.
+1. [ ] <mark>🟩 Stable or 🟨 Maintenance</mark>: Write release email to [kea-announce](https://lists.isc.org/pipermail/kea-announce/).
 1. [ ] Write email to [stork-users](https://lists.isc.org/pipermail/stork-users/).
 1. [ ] Announce on social media.
 1. [ ] <mark>🟩 Stable or 🟨 Maintenance</mark>: Write blog article.
