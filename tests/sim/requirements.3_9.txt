@@ -6,7 +6,7 @@
 #
 blinker==1.9.0
     # via flask
-certifi==2026.5.20
+certifi==2026.10.18
     # via requests
 charset-normalizer==3.4.7
     # via requests
