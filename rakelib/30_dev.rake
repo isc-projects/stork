@@ -777,15 +777,15 @@ namespace :lint do
         # Set "ALL=true" to lint all of the code.
         if ENV["ALL"] != "true"
             # Sometimes the branch doesn't exist in CI, so fetch it just to be sure.
-            if ENV["CI"] == "true"
-              sh "git", "fetch", "origin", "master:master"
-            end
-            local_master_sha = sh "git", "show-ref", "-s", "refs/heads/master"
-            origin_master_sha = sh "git", "show-ref", "-s", "refs/remotes/origin/master"
-            if local_master_sha != origin_master_sha
-                puts "WARNING: Your local `master` branch is not the same as the `master` branch at the `origin` remote. golangci-lint may find lint warnings in unexpected code. Pull your `master` branch up to date by running `git fetch origin master:master` (updates the ref without changing your working tree)."
-            end
             mr_target_branch = ENV["CI_MERGE_REQUEST_TARGET_BRANCH_NAME"] || "master"
+            if ENV["CI"] == "true"
+              sh "git", "fetch", "origin", "#{mr_target_branch}:#{mr_target_branch}"
+            end
+            local_sha = `git show-ref -s refs/heads/#{mr_target_branch}`.strip
+            origin_sha = `git show-ref -s refs/remotes/origin/#{mr_target_branch}`.strip
+            if local_sha != origin_sha
+                puts "WARNING: Your local `#{mr_target_branch}` branch is not the same as the `#{mr_target_branch}` branch at the `origin` remote. golangci-lint may find lint warnings in unexpected code. Pull your `#{mr_target_branch}` branch up to date by running `git fetch origin #{mr_target_branch}:#{mr_target_branch}` (updates the ref without changing your working tree)."
+            end
             opts += [ "--new-from-merge-base", mr_target_branch ]
         end
         if ENV["FIX"] == "true"
